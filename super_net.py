@@ -12,7 +12,20 @@ from soen_sim_lib__common_components__simple_gates import common_dendrite, commo
 ToDo:
  - Find way to generate structure only once, for any input
  - Find cleaner way of dealing with parameter adjustments
- - 
+ 
+ Proposed input method:
+
+input = Input(Channels=100, type=[random,MNIST,audio,custom])
+
+neuron_pupulation = Neurons(N=100, connectivity=[random,structured,custom], **kwargs)
+ - pass in dictionary of parameter settings through kwargs, else defaults
+ - Can customize connectivity with an adjacency matrix
+
+monitor - Monitor(neuron_population, ['spikes','phi_r','signal','etc...'])
+
+network = Network(input,neuron_population,monitor)
+
+network.run(simulation_time*ns)
 """
 
 
@@ -28,6 +41,7 @@ loops_present = 'ri' # 'ri' 'rtti'
 
 # ib__list, phi_r__array, i_di__array, r_fq__array, params_imported, _ = dend_load_rate_array('default_{}'.format(loops_present))
 # ib__list__ri, phi_r__array__ri, i_di__array__ri, r_fq__array__ri, phi_th_plus__vec__ri, phi_th_minus__vec__ri, s_max_plus__vec__ri, s_max_minus__vec__ri, s_max_plus__array__ri, s_max_minus__array__ri = dend_load_arrays_thresholds_saturations('default_ri')
+
 
 
 #%%
@@ -266,12 +280,12 @@ class SuperNet:
 net_args = {
     "N":100,
     "ns": 100,
-    "connectivity": "cascade",
+    "connectivity": "random",
     "in_connect": "ordered",
     "recurrence": None,
-    "sim": 5000,
-    "input_p": .5,
-    # "reservoir_p":0.1,
+    # "sim": 500,
+    "input_p": 1,
+    "reservoir_p":0.1,
 
     "beta_di": 2*np.pi*1e2,
     "tau_di": [900,1100],
@@ -293,9 +307,9 @@ net_args = {
 
     "beta_ni": 2*np.pi*1e3,
     "tau_ni": 50,
-    "ib_ref": 7, # int 0-9 to draw from ib__list__ri[i] list
-    "beta_ref": 2*np.pi*1e2,
-    "tau_ref": 50,
+    "ib_ref": 9, # int 0-9 to draw from ib__list__ri[i] list
+    "beta_ref": 2*np.pi*1e4,
+    "tau_ref": 500,
     "dt_soen": 10, # simulation time-step
     "_t_on": 5,
 
@@ -303,31 +317,33 @@ net_args = {
 
 input_args = {
     "dataset": "MNIST", # random for rand gen
-    "sim_in": 5000,
+    "sim_in": 500,
     #"channels": 100, 
     "channels": 28*28,
     "m_number":0,
     "slow_down":100,
 }
+net_args["sim"] = input_args["sim_in"]
 
-
+# make single line
 super_input = SuperInput(**input_args)
 mnist_data, mnist_indices, mnist_spikes = super_input.MNIST()
-
 spikes = [mnist_indices[0],mnist_spikes[0]]
 input = super_input.array_to_rows(spikes)
 
+# make single line
 super_net = SuperNet(dend_load_arrays_thresholds_saturations('default_ri'),**net_args)
 super_net.param_setup()
 super_net.make_input_signal(input)
-
 super_net.make_neurons()
 super_net.make_net()
 
+# Add preemptory monitor statement
 spiked, S = super_net.run()
 print("spikes = ", len(spiked[0]),"\n\n")
 
-# super_net.raster_plot(spiked)
+# Call this from a separate plotting file/class
+## super_net.raster_plot(spiked)
 input_spikes = super_input.rows_to_array(input)
 super_net.raster_input_plot(spiked,input_spikes)
 
@@ -335,6 +351,7 @@ super_net.raster_input_plot(spiked,input_spikes)
 
 print("\n\n")
 
+# arg-parser?
 
 # # input = super_input.gen_rand_input(10,25)
 # labels = ["zero","zero","zero","one","one","one","two","two","two"]
