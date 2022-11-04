@@ -323,12 +323,11 @@ def recursive_dendrite_updater(dendrite_object,time_index,present_time,d_tau):
     return
 
 def output_synapse_updater(neuron_object,time_index,present_time):
-    
     for synapse_key in neuron_object.synaptic_outputs:
         
         # find most recent spike time for this synapse
         _st_ind = np.where( present_time > neuron_object.synaptic_outputs[synapse_key].spike_times_converted[:] )[0]
-        
+        # print(_st_ind)
         if len(_st_ind) > 0:
             
             _st_ind = int(_st_ind[-1])

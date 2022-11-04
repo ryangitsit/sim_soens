@@ -310,18 +310,18 @@ net_args = {
     "ib_ref": 9, # int 0-9 to draw from ib__list__ri[i] list
     "beta_ref": 2*np.pi*1e4,
     "tau_ref": 500,
-    "dt_soen": 10, # simulation time-step
+    "dt_soen": 1, # simulation time-step
     "_t_on": 5,
 
 }
 
 input_args = {
     "dataset": "MNIST", # random for rand gen
-    "sim_in": 500,
+    "sim_in": 5000,
     #"channels": 100, 
     "channels": 28*28,
     "m_number":0,
-    "slow_down":100,
+    "slow_down":500,
 }
 net_args["sim"] = input_args["sim_in"]
 
@@ -343,9 +343,34 @@ spiked, S = super_net.run()
 print("spikes = ", len(spiked[0]),"\n\n")
 
 # Call this from a separate plotting file/class
-## super_net.raster_plot(spiked)
+# super_net.raster_plot(spiked)
 input_spikes = super_input.rows_to_array(input)
 super_net.raster_input_plot(spiked,input_spikes)
+
+# labels = ["zero","zero","zero","one","one","one","two","two","two"]
+# for i,pattern in enumerate(labels):
+
+#     print("pattern index: ",i)
+#     replica = str(i%3)
+
+#     spikes = [mnist_indices[i],mnist_spikes[i]]
+#     input = super_input.array_to_rows(spikes)
+
+#     super_net = SuperNet(dend_load_arrays_thresholds_saturations('default_ri'),**net_args)
+#     super_net.param_setup()
+#     super_net.make_input_signal(input)
+
+#     super_net.make_neurons()
+#     super_net.make_net()
+
+#     spiked, S = super_net.run()
+#     print("spikes = ", len(spiked[0]),"\n\n")
+
+#     # super_net.raster_plot(spiked)
+#     # input_spikes = super_input.rows_to_array(input)
+#     # super_net.raster_input_plot(spiked,input_spikes)
+#     dir = 'test_cases'
+#     super_net.spks_to_txt(spiked,3,dir,f"spikes_{pattern}_{replica}")
 
 #%%
 
