@@ -285,10 +285,10 @@ net_args = {
     "recurrence": None,
     # "sim": 500,
     "input_p": 1,
-    "reservoir_p":0.1,
+    "reservoir_p":0.2,
 
     "beta_di": 2*np.pi*1e2,
-    "tau_di": [900,1100],
+    "tau_di": [1,2], #[900,1100],
     "ib": 9, # int 0-9 to draw from ib__list__ri[i] list
     # "s_max":,
     # "phi_th":,
@@ -301,13 +301,13 @@ net_args = {
 
     "w_sd": [2.5],
     "w_sid": [2.5], # two numbers for rand float range or single value for consant
-    "w_dn": [1,1.5], # two numbers for rand float range or single value for consant
+    "w_dn": [.75], # two numbers for rand float range or single value for consant
     "norm_dn": 1,
     "norm_sd": 1,
 
     "beta_ni": 2*np.pi*1e3,
     "tau_ni": 50,
-    "ib_ref": 9, # int 0-9 to draw from ib__list__ri[i] list
+    "ib_ref": 8, # int 0-9 to draw from ib__list__ri[i] list
     "beta_ref": 2*np.pi*1e4,
     "tau_ref": 500,
     "dt_soen": 1, # simulation time-step
@@ -326,26 +326,26 @@ input_args = {
 net_args["sim"] = input_args["sim_in"]
 
 # make single line
-super_input = SuperInput(**input_args)
-mnist_data, mnist_indices, mnist_spikes = super_input.MNIST()
-spikes = [mnist_indices[0],mnist_spikes[0]]
-input = super_input.array_to_rows(spikes)
+# super_input = SuperInput(**input_args)
+# mnist_data, mnist_indices, mnist_spikes = super_input.MNIST()
+# spikes = [mnist_indices[0],mnist_spikes[0]]
+# input = super_input.array_to_rows(spikes)
 
-# make single line
-super_net = SuperNet(dend_load_arrays_thresholds_saturations('default_ri'),**net_args)
-super_net.param_setup()
-super_net.make_input_signal(input)
-super_net.make_neurons()
-super_net.make_net()
+# # make single line
+# super_net = SuperNet(dend_load_arrays_thresholds_saturations('default_ri'),**net_args)
+# super_net.param_setup()
+# super_net.make_input_signal(input)
+# super_net.make_neurons()
+# super_net.make_net()
 
-# Add preemptory monitor statement
-spiked, S = super_net.run()
-print("spikes = ", len(spiked[0]),"\n\n")
+# # Add preemptory monitor statement
+# spiked, S = super_net.run()
+# print("spikes = ", len(spiked[0]),"\n\n")
 
-# Call this from a separate plotting file/class
-# super_net.raster_plot(spiked)
-input_spikes = super_input.rows_to_array(input)
-super_net.raster_input_plot(spiked,input_spikes)
+# # Call this from a separate plotting file/class
+# # super_net.raster_plot(spiked)
+# input_spikes = super_input.rows_to_array(input)
+# super_net.raster_input_plot(spiked,input_spikes)
 
 # labels = ["zero","zero","zero","one","one","one","two","two","two"]
 # for i,pattern in enumerate(labels):
