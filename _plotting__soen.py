@@ -1425,11 +1425,37 @@ def plot_nine_pixel_activations_vs_input(drive_dict,s_z__vec,s_v__vec,s_n__vec):
 
 
 
+#%%
 
 
+# =============================================================================
+# Plots added by Ryan
+# =============================================================================
 
+def raster_plot(spikes,duration=None,title=None,input=[],notebook=False):
+    from matplotlib import pyplot as plt
+    if notebook==True:
+        plt.figure(figsize=(6, 4))
+    else:
+        plt.figure(figsize=(10, 6))
+    plt.plot(spikes[1], spikes[0], '.k')
+    if len(input)>0:
+        plt.plot(input[1], input[0]*(max(spikes[0])/max(input[0])), '.', markersize=7.5, color='r')
+    if title:
+        plt.title(title,fontsize=18)
+    else:
+        plt.title('Rasterplot of Spiking Activity',fontsize=18)
+    plt.xlabel('Spike Time (ns)',fontsize=16)
+    plt.ylabel('Index',fontsize=16)
+    if duration:
+        plt.xlim(0,duration+int(duration/20))
+    plt.show()
 
-
-
-
+# import numpy as np
+# spikes = np.array([[2,1,0],[12,24,56]])
+# inputs = np.array([[1,2,3],[15,18,76]])
+# raster_plot(spikes,duration=100,title="Test Spikes",input=inputs)
+# =============================================================================
+# End plots added by Ryan
+# =============================================================================
 

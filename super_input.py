@@ -7,13 +7,20 @@ class SuperInput():
         self.duration = 100,
         self.channels = 28*28,
         self.slow_down = 10,
+        self.total_spikes = 25,
         self.name = 'Super_Input'
         self.__dict__.update(entries)
         
         if self.type == "MNIST":
+            self.channels = int(28*28)
             print("Generating MNNIST dataset...")
             mnist_indices, mnist_spikes = self.MNIST()
             self.spike_arrays = [mnist_indices,mnist_spikes]
+            self.spike_rows = self.array_to_rows(self.spike_arrays)
+
+        if self.type == "random":
+            print("Generating random input...")
+            self.spike_arrays = [np.random.randint(self.channels,size=self.total_spikes),np.random.rand(self.total_spikes)*self.duration]
             self.spike_rows = self.array_to_rows(self.spike_arrays)
 
 
@@ -86,3 +93,5 @@ class SuperInput():
         self.times = spikes_t*1000
 
         return self.indices, self.times
+
+# %%
