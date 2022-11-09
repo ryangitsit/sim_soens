@@ -119,9 +119,10 @@ net.add_neuron(neuron_2)
 
 #%% run
 net.run_sim(dt = dt_soen, tf = input_1.spike_times[-1] + np.max([dendrite_1.tau_di,dendrite_2.tau_di]))
-
+print(net.neurons[2].dend__ref.synaptic_inputs)
 #%% plot
 neuron_1.plot_simple = True
 neuron_2.plot_simple = True
 net.plot()
             
+# %%

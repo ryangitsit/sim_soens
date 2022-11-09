@@ -295,19 +295,19 @@ class SuperNet:
 
 
 
-input_single = SuperInput(channels=50, type='random', total_spikes=100, duration=100)
-# input_MNIST = SuperInput(type='MNIST', index=0, slow_down=100, duration=1000)
-single_neuron = SuperNet(N=50,duration=100)#,params=net_args) #dendrites,synapses
-print(single_neuron.N)
-single_neuron.connect_input(input_single)
-#%%
-single_neuron.run()
-single_neuron.record(['spikes'])
-spikes = single_neuron.spikes
-#%%
+# input_single = SuperInput(channels=50, type='random', total_spikes=100, duration=100)
+# # input_MNIST = SuperInput(type='MNIST', index=0, slow_down=100, duration=1000)
+# single_neuron = SuperNet(N=50,duration=100)#,params=net_args) #dendrites,synapses
+# print(single_neuron.N)
+# single_neuron.connect_input(input_single)
+# #%%
+# single_neuron.run()
+# single_neuron.record(['spikes'])
+# spikes = single_neuron.spikes
+# #%%
 
-from _plotting__soen import raster_plot
-raster_plot(spikes,duration=100,input=input_single.spike_arrays)
+# from _plotting__soen import raster_plot
+# raster_plot(spikes,duration=100,input=input_single.spike_arrays)
 
 #%%
 
