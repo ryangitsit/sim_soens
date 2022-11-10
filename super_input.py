@@ -1,5 +1,6 @@
 #%%
 import numpy as np
+from soen_sim import input_signal
 
 class SuperInput():
     def __init__(self,**entries):
@@ -23,6 +24,12 @@ class SuperInput():
             self.spike_arrays = [np.random.randint(self.channels,size=self.total_spikes),np.random.rand(self.total_spikes)*self.duration]
             self.spike_rows = self.array_to_rows(self.spike_arrays)
 
+        
+        self.signals = []
+        for i in range(self.channels):
+            self.signals.append(input_signal(name = 'input_synaptic_drive', 
+                       input_temporal_form = 'arbitrary_spike_train', 
+                       spike_times = self.spike_rows[i]))
 
     def gen_rand_input(self,spiking_indices,max_amounts):
         # self.input = np.random.randint(self.duration, size=())
@@ -35,6 +42,7 @@ class SuperInput():
         print("Total number of spikes:", np.sum(sum))
         print("Spiking at neurons: ", spikers)
         return input
+
 
     def gen_ordered_input(self):
         pass

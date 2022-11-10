@@ -1,8 +1,6 @@
 #%%
 import numpy as np
 
-from super_input import SuperInput
-
 from _util import (
     physical_constants, set_plot_params, index_finder)
 from _util__soen import (
@@ -15,6 +13,9 @@ from super_input import SuperInput
 from params import default_neuron_params
 from _plotting__soen import raster_plot
 
+
+from super_input import SuperInput
+
 '''
 Here a class for calling from a 'zoo' of possible neurons is implemented.
 
@@ -25,13 +26,6 @@ Plan:
  - Add more explicit connectivity defintions and corresponding plotting
 '''
 
-#%%
-# input = SuperInput(channels=9, type='random', total_spikes=1000, duration=100)
-
-# print(input.spike_rows)
-# raster_plot(input.spike_arrays)
-
-# print(default_neuron_params)
 
 #%%
 class CustomNeurons():
@@ -41,6 +35,24 @@ class CustomNeurons():
 
         if self.type == '3fractal':
             self.fractal_three()
+
+        if self.type == 'single':
+            self.single()
+    
+    def single(self):
+
+        self.synapse = common_synapse(1)
+
+        self.dendrite = common_dendrite(1, 'ri', self.beta_di, 
+                                          self.tau_di, self.ib)
+                                    
+        self.dendrite.add_input(self.synapse, connection_strength = self.w_sd)
+
+        self.neuron = common_neuron(1, 'ri', self.beta_ni, self.tau_ni, 
+                                      self.ib, self.s_th_factor_n*self.s_max_n, 
+                                      self.beta_ref, self.tau_ref, self.ib_ref)
+
+        self.neuron.add_input(self.dendrite, connection_strength = self.w_dn)
 
 
     def fractal_three(self):
@@ -105,8 +117,25 @@ class CustomNeurons():
         # plt.xlabel('Source neuron index')
         # plt.ylabel('Target neuron index')
         plt.show()
+
+
         
-        
+
+input = SuperInput(channels=1, type='random', total_spikes=10, duration=100)
+
+print(input.spike_rows)
+raster_plot(input.spike_arrays)
+
+sing = CustomNeurons(type='single',**default_neuron_params)
+
+sing.synapse.add_input(input.signals[0])
+
+net = network(name = 'network_under_test')
+net.add_neuron(sing.neuron)
+# net.neurons['name'].name = 1
+net.run_sim(dt = 11, tf = 100)
+
+#%%
 
 # default_neuron_params['w_dd'] = 1
 # default_neuron_params['w_dn'] = 1
@@ -139,22 +168,24 @@ class CustomNeurons():
 # print(net.neurons['name'].name)
 # # network_object.neurons[neuron_key].dend__ref.synaptic_inputs['{}__syn_refraction'.format(network_object.neurons[neuron_key].name)].spike_times_converted = np.append(network_object.neurons[neuron_key].dend__ref.synaptic_inputs['{}__syn_refraction'.format(network_object.neurons[neuron_key].name)].spike_times_converted,tau_vec[ii+1])
 # net.run_sim(dt = 10, tf = 1000)
-# spikes = [ [] for _ in range(2) ]
-# S = []
-# Phi_r = []
-# count = 0
-# for neuron_key in net.neurons:
-#     s = net.neurons[neuron_key].dend__nr_ni.s
-#     S.append(s)
-#     phi_r = net.neurons[neuron_key].dend__nr_ni.phi_r
-#     Phi_r.append(phi_r)
-#     spike_t = net.neurons[neuron_key].spike_times
-#     spikes[0].append(np.ones(len(spike_t))*count)
-#     spikes[1].append(spike_t)
-#     count+=1
-# spikes[0] =np.concatenate(spikes[0])
-# spikes[1] = np.concatenate(spikes[1])/1000
+
+#%%
+spikes = [ [] for _ in range(2) ]
+S = []
+Phi_r = []
+count = 0
+for neuron_key in net.neurons:
+    s = net.neurons[neuron_key].dend__nr_ni.s
+    S.append(s)
+    phi_r = net.neurons[neuron_key].dend__nr_ni.phi_r
+    Phi_r.append(phi_r)
+    spike_t = net.neurons[neuron_key].spike_times
+    spikes[0].append(np.ones(len(spike_t))*count)
+    spikes[1].append(spike_t)
+    count+=1
+spikes[0] =np.concatenate(spikes[0])
+spikes[1] = np.concatenate(spikes[1])/1000
 
 
-# raster_plot(spikes,duration=1000)
+raster_plot(spikes,duration=100)
 # # %%
