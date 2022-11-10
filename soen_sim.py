@@ -690,3 +690,23 @@ class network():
     def plot(self):
         plot_network(self)
         return
+
+    def get_recordings(self):
+        spikes = [ [] for _ in range(2) ]
+        S = []
+        Phi_r = []
+        count = 0
+        for neuron_key in self.neurons:
+            s = self.neurons[neuron_key].dend__nr_ni.s
+            S.append(s)
+            phi_r = self.neurons[neuron_key].dend__nr_ni.phi_r
+            Phi_r.append(phi_r)
+            spike_t = self.neurons[neuron_key].spike_times
+            spikes[0].append(np.ones(len(spike_t))*count)
+            spikes[1].append(spike_t)
+            count+=1
+        spikes[0] =np.concatenate(spikes[0])
+        spikes[1] = np.concatenate(spikes[1])/1000
+        self.spikes = spikes
+        self.phi_r = Phi_r
+        self.signal = S

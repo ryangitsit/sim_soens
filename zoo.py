@@ -121,20 +121,23 @@ class CustomNeurons():
 
         
 
-input = SuperInput(channels=1, type='random', total_spikes=10, duration=100)
+# input = SuperInput(channels=1, type='random', total_spikes=100, duration=100)
 
-print(input.spike_rows)
-raster_plot(input.spike_arrays)
+# print(input.spike_rows)
+# raster_plot(input.spike_arrays)
 
-sing = CustomNeurons(type='single',**default_neuron_params)
+# sing = CustomNeurons(type='single',**default_neuron_params)
 
-sing.synapse.add_input(input.signals[0])
+# sing.synapse.add_input(input.signals[0])
 
-net = network(name = 'network_under_test')
-net.add_neuron(sing.neuron)
-# net.neurons['name'].name = 1
-net.run_sim(dt = 11, tf = 100)
+# net = network(name = 'network_under_test')
+# net.add_neuron(sing.neuron)
+# # net.neurons['name'].name = 1
+# net.run_sim(dt = 1, tf = 100)
 
+# net.get_recordings()
+
+# raster_plot(net.spikes,duration=100)
 #%%
 
 # default_neuron_params['w_dd'] = 1
@@ -169,23 +172,25 @@ net.run_sim(dt = 11, tf = 100)
 # # network_object.neurons[neuron_key].dend__ref.synaptic_inputs['{}__syn_refraction'.format(network_object.neurons[neuron_key].name)].spike_times_converted = np.append(network_object.neurons[neuron_key].dend__ref.synaptic_inputs['{}__syn_refraction'.format(network_object.neurons[neuron_key].name)].spike_times_converted,tau_vec[ii+1])
 # net.run_sim(dt = 10, tf = 1000)
 
-#%%
-spikes = [ [] for _ in range(2) ]
-S = []
-Phi_r = []
-count = 0
-for neuron_key in net.neurons:
-    s = net.neurons[neuron_key].dend__nr_ni.s
-    S.append(s)
-    phi_r = net.neurons[neuron_key].dend__nr_ni.phi_r
-    Phi_r.append(phi_r)
-    spike_t = net.neurons[neuron_key].spike_times
-    spikes[0].append(np.ones(len(spike_t))*count)
-    spikes[1].append(spike_t)
-    count+=1
-spikes[0] =np.concatenate(spikes[0])
-spikes[1] = np.concatenate(spikes[1])/1000
+
+# spikes = [ [] for _ in range(2) ]
+# S = []
+# Phi_r = []
+# count = 0
+# for neuron_key in net.neurons:
+#     s = net.neurons[neuron_key].dend__nr_ni.s
+#     S.append(s)
+#     phi_r = net.neurons[neuron_key].dend__nr_ni.phi_r
+#     Phi_r.append(phi_r)
+#     spike_t = net.neurons[neuron_key].spike_times
+#     spikes[0].append(np.ones(len(spike_t))*count)
+#     spikes[1].append(spike_t)
+#     count+=1
+# spikes[0] =np.concatenate(spikes[0])
+# spikes[1] = np.concatenate(spikes[1])/1000
 
 
-raster_plot(spikes,duration=100)
+
 # # %%
+
+# %%
