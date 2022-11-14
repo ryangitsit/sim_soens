@@ -232,9 +232,12 @@ class SuperNet:
         for n in range(self.N):
             self.net.add_neuron(self.neurons[n])
 
-    def run(self):
+    def run(self,dt=None):
         # self.net.run_sim(dt = self.dt_soen, tf = self.inputs[0].spike_times[-1] + np.max([self.tau_di] ))
-        self.net.run_sim(dt = self.dt_soen, tf = self.duration + np.max(self.tau_di))
+        if dt:
+            self.net.run_sim(dt = dt, tf = self.duration + np.max(self.tau_di))
+        else:
+            self.net.run_sim(dt = self.dt_soen, tf = self.duration + np.max(self.tau_di))
 
     def record(self,params):
         recordings = {}
