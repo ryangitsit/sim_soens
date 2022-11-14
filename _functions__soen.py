@@ -616,7 +616,7 @@ def synapse_time_stepper(synapse_object):
             if len(_st_ind) > 0:
                 
                 _st_ind = int(_st_ind[-1])
-                if spike_times[_st_ind] <= _pt and (_pt - spike_times[_st_ind]) < spd_duration: # the case that counts    
+                if spike_times[_st_ind] <= _pt and (_pt - spike_times[_st_ind]) < spd_duration: # the case that counts  ## add reset constraint here?
                     _dt_spk = _pt - spike_times[_st_ind]
                     _phi_spd = spd_response(phi_peak,tau_rise,tau_fall,hotspot_duration,_dt_spk)
                     
