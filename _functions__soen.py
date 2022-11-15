@@ -40,13 +40,11 @@ def run_soen_sim(obj, **kwargs):
         
     # synapse
     if type(obj).__name__ == 'synapse':
-        
         # step through time
         obj = synapse_time_stepper(obj)
         
     # neuron
     if type(obj).__name__ == 'neuron':
-        
         # convert to dimensionless time
         obj.time_params = {'dt': dt, 'tf': tf, 'time_vec': time_vec, 't_tau_conversion': 1e-9/obj.jj_params['tau_0']}
         t_tau_conversion = obj.time_params['t_tau_conversion']
@@ -78,7 +76,7 @@ def run_soen_sim(obj, **kwargs):
         
     # network
     if type(obj).__name__ == 'network':
-        
+
         # convert to dimensionless time
         obj.time_params = {'dt': dt, 'tf': tf, 'time_vec': time_vec, 't_tau_conversion': 1e-9/obj.jj_params['tau_0']}
         t_tau_conversion = obj.time_params['t_tau_conversion']
@@ -287,6 +285,8 @@ def recursive_dendrite_updater(dendrite_object,time_index,present_time,d_tau):
         if len(_st_ind) > 0:
             
             _st_ind = int(_st_ind[-1])
+            
+            #### insert reset constriant here?
             if dendrite_object.synaptic_inputs[synapse_key].spike_times_converted[_st_ind] <= present_time and (present_time - dendrite_object.synaptic_inputs[synapse_key].spike_times_converted[_st_ind]) < dendrite_object.synaptic_inputs[synapse_key].spd_duration_converted: # the case that counts    
                 _dt_spk = present_time - dendrite_object.synaptic_inputs[synapse_key].spike_times_converted[_st_ind]
                 _phi_spd = spd_response( dendrite_object.synaptic_inputs[synapse_key].phi_peak, 
@@ -420,7 +420,7 @@ def network_time_stepper(network_object,tau_vec,d_tau):
     return network_object
 
 def neuron_time_stepper(neuron_object,tau_vec,d_tau):
-               
+
     # set neuron threshold flag
     neuron_object.dend__nr_ni.threshold_flag = False
     
@@ -495,7 +495,6 @@ def recursive_dendrite_data_attachment(dendrite_object,neuron_object):
     return        
 
 def dendrite_time_stepper(dendrite_object):
-    
     # load rate array
     # load_string ='ra_dend_ri__beta_c_0.3000__beta_1_01.5708__beta_2_01.5708__beta_di_6.28319e+03__tau_di_long__ib_i_1.3673__ib_f_2.0673__d_ib_0.050__d_phi_r_0.0100__working_master'
     # load_string ='ra_dend_ri__beta_c_0.3000__beta_1_01.5708__beta_2_01.5708__beta_di_6.28319e+03__tau_di_long__ib_i_1.3524__ib_f_2.0524__d_ib_0.050__d_phi_r_0.0100__working_master'
@@ -610,9 +609,10 @@ def synapse_time_stepper(synapse_object):
             
             _pt = time_vec[ii+1]
             
+            
             # find most recent spike time 
             _st_ind = np.where( _pt > spike_times[:] )[0]
-            
+            print('---------',_pt,spike_times[_st_ind],'---------')
             if len(_st_ind) > 0:
                 
                 _st_ind = int(_st_ind[-1])

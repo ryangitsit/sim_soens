@@ -27,7 +27,6 @@ Plan:
 '''
 
 
-#%%
 class CustomNeurons():
 
     def __init__(self,**entries):
@@ -121,10 +120,21 @@ class CustomNeurons():
 
         
 
-# input = SuperInput(channels=1, type='random', total_spikes=100, duration=100)
+# times = np.arange(0,500,50)
+# indices = np.zeros(len(times)).astype(int)
+# def_spikes = [indices,times]
 
-# print(input.spike_rows)
-# raster_plot(input.spike_arrays)
+# # input_ = SuperInput(channels=1, type='random', total_spikes=int(500/42), duration=500)
+# input = SuperInput(channels=1, type='defined', defined_spikes=def_spikes, duration=500)
+
+# # print(input.spike_rows)
+# # raster_plot(input.spike_arrays)
+
+
+# default_neuron_params['w_dn'] = 0.9
+# default_neuron_params['tau_di'] = 1000
+# default_neuron_params['tau_ref'] = 500
+# default_neuron_params["s_th_factor_n"] = 0.1
 
 # sing = CustomNeurons(type='single',**default_neuron_params)
 
@@ -133,11 +143,19 @@ class CustomNeurons():
 # net = network(name = 'network_under_test')
 # net.add_neuron(sing.neuron)
 # # net.neurons['name'].name = 1
-# net.run_sim(dt = 1, tf = 100)
-
+# net.run_sim(dt = .1, tf = 500)
+# tau_convert = 1/net.neurons[1].time_params['t_tau_conversion']
 # net.get_recordings()
+# spikes = [net.spikes[0],net.spikes[1]*tau_convert*1000]
+# raster_plot(spikes,duration=500)
 
-# raster_plot(net.spikes,duration=100)
+
+
+
+
+
+
+
 #%%
 
 # default_neuron_params['w_dd'] = 1

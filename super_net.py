@@ -257,7 +257,7 @@ class SuperNet:
 
             spike_t = self.net.neurons[neuron_key].spike_times
             spikes[0].append(np.ones(len(spike_t))*count)
-            spikes[1].append(spike_t)
+            spikes[1].append(spike_t/self.neurons[neuron_key].time_params['t_tau_conversion'])
             count+=1
         spikes[0] =np.concatenate(spikes[0])
         spikes[1] = np.concatenate(spikes[1])/1000
