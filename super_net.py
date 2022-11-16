@@ -1,13 +1,13 @@
 #%%
 import numpy as np
 
-from super_input import SuperInput
-
 from _util import physical_constants, set_plot_params, index_finder
 from _util__soen import dend_load_rate_array, dend_load_arrays_thresholds_saturations
 from soen_sim import input_signal, synapse, neuron, network
 from soen_sim_lib__common_components__simple_gates import common_dendrite, common_synapse, common_neuron
 
+from super_input import SuperInput
+from params import net_args
 """
 ToDo:
  - Find way to generate structure only once, for any input
@@ -52,51 +52,16 @@ class SuperNet:
     '''
 
     def __init__(self,**entries):
-        net_args = {
-            # "N":100,
-            "ns": 100,
-            "connectivity": "random",
-            "in_connect": "ordered",
-            "recurrence": None,
-            # "sim": 500,
-            "input_p": 1,
-            "reservoir_p":0.2,
-
-            "beta_di": 2*np.pi*1e2,
-            "tau_di": [1,2], #[900,1100],
-            "ib": 9, # int 0-9 to draw from ib__list__ri[i] list
-            # "s_max":,
-            # "phi_th":,
-            "ib_n": 9, # int 0-9 to draw from ib__list__ri[i] list
-            "s_th_factor_n": 0.1,
-            # "s_max_n":,
-            # "phi_th_n":,
-            "beta_ni": 2*np.pi*1e3,
-            "tau_ni": 50,
-
-            "w_sd": [2.5],
-            "w_sid": [2.5], # two numbers for rand float range or single value for consant
-            "w_dn": [.75], # two numbers for rand float range or single value for consant
-            "norm_dn": 1,
-            "norm_sd": 1,
-
-            "beta_ni": 2*np.pi*1e3,
-            "tau_ni": 50,
-            "ib_ref": 8, # int 0-9 to draw from ib__list__ri[i] list
-            "beta_ref": 2*np.pi*1e4,
-            "tau_ref": 500,
-            "dt_soen": 1, # simulation time-step
-            "_t_on": 5,
-
-        }
         self.N = 10
         self.duration = 100
         self.name = 'Super_Net'
-        self.dend_type = 'default_ri',
-        self.__dict__.update(net_args)
+        self.connecivity = 'random'
+        self.in_connect = 'ordered'
+        self.dend_type = 'default_ri'
+        self.recurrence = None
         # self.__dict__.update(entries['params'])
-        self.__dict__.update(entries)
         self.ib__list__ri, self.phi_r__array__ri, self.i_di__array__ri, self.r_fq__array__ri, self.phi_th_plus__vec__ri, self.phi_th_minus__vec__ri, self.s_max_plus__vec__ri, self.s_max_minus__vec__ri, self.s_max_plus__array__ri, self.s_max_minus__array__ri = dend_load_arrays_thresholds_saturations('default_ri')
+        self.__dict__.update(entries)
         self.param_setup()
         self.make_neurons()
 
@@ -109,7 +74,6 @@ class SuperNet:
             - *Should coordinate on preferred organization for parameter passing
         '''
         N = self.N
-        ns = self.ns
 
         self.BETA_DI = []
         self.TAU_DI = []
@@ -260,7 +224,7 @@ class SuperNet:
             spikes[1].append(spike_t/self.neurons[neuron_key].time_params['t_tau_conversion'])
             count+=1
         spikes[0] =np.concatenate(spikes[0])
-        spikes[1] = np.concatenate(spikes[1])/1000
+        spikes[1] = np.concatenate(spikes[1])
         self.spikes = spikes
 
     def plot_signals():
@@ -299,16 +263,18 @@ class SuperNet:
 
 
 # input_single = SuperInput(channels=50, type='random', total_spikes=100, duration=100)
-# # input_MNIST = SuperInput(type='MNIST', index=0, slow_down=100, duration=1000)
-# single_neuron = SuperNet(N=50,duration=100)#,params=net_args) #dendrites,synapses
-# print(single_neuron.N)
-# single_neuron.connect_input(input_single)
-# #%%
-# single_neuron.run()
-# single_neuron.record(['spikes'])
-# spikes = single_neuron.spikes
+# input_MNIST = SuperInput(type='MNIST', index=0, slow_down=100, duration=1000)
+# single_net= SuperNet(N=50,duration=100,**net_args)#,params=net_args) #dendrites,synapses
+
+# single_net.connect_input(input_MNIST)
+
+# single_net.run()
+# single_net.record(['spikes'])
+
 # #%%
 
+# spikes = single_net.spikes
+# spikes = [spikes[0],spikes[1]]
 # from _plotting__soen import raster_plot
 # raster_plot(spikes,duration=100,input=input_single.spike_arrays)
 

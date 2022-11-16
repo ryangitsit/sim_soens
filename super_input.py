@@ -74,7 +74,6 @@ class SuperInput():
         return rows
 
     def MNIST(self):
-        import keras
         import brian2
         from keras.datasets import mnist
         print("load")

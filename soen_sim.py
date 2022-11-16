@@ -685,7 +685,6 @@ class network():
     
     def run_sim(self, **kwargs):
         self = run_soen_sim(self, **kwargs)
-        self.dt = kwargs['dt']
         return self
     
     def plot(self):

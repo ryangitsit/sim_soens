@@ -30,3 +30,42 @@ default_neuron_params = {
 }
 
 default_neuron_params["s_max_n"]=s_max_plus__vec__ri[index_finder(default_neuron_params['ib_n'],ib__list__ri[:])]
+
+
+net_args = {
+    # "N":100,
+    # "ns": 100,
+    "connectivity": "random",
+    "in_connect": "ordered",
+    "recurrence": None,
+    # "sim": 500,
+    "input_p": 1,
+    "reservoir_p":0.2,
+
+    "beta_di": 2*np.pi*1e2,
+    "tau_di": [1,2], #[900,1100],
+    "ib": 9, # int 0-9 to draw from ib__list__ri[i] list
+    # "s_max":,
+    # "phi_th":,
+    "ib_n": 9, # int 0-9 to draw from ib__list__ri[i] list
+    "s_th_factor_n": 0.1,
+    # "s_max_n":,
+    # "phi_th_n":,
+    "beta_ni": 2*np.pi*1e3,
+    "tau_ni": 50,
+
+    "w_sd": [2.5],
+    "w_sid": [2.5], # two numbers for rand float range or single value for consant
+    "w_dn": [.75], # two numbers for rand float range or single value for consant
+    "norm_dn": 1,
+    "norm_sd": 1,
+
+    "beta_ni": 2*np.pi*1e3,
+    "tau_ni": 50,
+    "ib_ref": 8, # int 0-9 to draw from ib__list__ri[i] list
+    "beta_ref": 2*np.pi*1e4,
+    "tau_ref": 500,
+    "dt_soen": 1, # simulation time-step
+    "_t_on": 5,
+
+}
