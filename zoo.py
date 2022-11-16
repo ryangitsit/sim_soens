@@ -82,9 +82,9 @@ class CustomNeurons():
             last_layer = n[h]
 
         for i,layer in enumerate(dendrites):
-            print("layer:", i)
+            # print("layer:", i)
             for j,d in enumerate(layer):
-                print("  dendrite", j)
+                # print("  dendrite", j)
                 if i < H-2:
                     for g in range(n[1]):
                         d.add_input(dendrites[i+1][j*n[1]+g], 
@@ -96,25 +96,34 @@ class CustomNeurons():
         self.fractal_neuron = fractal_neuron
 
     def plot_structure(self):
+        # add connection strengths
+        # print(self.dendrites[0][0].dendritic_connection_strengths)
         import matplotlib.pyplot as plt
-        Ns = len(self.dendrites[1])
-        Nt = len(self.dendrites[0])
-        plt.figure(figsize=(16, 10))
-        #plt.subplot(121)
-        plt.plot(np.zeros(Ns)+.5, np.arange(Ns), 'ok', ms=10)
-        plt.plot(np.ones(Nt)+1.5, np.arange(Nt)+(.5*Ns-.5*Nt), 'ok', ms=10)
-        # for i, j in zip(S.i, S.j):
-        #     plt.plot([0, 1], [i, j*(Ns/Nt)+.5*(Ns/Nt)], '-k', linewidth=200*S.w[i,j])
-        plt.xticks([.5, 2.5], ['Source', 'Target'])
-        plt.ylabel('Neuron index')
-        plt.xlim(-.1,3)
-        plt.ylim(-1, max(Ns, Nt))
-        # plt.subplot(122)
-        # plt.plot(S.i, S.j, 'ok',ms=2)
-        # plt.xlim(-1, Ns)
-        # plt.ylim(-1, Nt)
-        # plt.xlabel('Source neuron index')
-        # plt.ylabel('Target neuron index')
+        layers = [[] for i in range(len(self.dendrites))]
+        for i in range(len(layers)):
+            for j in range(len(self.dendrites[i])):
+                layers[i].append(list(self.dendrites[i][j].dendritic_inputs.keys()))
+        colors = ['r','b','g',]
+        Ns = [len(layers[i]) for i in range(len(layers))]
+        Ns.reverse()
+        Ns.append(1)
+        for i,l in enumerate(layers):
+            for j,d in enumerate(l):
+                if len(d) > 0:
+                    for k in layers[i][j]:
+                        plt.plot([i+.5, i+1.5], [k-3,j+3], '-k', color=colors[j], linewidth=1)
+        for i in range(Ns[-2]):
+            plt.plot([len(layers)-.5, len(layers)+.5], [i+len(Ns),len(Ns)+1], '-k', color=colors[i], linewidth=1)
+        for i,n in enumerate(Ns):
+            if n == np.max(Ns):
+                plt.plot(np.ones(n)*i+.5, np.arange(n), 'ok', ms=10)
+            else:
+                plt.plot(np.ones(n)*i+.5, np.arange(n)+(.5*np.max(Ns)-.5*n), 'ok', ms=10)
+        plt.xticks([.5, 1.5,2.5], ['Layer 1', 'layer 2', 'soma'])
+        plt.yticks([],[])
+        plt.xlim(0,len(layers)+1)
+        plt.ylim(-1, max(Ns))
+        plt.title('Dendritic Arbor')
         plt.show()
 
 
@@ -131,32 +140,41 @@ class CustomNeurons():
 # # raster_plot(input.spike_arrays)
 
 
-# default_neuron_params['w_dn'] = 0.9
+# default_neuron_params['w_dn'] = 0.42
 # default_neuron_params['tau_di'] = 1000
-# default_neuron_params['tau_ref'] = 500
+# default_neuron_params['tau_ref'] = 50
 # default_neuron_params["s_th_factor_n"] = 0.1
 
-# sing = CustomNeurons(type='single',**default_neuron_params)
+# neo = CustomNeurons(type='single',**default_neuron_params)
 
-# sing.synapse.add_input(input.signals[0])
+# neo.synapse.add_input(input.signals[0])
 
 # net = network(name = 'network_under_test')
-# net.add_neuron(sing.neuron)
+# net.add_neuron(neo.neuron)
 # # net.neurons['name'].name = 1
 # net.run_sim(dt = .1, tf = 500)
 # tau_convert = 1/net.neurons[1].time_params['t_tau_conversion']
 # net.get_recordings()
-# spikes = [net.spikes[0],net.spikes[1]*tau_convert*1000]
+# spikes = [net.spikes[0],net.spikes[1]*1000]
+# # print(spikes)
+
 # raster_plot(spikes,duration=500)
+# spd = neo.dendrite.synaptic_inputs[1].phi_spd
+# dend_s = neo.dendrite.s
+# signal = net.neurons[1].dend__nr_ni.s
+# ref = net.neurons[1].dend__ref.s
+
+# import matplotlib.pyplot as plt
+# plt.figure(figsize=(12,4))
+# plt.plot(spd[::10], label='phi_spd')
+# plt.plot(dend_s[::10], label='dendtrite signal')
+# plt.plot(signal[::10], label='soma signal')
+# plt.plot(ref[::10], label='refractory signal')
+# spike_height = [signal[::10][int(net.spikes[1][x]*1000)] for x in range(len(net.spikes[1]))]
+# plt.plot(net.spikes[1]*1000,spike_height,'xk', label='neuron fires')
+# plt.legend()
 
 
-
-
-
-
-
-
-#%%
 
 # default_neuron_params['w_dd'] = 1
 # default_neuron_params['w_dn'] = 1
@@ -165,18 +183,16 @@ class CustomNeurons():
 
 # neo = CustomNeurons(type='3fractal',**default_neuron_params)
 
-# # neo.plot_structure()
+# neo.plot_structure()
 
-# # print(neo.fractal_neuron.__dict__)
-# # print
+# print(neo.fractal_neuron.__dict__)
+# print
 
-# # for k,v in neo.fractal_neuron.__dict__.items():
-# #     print(k,v)
-
-
+# for k,v in neo.fractal_neuron.__dict__.items():
+#     print(k,v)
 
 
-# #%%
+#%%
 # for i in range(len(neo.synapses)):
 #     in_ = input_signal(name = 'input_synaptic_drive', 
 #                        input_temporal_form = 'arbitrary_spike_train', 
