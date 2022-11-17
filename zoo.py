@@ -27,7 +27,7 @@ Plan:
 '''
 
 
-class CustomNeurons():
+class NeuralZoo():
 
     def __init__(self,**entries):
         self.__dict__.update(entries)
@@ -37,6 +37,9 @@ class CustomNeurons():
 
         if self.type == 'single':
             self.single()
+
+        if self.type == 'custom':
+            self.custom()
     
     def single(self):
 
@@ -95,6 +98,40 @@ class CustomNeurons():
         self.synapses = synapses
         self.fractal_neuron = fractal_neuron
 
+
+    def custom(self):
+        custom_neuron = common_neuron(1, 'ri', self.beta_ni, self.tau_ni, 
+                                       self.ib, self.s_th_factor_n*self.s_max_n, 
+                                       self.beta_ref, self.tau_ref, self.ib_ref)
+        custom_neuron.name = 'custom_neuron'
+
+        if hasattr(self, 'structure'):
+            print("structure")
+            arbor = structure
+        elif hasattr(self, 'weights'):
+            print("weights")
+            arbor = weights
+
+        dendrites = [ [] for _ in range(len(arbor)) ]
+        synapses = []
+
+        count=0
+        count_syn=0
+        last_layer = 1
+        den_count = 0
+        for i,layer in enumerate(arbor):
+            c=0
+            for dens in layer:
+                sub = []
+                for d in dens:
+                    sub.append(common_dendrite(f"lay{i}_den{c}", 'ri', 
+                                        self.beta_di,self.tau_di, self.ib).name)
+                    den_count+=1
+                    c+=1
+                dendrites[i].append(sub)
+        for d in dendrites:
+            print(d)
+
     def plot_structure(self):
         # add connection strengths
         # print(self.dendrites[0][0].dendritic_connection_strengths)
@@ -127,7 +164,25 @@ class CustomNeurons():
         plt.show()
 
 
-        
+
+# structure = [
+#              [2],
+#              [3,2],
+#              [3,2,0,2,2]
+#             ]
+
+# weights = [
+#            [[.2,.5]],
+#            [[.2,.5,.4],[.2,.2]],
+#            [[.1,.1,.1],[.7,.7],[0],[.5,.6]]
+#           ]
+
+# for w in weights:
+#     print(w)
+# arb = NeuralZoo(type="custom",weights=weights,**default_neuron_params) 
+
+
+
 
 # times = np.arange(0,500,50)
 # indices = np.zeros(len(times)).astype(int)
@@ -145,7 +200,7 @@ class CustomNeurons():
 # default_neuron_params['tau_ref'] = 50
 # default_neuron_params["s_th_factor_n"] = 0.1
 
-# neo = CustomNeurons(type='single',**default_neuron_params)
+# neo = NeuralZoo(type='single',**default_neuron_params)
 
 # neo.synapse.add_input(input.signals[0])
 
@@ -181,7 +236,7 @@ class CustomNeurons():
 # default_neuron_params['tau_di'] = 100
 
 
-# neo = CustomNeurons(type='3fractal',**default_neuron_params)
+# neo = NeuralZoo(type='3fractal',**default_neuron_params)
 
 # neo.plot_structure()
 
@@ -190,6 +245,7 @@ class CustomNeurons():
 
 # for k,v in neo.fractal_neuron.__dict__.items():
 #     print(k,v)
+
 
 
 #%%
