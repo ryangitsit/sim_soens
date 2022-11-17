@@ -121,17 +121,39 @@ class NeuralZoo():
         den_count = 0
         for i,layer in enumerate(arbor):
             c=0
-            for dens in layer:
+            for j,dens in enumerate(layer):
                 sub = []
-                for d in dens:
-                    sub.append(common_dendrite(f"lay{i}_den{c}", 'ri', 
-                                        self.beta_di,self.tau_di, self.ib).name)
+                for k,d in enumerate(dens):
+                    sub.append(common_dendrite(f"lay{i}_branch{j}_den{k}", 'ri', 
+                                        self.beta_di,self.tau_di, self.ib))
                     den_count+=1
                     c+=1
                 dendrites[i].append(sub)
-        for d in dendrites:
-            print(d)
+        # for d in dendrites:
+        #     print(d)
+        print("\n")
+        for i,l in enumerate(dendrites):
+            for j, subgroup in enumerate(l):
+                for k,d in enumerate(subgroup):
+                    if i==0:
+                        # print(i,j,k, " --> soma")
+                        custom_neuron.add_input(d, connection_strength=weights[i][j][k])
+                    else:
+                        # print(i,j,k, " --> ", i-1,0,j)
+                        # print(np.concatenate(dendrites[i-1])[j])
+                        # d.add_input(np.concatenate(dendrites[i-1])[j], connection_strength=weights[i][j][k])
+                        np.concatenate(dendrites[i-1])[j].add_input(d, connection_strength=weights[i][j][k])
 
+        self.dendrites = dendrites
+        for i,l in enumerate(dendrites):
+            for j, subgroup in enumerate(l):
+                for k,d in enumerate(subgroup):
+                    keys = list(d.dendritic_inputs.keys())
+                    print(i,j,k," - >", d.dendritic_connection_strengths)
+                    # for k in keys:
+                    #     print(i,j,k," - >", d.dendritic_inputs[k].connection_strengths)
+
+                    
     def plot_structure(self):
         # add connection strengths
         # print(self.dendrites[0][0].dendritic_connection_strengths)
@@ -165,22 +187,22 @@ class NeuralZoo():
 
 
 
-# structure = [
-#              [2],
-#              [3,2],
-#              [3,2,0,2,2]
-#             ]
+structure = [
+             [2],
+             [3,2],
+             [3,2,0,2,2]
+            ]
 
-# weights = [
-#            [[.2,.5]],
-#            [[.2,.5,.4],[.2,.2]],
-#            [[.1,.1,.1],[.7,.7],[0],[.5,.6]]
-#           ]
+weights = [
+           [[.2,.5]],
+           [[.2,.5,.4],[.2,.2]],
+           [[.1,.1,.1],[.7,.7],[0],[.5,.6],[.3,.2]]
+          ]
 
-# for w in weights:
-#     print(w)
-# arb = NeuralZoo(type="custom",weights=weights,**default_neuron_params) 
-
+for w in weights:
+    print(w)
+arb = NeuralZoo(type="custom",weights=weights,**default_neuron_params) 
+arb.plot_structure()
 
 
 
