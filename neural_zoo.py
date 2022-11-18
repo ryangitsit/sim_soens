@@ -131,7 +131,6 @@ class NeuralZoo():
                 dendrites[i].append(sub)
         # for d in dendrites:
         #     print(d)
-        print("\n")
         for i,l in enumerate(dendrites):
             for j, subgroup in enumerate(l):
                 for k,d in enumerate(subgroup):
@@ -162,6 +161,7 @@ class NeuralZoo():
         for i in range(len(layers)):
             for j in range(len(self.dendrites[i])):
                 layers[i].append(list(self.dendrites[i][j].dendritic_inputs.keys()))
+        print(layers)
         colors = ['r','b','g',]
         Ns = [len(layers[i]) for i in range(len(layers))]
         Ns.reverse()
@@ -190,53 +190,142 @@ class NeuralZoo():
 
 
     def get_structure(self):
+        '''
+        Returns structure of dendritic arbor by recursive search of neuron 
+        dictionary tree.
+            - Returns list of lists containing names of dendrites
+            - List index associated with layer
+            - List index within lists associated with branch
+        '''
+        # Start with checking dendritic inputs to soma and getting their names
         soma_input = self.neuron.dend__nr_ni.dendritic_inputs
-        # print(soma_input)
         soma_input_names = list(self.neuron.dend__nr_ni.dendritic_inputs.keys())[1:]
+
+        # initialize arbor list and add soma inputs
         arbor = []
         arbor.append(soma_input_names)
-        def recursive_search(input,names,leaf,arbor):
+
+        # call recursive function to explore all branches
+        def recursive_search(input,names,leaf,arbor,count):
+            '''
+            Recursive search returns all inputs (however deep) to designated input
+                - Takes inputs (and their names) to a given denrite
+                - Iterates over each of those input/name pairs
+                - Adds to new lists all of the inputs and names to _those_ dendrites
+                - Adds the new name list to the growing arbor
+                - So long as names list is not empty, calls itself on new names
+                - Once leaf node is reached (no new inputs), returns
+            '''
+
             if leaf == True:
                 names_ = []
                 inputs_ = []
-
                 for d in names:
-                    # for d in branch:
                     names_.append(list(input[d].dendritic_inputs))
                     inputs_.append(input[d].dendritic_inputs)
-                empty = 1
 
                 if len(names_) > 0:
                     if len(names_[0]) > 0:
                         arbor.append(names_)
-                # print(names_, "\n")
-                
-                # print(inputs_)
-                if len(names_) > 0:
-                    leaf =True
-                else:
-                    leaf = False
-                for i,input_ in enumerate(inputs_):
-                    # print(input_)
-                    recursive_search(input_,names_[i],leaf,arbor)
-            else:
-                print(arbor)
-                return arbor
+                    # print("Leaf reached!")
 
-        arbor_ = recursive_search(soma_input,soma_input_names,True,arbor)
+                for i,input_ in enumerate(inputs_):
+                    count+=1
+                    # print(count)
+                    recursive_search(input_,names_[i],leaf,arbor,count)
+
+            return arbor
+
+        count=0
+        arbor = recursive_search(soma_input,soma_input_names,True,arbor,count)
+
+        for i,a in enumerate(arbor):
+            lists =  sum(type(el)== type([]) for el in a)
+            if lists > 1:
+                layer = []
+                for j in range(lists):
+                    if len(arbor) >= lists+j:
+                        if j == 0:
+                            layer = arbor[lists+j]
+                        else:
+                            layer = layer + arbor[lists+j]
+                arbor[i+1] = layer
+                for j in range(lists-1):
+                    del arbor[lists+1+j]
+            if len(arbor)==i+lists:
+                break
+
+        return arbor
+
+
+
+
+
+    def plot_custom_structure(self):
+        import matplotlib.pyplot as plt
+        import matplotlib.colors as mcolors
+        colors = mcolors.TABLEAU_COLORS
+        c_names = list(colors)
+        print(c_names[0])
+        print(colors[c_names[0]])
+        arbor = self.get_structure()
+
+        # colors = ['r','b','g',]
+        Ns = []
+        for i,a in enumerate(arbor):
+            count = 0
+            lsts = sum(type(el)== type([]) for el in a)
+            if lsts > 0:
+                for j in range(lsts):
+                    count+=len(arbor[i][j])
+            else: count = len(a)
+            Ns.append(count)
+        Ns.insert(0,1)
+        Ns.reverse()
+        arbor[0] = [arbor[0]]
         for a in arbor:
             print(a,"\n")
-        # print(arbor)
+        layers=len(arbor)
+        Ns_ = Ns[::-1]
+        # Ns_.reverse()
+        m=max(Ns)
+        print(Ns_)
+        # arbor.reverse()
+        for i,l in enumerate(arbor):
+            count=1
+            row_sum = 0
+            for j,b in enumerate(l):
+                for k,d in enumerate(b):
+                    if i == 0:
+                        plt.plot([layers-i-.5, layers-i+.5], [(m/2)+(len(b)/2)-(k+1),(m/2)-.5], '-',color=colors[c_names[k]], linewidth=1)
+                    else:
+                        y1=(m/2)+Ns_[i+1]/2 - 1 - (j+k) - row_sum #- ((Ns_[i]/2)%2)/2
+                        print(i,j,k,row_sum)
+                        y2=(m/2)+Ns_[i]/2 - j - 1 #-j+.5
+                        plt.plot([layers-i-.5, layers-i+.5], [y1,y2], '-', color=colors[c_names[j]], linewidth=1)
+                row_sum += len(arbor[i][j])-1 
+                        # pass
+                        # y1 = Ns[i] - (k+j)
+                        # y2 = j+5
+                        # print(i,j,k, " --> ",y1,y2,":  ",d)
+                        # plt.plot([i+.5, i+1.5], [y1,y2], '-k', linewidth=1)
+            count=0
+        for i,n in enumerate(Ns):
+            if n == np.max(Ns):
+                plt.plot(np.ones(n)*i+.5, np.arange(n), 'ok', ms=10)
+            elif n != 1:
+                factor = 1 # make proportional
+                plt.plot(np.ones(n)*i+.5, np.arange(n)*factor+(.5*np.max(Ns)-.5*n), 'ok', ms=10)
+            else:
+                plt.plot(np.ones(n)*i+.5, np.arange(n)+(.5*np.max(Ns)-.5*n), '*y', ms=20)
 
 
-
-
-
-
-
-
-
-
+        plt.yticks([],[])
+        plt.xticks([],[])
+        plt.xlim(0,len(Ns))
+        plt.ylim(-1, max(Ns))
+        plt.title('Dendritic Arbor')
+        plt.show()
 
 
 
@@ -260,7 +349,11 @@ weights = [
 # for w in weights:
 #     print(w)
 arb = NeuralZoo(type="custom",weights=weights,**default_neuron_params) 
-arb.get_structure()
+arb.plot_custom_structure()
+
+# arb = NeuralZoo(type="3fractal",**default_neuron_params) 
+# arb.plot_structure()
+
 # neuron_dict = arb.neuron.__dict__
 # for k,v in neuron_dict.items():
 #     print(k)
