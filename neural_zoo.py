@@ -104,7 +104,7 @@ class NeuralZoo():
                                        self.ib, self.s_th_factor_n*self.s_max_n, 
                                        self.beta_ref, self.tau_ref, self.ib_ref)
         custom_neuron.name = 'custom_neuron'
-
+        self.neuron = custom_neuron
         if hasattr(self, 'structure'):
             print("structure")
             arbor = structure
@@ -149,7 +149,7 @@ class NeuralZoo():
             for j, subgroup in enumerate(l):
                 for k,d in enumerate(subgroup):
                     keys = list(d.dendritic_inputs.keys())
-                    print(i,j,k," - >", d.dendritic_connection_strengths)
+                    # print(i,j,k," - >", d.dendritic_connection_strengths)
                     # for k in keys:
                     #     print(i,j,k," - >", d.dendritic_inputs[k].connection_strengths)
 
@@ -187,11 +187,69 @@ class NeuralZoo():
 
 
 
-structure = [
-             [2],
-             [3,2],
-             [3,2,0,2,2]
-            ]
+
+
+    def get_structure(self):
+        soma_input = self.neuron.dend__nr_ni.dendritic_inputs
+        # print(soma_input)
+        soma_input_names = list(self.neuron.dend__nr_ni.dendritic_inputs.keys())[1:]
+        arbor = []
+        arbor.append(soma_input_names)
+        def recursive_search(input,names,leaf,arbor):
+            if leaf == True:
+                names_ = []
+                inputs_ = []
+
+                for d in names:
+                    # for d in branch:
+                    names_.append(list(input[d].dendritic_inputs))
+                    inputs_.append(input[d].dendritic_inputs)
+                empty = 1
+
+                if len(names_) > 0:
+                    if len(names_[0]) > 0:
+                        arbor.append(names_)
+                # print(names_, "\n")
+                
+                # print(inputs_)
+                if len(names_) > 0:
+                    leaf =True
+                else:
+                    leaf = False
+                for i,input_ in enumerate(inputs_):
+                    # print(input_)
+                    recursive_search(input_,names_[i],leaf,arbor)
+            else:
+                print(arbor)
+                return arbor
+
+        arbor_ = recursive_search(soma_input,soma_input_names,True,arbor)
+        for a in arbor:
+            print(a,"\n")
+        # print(arbor)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# structure = [
+#              [2],
+#              [3,2],
+#              [3,2,0,2,2]
+#             ]
 
 weights = [
            [[.2,.5]],
@@ -199,13 +257,27 @@ weights = [
            [[.1,.1,.1],[.7,.7],[0],[.5,.6],[.3,.2]]
           ]
 
-for w in weights:
-    print(w)
+# for w in weights:
+#     print(w)
 arb = NeuralZoo(type="custom",weights=weights,**default_neuron_params) 
-arb.plot_structure()
+arb.get_structure()
+# neuron_dict = arb.neuron.__dict__
+# for k,v in neuron_dict.items():
+#     print(k)
+
+# print(arb.neuron.dend__nr_ni.dendritic_inputs)
 
 
 
+
+
+
+
+
+
+
+
+#%% -----------------------------
 # times = np.arange(0,500,50)
 # indices = np.zeros(len(times)).astype(int)
 # def_spikes = [indices,times]
