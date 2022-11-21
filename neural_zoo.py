@@ -203,10 +203,11 @@ class NeuralZoo():
 
         # initialize arbor list and add soma inputs
         arbor = []
+        strengths = []
         arbor.append(soma_input_names)
-
+        strengths.append(list(self.neuron.dend__nr_ni.dendritic_connection_strengths.values())[1:])
         # call recursive function to explore all branches
-        def recursive_search(input,names,leaf,arbor,count):
+        def recursive_search(input,names,leaf,arbor,count,strengths):
             '''
             Recursive search returns all inputs (however deep) to designated input
                 - Takes inputs (and their names) to a given denrite
@@ -220,42 +221,53 @@ class NeuralZoo():
             if leaf == True:
                 names_ = []
                 inputs_ = []
+                strengths_ = []
                 for d in names:
                     names_.append(list(input[d].dendritic_inputs))
                     inputs_.append(input[d].dendritic_inputs)
+                    strengths_.append(list(input[d].dendritic_connection_strengths.values()))
 
                 if len(names_) > 0:
                     if len(names_[0]) > 0:
                         arbor.append(names_)
+                        strengths.append(strengths_)
                     # print("Leaf reached!")
 
                 for i,input_ in enumerate(inputs_):
                     count+=1
                     # print(count)
-                    recursive_search(input_,names_[i],leaf,arbor,count)
+                    recursive_search(input_,names_[i],leaf,arbor,count,strengths)
 
-            return arbor
-
+            return arbor,strengths
         count=0
-        arbor = recursive_search(soma_input,soma_input_names,True,arbor,count)
+        arbor,strengths = recursive_search(soma_input,soma_input_names,True,arbor,count,strengths)
 
         for i,a in enumerate(arbor):
             lists =  sum(type(el)== type([]) for el in a)
             if lists > 1:
                 layer = []
+                s_layer = []
                 for j in range(lists):
                     if len(arbor) >= lists+j:
                         if j == 0:
                             layer = arbor[lists+j]
+                            s_layer = strengths[lists+j]
                         else:
                             layer = layer + arbor[lists+j]
+                            s_layer = s_layer + strengths[lists+j]
                 arbor[i+1] = layer
+                strengths[i+1] = s_layer
                 for j in range(lists-1):
                     del arbor[lists+1+j]
+                    del strengths[lists+1+j]
             if len(arbor)==i+lists:
                 break
 
-        return arbor
+        for s in strengths:
+            print(s)
+        print("\n")
+
+        return arbor,strengths
 
 
 
@@ -266,9 +278,9 @@ class NeuralZoo():
         import matplotlib.colors as mcolors
         colors = mcolors.TABLEAU_COLORS
         c_names = list(colors)
-        print(c_names[0])
-        print(colors[c_names[0]])
-        arbor = self.get_structure()
+        # print(c_names[0])
+        # print(colors[c_names[0]])
+        arbor,strengths = self.get_structure()
 
         # colors = ['r','b','g',]
         Ns = []
@@ -283,48 +295,68 @@ class NeuralZoo():
         Ns.insert(0,1)
         Ns.reverse()
         arbor[0] = [arbor[0]]
-        for a in arbor:
-            print(a,"\n")
+        strengths[0] = [strengths[0]]
+        # for a in arbor:
+        #     print(a,"\n")
         layers=len(arbor)
         Ns_ = Ns[::-1]
         # Ns_.reverse()
         m=max(Ns)
-        print(Ns_)
+        # print(Ns_)
         # arbor.reverse()
+        c_dexes=[[] for _ in range(len(Ns))]
         for i,l in enumerate(arbor):
-            count=1
+            count= 0
             row_sum = 0
             for j,b in enumerate(l):
                 for k,d in enumerate(b):
                     if i == 0:
-                        plt.plot([layers-i-.5, layers-i+.5], [(m/2)+(len(b)/2)-(k+1),(m/2)-.5], '-',color=colors[c_names[k]], linewidth=1)
+                        c_dexes[i].append(k)
+                        if strengths[i][j][k] >= 0:
+                            plt.plot([layers-i-.5, layers-i+.5], [(m/2)+(len(b)/2)-(k+1),(m/2)-.5], '-',color=colors[c_names[k]], linewidth=strengths[i][j][k]*5)
+                        else:
+                            plt.plot([layers-i-.5, layers-i+.5], [(m/2)+(len(b)/2)-(k+1),(m/2)-.5], '--',color=colors[c_names[k]], linewidth=strengths[i][j][k]*5*(-1))
                     else:
+                        c_dexes[i].append(c_dexes[i-1][j])
+                        c_index = c_dexes[i-1][j]
+                        # print(count)
+                        # print(c_index)
+
                         y1=(m/2)+Ns_[i+1]/2 - 1 - (j+k) - row_sum #- ((Ns_[i]/2)%2)/2
-                        print(i,j,k,row_sum)
-                        y2=(m/2)+Ns_[i]/2 - j - 1 #-j+.5
-                        plt.plot([layers-i-.5, layers-i+.5], [y1,y2], '-', color=colors[c_names[j]], linewidth=1)
+                        y2=(m/2)+Ns_[i]/2 - j - 1 
+                        # print(i,j,k,row_sum)
+
+                        if strengths[i][j][k] >= 0:
+                            plt.plot([layers-i-.5, layers-i+.5], [y1,y2], '-', color=colors[c_names[c_index]], linewidth=strengths[i][j][k]*5)
+                        else:
+                            plt.plot([layers-i-.5, layers-i+.5], [y1,y2], '--', color=colors[c_names[c_index]], linewidth=strengths[i][j][k]*5*(-1))
+                    count+=1
                 row_sum += len(arbor[i][j])-1 
-                        # pass
-                        # y1 = Ns[i] - (k+j)
-                        # y2 = j+5
-                        # print(i,j,k, " --> ",y1,y2,":  ",d)
-                        # plt.plot([i+.5, i+1.5], [y1,y2], '-k', linewidth=1)
-            count=0
+        print(c_dexes)
+                
+        x_ticks=[]
+        x_labels=[]
         for i,n in enumerate(Ns):
+            x_labels.append(f"layer {len(Ns)-(i+1)}")
+            x_ticks.append(i+.5)
             if n == np.max(Ns):
                 plt.plot(np.ones(n)*i+.5, np.arange(n), 'ok', ms=10)
             elif n != 1:
                 factor = 1 # make proportional
                 plt.plot(np.ones(n)*i+.5, np.arange(n)*factor+(.5*np.max(Ns)-.5*n), 'ok', ms=10)
             else:
+                plt.plot(np.ones(n)*i+.5, np.arange(n)+(.5*np.max(Ns)-.5*n), '*k', ms=30)
                 plt.plot(np.ones(n)*i+.5, np.arange(n)+(.5*np.max(Ns)-.5*n), '*y', ms=20)
+        x_labels[-1]="soma"
 
 
         plt.yticks([],[])
-        plt.xticks([],[])
+        plt.xticks(x_ticks,x_labels)
         plt.xlim(0,len(Ns))
         plt.ylim(-1, max(Ns))
-        plt.title('Dendritic Arbor')
+        plt.xlabel("Layers",fontsize=16)
+        plt.ylabel("Dendrites",fontsize=16)
+        plt.title('Dendritic Arbor',fontsize=20)
         plt.show()
 
 
@@ -341,9 +373,10 @@ class NeuralZoo():
 #             ]
 
 weights = [
-           [[.2,.5]],
-           [[.2,.5,.4],[.2,.2]],
-           [[.1,.1,.1],[.7,.7],[0],[.5,.6],[.3,.2]]
+           [[.2,-.5]],
+           [[.2,.5,-.4],[.2,-.2]],
+           [[.1,-.1,.1],[-.7,.7],[0],[-.5,.6],[.3,.2]],
+        #    [[.3,.1],[.3,.1],[.3,.1],[.3,.1],[.3,.1],[.3,.1],[.3,.1],[.3,.1],[.3,.1],[.3,.1]]
           ]
 
 # for w in weights:
