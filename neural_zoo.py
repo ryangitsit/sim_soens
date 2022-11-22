@@ -100,36 +100,50 @@ class NeuralZoo():
 
 
     def custom(self):
-        custom_neuron = common_neuron(1, 'ri', self.beta_ni, self.tau_ni, 
-                                       self.ib_n, self.s_th_factor_n*self.s_max_n, 
-                                       self.beta_ref, self.tau_ref, self.ib_ref)
+        
+    
+        if hasattr(self, 's_th'):
+            # print("structure")
+            s_th = self.s_th
+        else:
+            s_th = self.s_th_factor_n*self.s_max_n
+        # create a neuron body (soma and refractory loop) with called params
+        custom_neuron = common_neuron(1,'ri',self.beta_ni, self.tau_ni,
+                                      self.ib_n, s_th, self.beta_ref, 
+                                      self.tau_ref, self.ib_ref)
         custom_neuron.name = 'custom_neuron'
         self.neuron = custom_neuron
+
+        # check how arbor is defined
+        # structure just gives arbor form
         if hasattr(self, 'structure'):
             print("structure")
             arbor = self.structure
+        # weights defines structure implicitly and defines connection strengths
         elif hasattr(self, 'weights'):
             print("weights")
             arbor = self.weights
 
+        # initialize a list of lists for holding dendrits in each arbor layer
         dendrites = [ [] for _ in range(len(arbor)) ]
-        synapses = []
 
+        # iterate over the defined structure
+        # create dendritic arbor with defined parameters (may be dend specific)
         count=0
-        count_syn=0
-        last_layer = 1
         den_count = 0
         for i,layer in enumerate(arbor):
             c=0
             for j,dens in enumerate(layer):
                 sub = []
                 for k,d in enumerate(dens):
-                    if self.betas:
+                    if hasattr(self, 'betas'):
                         self.beta_di=(np.pi*2)*10**self.betas[i][j][k]
-                    if self.biases:
+                    if hasattr(self, 'biases'):
                         self.ib= self.ib_list_ri[self.biases[i][j][k]]
-                    if self.types:
+                    if hasattr(self, 'types'):
                         type = self.types[i][j][k]
+                    if hasattr(self, 'taus'):
+                        self.tau_di = self.taus[i][j][k]
                     else:
                         type = 'ri'
                     sub.append(common_dendrite(f"lay{i}_branch{j}_den{k}", type, 
@@ -137,21 +151,22 @@ class NeuralZoo():
                     den_count+=1
                     c+=1
                 dendrites[i].append(sub)
-        # for d in dendrites:
-        #     print(d)
+
+        # iterate over dendrites and connect them as defined by structure
         for i,l in enumerate(dendrites):
             for j, subgroup in enumerate(l):
                 for k,d in enumerate(subgroup):
                     if i==0:
                         # print(i,j,k, " --> soma")
-                        custom_neuron.add_input(d, connection_strength=self.weights[i][j][k])
+                        custom_neuron.add_input(d, 
+                            connection_strength=self.weights[i][j][k])
                     else:
                         # print(i,j,k, " --> ", i-1,0,j)
-                        # print(np.concatenate(dendrites[i-1])[j])
-                        # d.add_input(np.concatenate(dendrites[i-1])[j], connection_strength=weights[i][j][k])
-                        np.concatenate(dendrites[i-1])[j].add_input(d, connection_strength=self.weights[i][j][k])
+                        np.concatenate(dendrites[i-1])[j].add_input(d, 
+                            connection_strength=self.weights[i][j][k])
         
-        if self.syns:
+        # if synapses also defined, connect as a function of grouping
+        if hasattr(self, 'syns'):
             self.synapses = [[] for _ in range(len(self.syns))]
             for i,group in enumerate(self.syns):
                 for j,s in enumerate(group):
@@ -161,24 +176,25 @@ class NeuralZoo():
             for j, subgroup in enumerate(dendrites[len(dendrites)-1]):
                 for k,d in enumerate(subgroup):
                     for s in self.synapses[count]:
-                        dendrites[len(dendrites)-1][j][k].add_input(s, connection_strength = self.w_sd)
+                        dendrites[len(dendrites)-1][j][k].add_input(s, 
+                            connection_strength = self.w_sd)
                     count+=1
-
+        else:
+            self.synapses = []
+            count=0
+            for j,g in enumerate(dendrites[-1]):
+                for k,d in enumerate(g):
+                    self.synapses.append([common_synapse(f'branch_{j}syn_{k}')])
+                    d.add_input(self.synapses[count][0],connection_strength=self.w_sd)
+                    count+=1
         self.dendrites = dendrites
-
-        
-        # for i,l in enumerate(dendrites):
-        #     for j, subgroup in enumerate(l):
-        #         for k,d in enumerate(subgroup):
-        #             keys = list(d.dendritic_inputs.keys())
-                    # print(i,j,k," - >", d.dendritic_connection_strengths)
-                    # for k in keys:
-                    #     print(i,j,k," - >", d.dendritic_inputs[k].connection_strengths)
 
                     
     def plot_structure(self):
-        # add connection strengths
-        # print(self.dendrites[0][0].dendritic_connection_strengths)
+        '''
+        This is only for 3fractal neuron
+        '''
+
         import matplotlib.pyplot as plt
         layers = [[] for i in range(len(self.dendrites))]
         for i in range(len(layers)):
@@ -193,14 +209,16 @@ class NeuralZoo():
             for j,d in enumerate(l):
                 if len(d) > 0:
                     for k in layers[i][j]:
-                        plt.plot([i+.5, i+1.5], [k-3,j+3], '-k', color=colors[j], linewidth=1)
+                        plt.plot([i+.5, i+1.5], [k-3,j+3], '-k', color=colors[j])
         for i in range(Ns[-2]):
-            plt.plot([len(layers)-.5, len(layers)+.5], [i+len(Ns),len(Ns)+1], '-k', color=colors[i], linewidth=1)
+            plt.plot([len(layers)-.5, len(layers)+.5], [i+len(Ns),len(Ns)+1], 
+                '-k', color=colors[i], linewidth=1)
         for i,n in enumerate(Ns):
             if n == np.max(Ns):
                 plt.plot(np.ones(n)*i+.5, np.arange(n), 'ok', ms=10)
             else:
-                plt.plot(np.ones(n)*i+.5, np.arange(n)+(.5*np.max(Ns)-.5*n), 'ok', ms=10)
+                plt.plot(np.ones(n)*i+.5, np.arange(n)+(.5*np.max(Ns)-.5*n), 
+                    'ok', ms=10)
         plt.xticks([.5, 1.5,2.5], ['Layer 1', 'layer 2', 'soma'])
         plt.yticks([],[])
         plt.xlim(0,len(layers)+1)
@@ -219,6 +237,8 @@ class NeuralZoo():
             - Returns list of lists containing names of dendrites
             - List index associated with layer
             - List index within lists associated with branch
+        * INCOMPLETE for assymetrical arbors due to recusion returning dendrites
+          in branch order rather than layer --fixable
         '''
         # for w in weights:
         #     print(w)
@@ -231,17 +251,19 @@ class NeuralZoo():
         arbor = []
         strengths = []
         arbor.append(soma_input_names)
-        strengths.append(list(self.neuron.dend__nr_ni.dendritic_connection_strengths.values())[1:])
+        s_list = list(self.neuron.dend__nr_ni.dendritic_connection_strengths.values())
+        strengths.append(s_list[1:])
         # call recursive function to explore all branches
         def recursive_search(input,names,leaf,arbor,count,strengths):
             '''
-            Recursive search returns all inputs (however deep) to designated input
+            Returns all inputs (however deep) feeding given input
                 - Takes inputs (and their names) to a given denrite
                 - Iterates over each of those input/name pairs
-                - Adds to new lists all of the inputs and names to _those_ dendrites
+                - Adds new lists of the inputs and names to those dend indexes
                 - Adds the new name list to the growing arbor
                 - So long as names list is not empty, calls itself on new names
                 - Once leaf node is reached (no new inputs), returns
+                - Will exhaust all possible leaves
             '''
             # print(count)
             if leaf == True:
@@ -266,14 +288,15 @@ class NeuralZoo():
                     
             return arbor,strengths
         count=0
-        arbor,strengths = recursive_search(soma_input,soma_input_names,True,arbor,count,strengths)
+        arbor,strengths = recursive_search(soma_input,soma_input_names,True,
+                                           arbor,count,strengths)
         
         # for s in strengths:
         #     print(s)
         # print("\n")
-        for a in arbor:
-            print(a)
-        print("\n")
+        # for a in arbor:
+        #     print(a)
+        # print("\n")
         # return
         def recursive_squish(b,s,a,strengths,i,count,i_count):
             c = a
@@ -346,6 +369,13 @@ class NeuralZoo():
 
 
     def plot_custom_structure(self):
+        '''
+        Plots arbitrary neuron structure
+            - Weighting represented in line widths
+            - Dashed lines inhibitory
+            - Star is cell body
+            - Dots are dendrites
+        '''
         import matplotlib.pyplot as plt
         import matplotlib.colors as mcolors
         colors = mcolors.TABLEAU_COLORS
@@ -368,8 +398,8 @@ class NeuralZoo():
         Ns.reverse()
         arbor[0] = [arbor[0]]
         strengths[0] = [strengths[0]]
-        for a in arbor:
-            print(a,"\n")
+        # for a in arbor:
+        #     print(a,"\n")
         layers=len(arbor)
         Ns_ = Ns[::-1]
         # Ns_.reverse()
@@ -385,19 +415,29 @@ class NeuralZoo():
                     if i == 0:
                         c_dexes[i].append(k)
                         if strengths[i][j][k] >= 0:
-                            plt.plot([layers-i-.5, layers-i+.5], [(m/2)+(len(b)/2)-(k+1),(m/2)-.5], '-',color=colors[c_names[k]], linewidth=strengths[i][j][k]*5)
+                            plt.plot([layers-i-.5, layers-i+.5], 
+                                     [(m/2)+(len(b)/2)-(k+1),(m/2)-.5], 
+                                     '-',color=colors[c_names[k]], 
+                                     linewidth=strengths[i][j][k]*5)
                         else:
-                            plt.plot([layers-i-.5, layers-i+.5], [(m/2)+(len(b)/2)-(k+1),(m/2)-.5], '--',color=colors[c_names[k]], linewidth=strengths[i][j][k]*5*(-1))
+                            plt.plot([layers-i-.5, layers-i+.5], 
+                                     [(m/2)+(len(b)/2)-(k+1),(m/2)-.5], 
+                                     '--',color=colors[c_names[k]], 
+                                     linewidth=strengths[i][j][k]*5*(-1))
                     else:
                         c_dexes[i].append(c_dexes[i-1][j])
                         c_index = c_dexes[i-1][j]
-                        y1=(m/2)+Ns_[i+1]/2 - 1 - (j+k) - row_sum #- ((Ns_[i]/2)%2)/2
+                        y1=(m/2)+Ns_[i+1]/2 - 1 - (j+k) - row_sum #-((Ns_[i]/2)%2)/2
                         y2=(m/2)+Ns_[i]/2 - j - 1 
                         # print(i,j,k,row_sum)
                         if strengths[i][j][k] >= 0:
-                            plt.plot([layers-i-.5, layers-i+.5], [y1,y2], '-', color=colors[c_names[c_index]], linewidth=strengths[i][j][k]*5)
+                            plt.plot([layers-i-.5, layers-i+.5], [y1,y2], '-', 
+                                     color=colors[c_names[c_index]], 
+                                     linewidth=strengths[i][j][k]*5)
                         else:
-                            plt.plot([layers-i-.5, layers-i+.5], [y1,y2], '--', color=colors[c_names[c_index]], linewidth=strengths[i][j][k]*5*(-1))
+                            plt.plot([layers-i-.5, layers-i+.5], [y1,y2], '--', 
+                                     color=colors[c_names[c_index]], 
+                                     linewidth=strengths[i][j][k]*5*(-1))
                     count+=1
                 row_sum += len(arbor[i][j])-1 
 
@@ -407,16 +447,16 @@ class NeuralZoo():
             x_labels.append(f"L{len(Ns)-(i+1)}")
             x_ticks.append(i+.5)
             if n == np.max(Ns):
-                plt.plot(np.ones(n)*i+.5, np.arange(n), 'ok', ms=100/(np.max(Ns)))
+                plt.plot(np.ones(n)*i+.5,np.arange(n),'ok',ms=100/(np.max(Ns)))
             elif n != 1:
                 factor = 1 # make proportional
-                plt.plot(np.ones(n)*i+.5, np.arange(n)*factor+(.5*np.max(Ns)-.5*n), 'ok', ms=100/(np.max(Ns)))
+                plt.plot(np.ones(n)*i+.5,np.arange(n)*factor+(.5*np.max(Ns)-.5*n), 
+                         'ok', ms=100/(np.max(Ns)))
             else:
                 plt.plot(np.ones(n)*i+.5, np.arange(n)+(.5*np.max(Ns)-.5*n), '*k', ms=30)
                 plt.plot(np.ones(n)*i+.5, np.arange(n)+(.5*np.max(Ns)-.5*n), '*y', ms=20)
+
         x_labels[-1]="soma"
-
-
         plt.yticks([],[])
         plt.xticks(x_ticks,x_labels)
         plt.xlim(0,len(Ns))
@@ -426,20 +466,42 @@ class NeuralZoo():
         plt.title('Dendritic Arbor',fontsize=20)
         plt.show()
 
+    def arbor_activity_plot(self):
+        import matplotlib.pyplot as plt
+        # signal = net.neurons["custom_neuron"].dend__nr_ni.s
+        # ref = net.neurons["custom_neuron"].dend__ref.s
+        signal = self.neuron.dend__nr_ni.s
+        S = []
+        den_arb = self.dendrites
+        L = len(den_arb)
+        M = len(den_arb[-1])
+        print(M)
+        plt.figure(figsize=(6,8))
+        for i,l in enumerate(den_arb):
+            for j,g in enumerate(l):
+                for k,d in enumerate(g):
+                    if i < 10:
+                        s = d.s[::10]
+                        t = np.linspace(0,1,len(s))
+                        S.append(d.s)
+                        # print(i,j,k,'  --  ',np.max(d.s))
+                        # print(len(l),len(den_arb[i-1]))
+                        plt.plot(t+(L-i)*1.2,(s+j*4.2+k*1.5)*(M/len(l))+1.75*(M-i), linewidth=2, label=f'{i} mean dendritic signal')
+        T = t + L*1.6
+        s_n = signal[::10]+19.5
+        plt.plot(T,s_n,linewidth=3,color='r')
+        plt.xticks([],[])
+        plt.yticks([],[])
+        plt.title('Signal Propagation Across Arbor')
+        plt.show()
+
+
 
 # structure = [
 #              [2],
 #              [3,2],
 #              [3,2,0,2,2]
 #             ]
-
-# weights = [
-#            [[.2,-.5,.2]],
-#            [[.2,.5,-.4],[.2,-.2],[.2,.2]],
-#            [[.1,-.1,.1],[-.7,.7],[0],[-.5,.6],[.3,.2],[.1,.3],[.1,.2]],
-#            [[.3,.1],[.3,.1],[.3,.1],[.3,.1],[.3,.1],[.3,.1],[.3,.1],
-#            [.3,.1],[.3,.1],[.3,.1],[.3,.1],[.3,.1],[.3,.1],[.3,.1]]
-#           ]
 
 # weights = [
 #            [[1,1,1]],
@@ -451,186 +513,46 @@ class NeuralZoo():
 # weights = [
 #     [[.3,.3,.3]],
 #     [[.3,.3,.3],[.3,.3,.3],[.3,.3,.3]],
-#     [[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3]],
-#     [[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3]],
+#     # [[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3]],
+#     # [[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3]],
 #     # [[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3]],
 #     # [[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3]]
 #           ]
 
-# weights = [
-#     [[.5,.5,.5]],
-#     [[0.35,-0.65],[0.35,-0.65],[0.35,-0.65]],
-#     [[.6,.5],[.6,.5],[.6,.5],[.6,.5],[.6,.5],[.6,.5]]
-# ]
 
-# betas = [
-#     [[2,2,2]],
-#     [[2,2],[2,2],[2,2]],
-#     [[2,2],[2,2],[2,2],[2,2],[2,2],[2,2]]
-# ]
-
-# biases = [
-#     [[1,1,1]],
-#     [[5,5],[5,5],[5,5]],
-#     [[-4,3],[-4,3],[-4,3],[-4,3],[-4,3],[-4,3]]
-# ]
-
-# for w in weights:
-#     print(w)
 # arb = NeuralZoo(type="custom",weights=weights,**default_neuron_params) 
 
-# arb = NeuralZoo(type="custom",**nine_pixel_params) 
+# # arb = NeuralZoo(type="custom",**nine_pixel_params) 
 # arb.get_structure()
 # arb.plot_custom_structure()
 
-#%%
+# #%%
 
-
+# arb.neuron.name = 1
 # indices = np.array([0,1,3,7,8]) # z-pixel array
-# times = np.ones(len(indices))*50
+# times = np.ones(len(indices))*20
 # def_spikes = [indices,times]
-# input = SuperInput(channels=9, type='defined', defined_spikes=def_spikes, duration=500)
-# print(input.spike_arrays)
-# for g in arb.synapses:
+# # input = SuperInput(channels=9, type='defined', defined_spikes=def_spikes, duration=100)
+# input = SuperInput(channels=9, type='random', total_spikes=1000, duration=100)
+# raster_plot(input.spike_arrays)
+
+# for i,g in enumerate(arb.synapses):
 #     for s in g:
-#         for i,row in enumerate(input.spike_rows):
-#             if i == int(s.name)-1:
-#                 s.add_input(input_signal(name = 'input_synaptic_drive', input_temporal_form = 'arbitrary_spike_train', spike_times = row))
+#         s.add_input(input_signal(name = 'input_synaptic_drive', input_temporal_form = 'arbitrary_spike_train', spike_times = input.spike_rows[i]))
+
+# # for g in arb.synapses:
+# #     for s in g:
+# #         for i,row in enumerate(input.spike_rows):
+# #             if i == int(s.name)-1:
+# #                 s.add_input(input_signal(name = 'input_synaptic_drive', input_temporal_form = 'arbitrary_spike_train', spike_times = row)
 
 # net = network(name = 'network_under_test')
 # net.add_neuron(arb.neuron)
 # net.run_sim(dt = .1, tf = 100)
 # net.get_recordings()
 # spikes = [net.spikes[0],net.spikes[1]*1000]
-# print(spikes)
-# raster_plot(spikes,duration=100)
-
-
-
-
-#%%
-# raster_plot(input.spike_arrays)
-
-
-# print(arb.neuron.dend__nr_ni.dendritic_inputs['lay0_branch0_den1'].__dict__)
-# print(arb.neuron.__dict__)
-# arb = NeuralZoo(type="3fractal",**default_neuron_params) 
-# arb.plot_structure()
-
-# neuron_dict = arb.neuron.__dict__
-# for k,v in neuron_dict.items():
-#     print(k)
-
-# print(arb.neuron.dend__nr_ni.dendritic_inputs)
-
-
-
-
-
-
-
-
-
-
-
-
-#%% -----------------------------
-# times = np.arange(0,500,50)
-# indices = np.zeros(len(times)).astype(int)
-# def_spikes = [indices,times]
-
-# # input_ = SuperInput(channels=1, type='random', total_spikes=int(500/42), duration=500)
-# input = SuperInput(channels=1, type='defined', defined_spikes=def_spikes, duration=500)
-
-# # print(input.spike_rows)
-# # raster_plot(input.spike_arrays)
-
-# default_neuron_params['w_dn'] = 0.42
-# default_neuron_params['tau_di'] = 1000
-# default_neuron_params['tau_ref'] = 50
-# default_neuron_params["s_th_factor_n"] = 0.1
-
-# neo = NeuralZoo(type='single',**default_neuron_params)
-
-# neo.synapse.add_input(input.signals[0])
-
-# net = network(name = 'network_under_test')
-# net.add_neuron(neo.neuron)
-# # net.neurons['name'].name = 1
-# net.run_sim(dt = .1, tf = 500)
-# tau_convert = 1/net.neurons[1].time_params['t_tau_conversion']
-# net.get_recordings()
-# spikes = [net.spikes[0],net.spikes[1]*1000]
 # # print(spikes)
-
-# raster_plot(spikes,duration=500)
-# spd = neo.dendrite.synaptic_inputs[1].phi_spd
-# dend_s = neo.dendrite.s
-# signal = net.neurons[1].dend__nr_ni.s
-# ref = net.neurons[1].dend__ref.s
-
-# import matplotlib.pyplot as plt
-# plt.figure(figsize=(12,4))
-# plt.plot(spd[::10], label='phi_spd')
-# plt.plot(dend_s[::10], label='dendtrite signal')
-# plt.plot(signal[::10], label='soma signal')
-# plt.plot(ref[::10], label='refractory signal')
-# spike_height = [signal[::10][int(net.spikes[1][x]*1000)] for x in range(len(net.spikes[1]))]
-# plt.plot(net.spikes[1]*1000,spike_height,'xk', label='neuron fires')
-# plt.legend()
-
-
-
-# default_neuron_params['w_dd'] = 1
-# default_neuron_params['w_dn'] = 1
-# default_neuron_params['tau_di'] = 100
-
-
-# neo = NeuralZoo(type='3fractal',**default_neuron_params)
-
-# neo.plot_structure()
-
-# print(neo.fractal_neuron.__dict__)
-# print
-
-# for k,v in neo.fractal_neuron.__dict__.items():
-#     print(k,v)
-
-
+# arb.arbor_activity_plot()
+# raster_plot(spikes,duration=100)    
 
 #%%
-# for i in range(len(neo.synapses)):
-#     in_ = input_signal(name = 'input_synaptic_drive', 
-#                        input_temporal_form = 'arbitrary_spike_train', 
-#                        spike_times = input.spike_rows[i])
-#     neo.synapses[i].add_input(in_)
-
-# net = network(name = 'network_under_test')
-# net.add_neuron(neo.fractal_neuron)
-# net.neurons['name'].name = 1
-# print(net.neurons['name'].name)
-# # network_object.neurons[neuron_key].dend__ref.synaptic_inputs['{}__syn_refraction'.format(network_object.neurons[neuron_key].name)].spike_times_converted = np.append(network_object.neurons[neuron_key].dend__ref.synaptic_inputs['{}__syn_refraction'.format(network_object.neurons[neuron_key].name)].spike_times_converted,tau_vec[ii+1])
-# net.run_sim(dt = 10, tf = 1000)
-
-
-# spikes = [ [] for _ in range(2) ]
-# S = []
-# Phi_r = []
-# count = 0
-# for neuron_key in net.neurons:
-#     s = net.neurons[neuron_key].dend__nr_ni.s
-#     S.append(s)
-#     phi_r = net.neurons[neuron_key].dend__nr_ni.phi_r
-#     Phi_r.append(phi_r)
-#     spike_t = net.neurons[neuron_key].spike_times
-#     spikes[0].append(np.ones(len(spike_t))*count)
-#     spikes[1].append(spike_t)
-#     count+=1
-# spikes[0] =np.concatenate(spikes[0])
-# spikes[1] = np.concatenate(spikes[1])/1000
-
-
-
-# # %%
-
-# %%

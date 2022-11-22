@@ -51,6 +51,12 @@ nine_pixel_params = {
         [[2,2],[2,2],[2,2],[2,2],[2,2],[2,2]]
     ],
 
+    'taus': [
+        [[50,150,400]],
+        [[250,250],[250,250],[250,250]],
+        [[250,250],[250,250],[250,250],[250,250],[250,250],[250,250]]
+    ],
+
     'biases': [
         [[1,1,1]],
         [[5,5],[5,5],[5,5]],
@@ -63,24 +69,24 @@ nine_pixel_params = {
     ],
     'syns': [['2','5'],['4','6'],['5','8'],['4','6'],['1','3'],['7','9'],
              ['4','6'],['2','5'],['7','9'],['1','3'],['4','6'],['5','8']],
-
-    "tau_di": 1000,
-    "ib_n": ib__list__ri[9], 
-    "s_th_factor_n": 0.1,
+    # "ib_ne": ib__list__ri[4],
+    "tau_di": 250,
+    "ib_n": ib__list__ri[4], 
     "beta_ni": 2*np.pi*1e2,
     "tau_ni": 50,
     "w_sd": 1,
     # "w_sid": 1, 
     # "w_dd": 0.5,
-    "w_dn": .5, 
+    "w_dn": 1, 
     "ib_ref": ib__list__ri[8], 
-    "beta_ref": 2*np.pi*1e4,
-    "tau_ref": 100,
+    "beta_ref": 2*np.pi*1e2,
+    "tau_ref": ib__list__ri[8],
     'ib_list_ri':ib__list__ri[:]
 }
 
-nine_pixel_params["s_max_n"]=s_max_plus__vec__ri[index_finder(default_neuron_params['ib_n'],ib__list__ri[:])]
-
+nine_pixel_params["s_max_n"] = s_max_plus__vec__ri[index_finder(default_neuron_params['ib_n'],ib__list__ri[:])]
+nine_pixel_params["ind_ib"] = ( np.abs( ib__list__ri[:] - nine_pixel_params["ib_n"] ) ).argmin()
+nine_pixel_params["s_th"] =  0.2*s_max_plus__vec__ri[nine_pixel_params["ind_ib"]],
 
 default_neuron_params["s_max_n"]=s_max_plus__vec__ri[index_finder(default_neuron_params['ib_n'],ib__list__ri[:])]
 
