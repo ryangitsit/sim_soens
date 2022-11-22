@@ -10,7 +10,7 @@ from soen_sim_lib__common_components__simple_gates import (
     common_dendrite, common_synapse, common_neuron)
 
 from super_input import SuperInput
-from params import default_neuron_params
+from params import default_neuron_params, nine_pixel_params
 from _plotting__soen import raster_plot
 
 
@@ -101,16 +101,16 @@ class NeuralZoo():
 
     def custom(self):
         custom_neuron = common_neuron(1, 'ri', self.beta_ni, self.tau_ni, 
-                                       self.ib, self.s_th_factor_n*self.s_max_n, 
+                                       self.ib_n, self.s_th_factor_n*self.s_max_n, 
                                        self.beta_ref, self.tau_ref, self.ib_ref)
         custom_neuron.name = 'custom_neuron'
         self.neuron = custom_neuron
         if hasattr(self, 'structure'):
             print("structure")
-            arbor = structure
+            arbor = self.structure
         elif hasattr(self, 'weights'):
             print("weights")
-            arbor = weights
+            arbor = self.weights
 
         dendrites = [ [] for _ in range(len(arbor)) ]
         synapses = []
@@ -124,7 +124,15 @@ class NeuralZoo():
             for j,dens in enumerate(layer):
                 sub = []
                 for k,d in enumerate(dens):
-                    sub.append(common_dendrite(f"lay{i}_branch{j}_den{k}", 'ri', 
+                    if self.betas:
+                        self.beta_di=(np.pi*2)*10**self.betas[i][j][k]
+                    if self.biases:
+                        self.ib= self.ib_list_ri[self.biases[i][j][k]]
+                    if self.types:
+                        type = self.types[i][j][k]
+                    else:
+                        type = 'ri'
+                    sub.append(common_dendrite(f"lay{i}_branch{j}_den{k}", type, 
                                         self.beta_di,self.tau_di, self.ib))
                     den_count+=1
                     c+=1
@@ -136,18 +144,33 @@ class NeuralZoo():
                 for k,d in enumerate(subgroup):
                     if i==0:
                         # print(i,j,k, " --> soma")
-                        custom_neuron.add_input(d, connection_strength=weights[i][j][k])
+                        custom_neuron.add_input(d, connection_strength=self.weights[i][j][k])
                     else:
                         # print(i,j,k, " --> ", i-1,0,j)
                         # print(np.concatenate(dendrites[i-1])[j])
                         # d.add_input(np.concatenate(dendrites[i-1])[j], connection_strength=weights[i][j][k])
-                        np.concatenate(dendrites[i-1])[j].add_input(d, connection_strength=weights[i][j][k])
+                        np.concatenate(dendrites[i-1])[j].add_input(d, connection_strength=self.weights[i][j][k])
+        
+        if self.syns:
+            self.synapses = [[] for _ in range(len(self.syns))]
+            for i,group in enumerate(self.syns):
+                for j,s in enumerate(group):
+                    self.synapses[i].append(common_synapse(s))
+            count=0
+            print(len(dendrites[len(dendrites)-1][0]))
+            for j, subgroup in enumerate(dendrites[len(dendrites)-1]):
+                for k,d in enumerate(subgroup):
+                    for s in self.synapses[count]:
+                        dendrites[len(dendrites)-1][j][k].add_input(s, connection_strength = self.w_sd)
+                    count+=1
 
         self.dendrites = dendrites
-        for i,l in enumerate(dendrites):
-            for j, subgroup in enumerate(l):
-                for k,d in enumerate(subgroup):
-                    keys = list(d.dendritic_inputs.keys())
+
+        
+        # for i,l in enumerate(dendrites):
+        #     for j, subgroup in enumerate(l):
+        #         for k,d in enumerate(subgroup):
+        #             keys = list(d.dendritic_inputs.keys())
                     # print(i,j,k," - >", d.dendritic_connection_strengths)
                     # for k in keys:
                     #     print(i,j,k," - >", d.dendritic_inputs[k].connection_strengths)
@@ -197,6 +220,9 @@ class NeuralZoo():
             - List index associated with layer
             - List index within lists associated with branch
         '''
+        # for w in weights:
+        #     print(w)
+        # print("\n")
         # Start with checking dendritic inputs to soma and getting their names
         soma_input = self.neuron.dend__nr_ni.dendritic_inputs
         soma_input_names = list(self.neuron.dend__nr_ni.dendritic_inputs.keys())[1:]
@@ -217,7 +243,7 @@ class NeuralZoo():
                 - So long as names list is not empty, calls itself on new names
                 - Once leaf node is reached (no new inputs), returns
             '''
-
+            # print(count)
             if leaf == True:
                 names_ = []
                 inputs_ = []
@@ -237,21 +263,26 @@ class NeuralZoo():
                     count+=1
                     # print(count)
                     recursive_search(input_,names_[i],leaf,arbor,count,strengths)
-
+                    
             return arbor,strengths
         count=0
         arbor,strengths = recursive_search(soma_input,soma_input_names,True,arbor,count,strengths)
-        # print(len(arbor))
-
+        
+        # for s in strengths:
+        #     print(s)
+        # print("\n")
+        for a in arbor:
+            print(a)
+        print("\n")
+        # return
         def recursive_squish(b,s,a,strengths,i,count,i_count):
-            # i=count-1
             c = a
             s_ = strengths[i]
             # print(i+1,i+len(arbor[i-1]))
             for j in range(i+1,i+len(arbor[i-1])):
                 # print(i+1,i+len(arbor[i-1]))
-                c += arbor[i+1]
-                s_ += strengths[i+1]
+                c += arbor[j]
+                s_ += strengths[j]
                 count+=1
             i_count+=len(arbor[i-1])
             b.append(c)
@@ -271,7 +302,6 @@ class NeuralZoo():
                 count+=1
                 i_count+=1
             else:
-                i
                 b,s,a,strengths,i,count,i_count = recursive_squish(b,s,a,strengths,i,count,i_count)
                 # print(i_count,count)
             if i_count == len(arbor):
@@ -280,7 +310,10 @@ class NeuralZoo():
 
         arbor = b
         strengths = s
-        
+        # for a in strengths:
+        #     print(a)
+        # print("\n")
+
         # b = [arbor[0],arbor[1],arbor[2]+arbor[3]+arbor[4]]
         # for a in b:
         #     print(a,"\n")
@@ -306,10 +339,6 @@ class NeuralZoo():
         #         if len(arbor)==i+lists:
         #             break
                 
-        # for s in strengths:
-        #     print(s)
-        # print("\n")
-
         return arbor,strengths
 
 
@@ -339,8 +368,8 @@ class NeuralZoo():
         Ns.reverse()
         arbor[0] = [arbor[0]]
         strengths[0] = [strengths[0]]
-        # for a in arbor:
-        #     print(a,"\n")
+        for a in arbor:
+            print(a,"\n")
         layers=len(arbor)
         Ns_ = Ns[::-1]
         # Ns_.reverse()
@@ -362,13 +391,9 @@ class NeuralZoo():
                     else:
                         c_dexes[i].append(c_dexes[i-1][j])
                         c_index = c_dexes[i-1][j]
-                        # print(count)
-                        # print(c_index)
-
                         y1=(m/2)+Ns_[i+1]/2 - 1 - (j+k) - row_sum #- ((Ns_[i]/2)%2)/2
                         y2=(m/2)+Ns_[i]/2 - j - 1 
                         # print(i,j,k,row_sum)
-
                         if strengths[i][j][k] >= 0:
                             plt.plot([layers-i-.5, layers-i+.5], [y1,y2], '-', color=colors[c_names[c_index]], linewidth=strengths[i][j][k]*5)
                         else:
@@ -408,27 +433,87 @@ class NeuralZoo():
 #              [3,2,0,2,2]
 #             ]
 
-weights = [
-           [[.2,-.5]],
-           [[.2,.5,-.4],[.2,-.2]],
-           [[.1,-.1,.1],[-.7,.7],[0],[-.5,.6],[.3,.2]],
-        #    [[.3,.1],[.3,.1],[.3,.1],[.3,.1],[.3,.1],[.3,.1],[.3,.1],[.3,.1],[.3,.1],[.3,.1]]
-          ]
+# weights = [
+#            [[.2,-.5,.2]],
+#            [[.2,.5,-.4],[.2,-.2],[.2,.2]],
+#            [[.1,-.1,.1],[-.7,.7],[0],[-.5,.6],[.3,.2],[.1,.3],[.1,.2]],
+#            [[.3,.1],[.3,.1],[.3,.1],[.3,.1],[.3,.1],[.3,.1],[.3,.1],
+#            [.3,.1],[.3,.1],[.3,.1],[.3,.1],[.3,.1],[.3,.1],[.3,.1]]
+#           ]
 
-weights = [
-    [[.3,.3,.3]],
-    [[.3,.3,.3],[.3,.3,.3],[.3,.3,.3]],
-    [[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3]],
-    [[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3]],
-    [[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3]]
-          ]
+# weights = [
+#            [[1,1,1]],
+#            [[1,1],[1],[1,-1]],
+#            [[1],[1],[1],[-1,-1],[1,1,1]],
+#            [[1],[1,1],[1],[1,1],[1],[1],[1,1],[1,1]]
+#           ]
+
+# weights = [
+#     [[.3,.3,.3]],
+#     [[.3,.3,.3],[.3,.3,.3],[.3,.3,.3]],
+#     [[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3]],
+#     [[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3]],
+#     # [[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3]],
+#     # [[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3]]
+#           ]
+
+# weights = [
+#     [[.5,.5,.5]],
+#     [[0.35,-0.65],[0.35,-0.65],[0.35,-0.65]],
+#     [[.6,.5],[.6,.5],[.6,.5],[.6,.5],[.6,.5],[.6,.5]]
+# ]
+
+# betas = [
+#     [[2,2,2]],
+#     [[2,2],[2,2],[2,2]],
+#     [[2,2],[2,2],[2,2],[2,2],[2,2],[2,2]]
+# ]
+
+# biases = [
+#     [[1,1,1]],
+#     [[5,5],[5,5],[5,5]],
+#     [[-4,3],[-4,3],[-4,3],[-4,3],[-4,3],[-4,3]]
+# ]
 
 # for w in weights:
 #     print(w)
-arb = NeuralZoo(type="custom",weights=weights,**default_neuron_params) 
-arb.get_structure()
-arb.plot_custom_structure()
+# arb = NeuralZoo(type="custom",weights=weights,**default_neuron_params) 
 
+# arb = NeuralZoo(type="custom",**nine_pixel_params) 
+# arb.get_structure()
+# arb.plot_custom_structure()
+
+#%%
+
+
+# indices = np.array([0,1,3,7,8]) # z-pixel array
+# times = np.ones(len(indices))*50
+# def_spikes = [indices,times]
+# input = SuperInput(channels=9, type='defined', defined_spikes=def_spikes, duration=500)
+# print(input.spike_arrays)
+# for g in arb.synapses:
+#     for s in g:
+#         for i,row in enumerate(input.spike_rows):
+#             if i == int(s.name)-1:
+#                 s.add_input(input_signal(name = 'input_synaptic_drive', input_temporal_form = 'arbitrary_spike_train', spike_times = row))
+
+# net = network(name = 'network_under_test')
+# net.add_neuron(arb.neuron)
+# net.run_sim(dt = .1, tf = 100)
+# net.get_recordings()
+# spikes = [net.spikes[0],net.spikes[1]*1000]
+# print(spikes)
+# raster_plot(spikes,duration=100)
+
+
+
+
+#%%
+# raster_plot(input.spike_arrays)
+
+
+# print(arb.neuron.dend__nr_ni.dendritic_inputs['lay0_branch0_den1'].__dict__)
+# print(arb.neuron.__dict__)
 # arb = NeuralZoo(type="3fractal",**default_neuron_params) 
 # arb.plot_structure()
 
@@ -459,7 +544,6 @@ arb.plot_custom_structure()
 
 # # print(input.spike_rows)
 # # raster_plot(input.spike_arrays)
-
 
 # default_neuron_params['w_dn'] = 0.42
 # default_neuron_params['tau_di'] = 1000
