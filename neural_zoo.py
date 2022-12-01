@@ -632,7 +632,7 @@ class NeuralZoo():
 
 # spikes = [net.spikes[0],net.spikes[1]*1000]
 # # arb.arbor_activity_plot()
-# print(len(spikes[0]))
+# print(spikes[1])
 # raster_plot(spikes)
 
 # #%%
