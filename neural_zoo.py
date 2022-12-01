@@ -10,7 +10,7 @@ from soen_sim_lib__common_components__simple_gates import (
     common_dendrite, common_synapse, common_neuron)
 
 from super_input import SuperInput
-from params import default_neuron_params, nine_pixel_params
+from params import default_neuron_params, nine_pixel_params, weights_3
 from _plotting__soen import raster_plot
 
 
@@ -384,6 +384,7 @@ class NeuralZoo():
             - Star is cell body
             - Dots are dendrites
         '''
+        self.get_structure()
         import matplotlib.pyplot as plt
         import matplotlib.colors as mcolors
         colors = mcolors.TABLEAU_COLORS
@@ -393,6 +394,7 @@ class NeuralZoo():
         arbor,strengths = self.get_structure()
 
         # colors = ['r','b','g',]
+        # c_names = [1,2,3]
         Ns = []
         for i,a in enumerate(arbor):
             count = 0
@@ -588,44 +590,50 @@ class NeuralZoo():
         plt.show()
 
 
-# # arb = NeuralZoo(type="custom",weights=weights,**default_neuron_params) 
+# arb = NeuralZoo(type="custom",weights=weights_3,**default_neuron_params) 
 
-# arb = NeuralZoo(type="custom",**nine_pixel_params) 
-# # arb.get_structure()
-# # arb.plot_custom_structure()
+# # neuron = NeuralZoo(type="custom",**nine_pixel_params) 
+# # neuron.plot_custom_structure()
 
 
-# arb.neuron.name = 1
-# # indices = np.array([0,1,4,7,8]) # z-pixel array
-# indices = np.array([1,4,3,6,8])-1 # v
-# # indices = np.array([2,4,6,7,9])-1 # n
-# times = np.ones(len(indices))*20
-# def_spikes = [indices,times]
-# input = SuperInput(channels=9, type='defined', defined_spikes=def_spikes, duration=100)
-# # input = SuperInput(channels=24, type='random', total_spikes=1000, duration=100)
+# # arb.neuron.name = 1
+# # # indices = np.array([0,1,4,7,8]) # z-pixel array
+# # indices = np.array([1,4,3,6,8])-1 # v
+# # # indices = np.array([2,4,6,7,9])-1 # n
+# # times = np.ones(len(indices))*20
+# # def_spikes = [indices,times]
+# # input = SuperInput(channels=9, type='defined', defined_spikes=def_spikes, duration=100)
+# input = SuperInput(channels=9, type='random', total_spikes=10000, duration=100)
 # # raster_plot(input.spike_arrays)
 
-# # for i,g in enumerate(arb.synapses):
-# #     for s in g:
-# #         s.add_input(input_signal(name = 'input_synaptic_drive', input_temporal_form = 'arbitrary_spike_train', spike_times = input.spike_rows[i]))
-
-# count =0
-# for g in arb.synapses:
+# for i,g in enumerate(arb.synapses):
 #     for s in g:
-#         for i,row in enumerate(input.spike_rows):
-#             if i == int(s.name)-1:
-#                 s.add_input(input_signal(name = 'input_synaptic_drive', 
-#                 input_temporal_form = 'arbitrary_spike_train', spike_times = input.spike_rows[i]))
-#                 count+=1
-# print(count)
+#         s.add_input(input_signal(name = 'input_synaptic_drive', input_temporal_form = 'arbitrary_spike_train', spike_times = input.spike_rows[i]))
+
+# # count =0
+# # for g in arb.synapses:
+# #     for s in g:
+# #         for i,row in enumerate(input.spike_rows):
+# #             if i == int(s.name)-1:
+# #                 s.add_input(input_signal(name = 'input_synaptic_drive', 
+# #                 input_temporal_form = 'arbitrary_spike_train', spike_times = input.spike_rows[i]))
+# #                 count+=1
+# # print(count)
+
 # net = network(name = 'network_under_test')
 # net.add_neuron(arb.neuron)
+# print(net.neurons.keys())
+# print(net.neurons['custom_neuron'].dend__ref.synaptic_inputs.keys())
+# if 'custom_neuron__syn_refraction' not in net.neurons['custom_neuron'].dend__ref.synaptic_inputs.keys():
+#     print("FLAG")
+#     net.neurons[list(net.neurons.keys())[0]].name = 1
 # net.run_sim(dt = .1, tf = 100)
 # net.get_recordings()
 
 # spikes = [net.spikes[0],net.spikes[1]*1000]
-# arb.arbor_activity_plot()
-# print(spikes)  
+# # arb.arbor_activity_plot()
+# print(len(spikes[0]))
+# raster_plot(spikes)
 
 # #%%
 # # print(arb.neuron.dend__nr_ni.dendritic_connection_strengths)
