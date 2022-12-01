@@ -102,9 +102,9 @@ def run_soen_sim(obj, **kwargs):
             obj.neurons[neuron_key].time_params = obj.time_params
                         
             # initialize dendrites (phi_r vector) and make drive signals
-            print('\n')
+            # print('\n')
             recursive_dendrite_initialization_and_drive_construction(obj.neurons[neuron_key].dend__nr_ni,tau_vec,t_tau_conversion,d_tau) # go through all other dendrites in the neuron's arbor
-            print('\n')
+            # print('\n')
             
             # load rate arrays to all dendrites
             recursive_rate_array_attachment(obj.neurons[neuron_key].dend__nr_ni)
@@ -184,22 +184,22 @@ def recursive_dendrite_initialization_and_drive_construction(dendrite_object,tau
         _str = 'Warning: d_tau should be << beta/alpha.'
         _str = '{} For dendrite {} with beta = {:4.2e} and alpha = {:4.2e}'.format(_str,dendrite_object.name,dendrite_object.beta,dendrite_object.alpha)        
         _str = '{} the recommended d_tau is {:5.3e}-{:5.3e} (dt = {:5.3e}ns-{:5.3e}ns)'.format(_str,_min,_max,_min/t_tau_conversion,_max/t_tau_conversion)
-        print('{}'.format(_str))
+        # print('{}'.format(_str))
     elif d_tau <= 0.1*dendrite_object.beta/dendrite_object.alpha:
         _str = 'For dendrite {} d_tau = {:5.3e} = {:5.3e} x beta/alpha'.format(dendrite_object.name,d_tau,d_tau*dendrite_object.alpha/dendrite_object.beta)
         _str = '{} (0.01-0.1 x beta/alpha is recommended, dt = {:5.3e}ns-{:5.3e}ns)'.format(_str,_min/t_tau_conversion,_max/t_tau_conversion)
-        print('{}'.format(_str))
+        # print('{}'.format(_str))
     _min = 0.01*dendrite_object.beta/_r_max
     _max = 0.1*dendrite_object.beta/_r_max
     if d_tau > 0.1*dendrite_object.beta/_r_max:
         _str = 'Warning: d_tau should be << beta/r_max.'
         _str = '{} For dendrite {} with beta = {:4.2e} and r_max = {:4.2e}'.format(_str,dendrite_object.name,dendrite_object.beta,_r_max)        
         _str = '{} the recommended d_tau is {:5.3e}-{:5.3e} (dt = {:5.3e}ns-{:5.3e}ns)'.format(_str,_min,_max,_min/t_tau_conversion,_max/t_tau_conversion)
-        print('{}'.format(_str))
+        # print('{}'.format(_str))
     elif d_tau <= 0.1*dendrite_object.beta/_r_max:
         _str = 'For dendrite {} d_tau = {:5.3e} = {:5.3e} x beta/r_max'.format(dendrite_object.name,d_tau,d_tau*_r_max/dendrite_object.beta)
         _str = '{} (0.01-0.1 x beta/r_max is recommended, dt = {:5.3e}ns-{:5.3e}ns)'.format(_str,_min/t_tau_conversion,_max/t_tau_conversion)
-        print('{}'.format(_str))
+        # print('{}'.format(_str))
         
     # step through all dendrites input to this one and call the present function recursively
     for dendrite_key in dendrite_object.dendritic_inputs:
@@ -217,8 +217,8 @@ def recursive_rate_array_attachment(dendrite_object):
     # attach data to this dendrite
     _ind__ib = ( np.abs( ib__vec[:] - dendrite_object.bias_current ) ).argmin()
     dendrite_object.phi_r__vec = np.asarray(phi_r__array[_ind__ib])
-    dendrite_object.i_di__subarray = np.asarray(i_di__array[_ind__ib])
-    dendrite_object.r_fq__subarray = np.asarray(r_fq__array[_ind__ib])
+    dendrite_object.i_di__subarray = np.asarray(i_di__array[_ind__ib],dtype=object)
+    dendrite_object.r_fq__subarray = np.asarray(r_fq__array[_ind__ib],dtype=object)
         
     # iterate recursively through all input dendrites
     for dendrite_key in dendrite_object.dendritic_inputs:
@@ -389,11 +389,11 @@ def recursive_dendrite_updater(dendrite_object,time_index,present_time,d_tau):
                     
         dendrite_object.phi_r[time_index+1] += dendrite_object.synaptic_inputs[synapse_key].phi_spd[time_index+1]
         
-    if np.abs(dendrite_object.phi_r[time_index+1]) > 1:
-        print('\nWarning: absolute value of flux drive to dendrite {} exceeded 1 on time step {} (phi_r = {:5.3f})'.format(dendrite_object.name,time_index+1,dendrite_object.phi_r[time_index+1]))
-        if np.abs(dendrite_object.phi_r[time_index+1]) > 1.5:
-            print('phi_r = {:5.3f}? Calm the fuck down, bro.'.format(dendrite_object.phi_r[time_index+1]))
-        print('\n')
+    # if np.abs(dendrite_object.phi_r[time_index+1]) > 1:
+    #     # print('\nWarning: absolute value of flux drive to dendrite {} exceeded 1 on time step {} (phi_r = {:5.3f})'.format(dendrite_object.name,time_index+1,dendrite_object.phi_r[time_index+1]))
+    #     if np.abs(dendrite_object.phi_r[time_index+1]) > 1.5:
+    #         print('phi_r = {:5.3f}? Calm the fuck down, bro.'.format(dendrite_object.phi_r[time_index+1]))
+    #     # print('\n')
     
     # find relevant entry in r_fq__array
     _ind__phi_r = ( np.abs( dendrite_object.phi_r__vec[:] - dendrite_object.phi_r[time_index+1] ) ).argmin()
