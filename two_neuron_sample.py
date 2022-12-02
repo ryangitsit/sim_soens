@@ -101,7 +101,8 @@ dendrite_2.add_input(synapse_2, connection_strength = connection_strength__syn_2
 # establish neurons
 neuron_1 = common_neuron(1, 'ri', beta_ni, tau_ni, ib_n1, s_th_factor_n1*s_max_n1, beta_ref, tau_ref, ib_ref)
 neuron_2 = common_neuron(2, 'ri', beta_ni, tau_ni, ib_n2, s_th_factor_n2*s_max_n2, beta_ref, tau_ref, ib_ref)
-
+# print("-----",s_th_factor_n1*s_max_n1)
+# print("-----",s_th_factor_n2*s_max_n2)
 # add dendrites to neurons
 neuron_1.add_input(dendrite_1, connection_strength = connection_strength__dend_1_to_neu_1)
 neuron_2.add_input(dendrite_2, connection_strength = connection_strength__dend_2_to_neu_2)
@@ -124,5 +125,5 @@ print(net.neurons[2].dend__ref.synaptic_inputs)
 neuron_1.plot_simple = True
 neuron_2.plot_simple = True
 net.plot()
-            
+plt.show()
 # %%

@@ -50,8 +50,12 @@ class NeuralZoo():
                                     
         self.dendrite.add_input(self.synapse, connection_strength = self.w_sd)
 
+        # self.neuron = common_neuron(1, 'ri', self.beta_ni, self.tau_ni, 
+        #                               self.ib, self.s_th_factor_n*self.s_max_n, 
+        #                               self.beta_ref, self.tau_ref, self.ib_ref)
+
         self.neuron = common_neuron(1, 'ri', self.beta_ni, self.tau_ni, 
-                                      self.ib, self.s_th_factor_n*self.s_max_n, 
+                                      self.ib, self.s_th, 
                                       self.beta_ref, self.tau_ref, self.ib_ref)
 
         self.neuron.add_input(self.dendrite, connection_strength = self.w_dn)
@@ -62,7 +66,7 @@ class NeuralZoo():
         n = [3,3] # fanning at each layer, (length = H-1), from soma to synapses
 
         fractal_neuron = common_neuron(1, 'ri', self.beta_ni, self.tau_ni, 
-                                       self.ib, self.s_th_factor_n*self.s_max_n, 
+                                       self.ib, self.s_th, 
                                        self.beta_ref, self.tau_ref, self.ib_ref)
         fractal_neuron.name = 'name'
         dendrites = [ [] for _ in range(H-1) ]
@@ -100,28 +104,31 @@ class NeuralZoo():
 
 
     def custom(self):
-        
-    
+        '''
+        Arbitrary neuron generation
+            - Define dendritic structure with weight or structure input
+        '''    
         if hasattr(self, 's_th'):
             # print("structure")
-            s_th = self.s_th
+            self.s_th = self.s_th
         else:
-            s_th = self.s_th_factor_n*self.s_max_n
+            self.s_th = self.s_th_factor_n*self.s_max_n
         # create a neuron body (soma and refractory loop) with called params
         custom_neuron = common_neuron(1,'ri',self.beta_ni, self.tau_ni,
-                                      self.ib_n, s_th, self.beta_ref, 
+                                      self.ib_n, self.s_th, self.beta_ref, 
                                       self.tau_ref, self.ib_ref)
         custom_neuron.name = 'custom_neuron'
+        custom_neuron.normalize_input_connection_strengths=1
         self.neuron = custom_neuron
 
         # check how arbor is defined
         # structure just gives arbor form
         if hasattr(self, 'structure'):
-            print("structure")
+            # print("structure")
             arbor = self.structure
         # weights defines structure implicitly and defines connection strengths
         elif hasattr(self, 'weights'):
-            print("weights")
+            # print("weights")
             arbor = self.weights
 
         # initialize a list of lists for holding dendrits in each arbor layer
@@ -193,6 +200,7 @@ class NeuralZoo():
             for j,g in enumerate(dendrites[-1]):
                 for k,d in enumerate(g):
                     self.synapses.append([common_synapse(f'branch_{j}syn_{k}')])
+                    self.synapses[count][0].spd_duration=2
                     d.add_input(self.synapses[count][0],connection_strength=self.w_sd)
                     count+=1
         self.dendrites = dendrites
@@ -496,7 +504,8 @@ class NeuralZoo():
                         S.append(d.s)
                         # print(i,j,k,'  --  ',np.max(d.s))
                         # print(len(l),len(den_arb[i-1]))
-                        plt.plot(t+(L-i)*1.2,(s+j*4.2+k*1.5)*(M/len(l))+1.75*(M-i), linewidth=2, label=f'{i} mean dendritic signal')
+                        plt.plot(t+(L-i)*1.2,(s+j*4.2+k*1.5)*(M/len(l))+1.75*(M-i), 
+                                 linewidth=2, label=f'{i} mean dendritic signal')
         T = t + L*1.6
         s_n = signal[::10]+19.5
         plt.plot(T,s_n,linewidth=3,color='r')
@@ -589,53 +598,3 @@ class NeuralZoo():
         plt.title('Dendritic Arbor',fontsize=20)
         plt.show()
 
-
-# arb = NeuralZoo(type="custom",weights=weights_3,**default_neuron_params) 
-
-# # neuron = NeuralZoo(type="custom",**nine_pixel_params) 
-# # neuron.plot_custom_structure()
-
-
-# # arb.neuron.name = 1
-# # # indices = np.array([0,1,4,7,8]) # z-pixel array
-# # indices = np.array([1,4,3,6,8])-1 # v
-# # # indices = np.array([2,4,6,7,9])-1 # n
-# # times = np.ones(len(indices))*20
-# # def_spikes = [indices,times]
-# # input = SuperInput(channels=9, type='defined', defined_spikes=def_spikes, duration=100)
-# input = SuperInput(channels=9, type='random', total_spikes=10000, duration=100)
-# # raster_plot(input.spike_arrays)
-
-# for i,g in enumerate(arb.synapses):
-#     for s in g:
-#         s.add_input(input_signal(name = 'input_synaptic_drive', input_temporal_form = 'arbitrary_spike_train', spike_times = input.spike_rows[i]))
-
-# # count =0
-# # for g in arb.synapses:
-# #     for s in g:
-# #         for i,row in enumerate(input.spike_rows):
-# #             if i == int(s.name)-1:
-# #                 s.add_input(input_signal(name = 'input_synaptic_drive', 
-# #                 input_temporal_form = 'arbitrary_spike_train', spike_times = input.spike_rows[i]))
-# #                 count+=1
-# # print(count)
-
-# net = network(name = 'network_under_test')
-# net.add_neuron(arb.neuron)
-# print(net.neurons.keys())
-# print(net.neurons['custom_neuron'].dend__ref.synaptic_inputs.keys())
-# if 'custom_neuron__syn_refraction' not in net.neurons['custom_neuron'].dend__ref.synaptic_inputs.keys():
-#     print("FLAG")
-#     net.neurons[list(net.neurons.keys())[0]].name = 1
-# net.run_sim(dt = .1, tf = 100)
-# net.get_recordings()
-
-# spikes = [net.spikes[0],net.spikes[1]*1000]
-# # arb.arbor_activity_plot()
-# print(len(spikes[0]))
-# raster_plot(spikes)
-
-# #%%
-# # print(arb.neuron.dend__nr_ni.dendritic_connection_strengths)
-# import matplotlib.pyplot as plt
-# plt.plot(arb.neuron.dend__nr_ni.s)

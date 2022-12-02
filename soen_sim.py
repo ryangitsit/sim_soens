@@ -7,7 +7,6 @@ from _util import physical_constants
 from _util__soen import get_jj_params, dend_load_arrays_thresholds_saturations
 p = physical_constants()
 
-
 from _functions__soen import run_soen_sim
 from _plotting__soen import plot_dendrite, plot_synapse, plot_neuron, plot_network
 
@@ -202,11 +201,50 @@ class dendrite():
                 self.bias_current = 2.0 # dimensionless bias current
         self.ib = self.bias_current
         
-        if 'integration_loop_time_constant' in kwargs: # units of ns
+        if 'integration_loop_time_constant' in kwargs: # constant with units of ns or list of tau-s pairs; for list of pairs the form is [[tau_1,s_1],[tau_2,s_2],...] where the temporal decay will have time constant tau_1 from s = 0 to s = s_1, will switch to tau_2 from s_1 to s_2, etc 
             self.integration_loop_time_constant = kwargs['integration_loop_time_constant']
         else:
             self.integration_loop_time_constant = 250 # default time constant units of ns
-        self.tau_di = self.integration_loop_time_constant          
+        if type(self.integration_loop_time_constant).__name__ == 'list': 
+            tau_vs_current = self.integration_loop_time_constant
+            self.tau_list, self.s_list = [], []
+            for tau_s in tau_vs_current:
+                self.tau_list.append(tau_s[0])
+                self.s_list.append(tau_s[1])
+            self.tau_list.append(self.tau_list[-1]) # add one more entry with very large s
+            self.s_list.append(1e6) # add one more entry with very large s
+            self.tau_di = self.tau_list[0] # this is just here to give it an initial value. in time stepper it's broken down by s
+        else:
+            self.tau_di = self.integration_loop_time_constant 
+
+        # if 'normalize_input_connection_strengths' in kwargs:
+        #     self.normalize_input_connection_strengths = kwargs['normalize_input_connection_strengths']
+        # else:
+        #     self.normalize_input_connection_strengths = False
+            
+        # if self.normalize_input_connection_strengths:
+        #     if 'total_input_connection_strength' in kwargs:
+        #         self.total_input_connection_strength = kwargs['total_input_connection_strength']
+        #     else:
+        #         self.total_input_connection_strength = 1  
+
+        if 'normalize_input_connection_strengths' in kwargs:
+            if kwargs['normalize_input_connection_strengths'] == True:
+                self.normalize_input_connection_strengths = kwargs['normalize_input_connection_strengths']
+                if 'total_input_connection_strength' in kwargs:
+                    self.total_input_connection_strength = kwargs['total_input_connection_strength']
+                else:
+                    self.total_input_connection_strength = 1 
+            else:
+                self.normalize_input_connection_strengths = False
+        else:
+            self.normalize_input_connection_strengths = False
+
+                
+        if 'offset_flux' in kwargs: # units of Phi0
+            self.offset_flux = kwargs['offset_flux']
+        else:
+            self.offset_flux = 0
             
         tau_di = self.tau_di * 1e-9
         beta_di = self.circuit_betas[-1]
@@ -214,6 +252,9 @@ class dendrite():
         Ldi = p['Phi0']*beta_di/(2*np.pi*Ic)
         rdi = Ldi/tau_di
         self.alpha = rdi/jj_params['r_j']
+        if hasattr(self,'tau_list'):
+            rdi_list = Ldi/(np.asarray(self.tau_list) * 1e-9)
+            self.alpha_list = rdi_list/jj_params['r_j']
         self.jj_params = jj_params
 
         # prepare dendrite to have connections
@@ -300,7 +341,7 @@ class synapse():
             self.hotspot_duration =  2 * self.tau_rise # two time constants is default
         # print('hotspot_duration = {}'.format(self.hotspot_duration))
             
-        if 'spd_duration' in kwargs: # specified in units of number of tau_fall time constants
+        if 'spd_duration' in kwargs: # how long to observe spd after input spike, specified in units of number of tau_fall time constants
             self.spd_duration = kwargs['spd_duration'] * self.tau_fall # units of ns
         else:
             self.spd_duration = 8 * self.tau_fall # eight time constants is default
@@ -309,6 +350,11 @@ class synapse():
             self.phi_peak = kwargs['phi_peak'] # units of Phi0
         else:
             self.phi_peak = 0.5 # default peak flux is Phi0/2
+            
+        if 'spd_reset_time' in kwargs: # this duration must elapse before the spd can detect another photon
+            self.spd_reset_time = kwargs['spd_reset_time']            
+        else:
+            self.spd_reset_time = self.tau_fall
         # end synaptic receiver spd circuit specification
         
         synapse.synapses[self.name] = self
@@ -411,6 +457,41 @@ class neuron():
         else:
             self.integration_loop_time_constant = 250 # default time constant units of ns
             
+        if 'absolute_refractory_period' in kwargs: # units of ns
+            self.absolute_refractory_period = kwargs['absolute_refractory_period']
+        else:
+            self.absolute_refractory_period = 10
+            
+        # if 'normalize_input_connection_strengths' in kwargs:
+        #     self.normalize_input_connection_strengths = kwargs['normalize_input_connection_strengths']
+        # else:
+        #     self.normalize_input_connection_strengths = False
+            
+        # if self.normalize_input_connection_strengths:
+        #     if 'total_input_connection_strength' in kwargs:
+        #         self.total_input_connection_strength = kwargs['total_input_connection_strength']
+        #     else:
+        #         self.total_input_connection_strength = 1  
+
+
+        if 'normalize_input_connection_strengths' in kwargs:
+            if kwargs['normalize_input_connection_strengths'] == True:
+                self.normalize_input_connection_strengths = kwargs['normalize_input_connection_strengths']
+                if 'total_input_connection_strength' in kwargs:
+                    self.total_input_connection_strength = kwargs['total_input_connection_strength']
+                else:
+                    self.total_input_connection_strength = 1 
+            else:
+                self.normalize_input_connection_strengths = False
+        else:
+            self.normalize_input_connection_strengths = False
+
+                
+        if 'offset_flux' in kwargs: # units of Phi0
+            self.offset_flux = kwargs['offset_flux']
+        else:
+            self.offset_flux = 0                 
+            
         tau_ni = self.tau_ni * 1e-9
         beta_ni = self.circuit_betas[-1]
         Ic = self.Ic * 1e-6
@@ -421,10 +502,11 @@ class neuron():
         
         # create dendrite for neuronal receiving and integration loop
         neuron_dendrite = dendrite(name = '{}__{}'.format(self.name,'nr_ni'), loops_present = self.loops_present, circuit_betas = self.circuit_betas, junction_critical_current = self.junction_critical_current, junction_beta_c = self.junction_beta_c,
-                      bias_current = self.bias_current, integration_loop_time_constant = self.integration_loop_time_constant)
+                      bias_current = self.bias_current, integration_loop_time_constant = self.integration_loop_time_constant, normalize_input_connection_strengths = False, total_input_connection_strength = 1, offset_flux = self.offset_flux)
         neuron_dendrite.is_soma = True    
         
         self.dend__nr_ni = neuron_dendrite
+        self.dend__nr_ni.absolute_refractory_period = self.absolute_refractory_period
         
         # =============================================================================
         #         end receiving and integration dendrite
@@ -616,6 +698,7 @@ class neuron():
         # prepare for spikes        
         self.spike_times = []
         self.spike_indices = []
+        self.dend__nr_ni.spike_times = []
         
         # prepare for output synapses
         self.synaptic_outputs = dict()
@@ -684,6 +767,7 @@ class network():
         return
     
     def run_sim(self, **kwargs):
+        self.dt = kwargs['dt']
         self = run_soen_sim(self, **kwargs)
         return self
     
@@ -692,21 +776,30 @@ class network():
         return
 
     def get_recordings(self):
+        self.t = self.neurons[list(self.neurons.keys())[0]].time_params['time_vec']
         spikes = [ [] for _ in range(2) ]
         S = []
         Phi_r = []
+        spike_signals = []
         count = 0
         for neuron_key in self.neurons:
-            s = self.neurons[neuron_key].dend__nr_ni.s
+            neuron = self.neurons[neuron_key]
+            s = neuron.dend__nr_ni.s
             S.append(s)
-            phi_r = self.neurons[neuron_key].dend__nr_ni.phi_r
+            phi_r = neuron.dend__nr_ni.phi_r
             Phi_r.append(phi_r)
-            spike_t = self.neurons[neuron_key].spike_times
+            spike_t = neuron.spike_times
             spikes[0].append(np.ones(len(spike_t))*count)
-            spikes[1].append((spike_t/self.neurons[neuron_key].time_params['t_tau_conversion']))
+            spikes[1].append((spike_t/neuron.time_params['t_tau_conversion']))
+            spike_signal = []
+            spike_times = spike_t/neuron.time_params['t_tau_conversion']
+            for spike in spike_times:
+                spike_signal.append(s[int(spike/self.dt)])
+                spike_signals.append(spike_signal)
             count+=1
         spikes[0] = np.concatenate(spikes[0])
-        spikes[1] = np.concatenate(spikes[1])/1000
+        spikes[1] = np.concatenate(spikes[1])
         self.spikes = spikes
+        self.spike_signals = spike_signals
         self.phi_r = Phi_r
         self.signal = S

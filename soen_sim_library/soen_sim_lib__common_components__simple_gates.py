@@ -16,17 +16,19 @@ ib__list, phi_r__array, i_di__array, r_fq__array, phi_th_plus__vec, phi_th_minus
 # =============================================================================
 def common_synapse(name):
     
-    syn = synapse(name = name, tau_rise = common_params['syn_tau_rise'], tau_fall = common_params['syn_tau_fall'], hotspot_duration = common_params['syn_hotspot_duration'], spd_duration = common_params['syn_spd_duration'], phi_peak = common_params['syn_spd_phi_peak'])
+    syn = synapse(name = name, tau_rise = common_params['syn_tau_rise'], tau_fall = common_params['syn_tau_fall'], 
+                  hotspot_duration = common_params['syn_hotspot_duration'], spd_duration = common_params['syn_spd_duration'], 
+                  phi_peak = common_params['syn_spd_phi_peak'], spd_reset_time = common_params['syn_spd_reset_time'])
     
     return syn
 
 # =============================================================================
 # common dendrites
 # =============================================================================
-def common_dendrite(name, loops_present, beta_di, tau_di, ib):
+def common_dendrite(name, loops_present, beta_di, tau_di, ib, offset_flux = 0):
     
     dend = dendrite(name = name, loops_present = loops_present, circuit_betas = [2*np.pi*1/4, 2*np.pi*1/4, beta_di], junction_critical_current = common_params['Ic'], junction_beta_c = common_params['beta_c'],
-                          bias_current = ib, integration_loop_time_constant = tau_di)
+                          bias_current = ib, integration_loop_time_constant = tau_di, normalize_input_connection_strengths = False, total_input_connection_strength = 1, offset_flux = offset_flux)
     
     return dend
 
@@ -49,7 +51,7 @@ def monosynaptic_neuron(name,beta_di,tau_di,ib_dendrite,beta_ni,tau_ni,ib_neuron
                       
                       # neuron receiving/integrating dendrite
                       loops_present = 'ri', circuit_betas = [2*np.pi*1/4, 2*np.pi*1/4, beta_ni], junction_critical_current = common_params['Ic'], junction_beta_c = common_params['beta_c'],
-                      bias_current = ib_neuron, integration_loop_time_constant = tau_ni,
+                      bias_current = ib_neuron, integration_loop_time_constant = tau_ni, normalize_input_connection_strengths = False, total_input_connection_strength = 1,
                       
                       # neuron refractory dendrite
                       loops_present__refraction = 'ri', circuit_betas__refraction = [2*np.pi*1/4, 2*np.pi*1/4, beta_refractory], junction_critical_current__refraction = common_params['Ic'], junction_beta_c__refraction = common_params['beta_c'],
@@ -76,13 +78,14 @@ def monosynaptic_neuron(name,beta_di,tau_di,ib_dendrite,beta_ni,tau_ni,ib_neuron
 # =============================================================================
 # common neuron
 # =============================================================================
-def common_neuron(name, loops_present, beta_ni, tau_ni, ib, s_th, beta_ref, tau_ref, ib_ref):
+def common_neuron(name, loops_present, beta_ni, tau_ni, ib, s_th, beta_ref, tau_ref, ib_ref, offset_flux = 0):
         
     neuron_1 = neuron(name = name,
                       
                   # neuron receiving/integrating dendrite
                   loops_present = loops_present, circuit_betas = [2*np.pi*1/4, 2*np.pi*1/4, beta_ni], junction_critical_current = common_params['Ic'], junction_beta_c = common_params['beta_c'],
-                  bias_current = ib, integration_loop_time_constant = tau_ni,
+                  bias_current = ib, integration_loop_time_constant = tau_ni, absolute_refractory_period = common_params['absolute_refractory_period'], 
+                  normalize_input_connection_strengths = False, total_input_connection_strength = 1, offset_flux = offset_flux,
                   
                   # neuron refractory dendrite
                   loops_present__refraction = 'ri', circuit_betas__refraction = [2*np.pi*1/4, 2*np.pi*1/4, beta_ref], junction_critical_current__refraction = 100, junction_beta_c__refraction = 0.3,
