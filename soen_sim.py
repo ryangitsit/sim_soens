@@ -217,16 +217,29 @@ class dendrite():
         else:
             self.tau_di = self.integration_loop_time_constant 
 
+        # if 'normalize_input_connection_strengths' in kwargs:
+        #     self.normalize_input_connection_strengths = kwargs['normalize_input_connection_strengths']
+        # else:
+        #     self.normalize_input_connection_strengths = False
+            
+        # if self.normalize_input_connection_strengths:
+        #     if 'total_input_connection_strength' in kwargs:
+        #         self.total_input_connection_strength = kwargs['total_input_connection_strength']
+        #     else:
+        #         self.total_input_connection_strength = 1  
+
         if 'normalize_input_connection_strengths' in kwargs:
-            self.normalize_input_connection_strengths = kwargs['normalize_input_connection_strengths']
+            if kwargs['normalize_input_connection_strengths'] == True:
+                self.normalize_input_connection_strengths = kwargs['normalize_input_connection_strengths']
+                if 'total_input_connection_strength' in kwargs:
+                    self.total_input_connection_strength = kwargs['total_input_connection_strength']
+                else:
+                    self.total_input_connection_strength = 1 
+            else:
+                self.normalize_input_connection_strengths = False
         else:
             self.normalize_input_connection_strengths = False
-            
-        if self.normalize_input_connection_strengths:
-            if 'total_input_connection_strength' in kwargs:
-                self.total_input_connection_strength = kwargs['total_input_connection_strength']
-            else:
-                self.total_input_connection_strength = 1  
+
                 
         if 'offset_flux' in kwargs: # units of Phi0
             self.offset_flux = kwargs['offset_flux']
@@ -449,16 +462,30 @@ class neuron():
         else:
             self.absolute_refractory_period = 10
             
+        # if 'normalize_input_connection_strengths' in kwargs:
+        #     self.normalize_input_connection_strengths = kwargs['normalize_input_connection_strengths']
+        # else:
+        #     self.normalize_input_connection_strengths = False
+            
+        # if self.normalize_input_connection_strengths:
+        #     if 'total_input_connection_strength' in kwargs:
+        #         self.total_input_connection_strength = kwargs['total_input_connection_strength']
+        #     else:
+        #         self.total_input_connection_strength = 1  
+
+
         if 'normalize_input_connection_strengths' in kwargs:
-            self.normalize_input_connection_strengths = kwargs['normalize_input_connection_strengths']
+            if kwargs['normalize_input_connection_strengths'] == True:
+                self.normalize_input_connection_strengths = kwargs['normalize_input_connection_strengths']
+                if 'total_input_connection_strength' in kwargs:
+                    self.total_input_connection_strength = kwargs['total_input_connection_strength']
+                else:
+                    self.total_input_connection_strength = 1 
+            else:
+                self.normalize_input_connection_strengths = False
         else:
             self.normalize_input_connection_strengths = False
-            
-        if self.normalize_input_connection_strengths:
-            if 'total_input_connection_strength' in kwargs:
-                self.total_input_connection_strength = kwargs['total_input_connection_strength']
-            else:
-                self.total_input_connection_strength = 1  
+
                 
         if 'offset_flux' in kwargs: # units of Phi0
             self.offset_flux = kwargs['offset_flux']
@@ -475,7 +502,7 @@ class neuron():
         
         # create dendrite for neuronal receiving and integration loop
         neuron_dendrite = dendrite(name = '{}__{}'.format(self.name,'nr_ni'), loops_present = self.loops_present, circuit_betas = self.circuit_betas, junction_critical_current = self.junction_critical_current, junction_beta_c = self.junction_beta_c,
-                      bias_current = self.bias_current, integration_loop_time_constant = self.integration_loop_time_constant, normalize_input_connection_strengths = True, total_input_connection_strength = 1, offset_flux = self.offset_flux)
+                      bias_current = self.bias_current, integration_loop_time_constant = self.integration_loop_time_constant, normalize_input_connection_strengths = False, total_input_connection_strength = 1, offset_flux = self.offset_flux)
         neuron_dendrite.is_soma = True    
         
         self.dend__nr_ni = neuron_dendrite
@@ -740,6 +767,7 @@ class network():
         return
     
     def run_sim(self, **kwargs):
+        self.dt = kwargs['dt']
         self = run_soen_sim(self, **kwargs)
         return self
     
@@ -748,21 +776,30 @@ class network():
         return
 
     def get_recordings(self):
+        self.t = self.neurons[list(self.neurons.keys())[0]].time_params['time_vec']
         spikes = [ [] for _ in range(2) ]
         S = []
         Phi_r = []
+        spike_signals = []
         count = 0
         for neuron_key in self.neurons:
-            s = self.neurons[neuron_key].dend__nr_ni.s
+            neuron = self.neurons[neuron_key]
+            s = neuron.dend__nr_ni.s
             S.append(s)
-            phi_r = self.neurons[neuron_key].dend__nr_ni.phi_r
+            phi_r = neuron.dend__nr_ni.phi_r
             Phi_r.append(phi_r)
-            spike_t = self.neurons[neuron_key].spike_times
+            spike_t = neuron.spike_times
             spikes[0].append(np.ones(len(spike_t))*count)
-            spikes[1].append((spike_t/self.neurons[neuron_key].time_params['t_tau_conversion']))
+            spikes[1].append((spike_t/neuron.time_params['t_tau_conversion']))
+            spike_signal = []
+            spike_times = spike_t/neuron.time_params['t_tau_conversion']
+            for spike in spike_times:
+                spike_signal.append(s[int(spike/self.dt)])
+                spike_signals.append(spike_signal)
             count+=1
         spikes[0] = np.concatenate(spikes[0])
-        spikes[1] = np.concatenate(spikes[1])/1000
+        spikes[1] = np.concatenate(spikes[1])
         self.spikes = spikes
+        self.spike_signals = spike_signals
         self.phi_r = Phi_r
         self.signal = S

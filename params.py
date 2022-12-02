@@ -18,6 +18,7 @@ default_neuron_params = {
     # neurons
     "ib_n": ib__list__ri[9], 
     "s_th_factor_n": 0.1,
+    "s_th":0.2,
     # "phi_th_n":,
     "beta_ni": 2*np.pi*1e2,
     "tau_ni": 50,

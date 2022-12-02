@@ -21,15 +21,78 @@ from _plotting__soen import raster_plot
 import numpy as np
 import matplotlib.pyplot as plt
 
-weights_3 = weights = [
-                [[1,1,1]],
-                [[1,1,1],[1,1,1],[1,1,1]],
-            ]
-default_neuron_params['tau_ref'] = 35
-arb = NeuralZoo(type="custom",weights=weights,**default_neuron_params) 
 
-print(arb.__dict__.keys())
-# print(arb.synapses[0][0].spd_duration)
+
+# default_neuron_params["s_th_factor_n"] = 0.3
+default_neuron_params['w_dn'] = 1
+default_neuron_params['tau_di'] = 1000
+default_neuron_params['tau_ref'] = 35
+# default_neuron_params["beta_ni"] = 2*np.pi*1e3
+def_spikes = [[0],[.5]]
+input_ = SuperInput(channels=1, type='defined', defined_spikes=def_spikes, duration=100)
+
+single = NeuralZoo(type='single',**default_neuron_params)
+single.synapse.add_input(input_.signals[0])
+
+net = network(name = 'network_under_test')
+net.add_neuron(single.neuron)
+net.run_sim(dt = .001, tf = 100)
+net.get_recordings()
+print(net.neurons)
+spd = single.dendrite.synaptic_inputs[1].phi_spd
+phi_ref = net.neurons[1].dend__ref.phi_r
+phi_nr = net.neurons[1].dend__nr_ni.phi_r
+dend_s = single.dendrite.s
+signal = net.neurons[1].dend__nr_ni.s
+sig = single.neuron.dend__nr_ni.s
+ref = net.neurons[1].dend__ref.s
+# _time_vec = single.neuron.time_params['time_vec']
+# _tau_vec = single.neuron.time_params['tau_vec']
+# spike_times = single.neuron.spike_times
+# print(spike_times)
+# print(len(signal))
+# spike_signal = []
+# spike_times = spike_times/single.neuron.time_params['t_tau_conversion']
+# print(spike_times)
+# for spike in spike_times:
+#     spike_signal.append(signal[int(spike*10)])
+
+# print(len(spike_signal))
+# print(len(spike_times))
+
+# print(net.neurons[1].__dict__)
+# print(single.neuron.dend__nr_ni.s)
+# print(single.s_th_factor_n)
+
+# print(net.neurons[1].dend__nr_ni.dendritic_connection_strengths)
+# plt.figure(figsize=(12,4))
+# plt.plot(spd[::10], label='phi_spd')
+# plt.plot(dend_s[::10], label='dendtrite signal')
+# plt.plot(phi_ref[::10], label='phi_ref')
+# plt.plot(phi_nr[::10], label='phi_nr')
+plt.plot(net.t,net.signal[0], label='soma signal')
+plt.plot(net.spikes[1],net.spike_signals[0],'xk', label='neuron fires')
+plt.axhline(y = single.s_th, color = 'r', linestyle = '--')
+# plt.plot(ref[::10], label='refractory signal')
+# plt.plot(net.spikes[1]*1000,net.spikes[0],'xk', label='neuron fires')
+# plt.plot(net.spikes[1]*1000,signal[::10][int(net.spikes[1]*1000)],'xk', label='neuron fires')
+plt.legend()
+plt.show()
+# single.neuron.plot_simple = True
+# single.neuron.plot()
+# plt.show()
+
+# weights_3 = weights = [
+#                 [[1,1,1]],
+#                 [[1,1,1],[1,1,1],[1,1,1]],
+#             ]
+
+
+# default_neuron_params['tau_ref'] = 35
+# arb = NeuralZoo(type="custom",weights=weights,**default_neuron_params) 
+
+# # print(arb.__dict__.keys())
+# # print(arb.synapses[0][0].spd_duration)
 # input = SuperInput(channels=9, type='random', total_spikes=1000, duration=100)
 # # raster_plot(input.spike_arrays)
 # for i,g in enumerate(arb.synapses):

@@ -148,7 +148,8 @@ def recursive_dendrite_initialization_and_drive_construction(dendrite_object,tau
         dendrite_object.absolute_refractory_period_converted = dendrite_object.absolute_refractory_period * t_tau_conversion
         
     # normalize inputs
-    if dendrite_object.normalize_input_connection_strengths:        
+    if dendrite_object.normalize_input_connection_strengths == True:
+        print("den stepper true")      
         J_ij__init = 0
         J_ij = dendrite_object.total_input_connection_strength
         # print('J_ij = {}'.format(J_ij))
