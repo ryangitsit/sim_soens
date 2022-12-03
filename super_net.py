@@ -28,22 +28,6 @@ network = Network(input,neuron_population,monitor)
 network.run(simulation_time*ns)
 """
 
-
-
-# p = physical_constants()
-
-# # plt.close('all')
-# fig_case = 'presentation' # 'publication' 'presentation'
-# fig_size = set_plot_params(fig_case, display_fonts = False)
-
-
-# loops_present = 'ri' # 'ri' 'rtti'
-
-# # ib__list, phi_r__array, i_di__array, r_fq__array, params_imported, _ = dend_load_rate_array('default_{}'.format(loops_present))
-# # ib__list__ri, phi_r__array__ri, i_di__array__ri, r_fq__array__ri, phi_th_plus__vec__ri, phi_th_minus__vec__ri, s_max_plus__vec__ri, s_max_minus__vec__ri, s_max_plus__array__ri, s_max_minus__array__ri = dend_load_arrays_thresholds_saturations('default_ri')
-
-
-
 #%%
 
 class SuperNet:

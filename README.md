@@ -2,9 +2,10 @@
 ![plot](./img/wafer_tilted.png)
 Superconducting Optoelectronic Networks (SOENs) are an in-development neuromorphic hardware that offer *lightspeed communication* and *brain-level scalability*.\
 This repo is for the coders, neuroscientists, and machine-learners that want to play with the computational properties of SOENs through simulations, based on the phenomological model linked here:
- - link
+ - https://arxiv.org/abs/2210.09976
+
 For the interested hardware afficianados and device physicists, explanatory materical can be found:
- - link
+ - https://aip.scitation.org/doi/full/10.1063/1.5096403
 
 Enjoy!
 
@@ -43,8 +44,9 @@ Enjoy!
 
 ## Benchmarks
  - *Nine pixel classifier with a single neuron
- - **
- - 
+ - **Image classifcation
+ - **Speech recognition
+ - **Gesture recognition
 
 \
 \

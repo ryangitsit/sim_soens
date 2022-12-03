@@ -50,10 +50,6 @@ class NeuralZoo():
                                     
         self.dendrite.add_input(self.synapse, connection_strength = self.w_sd)
 
-        # self.neuron = common_neuron(1, 'ri', self.beta_ni, self.tau_ni, 
-        #                               self.ib, self.s_th_factor_n*self.s_max_n, 
-        #                               self.beta_ref, self.tau_ref, self.ib_ref)
-
         self.neuron = common_neuron(1, 'ri', self.beta_ni, self.tau_ni, 
                                       self.ib, self.s_th, 
                                       self.beta_ref, self.tau_ref, self.ib_ref)
@@ -117,7 +113,7 @@ class NeuralZoo():
         custom_neuron = common_neuron(1,'ri',self.beta_ni, self.tau_ni,
                                       self.ib_n, self.s_th, self.beta_ref, 
                                       self.tau_ref, self.ib_ref)
-        custom_neuron.name = 'custom_neuron'
+        # custom_neuron.name = 'custom_neuron'
         custom_neuron.normalize_input_connection_strengths=1
         self.neuron = custom_neuron
 
@@ -130,56 +126,61 @@ class NeuralZoo():
         elif hasattr(self, 'weights'):
             # print("weights")
             arbor = self.weights
-
-        # initialize a list of lists for holding dendrits in each arbor layer
+        else:
+            arbor = []
+            # dendrites = [[[]]]
         dendrites = [ [] for _ in range(len(arbor)) ]
-
-        # iterate over the defined structure
-        # create dendritic arbor with defined parameters (may be dend specific)
-        count=0
-        den_count = 0
-        for i,layer in enumerate(arbor):
-            c=0
-            for j,dens in enumerate(layer):
-                sub = []
-                for k,d in enumerate(dens):
-                    if hasattr(self, 'betas'):
-                        self.beta_di=(np.pi*2)*10**self.betas[i][j][k]
-                    if hasattr(self, 'biases'):
-                        if hasattr(self, 'types'):
-                            if self.types[i][j][k] == 'ri':
-                                self.ib= self.ib_list_ri[self.biases[i][j][k]]
+        if len(arbor)>0:
+            # initialize a list of lists for holding dendrits in each arbor layer
+            print(dendrites)
+            # iterate over the defined structure
+            # create dendritic arbor with defined parameters (may be dend specific)
+            count=0
+            den_count = 0
+            for i,layer in enumerate(arbor):
+                c=0
+                for j,dens in enumerate(layer):
+                    sub = []
+                    for k,d in enumerate(dens):
+                        if hasattr(self, 'betas'):
+                            self.beta_di=(np.pi*2)*10**self.betas[i][j][k]
+                        if hasattr(self, 'biases'):
+                            if hasattr(self, 'types'):
+                                if self.types[i][j][k] == 'ri':
+                                    self.ib= self.ib_list_ri[self.biases[i][j][k]]
+                                else:
+                                    self.ib= self.ib_list_rtti[self.biases[i][j][k]]
                             else:
-                                self.ib= self.ib_list_rtti[self.biases[i][j][k]]
+                                self.ib= self.ib_list_ri[self.biases[i][j][k]]
+                        if hasattr(self, 'types'):
+                            type = self.types[i][j][k]
+                        if hasattr(self, 'taus'):
+                            self.tau_di = self.taus[i][j][k]
                         else:
-                            self.ib= self.ib_list_ri[self.biases[i][j][k]]
-                    if hasattr(self, 'types'):
-                        type = self.types[i][j][k]
-                    if hasattr(self, 'taus'):
-                        self.tau_di = self.taus[i][j][k]
-                    else:
-                        type = 'ri'
-                    sub.append(common_dendrite(f"lay{i}_branch{j}_den{k}", type, 
-                                        self.beta_di,self.tau_di, self.ib))
-                    den_count+=1
-                    c+=1
-                dendrites[i].append(sub)
-
-        # iterate over dendrites and connect them as defined by structure
-        for i,l in enumerate(dendrites):
-            for j, subgroup in enumerate(l):
-                for k,d in enumerate(subgroup):
-                    if i==0:
-                        # print(i,j,k, " --> soma")
-                        # custom_neuron.add_input(d, 
-                        #     connection_strength=self.weights[i][j][k])
-                        custom_neuron.add_input(d, 
-                            connection_strength=self.w_dn)
-                    else:
-                        # print(i,j,k, " --> ", i-1,0,j)
-                        np.concatenate(dendrites[i-1])[j].add_input(d, 
-                            connection_strength=self.weights[i][j][k])
+                            type = 'ri'
+                        sub.append(common_dendrite(f"lay{i}_branch{j}_den{k}", type, 
+                                            self.beta_di,self.tau_di, self.ib))
+                        den_count+=1
+                        c+=1
+                    dendrites[i].append(sub)
         
+            # iterate over dendrites and connect them as defined by structure
+            for i,l in enumerate(dendrites):
+                for j, subgroup in enumerate(l):
+                    for k,d in enumerate(subgroup):
+                        if i==0:
+                            # print(i,j,k, " --> soma")
+                            # custom_neuron.add_input(d, 
+                            #     connection_strength=self.weights[i][j][k])
+                            custom_neuron.add_input(d, 
+                                connection_strength=self.w_dn)
+                        else:
+                            # print(i,j,k, " --> ", i-1,0,j)
+                            np.concatenate(dendrites[i-1])[j].add_input(d, 
+                                connection_strength=self.weights[i][j][k])
+
+        dendrites.insert(0,[[custom_neuron.dend__nr_ni]])
+        print(dendrites)
         # if synapses also defined, connect as a function of grouping
         if hasattr(self, 'syns'):
             self.synapses = [[] for _ in range(len(self.syns))]
@@ -187,13 +188,34 @@ class NeuralZoo():
                 for j,s in enumerate(group):
                     self.synapses[i].append(common_synapse(s))
             count=0
-            print(len(dendrites[len(dendrites)-1][0]))
+            # print(len(dendrites[len(dendrites)-1][0]))
             for j, subgroup in enumerate(dendrites[len(dendrites)-1]):
                 for k,d in enumerate(subgroup):
                     for s in self.synapses[count]:
                         dendrites[len(dendrites)-1][j][k].add_input(s, 
                             connection_strength = self.syn_w[j][k])
                     count+=1
+
+        elif hasattr(self, 'synaptic_structure'):
+            self.synapses = [[] for _ in range(len(self.synaptic_structure))]
+            for i,layer in enumerate(self.synaptic_structure):
+                self.synapses[i] = [[] for _ in range(len(self.synaptic_structure[i]))]
+                for j,group in enumerate(layer):
+                    for k,s in enumerate(group):
+                        self.synapses[i][j].append(common_synapse(s))
+            print(self.synapses)
+            count=0
+            for i,layer in enumerate(self.synaptic_structure):
+                for j, subgroup in enumerate(dendrites[len(dendrites)-1]):
+                    for k,d in enumerate(subgroup):
+                        s=self.synapses[i][j][k]
+                        dendrites[i][j][k].add_input(s, 
+                            connection_strength = self.synaptic_structure[i][j][k])
+                        count+=1
+            # else:
+            #     for i in self.synapses[0][0]:
+            #         self.neuron.dend__nr_ni.add_input(self.synapses[0][0][i],
+            #         connection_strength=self.synaptic_structure[0][0][i])
         else:
             self.synapses = []
             count=0
@@ -203,7 +225,8 @@ class NeuralZoo():
                     self.synapses[count][0].spd_duration=2
                     d.add_input(self.synapses[count][0],connection_strength=self.w_sd)
                     count+=1
-        self.dendrites = dendrites
+        if dendrites:
+            self.dendrites = dendrites
 
                     
     def plot_structure(self):

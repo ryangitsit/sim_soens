@@ -32,7 +32,7 @@ default_neuron_params = {
     # refraction loop
     "ib_ref": ib__list__ri[8], 
     "beta_ref": 2*np.pi*1e4,
-    "tau_ref": 500,
+    "tau_ref": 35,
 
     'ib_list_ri':ib__list__ri[:]
 }
