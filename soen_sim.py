@@ -3,12 +3,12 @@ import pickle
 import sys
 from numpy.random import default_rng
 
-from _util import physical_constants
+from _util import physical_constants, index_finder
 from _util__soen import get_jj_params, dend_load_arrays_thresholds_saturations
 p = physical_constants()
 
 from _functions__soen import run_soen_sim
-from _plotting__soen import plot_dendrite, plot_synapse, plot_neuron, plot_network
+from _plotting__soen import plot_dendrite, plot_synapse, plot_neuron, plot_neuron_simple, plot_network
 
 class input_signal():
     
@@ -215,36 +215,33 @@ class dendrite():
             self.s_list.append(1e6) # add one more entry with very large s
             self.tau_di = self.tau_list[0] # this is just here to give it an initial value. in time stepper it's broken down by s
         else:
-            self.tau_di = self.integration_loop_time_constant 
-
-        # if 'normalize_input_connection_strengths' in kwargs:
-        #     self.normalize_input_connection_strengths = kwargs['normalize_input_connection_strengths']
-        # else:
-        #     self.normalize_input_connection_strengths = False
-            
-        # if self.normalize_input_connection_strengths:
-        #     if 'total_input_connection_strength' in kwargs:
-        #         self.total_input_connection_strength = kwargs['total_input_connection_strength']
-        #     else:
-        #         self.total_input_connection_strength = 1  
+            self.tau_di = self.integration_loop_time_constant  
 
         if 'normalize_input_connection_strengths' in kwargs:
             if kwargs['normalize_input_connection_strengths'] == True:
                 self.normalize_input_connection_strengths = kwargs['normalize_input_connection_strengths']
-                if 'total_input_connection_strength' in kwargs:
-                    self.total_input_connection_strength = kwargs['total_input_connection_strength']
+                if 'total_excitatory_input_connection_strength' in kwargs:
+                    self.total_excitatory_input_connection_strength = kwargs['total_excitatory_input_connection_strength']
                 else:
-                    self.total_input_connection_strength = 1 
+                    self.total_excitatory_input_connection_strength = 1                     
+                if 'total_inhibitory_input_connection_strength' in kwargs:
+                    self.total_inhibitory_input_connection_strength = kwargs['total_inhibitory_input_connection_strength']
+                else:
+                    self.total_inhibitory_input_connection_strength = -0.5
             else:
                 self.normalize_input_connection_strengths = False
         else:
             self.normalize_input_connection_strengths = False
-
                 
         if 'offset_flux' in kwargs: # units of Phi0
             self.offset_flux = kwargs['offset_flux']
         else:
             self.offset_flux = 0
+            
+        if 'self_feedback_coupling_strength' in kwargs: # J_ii, units of phi/s (normalized flux divided by normalized current in DI loop)
+            self.self_feedback_coupling_strength = kwargs['self_feedback_coupling_strength']
+        else:
+            self.self_feedback_coupling_strength = 0
             
         tau_di = self.tau_di * 1e-9
         beta_di = self.circuit_betas[-1]
@@ -461,36 +458,37 @@ class neuron():
             self.absolute_refractory_period = kwargs['absolute_refractory_period']
         else:
             self.absolute_refractory_period = 10
-            
-        # if 'normalize_input_connection_strengths' in kwargs:
-        #     self.normalize_input_connection_strengths = kwargs['normalize_input_connection_strengths']
-        # else:
-        #     self.normalize_input_connection_strengths = False
-            
-        # if self.normalize_input_connection_strengths:
-        #     if 'total_input_connection_strength' in kwargs:
-        #         self.total_input_connection_strength = kwargs['total_input_connection_strength']
-        #     else:
-        #         self.total_input_connection_strength = 1  
-
-
+                      
         if 'normalize_input_connection_strengths' in kwargs:
-            if kwargs['normalize_input_connection_strengths'] == True:
-                self.normalize_input_connection_strengths = kwargs['normalize_input_connection_strengths']
-                if 'total_input_connection_strength' in kwargs:
-                    self.total_input_connection_strength = kwargs['total_input_connection_strength']
-                else:
-                    self.total_input_connection_strength = 1 
-            else:
-                self.normalize_input_connection_strengths = False
+            self.normalize_input_connection_strengths = kwargs['normalize_input_connection_strengths']
         else:
             self.normalize_input_connection_strengths = False
-
+            
+        if 'total_excitatory_input_connection_strength' in kwargs:
+            self.total_excitatory_input_connection_strength = kwargs['total_excitatory_input_connection_strength']
+        else:
+            self.total_excitatory_input_connection_strength = 1 
+            
+        if 'total_inhibitory_input_connection_strength' in kwargs:
+            self.total_inhibitory_input_connection_strength = kwargs['total_inhibitory_input_connection_strength']
+        else:
+            self.total_inhibitory_input_connection_strength = -0.5
                 
         if 'offset_flux' in kwargs: # units of Phi0
             self.offset_flux = kwargs['offset_flux']
         else:
             self.offset_flux = 0                 
+            
+        if 'self_feedback_coupling_strength' in kwargs: # J_ii, units of phi/s (normalized flux divided by normalized current in DI loop)
+            self.self_feedback_coupling_strength = kwargs['self_feedback_coupling_strength']
+        else:
+            self.self_feedback_coupling_strength = 0
+                                
+        if 'integrated_current_threshold' in kwargs:
+            self.integrated_current_threshold = kwargs['integrated_current_threshold']
+        else:
+            self.integrated_current_threshold = 0.5 # units of Ic
+        self.s_th = self.integrated_current_threshold
             
         tau_ni = self.tau_ni * 1e-9
         beta_ni = self.circuit_betas[-1]
@@ -501,8 +499,15 @@ class neuron():
         self.jj_params = jj_params
         
         # create dendrite for neuronal receiving and integration loop
-        neuron_dendrite = dendrite(name = '{}__{}'.format(self.name,'nr_ni'), loops_present = self.loops_present, circuit_betas = self.circuit_betas, junction_critical_current = self.junction_critical_current, junction_beta_c = self.junction_beta_c,
-                      bias_current = self.bias_current, integration_loop_time_constant = self.integration_loop_time_constant, normalize_input_connection_strengths = False, total_input_connection_strength = 1, offset_flux = self.offset_flux)
+        neuron_dendrite = dendrite(name = '{}__{}'.format(self.name,'nr_ni'), loops_present = self.loops_present, 
+                      circuit_betas = self.circuit_betas, junction_critical_current = self.junction_critical_current, junction_beta_c = self.junction_beta_c,
+                      bias_current = self.bias_current, 
+                      integration_loop_time_constant = self.integration_loop_time_constant, 
+                      normalize_input_connection_strengths = self.normalize_input_connection_strengths, 
+                      total_excitatory_input_connection_strength = self.total_excitatory_input_connection_strength, 
+                      total_inhibitory_input_connection_strength = self.total_inhibitory_input_connection_strength, 
+                      offset_flux = self.offset_flux,
+                      self_feedback_coupling_strength = self.self_feedback_coupling_strength)
         neuron_dendrite.is_soma = True    
         
         self.dend__nr_ni = neuron_dendrite
@@ -584,7 +589,7 @@ class neuron():
 
         self.dend__ref = neuron_refractory_dendrite
         
-        if 'refractory_dendrite_connection_strength' in kwargs:
+        if 'refractory_dendrite_connection_strength' in kwargs: # when in doubt, use 'auto'
             if type(kwargs['refractory_dendrite_connection_strength']).__name__ == 'float' or type(kwargs['refractory_dendrite_connection_strength']).__name__ == 'int':
                 self.refractory_dendrite_connection_strength = kwargs['refractory_dendrite_connection_strength']
             elif kwargs['refractory_dendrite_connection_strength'] == 'auto':
@@ -594,27 +599,46 @@ class neuron():
                     ib_list = ib__list__ri
                     phi_th_minus_vec = phi_th_minus__vec__ri
                     phi_th_plus_vec = phi_th_plus__vec__ri
+                    s_max_plus__array = s_max_plus__array__ri
                 elif self.loops_present == 'rtti':
                     ib_list = ib__list__rtti
                     phi_th_minus_vec = phi_th_minus__vec__rtti
                     phi_th_plus_vec = phi_th_plus__vec__rtti
+                    s_max_plus__array = s_max_plus__array__rtti
                 if self.loops_present__refraction == 'ri':
                     ib_list_r = ib__list__ri
-                    s_max_plus_vec = s_max_plus__vec__ri
+                    s_max_plus_vec__refractory = s_max_plus__vec__ri
                 elif self.loops_present__refraction == 'rtti':
                     ib_list_r = ib__list__rtti
-                    s_max_plus_vec = s_max_plus__vec__rtti
-                _ind_ib = ( np.abs( ib_list[:] - self.dend__nr_ni.ib ) ).argmin()
-                phi_th_plus = phi_th_plus_vec[_ind_ib]
-                phi_th_minus = phi_th_minus_vec[_ind_ib]
-                delta = phi_th_plus - phi_th_minus
-                _ind_ib_r = ( np.abs( ib_list_r[:] - self.dend__ref.ib ) ).argmin()
-                s_max = s_max_plus_vec[_ind_ib_r]
-                self.refractory_dendrite_connection_strength = -delta/s_max # ( phi_th_minus + delta/100 ) / s_max
+                    s_max_plus_vec__refractory = s_max_plus__vec__rtti
+                    
+                _ind_ib_soma = index_finder(ib_list[:],self.dend__nr_ni.ib) # ( np.abs( ib_list[:] - self.dend__nr_ni.ib ) ).argmin()
+                
+                # for depricated auto calculation
+                # phi_th_plus = phi_th_plus_vec[_ind_ib_soma]
+                # phi_th_minus = phi_th_minus_vec[_ind_ib_soma]
+                # delta = phi_th_plus - phi_th_minus
+                
+                phi_th_minus = phi_th_minus_vec[_ind_ib_soma]
+                _phi_vec_prelim = np.asarray( phi_r__array__ri[_ind_ib_soma] )
+                _phi_vec_prelim = _phi_vec_prelim[ np.where( _phi_vec_prelim >= 0 ) ]
+                _ind_phi_max = index_finder(_phi_vec_prelim,0.5)
+                
+                s_max_plus__vec = s_max_plus__array[_ind_ib_soma][:_ind_phi_max]
+                
+                _ind_s_th = index_finder(s_max_plus__vec,self.s_th)
+                phi_a_s_th = _phi_vec_prelim[_ind_s_th]
+                delta = phi_a_s_th - phi_th_minus
+                                
+                _ind_ib_refractory = index_finder(ib_list_r[:],self.dend__ref.ib) # ( np.abs( ib_list_r[:] - self.dend__ref.ib ) ).argmin()
+                _s_max_refractory = s_max_plus_vec__refractory[_ind_ib_refractory]
+                                
+                self.refractory_dendrite_connection_strength = -delta/_s_max_refractory # ( phi_th_minus + delta/100 ) / s_max
         else:
-            self.refractory_dendrite_connection_strength = -0.7 # default; when in doubt, use 'auto'
+            self.refractory_dendrite_connection_strength = -0.7 # default, totally arbitrary; when in doubt, use 'auto'
             
         self.dend__nr_ni.add_input(self.dend__ref, connection_strength = self.refractory_dendrite_connection_strength)
+ 
         
         # =============================================================================
         #         end refractory dendrite
@@ -665,11 +689,6 @@ class neuron():
         # =============================================================================
         #         transmitter
         # =============================================================================
-        
-        if 'integrated_current_threshold' in kwargs:
-            self.integrated_current_threshold = kwargs['integrated_current_threshold']
-        else:
-            self.integrated_current_threshold = 0.5 # units of Ic
             
         if 'source_type' in kwargs: 
             if kwargs['source_type'] == 'ec' or kwargs['source_type'] == 'qd' or kwargs['source_type'] == 'delay_delta':
@@ -726,7 +745,10 @@ class neuron():
         return self
     
     def plot(self):
-        plot_neuron(self)
+        if self.plot_simple:
+            plot_neuron_simple(self)
+        else:
+            plot_neuron(self)
         return
 
     def __del__(self):
@@ -778,7 +800,7 @@ class network():
     def get_recordings(self):
         self.t = self.neurons[list(self.neurons.keys())[0]].time_params['time_vec']
         spikes = [ [] for _ in range(2) ]
-        print(spikes)
+        # print(spikes)
         S = []
         Phi_r = []
         spike_signals = []

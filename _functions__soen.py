@@ -62,9 +62,9 @@ def run_soen_sim(obj, **kwargs):
         obj.time_params.update({'tau_vec': tau_vec, 'd_tau': d_tau})
         
         # initialize dendrites (phi_r vector) and make drive signals
-        print('\n')
+        # print('\n')
         recursive_dendrite_initialization_and_drive_construction(obj.dend__nr_ni,tau_vec,t_tau_conversion,d_tau) # go through all other dendrites in the neuron's arbor
-        print('\n')
+        # print('\n')
         
         # load rate arrays to all dendrites
         recursive_rate_array_attachment(obj.dend__nr_ni)
@@ -148,26 +148,54 @@ def recursive_dendrite_initialization_and_drive_construction(dendrite_object,tau
         dendrite_object.absolute_refractory_period_converted = dendrite_object.absolute_refractory_period * t_tau_conversion
         
     # normalize inputs
-    if dendrite_object.normalize_input_connection_strengths == True:
-        print("den stepper true")      
-        J_ij__init = 0
-        J_ij = dendrite_object.total_input_connection_strength
+    if dendrite_object.normalize_input_connection_strengths:        
+        J_ij_e__init = 0 # excitatory
+        J_ij_i__init = 0 # inhibitory
+        J_ij_e = dendrite_object.total_excitatory_input_connection_strength
+        J_ij_i = dendrite_object.total_inhibitory_input_connection_strength
         # print('J_ij = {}'.format(J_ij))
         for external_input in dendrite_object.external_inputs:
-            J_ij__init += dendrite_object.external_connection_strengths[external_input]
+            if dendrite_object.external_connection_strengths[external_input] >= 0:
+                J_ij_e__init += dendrite_object.external_connection_strengths[external_input]
+            elif dendrite_object.external_connection_strengths[external_input] < 0:
+                J_ij_i__init += dendrite_object.external_connection_strengths[external_input]
         for synapse in dendrite_object.synaptic_inputs:
-            J_ij__init += dendrite_object.synaptic_connection_strengths[synapse]
+            if dendrite_object.synaptic_connection_strengths[synapse] >= 0:
+                J_ij_e__init += dendrite_object.synaptic_connection_strengths[synapse]
+            elif dendrite_object.synaptic_connection_strengths[synapse] < 0:
+                J_ij_i__init += dendrite_object.synaptic_connection_strengths[synapse]
         for dendrite in dendrite_object.dendritic_inputs:
-            J_ij__init += dendrite_object.dendritic_connection_strengths[dendrite]
-        factor = J_ij/J_ij__init
+            if dendrite_object.dendritic_connection_strengths[dendrite] >= 0:
+                J_ij_e__init += dendrite_object.dendritic_connection_strengths[dendrite]
+            elif dendrite_object.dendritic_connection_strengths[dendrite] < 0:
+                if dendrite_object.dendritic_inputs[dendrite].name[-15:] != 'dend_refraction': # make sure this isn't the refractory dendrite. that one doesn't get included in this normalization.
+                    J_ij_i__init += dendrite_object.dendritic_connection_strengths[dendrite]
+        if J_ij_e__init > 0:
+            factor_e = J_ij_e/J_ij_e__init
+        else:
+            factor_e = 0
+        if J_ij_i__init > 0:
+            factor_i = J_ij_i/J_ij_i__init
+        else:
+            factor_i = 0
         # print('J_ij__init = {}'.format(J_ij__init))
         # print('factor = {}'.format(factor))
         for external_input in dendrite_object.external_inputs:
-            dendrite_object.external_connection_strengths[external_input] = factor * dendrite_object.external_connection_strengths[external_input]
+            if dendrite_object.external_connection_strengths[external_input] >= 0:
+                dendrite_object.external_connection_strengths[external_input] = factor_e * dendrite_object.external_connection_strengths[external_input]
+            elif dendrite_object.external_connection_strengths[external_input] < 0:
+                dendrite_object.external_connection_strengths[external_input] = factor_i * dendrite_object.external_connection_strengths[external_input]
         for synapse in dendrite_object.synaptic_inputs:
-            dendrite_object.synaptic_connection_strengths[synapse] = factor * dendrite_object.synaptic_connection_strengths[synapse]
+            if dendrite_object.synaptic_connection_strengths[synapse] >= 0:
+                dendrite_object.synaptic_connection_strengths[synapse] = factor_e * dendrite_object.synaptic_connection_strengths[synapse]
+            elif dendrite_object.synaptic_connection_strengths[synapse] < 0:
+                dendrite_object.synaptic_connection_strengths[synapse] = factor_i * dendrite_object.synaptic_connection_strengths[synapse]
         for dendrite in dendrite_object.dendritic_inputs:
-            dendrite_object.dendritic_connection_strengths[dendrite] = factor * dendrite_object.dendritic_connection_strengths[dendrite]
+            if dendrite_object.dendritic_connection_strengths[dendrite] >= 0:
+                dendrite_object.dendritic_connection_strengths[dendrite] = factor_e * dendrite_object.dendritic_connection_strengths[dendrite]
+            elif dendrite_object.dendritic_connection_strengths[dendrite] < 0:
+                if dendrite_object.dendritic_inputs[dendrite].name[-15:] != 'dend_refraction': # make sure this isn't the refractory dendrite. that one doesn't get included in this normalization.
+                    dendrite_object.dendritic_connection_strengths[dendrite] = factor_i * dendrite_object.dendritic_connection_strengths[dendrite]
         
     # check that timestep is sufficiently small:
     if dendrite_object.loops_present == 'ri':
@@ -297,12 +325,19 @@ def transmitter_initialization(neuron_object,t_tau_conversion):
     
     if neuron_object.source_type == 'qd' or neuron_object.source_type == 'ec':
     
+        # what Ryan had
         for _str in sys.path:
             dir_index = _str.find("sim_soens")
             if _str[dir_index:dir_index+9] == 'sim_soens':
                 _path = _str.replace('\\','/')[:dir_index+9] +'/'
                 break
             break
+                
+        # what Jeff had
+        for _str in sys.path:
+            if _str[-9:] == 'sim_soens':
+                _path = _str.replace('\\','/')
+                break
         
         if neuron_object.source_type == 'qd':
             load_string = 'source_qd_Nph_1.0e+04'
@@ -356,6 +391,9 @@ def recursive_dendrite_updater(dendrite_object,time_index,present_time,d_tau):
     # applied flux from dendrites
     for dendrite_key in dendrite_object.dendritic_inputs:
         dendrite_object.phi_r[time_index+1] += dendrite_object.dendritic_inputs[dendrite_key].s[time_index] * dendrite_object.dendritic_connection_strengths[dendrite_key]        
+        
+    # self-feedback
+    dendrite_object.phi_r[time_index+1] += dendrite_object.self_feedback_coupling_strength * dendrite_object.s[time_index]
     
     # applied flux from synapses
     for synapse_key in dendrite_object.synaptic_inputs:

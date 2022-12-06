@@ -25,10 +25,15 @@ def common_synapse(name):
 # =============================================================================
 # common dendrites
 # =============================================================================
-def common_dendrite(name, loops_present, beta_di, tau_di, ib, offset_flux = 0):
+def common_dendrite(name, loops_present, beta_di, tau_di, ib, offset_flux = 0, self_feedback_coupling_strength = 0, 
+                    normalize_input_connection_strengths = True, total_excitatory_input_connection_strength = 1, total_inhibitory_input_connection_strength = -0.5):
     
     dend = dendrite(name = name, loops_present = loops_present, circuit_betas = [2*np.pi*1/4, 2*np.pi*1/4, beta_di], junction_critical_current = common_params['Ic'], junction_beta_c = common_params['beta_c'],
-                          bias_current = ib, integration_loop_time_constant = tau_di, normalize_input_connection_strengths = False, total_input_connection_strength = 1, offset_flux = offset_flux)
+                          bias_current = ib, integration_loop_time_constant = tau_di, 
+                          normalize_input_connection_strengths = normalize_input_connection_strengths, 
+                          total_excitatory_input_connection_strength = total_excitatory_input_connection_strength, 
+                          total_inhibitory_input_connection_strength = total_inhibitory_input_connection_strength,
+                          offset_flux = offset_flux, self_feedback_coupling_strength = self_feedback_coupling_strength)
     
     return dend
 
@@ -50,8 +55,8 @@ def monosynaptic_neuron(name,beta_di,tau_di,ib_dendrite,beta_ni,tau_ni,ib_neuron
     neu = neuron(name = 'ne', 
                       
                       # neuron receiving/integrating dendrite
-                      loops_present = 'ri', circuit_betas = [2*np.pi*1/4, 2*np.pi*1/4, beta_ni], junction_critical_current = common_params['Ic'], junction_beta_c = common_params['beta_c'],
-                      bias_current = ib_neuron, integration_loop_time_constant = tau_ni, normalize_input_connection_strengths = False, total_input_connection_strength = 1,
+loops_present = 'ri', circuit_betas = [2*np.pi*1/4, 2*np.pi*1/4, beta_ni], junction_critical_current = common_params['Ic'], junction_beta_c = common_params['beta_c'],
+bias_current = ib_neuron, integration_loop_time_constant = tau_ni, normalize_input_connection_strengths = True, total_excitatory_input_connection_strength = 1, total_inhibitory_input_connection_strength = -0.5,
                       
                       # neuron refractory dendrite
                       loops_present__refraction = 'ri', circuit_betas__refraction = [2*np.pi*1/4, 2*np.pi*1/4, beta_refractory], junction_critical_current__refraction = common_params['Ic'], junction_beta_c__refraction = common_params['beta_c'],
@@ -78,18 +83,22 @@ def monosynaptic_neuron(name,beta_di,tau_di,ib_dendrite,beta_ni,tau_ni,ib_neuron
 # =============================================================================
 # common neuron
 # =============================================================================
-def common_neuron(name, loops_present, beta_ni, tau_ni, ib, s_th, beta_ref, tau_ref, ib_ref, offset_flux = 0):
+def common_neuron(name, loops_present, beta_ni, tau_ni, ib, s_th, beta_ref, tau_ref, ib_ref, offset_flux = 0, self_feedback_coupling_strength = 0, refractory_dendrite_connection_strength = 'auto',
+                  normalize_input_connection_strengths = True, total_excitatory_input_connection_strength = 1, total_inhibitory_input_connection_strength = -0.5):
         
     neuron_1 = neuron(name = name,
                       
                   # neuron receiving/integrating dendrite
                   loops_present = loops_present, circuit_betas = [2*np.pi*1/4, 2*np.pi*1/4, beta_ni], junction_critical_current = common_params['Ic'], junction_beta_c = common_params['beta_c'],
                   bias_current = ib, integration_loop_time_constant = tau_ni, absolute_refractory_period = common_params['absolute_refractory_period'], 
-                  normalize_input_connection_strengths = False, total_input_connection_strength = 1, offset_flux = offset_flux,
+                  normalize_input_connection_strengths = normalize_input_connection_strengths, 
+                  total_excitatory_input_connection_strength = total_excitatory_input_connection_strength, 
+                  total_inhibitory_input_connection_strength = total_inhibitory_input_connection_strength, 
+                  offset_flux = offset_flux, self_feedback_coupling_strength = 0,
                   
                   # neuron refractory dendrite
                   loops_present__refraction = 'ri', circuit_betas__refraction = [2*np.pi*1/4, 2*np.pi*1/4, beta_ref], junction_critical_current__refraction = 100, junction_beta_c__refraction = 0.3,
-                  bias_current__refraction = ib_ref, integration_loop_time_constant__refraction = tau_ref, refractory_dendrite_connection_strength = 'auto',
+                  bias_current__refraction = ib_ref, integration_loop_time_constant__refraction = tau_ref, refractory_dendrite_connection_strength = refractory_dendrite_connection_strength,
                   
                   # synapse to refractory dendrite
                   tau_rise__refraction = common_params['syn_tau_rise'], tau_fall__refraction = common_params['syn_tau_fall'], hotspot_duration__refraction = common_params['syn_hotspot_duration'], spd_duration__refraction = common_params['syn_spd_duration'], phi_peak__refraction = common_params['syn_spd_phi_peak'],

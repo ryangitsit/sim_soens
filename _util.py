@@ -8,170 +8,170 @@ from pylab import *
 
 #%%
 
-def set_plot_params(case, display_fonts = False):
+# def set_plot_params(case, display_fonts = False):
     
-    import matplotlib.font_manager as fm
-    # Collect all the font names available to matplotlib
-    font_names = [f.name for f in fm.fontManager.ttflist]
-    if display_fonts == True:
-        print(font_names)
+#     import matplotlib.font_manager as fm
+#     # Collect all the font names available to matplotlib
+#     font_names = [f.name for f in fm.fontManager.ttflist]
+#     if display_fonts == True:
+#         print(font_names)
         
-    p = physical_constants()
-    gr = p['golden_ratio']
+#     p = physical_constants()
+#     gr = p['golden_ratio']
     
-    colors = color_dictionary()
+#     colors = color_dictionary()
     
-    plt.rcParams['figure.max_open_warning'] = 100
+#     plt.rcParams['figure.max_open_warning'] = 100
     
-    # plt.rcParams['axes.prop_cycle'] = cycler('color', [colors['blue1'],colors['blue2'],colors['blue3'],colors['blue4'],colors['blue5'],
-    #                                                     colors['blue4'],colors['blue3'],colors['blue2'],colors['blue1'],
-    #                                                     colors['red1'],colors['red2'],colors['red3'],colors['red4'],colors['red5'],
-    #                                                     colors['red4'],colors['red3'],colors['red2'],colors['red1'],
-    #                                                     colors['green1'],colors['green2'],colors['green3'],colors['green4'],colors['green5'],
-    #                                                     colors['green4'],colors['green3'],colors['green2'],colors['green1'],
-    #                                                     colors['yellow1'],colors['yellow2'],colors['yellow3'],colors['yellow4'],colors['yellow5'],
-    #                                                     colors['yellow4'],colors['yellow3'],colors['yellow2'],colors['yellow1']])
+#     # plt.rcParams['axes.prop_cycle'] = cycler('color', [colors['blue1'],colors['blue2'],colors['blue3'],colors['blue4'],colors['blue5'],
+#     #                                                     colors['blue4'],colors['blue3'],colors['blue2'],colors['blue1'],
+#     #                                                     colors['red1'],colors['red2'],colors['red3'],colors['red4'],colors['red5'],
+#     #                                                     colors['red4'],colors['red3'],colors['red2'],colors['red1'],
+#     #                                                     colors['green1'],colors['green2'],colors['green3'],colors['green4'],colors['green5'],
+#     #                                                     colors['green4'],colors['green3'],colors['green2'],colors['green1'],
+#     #                                                     colors['yellow1'],colors['yellow2'],colors['yellow3'],colors['yellow4'],colors['yellow5'],
+#     #                                                     colors['yellow4'],colors['yellow3'],colors['yellow2'],colors['yellow1']])
     
-    # plt.rcParams['axes.prop_cycle'] = cycler('color', [colors['blue1'],colors['blue2'],colors['blue3'],colors['blue4'],colors['blue5'],
-    #                                                     colors['red1'],colors['red2'],colors['red3'],colors['red4'],colors['red5'],
-    #                                                     colors['green1'],colors['green2'],colors['green3'],colors['green4'],colors['green5'],
-    #                                                     colors['yellow1'],colors['yellow2'],colors['yellow3'],colors['yellow4'],colors['yellow5']])  
+#     # plt.rcParams['axes.prop_cycle'] = cycler('color', [colors['blue1'],colors['blue2'],colors['blue3'],colors['blue4'],colors['blue5'],
+#     #                                                     colors['red1'],colors['red2'],colors['red3'],colors['red4'],colors['red5'],
+#     #                                                     colors['green1'],colors['green2'],colors['green3'],colors['green4'],colors['green5'],
+#     #                                                     colors['yellow1'],colors['yellow2'],colors['yellow3'],colors['yellow4'],colors['yellow5']])  
     
-    plt.rcParams['axes.prop_cycle'] = cycler('color', colors_gist(np.linspace(.1, 1,9)))
+#     plt.rcParams['axes.prop_cycle'] = cycler('color', colors_gist(np.linspace(.1, 1,9)))
     
-    if case == 'presentation':
+#     if case == 'presentation':
     
-        major_tick_length = 5
-        major_tick_width = 0.75
-        minor_tick_width = 0.45
-        tn = 4*1.1*8.6/2.54 # for figure size    
+#         major_tick_length = 5
+#         major_tick_width = 0.75
+#         minor_tick_width = 0.45
+#         tn = 4*1.1*8.6/2.54 # for figure size    
                 
-        plt.rcParams['figure.autolayout'] = False # True
+#         plt.rcParams['figure.autolayout'] = False # True
         
-        plt.rcParams['lines.linewidth'] = 2.0
-        plt.rcParams['lines.markersize'] = 5
+#         plt.rcParams['lines.linewidth'] = 2.0
+#         plt.rcParams['lines.markersize'] = 5
         
-        plt.rcParams['axes.linewidth'] = 1.5
-        plt.rcParams['axes.grid'] = False
-        plt.rcParams['axes.labelpad'] = 0
-        plt.rcParams['axes.xmargin'] = 0.0 # space between traces and axes
-        plt.rcParams['axes.ymargin'] = 0.05
-        plt.rcParams['axes.titlepad'] = 0
+#         plt.rcParams['axes.linewidth'] = 1.5
+#         plt.rcParams['axes.grid'] = False
+#         plt.rcParams['axes.labelpad'] = 0
+#         plt.rcParams['axes.xmargin'] = 0.0 # space between traces and axes
+#         plt.rcParams['axes.ymargin'] = 0.05
+#         plt.rcParams['axes.titlepad'] = 0
         
-        plt.rcParams['legend.loc'] = 'best'
+#         plt.rcParams['legend.loc'] = 'best'
         
-        plt.rcParams['savefig.dpi'] = 300
-        plt.rcParams['savefig.format'] = 'pdf'
-        plt.rcParams['savefig.pad_inches'] = 0
+#         plt.rcParams['savefig.dpi'] = 300
+#         plt.rcParams['savefig.format'] = 'pdf'
+#         plt.rcParams['savefig.pad_inches'] = 0
         
-        plt.rcParams['xtick.direction'] = 'out'
-        plt.rcParams['xtick.major.bottom'] = True
-        plt.rcParams['xtick.major.top'] = True
-        plt.rcParams['xtick.major.size'] = major_tick_length
-        plt.rcParams['xtick.major.width'] = major_tick_width
-        plt.rcParams['xtick.minor.visible'] = True
-        plt.rcParams['xtick.minor.size'] = major_tick_length/gr
-        plt.rcParams['xtick.minor.width'] = minor_tick_width
+#         plt.rcParams['xtick.direction'] = 'out'
+#         plt.rcParams['xtick.major.bottom'] = True
+#         plt.rcParams['xtick.major.top'] = True
+#         plt.rcParams['xtick.major.size'] = major_tick_length
+#         plt.rcParams['xtick.major.width'] = major_tick_width
+#         plt.rcParams['xtick.minor.visible'] = True
+#         plt.rcParams['xtick.minor.size'] = major_tick_length/gr
+#         plt.rcParams['xtick.minor.width'] = minor_tick_width
         
-        plt.rcParams['ytick.direction'] = 'out'
-        plt.rcParams['ytick.major.left'] = True
-        plt.rcParams['ytick.major.right'] = True
-        plt.rcParams['ytick.major.size'] = major_tick_length
-        plt.rcParams['ytick.major.width'] = major_tick_width
-        plt.rcParams['ytick.minor.visible'] = True
-        plt.rcParams['ytick.minor.size'] = major_tick_length/gr
-        plt.rcParams['ytick.minor.width'] = minor_tick_width
+#         plt.rcParams['ytick.direction'] = 'out'
+#         plt.rcParams['ytick.major.left'] = True
+#         plt.rcParams['ytick.major.right'] = True
+#         plt.rcParams['ytick.major.size'] = major_tick_length
+#         plt.rcParams['ytick.major.width'] = major_tick_width
+#         plt.rcParams['ytick.minor.visible'] = True
+#         plt.rcParams['ytick.minor.size'] = major_tick_length/gr
+#         plt.rcParams['ytick.minor.width'] = minor_tick_width
         
-        # plt.rcParams['font.family'] = ['sans-serif']
-        # plt.rcParams['font.sans-serif'] = 'dejavuserif' # 'Verdana'#'Computer Modern Sans Serif'
-        # plt.rcParams['font.serif'] = 'dejavuserif' # 'Verdana'#'Computer Modern Sans Serif'
-        # plt.rcParams['font.sans-serif'] = 'cmss10' # 'Verdana'#'Computer Modern Sans Serif'
-        # plt.rcParams['font.serif'] = 'cmr10' # 'Verdana'#'Computer Modern Sans Serif'
+#         # plt.rcParams['font.family'] = ['sans-serif']
+#         # plt.rcParams['font.sans-serif'] = 'dejavuserif' # 'Verdana'#'Computer Modern Sans Serif'
+#         # plt.rcParams['font.serif'] = 'dejavuserif' # 'Verdana'#'Computer Modern Sans Serif'
+#         # plt.rcParams['font.sans-serif'] = 'cmss10' # 'Verdana'#'Computer Modern Sans Serif'
+#         # plt.rcParams['font.serif'] = 'cmr10' # 'Verdana'#'Computer Modern Sans Serif'
                 
-        plt.rcParams['mathtext.fontset'] = 'dejavuserif'
-        plt.rcParams['mathtext.rm'] = 'dejavuserif'
-        plt.rcParams['mathtext.it'] = 'dejavuserif'
-        plt.rcParams['mathtext.bf'] = 'dejavuserif'
+#         plt.rcParams['mathtext.fontset'] = 'dejavuserif'
+#         plt.rcParams['mathtext.rm'] = 'dejavuserif'
+#         plt.rcParams['mathtext.it'] = 'dejavuserif'
+#         plt.rcParams['mathtext.bf'] = 'dejavuserif'
         
-        # plt.rcParams['mathtext.fontset'] = 'cm'
-        # plt.rcParams['mathtext.rm'] = 'cmr10'
-        # plt.rcParams['mathtext.it'] = 'cmtt10'
-        # plt.rcParams['mathtext.bf'] = 'cmb10'
+#         # plt.rcParams['mathtext.fontset'] = 'cm'
+#         # plt.rcParams['mathtext.rm'] = 'cmr10'
+#         # plt.rcParams['mathtext.it'] = 'cmtt10'
+#         # plt.rcParams['mathtext.bf'] = 'cmb10'
 
-        # plt.rcParams['mathtext.rm'] = 'serif'
-        plt.rcParams['figure.figsize'] = [tn,tn/gr]
-        plt.rcParams['figure.titlesize'] = 16
-        plt.rcParams['axes.titlesize'] = 14
-        plt.rcParams['axes.labelsize'] = 16
-        plt.rcParams['legend.fontsize'] = 12
-        plt.rcParams['xtick.labelsize'] = 14
-        plt.rcParams['ytick.labelsize'] = 14
-        plt.rcParams['figure.autolayout'] = False    
+#         # plt.rcParams['mathtext.rm'] = 'serif'
+#         plt.rcParams['figure.figsize'] = [tn,tn/gr]
+#         plt.rcParams['figure.titlesize'] = 16
+#         plt.rcParams['axes.titlesize'] = 14
+#         plt.rcParams['axes.labelsize'] = 16
+#         plt.rcParams['legend.fontsize'] = 12
+#         plt.rcParams['xtick.labelsize'] = 14
+#         plt.rcParams['ytick.labelsize'] = 14
+#         plt.rcParams['figure.autolayout'] = False    
         
-        plt.rcParams['grid.linewidth'] = major_tick_width
-        plt.rcParams['grid.color'] = colors['grey7']
+#         plt.rcParams['grid.linewidth'] = major_tick_width
+#         plt.rcParams['grid.color'] = colors['grey7']
         
-    elif case == 'publication':
+#     elif case == 'publication':
                 
-        major_tick_length = 3
-        major_tick_width = 0.25
-        minor_tick_width = 0.15
-        tn = 1.1*8.6/2.54 # for figure size    
+#         major_tick_length = 3
+#         major_tick_width = 0.25
+#         minor_tick_width = 0.15
+#         tn = 1.1*8.6/2.54 # for figure size    
                 
-        plt.rcParams['figure.autolayout'] = False # True
+#         plt.rcParams['figure.autolayout'] = False # True
         
-        plt.rcParams['lines.linewidth'] = 1.0
-        plt.rcParams['lines.markersize'] = 2
+#         plt.rcParams['lines.linewidth'] = 1.0
+#         plt.rcParams['lines.markersize'] = 2
         
-        plt.rcParams['axes.linewidth'] = 0.75
-        plt.rcParams['axes.grid'] = False
-        plt.rcParams['axes.labelpad'] = 0
-        plt.rcParams['axes.xmargin'] = 0.0 # space between traces and axes
-        plt.rcParams['axes.ymargin'] = 0.05
-        plt.rcParams['axes.titlepad'] = 0
+#         plt.rcParams['axes.linewidth'] = 0.75
+#         plt.rcParams['axes.grid'] = False
+#         plt.rcParams['axes.labelpad'] = 0
+#         plt.rcParams['axes.xmargin'] = 0.0 # space between traces and axes
+#         plt.rcParams['axes.ymargin'] = 0.05
+#         plt.rcParams['axes.titlepad'] = 0
         
-        plt.rcParams['legend.loc'] = 'best'
+#         plt.rcParams['legend.loc'] = 'best'
         
-        plt.rcParams['savefig.dpi'] = 300
-        plt.rcParams['savefig.format'] = 'pdf'
-        plt.rcParams['savefig.pad_inches'] = 0
+#         plt.rcParams['savefig.dpi'] = 300
+#         plt.rcParams['savefig.format'] = 'pdf'
+#         plt.rcParams['savefig.pad_inches'] = 0
         
-        plt.rcParams['xtick.direction'] = 'out'
-        plt.rcParams['xtick.major.bottom'] = True
-        plt.rcParams['xtick.major.top'] = True
-        plt.rcParams['xtick.major.size'] = major_tick_length
-        plt.rcParams['xtick.major.width'] = major_tick_width
-        plt.rcParams['xtick.minor.visible'] = True
-        plt.rcParams['xtick.minor.size'] = major_tick_length/gr
-        plt.rcParams['xtick.minor.width'] = minor_tick_width
+#         plt.rcParams['xtick.direction'] = 'out'
+#         plt.rcParams['xtick.major.bottom'] = True
+#         plt.rcParams['xtick.major.top'] = True
+#         plt.rcParams['xtick.major.size'] = major_tick_length
+#         plt.rcParams['xtick.major.width'] = major_tick_width
+#         plt.rcParams['xtick.minor.visible'] = True
+#         plt.rcParams['xtick.minor.size'] = major_tick_length/gr
+#         plt.rcParams['xtick.minor.width'] = minor_tick_width
         
-        plt.rcParams['ytick.direction'] = 'out'
-        plt.rcParams['ytick.major.left'] = True
-        plt.rcParams['ytick.major.right'] = True
-        plt.rcParams['ytick.major.size'] = major_tick_length
-        plt.rcParams['ytick.major.width'] = major_tick_width
-        plt.rcParams['ytick.minor.visible'] = True
-        plt.rcParams['ytick.minor.size'] = major_tick_length/gr
-        plt.rcParams['ytick.minor.width'] = minor_tick_width
+#         plt.rcParams['ytick.direction'] = 'out'
+#         plt.rcParams['ytick.major.left'] = True
+#         plt.rcParams['ytick.major.right'] = True
+#         plt.rcParams['ytick.major.size'] = major_tick_length
+#         plt.rcParams['ytick.major.width'] = major_tick_width
+#         plt.rcParams['ytick.minor.visible'] = True
+#         plt.rcParams['ytick.minor.size'] = major_tick_length/gr
+#         plt.rcParams['ytick.minor.width'] = minor_tick_width
         
-        plt.rcParams['font.family'] = ['sans-serif']
-        plt.rcParams['font.sans-serif'] = 'cmss10' # 'Verdana'#'Computer Modern Sans Serif'
-        plt.rcParams['font.serif'] = 'cmr10' # 'Verdana'#'Computer Modern Sans Serif'
-        plt.rcParams['mathtext.fontset'] = 'cm'
-        plt.rcParams['mathtext.rm'] = 'serif'
-        plt.rcParams['figure.figsize'] = [tn,tn/gr]
-        plt.rcParams['figure.titlesize'] = 10
-        plt.rcParams['axes.titlesize'] = 10
-        plt.rcParams['axes.labelsize'] = 10
-        plt.rcParams['legend.fontsize'] = 8
-        plt.rcParams['xtick.labelsize'] = 8
-        plt.rcParams['ytick.labelsize'] = 8
-        plt.rcParams['figure.autolayout'] = False    
+#         plt.rcParams['font.family'] = ['sans-serif']
+#         plt.rcParams['font.sans-serif'] = 'cmss10' # 'Verdana'#'Computer Modern Sans Serif'
+#         plt.rcParams['font.serif'] = 'cmr10' # 'Verdana'#'Computer Modern Sans Serif'
+#         plt.rcParams['mathtext.fontset'] = 'cm'
+#         plt.rcParams['mathtext.rm'] = 'serif'
+#         plt.rcParams['figure.figsize'] = [tn,tn/gr]
+#         plt.rcParams['figure.titlesize'] = 10
+#         plt.rcParams['axes.titlesize'] = 10
+#         plt.rcParams['axes.labelsize'] = 10
+#         plt.rcParams['legend.fontsize'] = 8
+#         plt.rcParams['xtick.labelsize'] = 8
+#         plt.rcParams['ytick.labelsize'] = 8
+#         plt.rcParams['figure.autolayout'] = False    
         
-        plt.rcParams['grid.linewidth'] = major_tick_width
-        plt.rcParams['grid.color'] = colors['grey7']
+#         plt.rcParams['grid.linewidth'] = major_tick_width
+#         plt.rcParams['grid.color'] = colors['grey7']
 
-    return plt.rcParams['figure.figsize']
+#     return plt.rcParams['figure.figsize']
 
 
 #%%
@@ -355,10 +355,10 @@ def index_finder(var_1,var_2):
     
     if type(var_1).__name__ == 'float' or type(var_1).__name__ == 'float64' or type(var_1).__name__ == 'int' or type(var_1).__name__ == 'uint8':
         value = var_1
-        array = var_2
+        array = np.asarray(var_2)
     elif type(var_2).__name__ == 'float' or type(var_2).__name__ == 'float64' or type(var_2).__name__ == 'int' or type(var_2).__name__ == 'uint8':
         value = var_2
-        array = var_1
+        array = np.asarray(var_1)
     else:
         raise ValueError('index_finder: it doesn\'t seem like either input is an integer or float. type(var_1) = {}, type(var_2) = {}'.format(type(var_1).__name__,type(var_2).__name__))
         
@@ -370,5 +370,5 @@ def index_finder(var_1,var_2):
     
     return _inds
 
-def rgb_to_hex(rgb):
-    return '#{:02x}{:02x}{:02x}'.format(int(np.round(255*rgb[0])),int(np.round(255*rgb[1])),int(np.round(255*rgb[2])))
+# def rgb_to_hex(rgb):
+#     return '#{:02x}{:02x}{:02x}'.format(int(np.round(255*rgb[0])),int(np.round(255*rgb[1])),int(np.round(255*rgb[2])))

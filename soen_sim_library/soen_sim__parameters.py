@@ -9,8 +9,11 @@ def common_parameters():
                   'syn_hotspot_duration': 3, # number of tau rise time constants
                   'syn_spd_duration': 8, # number of tau fall time constants
                   'syn_spd_phi_peak': 0.5, # Phi_0
+                  'syn_spd_reset_time': 50, # time that must elapse between spd detection events
                   }
     
-    params = {**jj_params, **syn_params}
+    neu_params = neu_params = {'absolute_refractory_period': 20}
+    
+    params = {**jj_params, **syn_params, **neu_params}
     
     return params
