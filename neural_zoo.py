@@ -2,7 +2,7 @@
 import numpy as np
 
 from _util import (
-    physical_constants, set_plot_params, index_finder)
+    physical_constants, index_finder)
 from _util__soen import (
     dend_load_rate_array, dend_load_arrays_thresholds_saturations)
 from soen_sim import input_signal, synapse, neuron, network
@@ -179,7 +179,7 @@ class NeuralZoo():
                                 connection_strength=self.weights[i][j][k])
 
         dendrites.insert(0,[[custom_neuron.dend__nr_ni]])
-        # print('dendrites:', dendrites)
+        print('dendrites:', dendrites)
         # if synapses also defined, connect as a function of grouping
         if hasattr(self, 'syns'):
             self.synapses = [[] for _ in range(len(self.syns))]
@@ -202,13 +202,15 @@ class NeuralZoo():
                 for j,group in enumerate(layer):
                     for k,s in enumerate(group):
                         if s != 0:
+                            print('synapse')
                             self.synapses[i][j].append(common_synapse(s))
                         else:
+                            print('no synapse')
                             self.synapses[i][j].append(0)
-            # print('synapses:', self.synapses)
+            print('synapses:', self.synapses)
             count=0
-            for i,layer in enumerate(self.synaptic_structure):
-                for j, subgroup in enumerate(dendrites[len(dendrites)-1]):
+            for i,layer in enumerate(self.synapses):
+                for j, subgroup in enumerate(layer):
                     for k,d in enumerate(subgroup):
                         s=self.synapses[i][j][k]
                         if s !=0:
@@ -487,9 +489,10 @@ class NeuralZoo():
 
         x_ticks=[]
         x_labels=[]
+        print(Ns)
         for i,n in enumerate(Ns):
             if (np.max(Ns)) < 10:
-                size = 4
+                size = 15
             else:
                 size = 100/(np.max(Ns))
             x_labels.append(f"L{len(Ns)-(i+1)}")
