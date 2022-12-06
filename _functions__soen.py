@@ -102,9 +102,9 @@ def run_soen_sim(obj, **kwargs):
             obj.neurons[neuron_key].time_params = obj.time_params
                         
             # initialize dendrites (phi_r vector) and make drive signals
-            print('\n')
+            # print('\n')
             recursive_dendrite_initialization_and_drive_construction(obj.neurons[neuron_key].dend__nr_ni,tau_vec,t_tau_conversion,d_tau) # go through all other dendrites in the neuron's arbor
-            print('\n')
+            # print('\n')
             
             # load rate arrays to all dendrites
             recursive_rate_array_attachment(obj.neurons[neuron_key].dend__nr_ni)
@@ -325,12 +325,19 @@ def transmitter_initialization(neuron_object,t_tau_conversion):
     
     if neuron_object.source_type == 'qd' or neuron_object.source_type == 'ec':
     
+        # what Ryan had
         for _str in sys.path:
             dir_index = _str.find("sim_soens")
             if _str[dir_index:dir_index+9] == 'sim_soens':
                 _path = _str.replace('\\','/')[:dir_index+9] +'/'
                 break
             break
+                
+        # what Jeff had
+        for _str in sys.path:
+            if _str[-9:] == 'sim_soens':
+                _path = _str.replace('\\','/')
+                break
         
         if neuron_object.source_type == 'qd':
             load_string = 'source_qd_Nph_1.0e+04'
