@@ -458,7 +458,7 @@ class neuron():
             self.absolute_refractory_period = kwargs['absolute_refractory_period']
         else:
             self.absolute_refractory_period = 10
-            
+                      
         if 'normalize_input_connection_strengths' in kwargs:
             self.normalize_input_connection_strengths = kwargs['normalize_input_connection_strengths']
         else:
@@ -800,7 +800,7 @@ class network():
     def get_recordings(self):
         self.t = self.neurons[list(self.neurons.keys())[0]].time_params['time_vec']
         spikes = [ [] for _ in range(2) ]
-        print(spikes)
+        # print(spikes)
         S = []
         Phi_r = []
         spike_signals = []
