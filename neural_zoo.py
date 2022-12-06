@@ -169,10 +169,10 @@ class NeuralZoo():
                     for k,d in enumerate(subgroup):
                         if i==0:
                             # print(i,j,k, " --> soma")
-                            # custom_neuron.add_input(d, 
-                            #     connection_strength=self.weights[i][j][k])
                             custom_neuron.add_input(d, 
-                                connection_strength=self.w_dn)
+                                connection_strength=self.weights[i][j][k])
+                            # custom_neuron.add_input(d, 
+                            #     connection_strength=self.w_dn)
                         else:
                             # print(i,j,k, " --> ", i-1,0,j)
                             np.concatenate(dendrites[i-1])[j].add_input(d, 

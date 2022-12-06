@@ -62,9 +62,9 @@ def run_soen_sim(obj, **kwargs):
         obj.time_params.update({'tau_vec': tau_vec, 'd_tau': d_tau})
         
         # initialize dendrites (phi_r vector) and make drive signals
-        print('\n')
+        # print('\n')
         recursive_dendrite_initialization_and_drive_construction(obj.dend__nr_ni,tau_vec,t_tau_conversion,d_tau) # go through all other dendrites in the neuron's arbor
-        print('\n')
+        # print('\n')
         
         # load rate arrays to all dendrites
         recursive_rate_array_attachment(obj.dend__nr_ni)
@@ -102,9 +102,9 @@ def run_soen_sim(obj, **kwargs):
             obj.neurons[neuron_key].time_params = obj.time_params
                         
             # initialize dendrites (phi_r vector) and make drive signals
-            print('\n')
+            # print('\n')
             recursive_dendrite_initialization_and_drive_construction(obj.neurons[neuron_key].dend__nr_ni,tau_vec,t_tau_conversion,d_tau) # go through all other dendrites in the neuron's arbor
-            print('\n')
+            # print('\n')
             
             # load rate arrays to all dendrites
             recursive_rate_array_attachment(obj.neurons[neuron_key].dend__nr_ni)

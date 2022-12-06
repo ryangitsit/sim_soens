@@ -474,6 +474,7 @@ class neuron():
                 self.normalize_input_connection_strengths = False
         else:
             self.normalize_input_connection_strengths = False
+
                 
         if 'offset_flux' in kwargs: # units of Phi0
             self.offset_flux = kwargs['offset_flux']
