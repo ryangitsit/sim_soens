@@ -3,7 +3,7 @@ import pickle
 import sys
 from numpy.random import default_rng
 
-from _util import physical_constants
+from _util import physical_constants, index_finder
 from _util__soen import get_jj_params, dend_load_arrays_thresholds_saturations
 p = physical_constants()
 
@@ -483,6 +483,12 @@ class neuron():
             self.self_feedback_coupling_strength = kwargs['self_feedback_coupling_strength']
         else:
             self.self_feedback_coupling_strength = 0
+                                
+        if 'integrated_current_threshold' in kwargs:
+            self.integrated_current_threshold = kwargs['integrated_current_threshold']
+        else:
+            self.integrated_current_threshold = 0.5 # units of Ic
+        self.s_th = self.integrated_current_threshold
             
         tau_ni = self.tau_ni * 1e-9
         beta_ni = self.circuit_betas[-1]
@@ -583,7 +589,7 @@ class neuron():
 
         self.dend__ref = neuron_refractory_dendrite
         
-        if 'refractory_dendrite_connection_strength' in kwargs:
+        if 'refractory_dendrite_connection_strength' in kwargs: # when in doubt, use 'auto'
             if type(kwargs['refractory_dendrite_connection_strength']).__name__ == 'float' or type(kwargs['refractory_dendrite_connection_strength']).__name__ == 'int':
                 self.refractory_dendrite_connection_strength = kwargs['refractory_dendrite_connection_strength']
             elif kwargs['refractory_dendrite_connection_strength'] == 'auto':
@@ -593,27 +599,46 @@ class neuron():
                     ib_list = ib__list__ri
                     phi_th_minus_vec = phi_th_minus__vec__ri
                     phi_th_plus_vec = phi_th_plus__vec__ri
+                    s_max_plus__array = s_max_plus__array__ri
                 elif self.loops_present == 'rtti':
                     ib_list = ib__list__rtti
                     phi_th_minus_vec = phi_th_minus__vec__rtti
                     phi_th_plus_vec = phi_th_plus__vec__rtti
+                    s_max_plus__array = s_max_plus__array__rtti
                 if self.loops_present__refraction == 'ri':
                     ib_list_r = ib__list__ri
-                    s_max_plus_vec = s_max_plus__vec__ri
+                    s_max_plus_vec__refractory = s_max_plus__vec__ri
                 elif self.loops_present__refraction == 'rtti':
                     ib_list_r = ib__list__rtti
-                    s_max_plus_vec = s_max_plus__vec__rtti
-                _ind_ib = ( np.abs( ib_list[:] - self.dend__nr_ni.ib ) ).argmin()
-                phi_th_plus = phi_th_plus_vec[_ind_ib]
-                phi_th_minus = phi_th_minus_vec[_ind_ib]
-                delta = phi_th_plus - phi_th_minus
-                _ind_ib_r = ( np.abs( ib_list_r[:] - self.dend__ref.ib ) ).argmin()
-                s_max = s_max_plus_vec[_ind_ib_r]
-                self.refractory_dendrite_connection_strength = -delta/s_max # ( phi_th_minus + delta/100 ) / s_max
+                    s_max_plus_vec__refractory = s_max_plus__vec__rtti
+                    
+                _ind_ib_soma = index_finder(ib_list[:],self.dend__nr_ni.ib) # ( np.abs( ib_list[:] - self.dend__nr_ni.ib ) ).argmin()
+                
+                # for depricated auto calculation
+                # phi_th_plus = phi_th_plus_vec[_ind_ib_soma]
+                # phi_th_minus = phi_th_minus_vec[_ind_ib_soma]
+                # delta = phi_th_plus - phi_th_minus
+                
+                phi_th_minus = phi_th_minus_vec[_ind_ib_soma]
+                _phi_vec_prelim = np.asarray( phi_r__array__ri[_ind_ib_soma] )
+                _phi_vec_prelim = _phi_vec_prelim[ np.where( _phi_vec_prelim >= 0 ) ]
+                _ind_phi_max = index_finder(_phi_vec_prelim,0.5)
+                
+                s_max_plus__vec = s_max_plus__array[_ind_ib_soma][:_ind_phi_max]
+                
+                _ind_s_th = index_finder(s_max_plus__vec,self.s_th)
+                phi_a_s_th = _phi_vec_prelim[_ind_s_th]
+                delta = phi_a_s_th - phi_th_minus
+                                
+                _ind_ib_refractory = index_finder(ib_list_r[:],self.dend__ref.ib) # ( np.abs( ib_list_r[:] - self.dend__ref.ib ) ).argmin()
+                _s_max_refractory = s_max_plus_vec__refractory[_ind_ib_refractory]
+                                
+                self.refractory_dendrite_connection_strength = -delta/_s_max_refractory # ( phi_th_minus + delta/100 ) / s_max
         else:
-            self.refractory_dendrite_connection_strength = -0.7 # default; when in doubt, use 'auto'
+            self.refractory_dendrite_connection_strength = -0.7 # default, totally arbitrary; when in doubt, use 'auto'
             
         self.dend__nr_ni.add_input(self.dend__ref, connection_strength = self.refractory_dendrite_connection_strength)
+ 
         
         # =============================================================================
         #         end refractory dendrite
@@ -664,11 +689,6 @@ class neuron():
         # =============================================================================
         #         transmitter
         # =============================================================================
-        
-        if 'integrated_current_threshold' in kwargs:
-            self.integrated_current_threshold = kwargs['integrated_current_threshold']
-        else:
-            self.integrated_current_threshold = 0.5 # units of Ic
             
         if 'source_type' in kwargs: 
             if kwargs['source_type'] == 'ec' or kwargs['source_type'] == 'qd' or kwargs['source_type'] == 'delay_delta':

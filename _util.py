@@ -355,10 +355,10 @@ def index_finder(var_1,var_2):
     
     if type(var_1).__name__ == 'float' or type(var_1).__name__ == 'float64' or type(var_1).__name__ == 'int' or type(var_1).__name__ == 'uint8':
         value = var_1
-        array = var_2
+        array = np.asarray(var_2)
     elif type(var_2).__name__ == 'float' or type(var_2).__name__ == 'float64' or type(var_2).__name__ == 'int' or type(var_2).__name__ == 'uint8':
         value = var_2
-        array = var_1
+        array = np.asarray(var_1)
     else:
         raise ValueError('index_finder: it doesn\'t seem like either input is an integer or float. type(var_1) = {}, type(var_2) = {}'.format(type(var_1).__name__,type(var_2).__name__))
         
