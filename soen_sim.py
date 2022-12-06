@@ -8,7 +8,7 @@ from _util__soen import get_jj_params, dend_load_arrays_thresholds_saturations
 p = physical_constants()
 
 from _functions__soen import run_soen_sim
-from _plotting__soen import plot_dendrite, plot_synapse, plot_neuron, plot_network
+from _plotting__soen import plot_dendrite, plot_synapse, plot_neuron, plot_neuron_simple, plot_network
 
 class input_signal():
     
@@ -460,21 +460,19 @@ class neuron():
             self.absolute_refractory_period = 10
             
         if 'normalize_input_connection_strengths' in kwargs:
-            if kwargs['normalize_input_connection_strengths'] == True:
-                self.normalize_input_connection_strengths = kwargs['normalize_input_connection_strengths']
-                if 'total_excitatory_input_connection_strength' in kwargs:
-                    self.total_excitatory_input_connection_strength = kwargs['total_excitatory_input_connection_strength']
-                else:
-                    self.total_excitatory_input_connection_strength = 1                     
-                if 'total_inhibitory_input_connection_strength' in kwargs:
-                    self.total_inhibitory_input_connection_strength = kwargs['total_inhibitory_input_connection_strength']
-                else:
-                    self.total_inhibitory_input_connection_strength = -0.5
-            else:
-                self.normalize_input_connection_strengths = False
+            self.normalize_input_connection_strengths = kwargs['normalize_input_connection_strengths']
         else:
             self.normalize_input_connection_strengths = False
-
+            
+        if 'total_excitatory_input_connection_strength' in kwargs:
+            self.total_excitatory_input_connection_strength = kwargs['total_excitatory_input_connection_strength']
+        else:
+            self.total_excitatory_input_connection_strength = 1 
+            
+        if 'total_inhibitory_input_connection_strength' in kwargs:
+            self.total_inhibitory_input_connection_strength = kwargs['total_inhibitory_input_connection_strength']
+        else:
+            self.total_inhibitory_input_connection_strength = -0.5
                 
         if 'offset_flux' in kwargs: # units of Phi0
             self.offset_flux = kwargs['offset_flux']
@@ -727,7 +725,10 @@ class neuron():
         return self
     
     def plot(self):
-        plot_neuron(self)
+        if self.plot_simple:
+            plot_neuron_simple(self)
+        else:
+            plot_neuron(self)
         return
 
     def __del__(self):

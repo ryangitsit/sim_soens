@@ -325,12 +325,19 @@ def transmitter_initialization(neuron_object,t_tau_conversion):
     
     if neuron_object.source_type == 'qd' or neuron_object.source_type == 'ec':
     
+        # what Ryan had
         for _str in sys.path:
             dir_index = _str.find("sim_soens")
             if _str[dir_index:dir_index+9] == 'sim_soens':
                 _path = _str.replace('\\','/')[:dir_index+9] +'/'
                 break
             break
+                
+        # what Jeff had
+        for _str in sys.path:
+            if _str[-9:] == 'sim_soens':
+                _path = _str.replace('\\','/')
+                break
         
         if neuron_object.source_type == 'qd':
             load_string = 'source_qd_Nph_1.0e+04'

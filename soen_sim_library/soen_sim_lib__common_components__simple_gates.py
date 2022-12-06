@@ -83,8 +83,8 @@ bias_current = ib_neuron, integration_loop_time_constant = tau_ni, normalize_inp
 # =============================================================================
 # common neuron
 # =============================================================================
-def common_neuron(name, loops_present, beta_ni, tau_ni, ib, s_th, beta_ref, tau_ref, ib_ref, offset_flux = 0, self_feedback_coupling_strength = 0, 
-              normalize_input_connection_strengths = True, total_excitatory_input_connection_strength = 1, total_inhibitory_input_connection_strength = -0.5):
+def common_neuron(name, loops_present, beta_ni, tau_ni, ib, s_th, beta_ref, tau_ref, ib_ref, offset_flux = 0, self_feedback_coupling_strength = 0, refractory_dendrite_connection_strength = 'auto',
+                  normalize_input_connection_strengths = True, total_excitatory_input_connection_strength = 1, total_inhibitory_input_connection_strength = -0.5):
         
     neuron_1 = neuron(name = name,
                       
@@ -94,11 +94,11 @@ def common_neuron(name, loops_present, beta_ni, tau_ni, ib, s_th, beta_ref, tau_
                   normalize_input_connection_strengths = normalize_input_connection_strengths, 
                   total_excitatory_input_connection_strength = total_excitatory_input_connection_strength, 
                   total_inhibitory_input_connection_strength = total_inhibitory_input_connection_strength, 
-                  offset_flux = offset_flux, self_feedback_coupling_strength = self_feedback_coupling_strength,
+                  offset_flux = offset_flux, self_feedback_coupling_strength = 0,
                   
                   # neuron refractory dendrite
                   loops_present__refraction = 'ri', circuit_betas__refraction = [2*np.pi*1/4, 2*np.pi*1/4, beta_ref], junction_critical_current__refraction = 100, junction_beta_c__refraction = 0.3,
-                  bias_current__refraction = ib_ref, integration_loop_time_constant__refraction = tau_ref, refractory_dendrite_connection_strength = 'auto',
+                  bias_current__refraction = ib_ref, integration_loop_time_constant__refraction = tau_ref, refractory_dendrite_connection_strength = refractory_dendrite_connection_strength,
                   
                   # synapse to refractory dendrite
                   tau_rise__refraction = common_params['syn_tau_rise'], tau_fall__refraction = common_params['syn_tau_fall'], hotspot_duration__refraction = common_params['syn_hotspot_duration'], spd_duration__refraction = common_params['syn_spd_duration'], phi_peak__refraction = common_params['syn_spd_phi_peak'],
