@@ -119,7 +119,7 @@ def run_soen_sim(obj, **kwargs):
             transmitter_initialization(obj.neurons[neuron_key],t_tau_conversion)
             
         # step through time
-        print('\nrunning network time stepper for {:4.2e}ns ({:d} time steps) ...'.format(time_vec[-1],len(tau_vec)))
+        # print('\nrunning network time stepper for {:4.2e}ns ({:d} time steps) ...'.format(time_vec[-1],len(tau_vec)))
         obj = network_time_stepper(obj,tau_vec,d_tau)
         
         # add output data to dendrites for plotting and diagnostics
@@ -518,7 +518,7 @@ def network_time_stepper(network_object,tau_vec,d_tau):
                 # end add spike to output synapses
                        
     _t1 = time.time_ns()
-    print('done running network time stepper. t_sim = {:7.5e}s\n'.format(1e-9*(_t1-_t0))) # {:7.5e}
+    # print('done running network time stepper. t_sim = {:7.5e}s\n'.format(1e-9*(_t1-_t0))) # {:7.5e}
         
     return network_object
 

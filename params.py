@@ -113,9 +113,12 @@ nine_pixel_params["s_th"] =  0.2*s_max_plus__vec__ri[nine_pixel_params["ind_ib"]
 # nine_pixel_params["s_th"] = .05
 bias_stage_3__logic_level_restoration = ib__list__rtti[-4]
 s_max = s_max_plus__vec__rtti[index_finder(bias_stage_3__logic_level_restoration,ib__list__rtti[:])]
-phi_target = phi_th_plus__vec__ri[nine_pixel_params["ind_ib"]] + 0.1
+# phi_target = phi_th_plus__vec__ri[nine_pixel_params["ind_ib"]] + 0.1
+phi_target = 0.4
 connection_strength__soma = phi_target/s_max
 nine_pixel_params['w_dn'] = connection_strength__soma
+
+
 
 
 

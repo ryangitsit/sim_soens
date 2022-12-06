@@ -132,7 +132,6 @@ class NeuralZoo():
         dendrites = [ [] for _ in range(len(arbor)) ]
         if len(arbor)>0:
             # initialize a list of lists for holding dendrits in each arbor layer
-            print(dendrites)
             # iterate over the defined structure
             # create dendritic arbor with defined parameters (may be dend specific)
             count=0
@@ -180,7 +179,7 @@ class NeuralZoo():
                                 connection_strength=self.weights[i][j][k])
 
         dendrites.insert(0,[[custom_neuron.dend__nr_ni]])
-        print(dendrites)
+        # print('dendrites:', dendrites)
         # if synapses also defined, connect as a function of grouping
         if hasattr(self, 'syns'):
             self.synapses = [[] for _ in range(len(self.syns))]
@@ -202,15 +201,19 @@ class NeuralZoo():
                 self.synapses[i] = [[] for _ in range(len(self.synaptic_structure[i]))]
                 for j,group in enumerate(layer):
                     for k,s in enumerate(group):
-                        self.synapses[i][j].append(common_synapse(s))
-            print(self.synapses)
+                        if s != 0:
+                            self.synapses[i][j].append(common_synapse(s))
+                        else:
+                            self.synapses[i][j].append(0)
+            # print('synapses:', self.synapses)
             count=0
             for i,layer in enumerate(self.synaptic_structure):
                 for j, subgroup in enumerate(dendrites[len(dendrites)-1]):
                     for k,d in enumerate(subgroup):
                         s=self.synapses[i][j][k]
-                        dendrites[i][j][k].add_input(s, 
-                            connection_strength = self.synaptic_structure[i][j][k])
+                        if s !=0:
+                            dendrites[i][j][k].add_input(s, 
+                                connection_strength = self.synaptic_structure[i][j][k])
                         count+=1
             # else:
             #     for i in self.synapses[0][0]:
@@ -239,7 +242,7 @@ class NeuralZoo():
         for i in range(len(layers)):
             for j in range(len(self.dendrites[i])):
                 layers[i].append(list(self.dendrites[i][j].dendritic_inputs.keys()))
-        print(layers)
+        # print(layers)
         colors = ['r','b','g',]
         Ns = [len(layers[i]) for i in range(len(layers))]
         Ns.reverse()
@@ -485,14 +488,18 @@ class NeuralZoo():
         x_ticks=[]
         x_labels=[]
         for i,n in enumerate(Ns):
+            if (np.max(Ns)) < 10:
+                size = 4
+            else:
+                size = 100/(np.max(Ns))
             x_labels.append(f"L{len(Ns)-(i+1)}")
             x_ticks.append(i+.5)
             if n == np.max(Ns):
-                plt.plot(np.ones(n)*i+.5,np.arange(n),'ok',ms=100/(np.max(Ns)))
+                plt.plot(np.ones(n)*i+.5,np.arange(n),'ok',ms=size)
             elif n != 1:
                 factor = 1 # make proportional
                 plt.plot(np.ones(n)*i+.5,np.arange(n)*factor+(.5*np.max(Ns)-.5*n), 
-                         'ok', ms=100/(np.max(Ns)))
+                         'ok', ms=size)
             else:
                 plt.plot(np.ones(n)*i+.5, np.arange(n)+(.5*np.max(Ns)-.5*n), '*k', ms=30)
                 plt.plot(np.ones(n)*i+.5, np.arange(n)+(.5*np.max(Ns)-.5*n), '*y', ms=20)
@@ -516,7 +523,7 @@ class NeuralZoo():
         den_arb = self.dendrites
         L = len(den_arb)
         M = len(den_arb[-1])
-        print(M)
+        # print(M)
         plt.figure(figsize=(6,8))
         for i,l in enumerate(den_arb):
             for j,g in enumerate(l):

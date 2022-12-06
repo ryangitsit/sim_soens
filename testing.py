@@ -1,5 +1,15 @@
 '''
 THIS FILE IS FOR LOCAL DEVELOPMENT PURPOSES ONLY
+
+TODO
+ - Fix defined_spikes
+ - Finish recursive search and plotting
+ - Finish activity plotting
+ - Make callable plotting functions
+ - Integrate jeff's new changes
+ - Neural motifs
+ - Networking
+ - Preliminary sweep
 '''
 
 
@@ -21,40 +31,157 @@ from _plotting__soen import raster_plot
 import numpy as np
 import matplotlib.pyplot as plt
 
-synaptic_structure = [[[1]]]
-mono = NeuralZoo(type="custom",synaptic_structure=synaptic_structure,**default_neuron_params)
-
-# def_spikes = [np.zeros(3).astype(int),np.array([.5,10,75])]
-
 times = np.arange(0,150,25)
 indices = np.zeros(len(times)).astype(int)
 def_spikes = [indices,times]
 input = SuperInput(channels=1, type='defined', defined_spikes=def_spikes, duration=150)
-print(input.signals)
-mono.synapses[0][0][0].add_input(input.signals[0])
 
+synaptic_structure = [[[0]],[[1]]]
+weights = [[[1]]]
+mono_dend = NeuralZoo(type="custom",weights=weights, synaptic_structure=synaptic_structure,**default_neuron_params)
+
+mono_dend.synapses[1][0][0].add_input(input.signals[0])
+print(mono_dend.dendrites[1][0][0].synaptic_inputs[1].input_signal.__dict__)
 net = network(name = 'network_under_test')
-net.add_neuron(mono.neuron)
-net.run_sim(dt = .1, tf = 150)
+net.add_neuron(mono_dend.neuron)
+net.run_sim(dt = .01, tf = 150)
 net.get_recordings()
-print(net.neurons[1].spike_times)
 
-spd = mono.dendrites[0][0][0].synaptic_inputs[1].phi_spd
-
-dend_s = mono.dendrites[0][0][0].s
-signal = net.neurons[1].dend__nr_ni.s
-ref = net.neurons[1].dend__ref.s
-
+spd = mono_dend.synapses[1][0][0].phi_spd
+signal = mono_dend.dendrites[0][0][0].s
+ref = mono_dend.neuron.dend__ref.s
 
 plt.figure(figsize=(12,4))
-plt.plot(net.t,net.signal[0], label='soma signal')
-# plt.plot(net.spikes[1],net.spike_signals[0],'xk', label='neuron fires')
-plt.axhline(y = mono.s_th, color = 'purple', linestyle = '--')
 plt.plot(net.t,spd, label='phi_spd')
-# plt.plot(net.t,dend_s, label='dendrite signal')
-plt.plot(ref[::10], label='refractory signal')
+plt.plot(net.t,signal, label='soma signal')
+plt.plot(net.t,ref, label='refractory signal')
+plt.axhline(y = mono_dend.s_th, color = 'purple', linestyle = '--',label='Threshold')
 plt.legend()
 plt.show()
+
+
+
+# synaptic_structure = [[[1]]]
+# mono = NeuralZoo(type="custom",synaptic_structure=synaptic_structure,**default_neuron_params)
+
+# # def_spikes = [np.zeros(3).astype(int),np.array([.5,10,75])]
+
+# times = np.arange(0,150,25)
+# indices = np.zeros(len(times)).astype(int)
+# def_spikes = [indices,times]
+# input = SuperInput(channels=1, type='defined', defined_spikes=def_spikes, duration=150)
+# mono.synapses[0][0][0].add_input(input.signals[0])
+
+
+
+# synaptic_structure = [[[0]],[[1]]]
+# weights = [[[1]]]
+# mono_dend = NeuralZoo(type="custom",weights=weights, synaptic_structure=synaptic_structure,**default_neuron_params)
+
+# mono_dend.dendrites[0][0][0].add_input(input.signals[0])
+
+
+
+# net = network(name = 'network_under_test')
+# net.add_neuron(mono_dend.neuron)
+# net.run_sim(dt = .1, tf = 150)
+# net.get_recordings()
+# print(net.neurons[1].spike_times)
+
+# spd = mono_dend.dendrites[0][0][0].synaptic_inputs[1].phi_spd
+
+# dend_s = mono_dend.dendrites[0][0][0].s
+# signal = net.neurons[1].dend__nr_ni.s
+# ref = net.neurons[1].dend__ref.s
+
+# plt.figure(figsize=(12,4))
+# plt.plot(net.t,net.signal[0], label='soma signal')
+# # plt.plot(net.spikes[1],net.spike_signals[0],'xk', label='neuron fires')
+# plt.axhline(y = mono.s_th, color = 'purple', linestyle = '--')
+# plt.plot(net.t,spd, label='phi_spd')
+# # plt.plot(net.t,dend_s, label='dendrite signal')
+# plt.plot(ref[::10], label='refractory signal')
+# plt.legend()
+# plt.show()
+
+
+
+
+################################################################################
+                        ###  Nine Pixel Example  ###
+################################################################################
+
+
+# # nine_pixel_params['weights']= [
+# #         [[1.5,.9678933,.4]],
+# #         [[0.5,0.5],[0.5,0.5],[0.5,0.5]],
+# #         [[0.35,-0.65],[0.35,-0.65],[0.35,-0.65],[0.35,-0.65],[0.35,-0.65],[0.35,-0.65]]
+# #     ]
+# nine_pixel_params["s_th"] = 0.05
+# # nine_pixel_params["tau_ref"] = 50
+# nine_neuron = NeuralZoo(type="custom",**nine_pixel_params) 
+# # nine_neuron.plot_custom_structure()
+
+# z = np.array([0,1,4,7,8]) # z-pixel array
+# v = np.array([1,4,3,6,8])-1 # v
+# n = np.array([2,4,6,7,9])-1 # n
+# letters = [z,v,n]
+
+# for let in letters:
+    
+#     indices = let
+#     times = np.ones(len(indices))*20
+#     def_spikes = [indices,times]
+#     input = SuperInput(channels=9, type='defined', defined_spikes=def_spikes, duration=100)
+
+#     count = 0
+#     for g in nine_neuron.synapses:
+#         for s in g:
+#             for i,row in enumerate(input.spike_rows):
+#                 if i == int(s.name)-1:
+#                     s.add_input(input_signal(name = 'input_synaptic_drive', 
+#                     input_temporal_form = 'arbitrary_spike_train', spike_times = input.spike_rows[i]))
+#                     count+=1
+#     # print(count)
+
+#     net = network(name = 'network_under_test')
+#     net.add_neuron(nine_neuron.neuron)
+
+#     if 'custom_neuron__syn_refraction' not in net.neurons[list(net.neurons.keys())[0]].dend__ref.synaptic_inputs.keys():
+#         net.neurons[list(net.neurons.keys())[0]].name = 1
+#     print(net.neurons[1].dend__nr_ni.dendritic_connection_strengths)
+#     net.run_sim(dt = .1, tf = 100)
+#     net.get_recordings()
+
+#     spikes = [net.spikes[0],net.spikes[1]*1000]
+#     nine_neuron.arbor_activity_plot()
+#     print(len(spikes[1]))
+#     # import matplotlib.pyplot as plt
+#     # # spd = nine_neuron.dendrites[0][0][0].synaptic_inputs[1].phi_spd
+
+#     # dend_s = nine_neuron.dendrites[0][0][0].s
+#     # signal = net.neurons[1].dend__nr_ni.s
+#     # ref = net.neurons[1].dend__ref.s
+
+#     # plt.figure(figsize=(12,4))
+#     # plt.plot(net.t,net.signal[0], label='soma signal')
+#     # # plt.plot(net.spikes[1],net.spike_signals[0],'xk', label='neuron fires')
+#     # plt.axhline(y = nine_neuron.s_th, color = 'purple', linestyle = '--')
+#     # # plt.plot(net.t,spd, label='phi_spd')
+#     # # plt.plot(net.t,dend_s, label='dendrite signal')
+#     # plt.plot(ref[::10], label='refractory signal')
+#     # plt.legend()
+#     # plt.show()
+#     # raster_plot(spikes)
+
+# # #%%
+# # # print(arb.neuron.dend__nr_ni.dendritic_connection_strengths)
+
+
+
+
+
+
 
 
 
@@ -222,48 +349,6 @@ plt.show()
 # plt.legend()
 # plt.show()
 
-
-# neuron = NeuralZoo(type="custom",**nine_pixel_params) 
-# neuron.plot_custom_structure()
-
-
-# arb.neuron.name = 1
-# # indices = np.array([0,1,4,7,8]) # z-pixel array
-# indices = np.array([1,4,3,6,8])-1 # v
-# # indices = np.array([2,4,6,7,9])-1 # n
-# times = np.ones(len(indices))*20
-# def_spikes = [indices,times]
-# input = SuperInput(channels=9, type='defined', defined_spikes=def_spikes, duration=100)
-# input_signal(name = 'input_synaptic_drive', input_temporal_form = 'arbitrary_spike_train', spike_times = input.spike_rows[i])
-
-# count =0
-# for g in arb.synapses:
-#     for s in g:
-#         for i,row in enumerate(input.spike_rows):
-#             if i == int(s.name)-1:
-#                 s.add_input(input_signal(name = 'input_synaptic_drive', 
-#                 input_temporal_form = 'arbitrary_spike_train', spike_times = input.spike_rows[i]))
-#                 count+=1
-# print(count)
-
-# net = network(name = 'network_under_test')
-# net.add_neuron(arb.neuron)
-# # print(net.neurons.keys())
-# # print(net.neurons['custom_neuron'].dend__ref.synaptic_inputs.keys())
-# if 'custom_neuron__syn_refraction' not in net.neurons['custom_neuron'].dend__ref.synaptic_inputs.keys():
-#     net.neurons[list(net.neurons.keys())[0]].name = 1
-# net.run_sim(dt = .1, tf = 100)
-# net.get_recordings()
-
-# spikes = [net.spikes[0],net.spikes[1]*1000]
-# # arb.arbor_activity_plot()
-# print(spikes[1])
-# # raster_plot(spikes)
-
-# #%%
-# # print(arb.neuron.dend__nr_ni.dendritic_connection_strengths)
-# import matplotlib.pyplot as plt
-# plt.plot(arb.neuron.dend__nr_ni.s)
 
 
 

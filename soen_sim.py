@@ -778,6 +778,7 @@ class network():
     def get_recordings(self):
         self.t = self.neurons[list(self.neurons.keys())[0]].time_params['time_vec']
         spikes = [ [] for _ in range(2) ]
+        print(spikes)
         S = []
         Phi_r = []
         spike_signals = []
@@ -803,3 +804,4 @@ class network():
         self.spike_signals = spike_signals
         self.phi_r = Phi_r
         self.signal = S
+        neuron.spike_times = []
