@@ -588,10 +588,20 @@ class neuron():
 
         self.dend__ref = neuron_refractory_dendrite
         
-        if 'refractory_dendrite_connection_strength' in kwargs: # options are: scalar value in units of Phi0/Ic, 'auto', 'match_excitatory'; when in doubt, use 'auto' or 'match_excitatory'
+        if 'refractory_dendrite_connection_strength' in kwargs: # options are: scalar value in units of Phi0/Ic, 'auto', or 'match_excitatory'; default is 'auto'; when in doubt, use 'auto'
             if type(kwargs['refractory_dendrite_connection_strength']).__name__ == 'float' or type(kwargs['refractory_dendrite_connection_strength']).__name__ == 'int':
                 self.refractory_dendrite_connection_strength = kwargs['refractory_dendrite_connection_strength']
+                auto = False
             elif kwargs['refractory_dendrite_connection_strength'] == 'auto':
+                auto = True
+            elif kwargs['refractory_dendrite_connection_strength'] == 'match_excitatory':                
+                self.refractory_dendrite_connection_strength = self.total_excitatory_input_connection_strength
+                auto = False
+        else:
+            auto = True
+        
+        if auto:
+            
                 ib__list__ri, phi_r__array__ri, i_di__array__ri, r_fq__array__ri, phi_th_plus__vec__ri, phi_th_minus__vec__ri, s_max_plus__vec__ri, s_max_minus__vec__ri, s_max_plus__array__ri, s_max_minus__array__ri = dend_load_arrays_thresholds_saturations('default_ri')
                 ib__list__rtti, phi_r__array__rtti, i_di__array__rtti, r_fq__array__rtti, phi_th_plus__vec__rtti, phi_th_minus__vec__rtti, s_max_plus__vec__rtti, s_max_minus__vec__rtti, s_max_plus__array__rtti, s_max_minus__array__rtti = dend_load_arrays_thresholds_saturations('default_rtti')
                 if self.loops_present == 'ri':
@@ -634,13 +644,6 @@ class neuron():
                                 
                 self.refractory_dendrite_connection_strength = -delta/_s_max_refractory # ( phi_th_minus + delta/100 ) / s_max
                 
-            elif kwargs['refractory_dendrite_connection_strength'] == 'match_excitatory':
-                
-                self.refractory_dendrite_connection_strength = self.total_excitatory_input_connection_strength
-            
-        else:
-            self.refractory_dendrite_connection_strength = -0.7 # default, totally arbitrary; when in doubt, use 'auto'
-            
         self.dend__nr_ni.add_input(self.dend__ref, connection_strength = self.refractory_dendrite_connection_strength)
  
         
