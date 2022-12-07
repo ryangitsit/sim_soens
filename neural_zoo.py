@@ -67,7 +67,7 @@ class NeuralZoo():
         fractal_neuron = common_neuron(1, 'ri', self.beta_ni, self.tau_ni, 
                                        self.ib, self.s_th, 
                                        self.beta_ref, self.tau_ref, self.ib_ref)
-        fractal_neuron.name = 'name'
+        # fractal_neuron.name = 'name'
         dendrites = [ [] for _ in range(H-1) ]
         synapses = []
 
