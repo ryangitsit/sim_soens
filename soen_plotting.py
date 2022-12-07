@@ -802,11 +802,13 @@ def plot_neuron(neuron_object):
     return
 
 def plot_neuron_simple(neuron_object):
+    
+    if fig_size[0] < 10:
         
-    plt.rcParams['legend.fontsize'] = 6
-    plt.rcParams['axes.labelsize'] = 8
-    plt.rcParams['xtick.labelsize'] = 8
-    plt.rcParams['ytick.labelsize'] = 8
+        plt.rcParams['legend.fontsize'] = 6
+        plt.rcParams['axes.labelsize'] = 8
+        plt.rcParams['xtick.labelsize'] = 8
+        plt.rcParams['ytick.labelsize'] = 8
     
     lines = ["-","--","-.",":"]
     linecycler = cycle(lines)
@@ -818,20 +820,12 @@ def plot_neuron_simple(neuron_object):
     fig, ax = plt.subplots( nrows = 5, ncols = 1, sharex = True, sharey = False, figsize = ( fig_size[0] , 3*fig_size[1]) )
         
     _str = 'soen neuron: {}, loops present = {}'.format(neuron_object.name,neuron_object.loops_present)
-    _str = '{}\nib = {:4.2f}, beta_ni/2pi = {:4.2e}, tau_ni = {:5.3e}ns'.format(_str,neuron_object.bias_current,neuron_object.circuit_betas[-1]/(2*np.pi),neuron_object.integration_loop_time_constant)
+    _str = '{}\nib = {:4.2f}, beta_ni/2pi = {:4.2e}, tau_ni = {:5.3e}ns, J_rn = {:5.3f}'.format(_str,neuron_object.bias_current,neuron_object.circuit_betas[-1]/(2*np.pi),neuron_object.integration_loop_time_constant,neuron_object.refractory_dendrite_connection_strength)
     _str = '{}\nib_refract = {:4.2f}, beta_refract/2pi = {:4.2e}, tau_refract = {:5.3e}ns'.format(_str,neuron_object.bias_current__refraction,neuron_object.circuit_betas__refraction[-1]/(2*np.pi),neuron_object.integration_loop_time_constant__refraction)
     plt.suptitle( _str )
     
     _time_vec = neuron_object.time_params['time_vec']
     _tau_vec = neuron_object.time_params['tau_vec']
-    
-    # output synapses from neuron
-    for synapse_key in neuron_object.synaptic_outputs:
-        ax[0].plot(_time_vec[:], neuron_object.synaptic_outputs[synapse_key].phi_spd[:], color = colors['green3'], label = '{}'.format(neuron_object.synaptic_outputs[synapse_key].name)) 
-        _spike_out_ind_vec = np.zeros([len(neuron_object.synaptic_outputs[synapse_key].spike_times_converted)], dtype = int)
-        for ii in range(len(_spike_out_ind_vec)):
-            _spike_out_ind_vec[ii] = index_finder(_tau_vec,neuron_object.synaptic_outputs[synapse_key].spike_times_converted[ii])
-        ax[0].plot(_time_vec[_spike_out_ind_vec], neuron_object.synaptic_outputs[synapse_key].phi_spd[_spike_out_ind_vec], 'x', color = colors['green5']) 
     
     # find indices of neuron spike times
     _spike_ind_vec = np.zeros([len(neuron_object.spike_times)], dtype = int)
@@ -867,6 +861,14 @@ def plot_neuron_simple(neuron_object):
     
     already_plotted_synapses = []
     find_synapses_recursively_and_plot(neuron_object.dend__nr_ni,ax[0],already_plotted_synapses)
+            
+    # output synapses from neuron
+    for synapse_key in neuron_object.synaptic_outputs:
+        ax[0].plot(_time_vec[:], neuron_object.synaptic_outputs[synapse_key].phi_spd[:], color = colors['green3'], label = '{}'.format(neuron_object.synaptic_outputs[synapse_key].name)) 
+        _spike_out_ind_vec = np.zeros([len(neuron_object.synaptic_outputs[synapse_key].spike_times_converted)], dtype = int)
+        for ii in range(len(_spike_out_ind_vec)):
+            _spike_out_ind_vec[ii] = index_finder(_tau_vec,neuron_object.synaptic_outputs[synapse_key].spike_times_converted[ii])
+        ax[0].plot(_time_vec[_spike_out_ind_vec], neuron_object.synaptic_outputs[synapse_key].phi_spd[_spike_out_ind_vec], 'x', color = colors['green5'])
     
     # dendrites
     def find_dendrites_recursively_and_plot(dendrite_object,axs,counter):
@@ -1127,7 +1129,7 @@ def plot_monosynaptic_monodendritic_neuron__rate_out_vs_rate_in(rate_in__vec, ra
     return
 
 
-def plot_monosynaptic_monodendritic_neuron__single_synapse_event(spike_times__array, ib_neuron__vec, tau_di__vec, beta_ni__vec, neuron_object, dendrite_object):
+def plot_monosynaptic_monodendritic_neuron__single_synapse_event(spike_times__array, ib_neuron__vec, tau_di__vec, beta_ni__vec, neuron_object, dendrite_object, refractory_connection_strength):
     
     # color_list = [['blue1','blue2','blue3','blue4','blue5'],['green1','green2','green3','green4','green5'],['yellow1','yellow2','yellow3','yellow4','yellow5'],['red1','red2','red3','red4','red5']]
     # color_list = [['blue1','blue3','blue5'],['green1','green3','green5'],['yellow1','yellow3','yellow5'],['red1','red3','red5']]
@@ -1156,54 +1158,62 @@ def plot_monosynaptic_monodendritic_neuron__single_synapse_event(spike_times__ar
                     r_out__array[ii][jj].append(0)
                     
                  
-    # r_out vs ib for each beta_ni (separate plot for each tau_di)
-    for kk in range(len(tau_di__vec)):
+    # for each beta_ni (separate plot for each tau_di)
+    for jj in range(len(tau_di__vec)):
                 
-        fig, ax = plt.subplots(nrows = 1, ncols = 1, sharex = True, sharey = False, figsize = ( fig_size[0] , fig_size[1]) ) # 
+        fig, ax = plt.subplots(nrows = 2, ncols = 1, sharex = True, sharey = False, figsize = ( fig_size[0] , fig_size[1]) ) # 
         _str = 'neuron, one syn, one dend, one synapse event: loops present = {}'.format(neuron_object.loops_present)
-        _str = '{}\nbeta_di = {:5.3e}, tau_di = {:5.3e}ns'.format(_str, dendrite_object.beta, tau_di__vec[kk])
+        _str = '{}\nbeta_di = {:5.3e}, tau_di = {:5.3e}ns'.format(_str, dendrite_object.beta, tau_di__vec[jj])
         _str = '{}\nib_n = {:5.3f}, tau_ni = {:5.3f}ns, s_th = {:4.2f}'.format(_str, neuron_object.dend__nr_ni.ib, neuron_object.dend__nr_ni.tau_di, neuron_object.integrated_current_threshold)
         _str = '{}\nib_ref = {:5.3f}, beta_ref = {:5.3e}, tau_ref = {:5.3f}ns'.format(_str, neuron_object.dend__ref.ib, neuron_object.dend__ref.beta, neuron_object.dend__ref.tau_di)
         plt.suptitle('{}'.format( _str ) )
     
         color_list = colors_gist(np.linspace(.1, 1,len(beta_ni__vec)))
-        for jj in range(len(beta_ni__vec)):            
+        for ii in range(len(beta_ni__vec)):            
 
-            ax.plot(ib_neuron__vec[:], 1e-6*np.asarray(r_out__array[jj][kk][:]), '-o', color = color_list[jj], label = 'beta_ni = {:3.1e}'.format(beta_ni__vec[jj]))
+            ax[0].plot(ib_neuron__vec[:], 1e-6*np.asarray(r_out__array[ii][jj][:]), '-o', color = color_list[ii], label = 'beta_ni = {:3.1e}'.format(beta_ni__vec[ii]))
+            ax[1].plot(ib_neuron__vec[:], np.asarray(num_burst__array[ii][jj][:]), '-o', color = color_list[ii], label = 'beta_ni = {:3.1e}'.format(beta_ni__vec[ii]))
         
         # ax.set_ylim([0,20])
-        ax.set_xlabel(r'$i_b$ [$I_c$]')
-        ax.set_ylabel(r'rate out [MHz]')          
-        ax.legend(loc = 'center left') # loc = 'lower right'
-        ax.grid(which = 'both', axis = 'both', color = colors['grey4'])
-        ax.grid(which='minor', linewidth = 0.15)
+        ax[-1].set_xlabel('$i_b$ [$I_c$]')
+        ax[0].set_ylabel('rate out [MHz]')          
+        ax[1].set_ylabel('Num in burst')
+        for qq in range(len(ax)):
+            ax[qq].legend(loc = 'center left') # loc = 'lower right'
+            ax[qq].grid(which = 'both', axis = 'both', color = colors['grey4'])
+            ax[qq].grid(which='minor', linewidth = 0.15)
+        plt.subplots_adjust(wspace=0.3, hspace=0)
         
         # _str = 'tau_ni_{:5.3f}ns_s_th_{:4.2f}'.format(neuron_object.dend__nr_ni.tau_di, neuron_object.integrated_current_threshold)
         # _str = '{}_ib_ref_{:5.3f}_beta_ref_{:5.3e}_tau_ref_{:5.3f}ns'.format(_str, neuron_object.dend__ref.ib, neuron_object.dend__ref.beta, neuron_object.dend__ref.tau_di)
         # _str = '{}_beta_di_{:5.3e}'.format(_str, beta_di__vec[kk])
         # plt.savefig('one_syn_one_dend_one_neu__{}.pdf'.format(_str))
                   
-    # num_burst vs ib for each tau_di (separate plot for each beta_ni)
-    for kk in range(len(beta_ni__vec)):
+    # for each tau_di (separate plot for each beta_ni)
+    for ii in range(len(beta_ni__vec)):
                 
-        fig, ax = plt.subplots(nrows = 1, ncols = 1, sharex = True, sharey = False, figsize = ( fig_size[0] , fig_size[1]) ) # 
+        fig, ax = plt.subplots(nrows = 2, ncols = 1, sharex = True, sharey = False, figsize = ( fig_size[0] , fig_size[1]) ) # 
         _str = 'neuron, one syn, one dend, one synapse event: loops present = {}'.format(neuron_object.loops_present)
-        _str = '{}\nbeta_di = {:5.3e}'.format(_str, dendrite_object.beta)
-        _str = '{}\nib_n = {:5.3f}, beta_ni = {:5.3e}, tau_ni = {:5.3f}ns, s_th = {:4.2f}'.format(_str, neuron_object.dend__nr_ni.ib, beta_ni__vec[kk], neuron_object.dend__nr_ni.tau_di, neuron_object.integrated_current_threshold)
+        _str = '{}\nbeta_di = {:5.3e}, beta_ni = {:5.3e}'.format(_str, dendrite_object.beta, beta_ni__vec[ii])
+        _str = '{}\nib_n = {:5.3f}, tau_ni = {:5.3f}ns, s_th = {:4.2f}'.format(_str, neuron_object.dend__nr_ni.ib, neuron_object.dend__nr_ni.tau_di, neuron_object.integrated_current_threshold)
         _str = '{}\nib_ref = {:5.3f}, beta_ref = {:5.3e}, tau_ref = {:5.3f}ns'.format(_str, neuron_object.dend__ref.ib, neuron_object.dend__ref.beta, neuron_object.dend__ref.tau_di)
         plt.suptitle('{}'.format( _str ) )
     
         color_list = colors_gist(np.linspace(.1, 1,len(tau_di__vec)))
         for jj in range(len(tau_di__vec)):            
-
-            ax.plot(ib_neuron__vec[:], np.asarray(num_burst__array[kk][jj][:]), '-o', color = color_list[jj], label = 'tau_di = {:3.1e}'.format(tau_di__vec[jj]))
+            
+            ax[0].plot(ib_neuron__vec[:], 1e-6*np.asarray(r_out__array[ii][jj][:]), '-o', color = color_list[jj], label = 'tau_di = {:3.1e}'.format(tau_di__vec[jj]))
+            ax[1].plot(ib_neuron__vec[:], np.asarray(num_burst__array[ii][jj][:]), '-o', color = color_list[jj], label = 'tau_di = {:3.1e}'.format(tau_di__vec[jj]))
         
         # ax.set_ylim([0,20])
-        ax.set_xlabel(r'$i_b$ [$I_c$]')
-        ax.set_ylabel(r'Num in burst')          
-        ax.legend(loc = 'center left') # loc = 'lower right'
-        ax.grid(which = 'both', axis = 'both', color = colors['grey4'])
-        ax.grid(which='minor', linewidth = 0.15)
+        ax[-1].set_xlabel('$i_b$ [$I_c$]')
+        ax[0].set_ylabel('rate out [MHz]')          
+        ax[1].set_ylabel('Num in burst')
+        for qq in range(len(ax)):
+            ax[qq].legend(loc = 'center left') # loc = 'lower right'
+            ax[qq].grid(which = 'both', axis = 'both', color = colors['grey4'])
+            ax[qq].grid(which='minor', linewidth = 0.15)
+        plt.subplots_adjust(wspace=0.3, hspace=0)
         
     return r_out__array
 
