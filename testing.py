@@ -2,6 +2,12 @@
 THIS FILE IS FOR LOCAL DEVELOPMENT PURPOSES ONLY
 
 TODO
+ - Add multi-synapse connections
+ - Plotting for phi_nr
+ - Flag for rollover
+ - Dendrite after skip/intermediate
+ - Experiment with auto refraction
+ - Try self-connect
  - Fix defined_spikes
  - Finish recursive search and plotting
  - Finish activity plotting
