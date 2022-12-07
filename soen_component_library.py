@@ -73,7 +73,7 @@ def common_synapse(name):
 # common dendrites
 # =============================================================================
 def common_dendrite(name, loops_present, beta_di, tau_di, ib, offset_flux = 0, self_feedback_coupling_strength = 0, 
-                    normalize_input_connection_strengths = True, total_excitatory_input_connection_strength = 1, total_inhibitory_input_connection_strength = -0.5):
+                    normalize_input_connection_strengths = False, total_excitatory_input_connection_strength = 1, total_inhibitory_input_connection_strength = -0.5):
     
     dend = dendrite(name = name, loops_present = loops_present, circuit_betas = [2*np.pi*1/4, 2*np.pi*1/4, beta_di], junction_critical_current = common_params['Ic'], junction_beta_c = common_params['beta_c'],
                           bias_current = ib, integration_loop_time_constant = tau_di, 
@@ -131,7 +131,7 @@ bias_current = ib_neuron, integration_loop_time_constant = tau_ni, normalize_inp
 # common neuron
 # =============================================================================
 def common_neuron(name, loops_present, beta_ni, tau_ni, ib, s_th, beta_ref, tau_ref, ib_ref, offset_flux = 0, self_feedback_coupling_strength = 0, refractory_dendrite_connection_strength = 'auto',
-                  normalize_input_connection_strengths = True, total_excitatory_input_connection_strength = 1, total_inhibitory_input_connection_strength = -0.5):
+                  normalize_input_connection_strengths = False, total_excitatory_input_connection_strength = 1, total_inhibitory_input_connection_strength = -0.5):
         
     neuron_1 = neuron(name = name,
                       
