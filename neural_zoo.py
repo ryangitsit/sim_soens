@@ -1,20 +1,23 @@
 #%%
 import numpy as np
 
-from _util import (
-    physical_constants, index_finder)
-from _util__soen import (
-    dend_load_rate_array, dend_load_arrays_thresholds_saturations)
-from soen_sim import input_signal, synapse, neuron, network
-from soen_sim_lib__common_components__simple_gates import (
+# from _util import (
+#     physical_constants, index_finder)
+
+from soen_component_library import (
     common_dendrite, common_synapse, common_neuron)
 
-from super_input import SuperInput
-from params import default_neuron_params, nine_pixel_params, weights_3
-from _plotting__soen import raster_plot
+# from soen_utilities import (
+#     dend_load_rate_array, dend_load_arrays_thresholds_saturations,
+#     physical_constants, index_finder)
+
+# from soen_sim import input_signal, synapse, neuron, network
+# from super_input import SuperInput
+# from params import default_neuron_params, nine_pixel_params, weights_3
+# from _plotting__soen import raster_plot
 
 
-from super_input import SuperInput
+# from super_input import SuperInput
 
 '''
 Here a class for calling from a 'zoo' of possible neurons is implemented.
@@ -64,7 +67,7 @@ class NeuralZoo():
         fractal_neuron = common_neuron(1, 'ri', self.beta_ni, self.tau_ni, 
                                        self.ib, self.s_th, 
                                        self.beta_ref, self.tau_ref, self.ib_ref)
-        fractal_neuron.name = 'name'
+        # fractal_neuron.name = 'name'
         dendrites = [ [] for _ in range(H-1) ]
         synapses = []
 
@@ -179,7 +182,7 @@ class NeuralZoo():
                                 connection_strength=self.weights[i][j][k])
 
         dendrites.insert(0,[[custom_neuron.dend__nr_ni]])
-        print('dendrites:', dendrites)
+        # print('dendrites:', dendrites)
         # if synapses also defined, connect as a function of grouping
         if hasattr(self, 'syns'):
             self.synapses = [[] for _ in range(len(self.syns))]
@@ -202,12 +205,12 @@ class NeuralZoo():
                 for j,group in enumerate(layer):
                     for k,s in enumerate(group):
                         if s != 0:
-                            print('synapse')
+                            # print('synapse')
                             self.synapses[i][j].append(common_synapse(s))
                         else:
-                            print('no synapse')
+                            # print('no synapse')
                             self.synapses[i][j].append(0)
-            print('synapses:', self.synapses)
+            # print('synapses:', self.synapses)
             count=0
             for i,layer in enumerate(self.synapses):
                 for j, subgroup in enumerate(layer):

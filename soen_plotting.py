@@ -6,11 +6,10 @@ import matplotlib as mp
 import pickle
 from itertools import cycle
 
-from _util__soen import depth_of_dendritic_tree, dend_load_arrays_thresholds_saturations
-from _util import color_dictionary, physical_constants, colors_gist, index_finder
+from soen_utilities import depth_of_dendritic_tree, dend_load_arrays_thresholds_saturations, color_dictionary, physical_constants, colors_gist, index_finder
+
 colors = color_dictionary()
 p = physical_constants()
-
 
 fig_size = plt.rcParams['figure.figsize']
 

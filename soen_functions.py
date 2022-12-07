@@ -7,8 +7,7 @@ import sys
 from numpy.random import default_rng
 rng = default_rng()
 
-from _util import physical_constants, index_finder
-from _util__soen import dend_load_rate_array, dend_load_arrays_thresholds_saturations
+from soen_utilities import dend_load_rate_array, dend_load_arrays_thresholds_saturations, physical_constants, index_finder
 
 #%% necessary info
 

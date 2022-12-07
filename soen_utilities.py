@@ -9,12 +9,49 @@ import copy
 import matplotlib as mp
 from soen_sim_data import *
 
-from _util import physical_constants, material_parameters,color_dictionary
-colors = color_dictionary()
-p = physical_constants()
-m_p = material_parameters()
+# from soen_utilities import physical_constants, material_parameters, color_dictionary
+# colors = color_dictionary()
+
+# m_p = material_parameters()
 
 fig_size = plt.rcParams['figure.figsize']
+
+#%%
+
+def physical_constants():
+
+    p = dict(h = 6.62606957e-34,#Planck's constant in kg m^2/s
+         hbar = 6.62606957e-34/(2*np.pi),
+         hBar = 6.62606957e-34/(2*np.pi),
+         hbar__eV_fs = 10.616133416243974/(2*np.pi),
+         hBar__eV_fs = 10.616133416243974/(2*np.pi),
+         c = 299792458,#speed of light in meters per second
+         c__um_ns = 299792.458,#speed of light in meters per second
+         epsilon0 = 8.854187817e-12,#permittivity of free space in farads per meter
+         mu0 = 4*np.pi*1e-7,#permeability of free space in volt seconds per amp meter
+         k = 1.3806e-23,#Boltzmann's constant in joules per kelvin
+         kB = 1.3806e-23,#Boltzmann's constant in joules per kelvin
+         kb = 1.3806e-23,#Boltzmann's constant in joules per kelvin
+         kB__eV = 8.61703e-05,#Boltzmann's constant in electron volts per kelvin
+         kb__ev = 8.61703e-05,#Boltzmann's constant in electron volts per kelvin
+         kB_eV = 8.61703e-05,#Boltzmann's constant in electron volts per kelvin
+         kb_ev = 8.61703e-05,#Boltzmann's constant in electron volts per kelvin
+         e = 1.60217657e-19,#electron charge in coulombs
+         m_e = 9.10938291e-31,#mass of electron in kg
+         eV = 1.60217657e-19,#joules per eV
+         ev = 1.60217657e-19,#joules per eV
+         Ry = 9.10938291e-31*1.60217657e-19**4/(8*8.854187817e-12**2*(6.62606957e-34/2/np.pi)**3*299792458),#13.3*eV;#Rydberg in joules
+         a0 = 4*np.pi*8.854187817e-12*(6.62606957e-34/2/np.pi)**2/(9.10938291e-31*1.60217657e-19**2),#estimate of Bohr radius
+         Phi0 = 6.62606957e-34/(2*1.60217657e-19),#flux quantum
+         Phi0__pH_ns = 6.62606957e3/(2*1.60217657),
+         N_mole = 6.02214076e23, # atoms per mole
+         golden_ratio = (1+np.sqrt(5))/2,
+         gamma_euler = 0.5772  # Euler's constant
+         )
+
+    return p 
+
+p = physical_constants()
 
 #%%
 def bias_ramp(t,dt_ramp,ii_max):
@@ -625,256 +662,6 @@ def exp_fitter(x,y,index1,index2, rise_or_fall = 'rise'):
 
 
 # =============================================================================
-# nine pixel helpers
-# =============================================================================
-
-def nine_pixel_classifier_drive(plot_drive_array = False):
-    
-    _z = [1,1,0,
-          0,1,0,
-          0,1,1]
-    
-    _v = [1,0,1,
-          1,0,1,
-          0,1,0]
-    
-    _n = [0,1,0,
-          1,0,1,
-          1,0,1]
-            
-    mat_list = [_z,_v,_n]
-
-    drive_dict = dict()
-    str_list = ['z','v','n']
-    for ii in range(len(mat_list)):
-        _str = str_list[ii]
-        _mat = mat_list[ii]
-        drive_dict['{}_{:d}'.format(_str,0)] = _mat
-        for jj in range(len(_mat)):
-            _mat_mod = copy.deepcopy(_mat)
-            _mat_mod[jj] = ( _mat_mod[jj] + 1 ) % 2
-            drive_dict['{}_{:d}'.format(_str,jj+1)] = _mat_mod            
-        
-    if plot_drive_array:
-    
-        color_map = mp.colors.ListedColormap([colors['grey1'],colors['black']])
-        fig, ax = plt.subplots(nrows = 3, ncols = 10, sharex = False, sharey = False, figsize = ( fig_size[0] , fig_size[1] ) ) 
-        for ii in range(len(ax[:,1])):
-            for jj in range(len(ax[1,:])):
-                
-                _temp_mat = np.zeros([3,3])
-                for kk in range(3):
-                    _temp_mat[:,kk] = drive_dict['{}_{}'.format(str_list[ii],jj)][kk*3:(kk+1)*3]
-                                
-                ax[ii,jj].imshow(np.transpose(_temp_mat[:,:]), cmap = color_map, interpolation='none', extent = [0.5,3.5,0.5,3.5], aspect = 'equal', origin = 'upper') # np.transpose(_temp_mat[:,:]) # np.fliplr(np.transpose(_temp_mat[:,:]))
-                
-                # major ticks
-                ax[ii,jj].set_xticks(np.asarray([1,2,3]))
-                ax[ii,jj].set_yticks(np.asarray([3,2,1]))
-    
-                # labels for major ticks
-                ax[ii,jj].set_xticklabels(np.asarray([1,2,3]))
-                ax[ii,jj].set_yticklabels(np.asarray([1,2,3]))
-                
-                # minor ticks
-                ax[ii,jj].set_xticks(np.asarray([1.5,2.5]), minor=True)
-                ax[ii,jj].set_yticks(np.asarray([1.5,2.5]), minor=True)
-                
-                # gridlines based on minor ticks
-                ax[ii,jj].grid(which='minor', color = colors['greengrey3'], linestyle='-', linewidth=1)
-                    
-        fig.suptitle('Nine-pixel classifier drive matrices')  
-        plt.show()
-    
-    return drive_dict # drive_array, 
-
-from soen_sim_lib__common_components__simple_gates import common_synapse, common_dendrite
-from soen_sim import input_signal
-
-def nine_pixel_synapses():
-    syn_1 = common_synapse('syn_1')
-    syn_2 = common_synapse('syn_2')
-    syn_3 = common_synapse('syn_3')
-    syn_4 = common_synapse('syn_4')
-    syn_5 = common_synapse('syn_5')
-    syn_6 = common_synapse('syn_6')
-    syn_7 = common_synapse('syn_7')
-    syn_8 = common_synapse('syn_8')
-    syn_9 = common_synapse('syn_9')
-    syn_out = common_synapse('syn_out')
-    return syn_1, syn_2, syn_3, syn_4, syn_5, syn_6, syn_7, syn_8, syn_9, syn_out
-
-def nine_pixel_stage_1_dendrites(OR_beta,AND_beta,tau,OR_bias,AND_bias):
-    dend_2or5 = common_dendrite('dend_2or5', 'rtti', OR_beta, tau, OR_bias)
-    dend_4and6 = common_dendrite('dend_4and6', 'ri', AND_beta, tau, AND_bias)
-    dend_5or8 = common_dendrite('dend_5or8', 'rtti', OR_beta, tau, OR_bias)
-    dend_1or3 = common_dendrite('dend_1or3', 'rtti', OR_beta, tau, OR_bias)
-    dend_7and9 = common_dendrite('dend_7and9', 'ri', AND_beta, tau, AND_bias)
-    dend_4or6 = common_dendrite('dend_4or6', 'rtti', OR_beta, tau, OR_bias)
-    dend_2and5 = common_dendrite('dend_2and5', 'ri', AND_beta, tau, AND_bias)
-    dend_7or9 = common_dendrite('dend_7or9', 'rtti', OR_beta, tau, OR_bias)
-    dend_1and3 = common_dendrite('dend_1and3', 'ri', AND_beta, tau, AND_bias)
-    dend_5and8 = common_dendrite('dend_5and8', 'ri', AND_beta, tau, AND_bias)
-    return dend_2or5, dend_4and6, dend_5or8, dend_1or3, dend_7and9, dend_4or6, dend_2and5, dend_7or9, dend_1and3, dend_5and8
-
-def nine_pixel_stage_2_dendrites(ANDNOT_beta,tau,ANDNOT_bias):
-    dend_2or5_andnot_4and6 = common_dendrite('dend_2or5_andnot_4and6', 'ri', ANDNOT_beta, tau, ANDNOT_bias)
-    dend_5or8_andnot_4and6 = common_dendrite('dend_5or8_andnot_4and6', 'ri', ANDNOT_beta, tau, ANDNOT_bias)
-    dend_1or3_andnot_7and9 = common_dendrite('dend_1or3_andnot_7and9', 'ri', ANDNOT_beta, tau, ANDNOT_bias)
-    dend_4or6_andnot_2and5 = common_dendrite('dend_4or6_andnot_2and5', 'ri', ANDNOT_beta, tau, ANDNOT_bias)
-    dend_7or9_andnot_1and3 = common_dendrite('dend_7or9_andnot_1and3', 'ri', ANDNOT_beta, tau, ANDNOT_bias)
-    dend_4or6_andnot_5and8 = common_dendrite('dend_4or6_andnot_5and8', 'ri', ANDNOT_beta, tau, ANDNOT_bias)
-    return dend_2or5_andnot_4and6, dend_5or8_andnot_4and6, dend_1or3_andnot_7and9, dend_4or6_andnot_2and5, dend_7or9_andnot_1and3, dend_4or6_andnot_5and8 
-
-def nine_pixel_stage_3_dendrites(AND_beta,tau_z,tau_v,tau_n,AND_bias):
-    dend_z = common_dendrite('dend_z', 'ri', AND_beta, tau_z, AND_bias)
-    dend_v = common_dendrite('dend_v', 'ri', AND_beta, tau_v, AND_bias)
-    dend_n = common_dendrite('dend_n', 'ri', AND_beta, tau_n, AND_bias)
-    return dend_z, dend_v, dend_n
-
-def nine_pixel_stage_3_dendrites__logic_level_restoration(beta,tau_z,tau_v,tau_n,bias):
-    dend_z2 = common_dendrite('dend_z2', 'rtti', beta, tau_z, bias)
-    dend_v2 = common_dendrite('dend_v2', 'rtti', beta, tau_v, bias)
-    dend_n2 = common_dendrite('dend_n2', 'rtti', beta, tau_n, bias)
-    return dend_z2, dend_v2, dend_n2
-
-def nine_pixel_add_inputs_to_synapses(syn_1, syn_2, syn_3, syn_4, syn_5, syn_6, syn_7, syn_8, syn_9, in_1, in_2, in_3, in_4, in_5, in_6, in_7, in_8, in_9):
-    syn_1.add_input(in_1)
-    syn_2.add_input(in_2)
-    syn_3.add_input(in_3)
-    syn_4.add_input(in_4)
-    syn_5.add_input(in_5)
-    syn_6.add_input(in_6)
-    syn_7.add_input(in_7)
-    syn_8.add_input(in_8)
-    syn_9.add_input(in_9)
-    return syn_1, syn_2, syn_3, syn_4, syn_5, syn_6, syn_7, syn_8, syn_9
-
-def nine_pixel_add_synapses_to_stage_one_dendrites(syn_1, syn_2, syn_3, syn_4, syn_5, syn_6, syn_7, syn_8, syn_9, dend_2or5, dend_4and6, dend_5or8, dend_1or3, dend_7and9, dend_4or6, dend_2and5, dend_7or9, dend_1and3, dend_5and8, OR_connection_strengths, AND_connection_strengths):    
-    dend_2or5.add_input(syn_2, connection_strength = OR_connection_strengths[0])
-    dend_2or5.add_input(syn_5, connection_strength = OR_connection_strengths[1])        
-    dend_4and6.add_input(syn_4, connection_strength = AND_connection_strengths[0])
-    dend_4and6.add_input(syn_6, connection_strength = AND_connection_strengths[1])    
-    dend_5or8.add_input(syn_5, connection_strength = OR_connection_strengths[0])
-    dend_5or8.add_input(syn_8, connection_strength = OR_connection_strengths[1])    
-    dend_1or3.add_input(syn_1, connection_strength = OR_connection_strengths[0])
-    dend_1or3.add_input(syn_3, connection_strength = OR_connection_strengths[1])    
-    dend_7and9.add_input(syn_7, connection_strength = AND_connection_strengths[0])
-    dend_7and9.add_input(syn_9, connection_strength = AND_connection_strengths[1])    
-    dend_4or6.add_input(syn_4, connection_strength = OR_connection_strengths[0])
-    dend_4or6.add_input(syn_6, connection_strength = OR_connection_strengths[1])    
-    dend_2and5.add_input(syn_2, connection_strength = AND_connection_strengths[0])
-    dend_2and5.add_input(syn_5, connection_strength = AND_connection_strengths[1])    
-    dend_7or9.add_input(syn_7, connection_strength = OR_connection_strengths[0])
-    dend_7or9.add_input(syn_9, connection_strength = OR_connection_strengths[1])    
-    dend_1and3.add_input(syn_1, connection_strength = AND_connection_strengths[0])
-    dend_1and3.add_input(syn_3, connection_strength = AND_connection_strengths[1])    
-    dend_5and8.add_input(syn_5, connection_strength = AND_connection_strengths[0])
-    dend_5and8.add_input(syn_8, connection_strength = AND_connection_strengths[1])
-    return dend_2or5, dend_4and6, dend_5or8, dend_1or3, dend_7and9, dend_4or6, dend_2and5, dend_7or9, dend_1and3, dend_5and8
-
-def nine_pixel_add_stage_one_dendrites_to_stage_two_dendrites(dend_2or5,dend_4and6,dend_5or8,dend_1or3,dend_7and9,dend_4or6,dend_2and5,dend_7or9,dend_1and3,dend_5and8,dend_2or5_andnot_4and6,dend_5or8_andnot_4and6,dend_1or3_andnot_7and9,dend_4or6_andnot_2and5,dend_7or9_andnot_1and3,dend_4or6_andnot_5and8,ANDNOT_connection_strengths):
-    dend_2or5_andnot_4and6.add_input(dend_2or5, connection_strength = ANDNOT_connection_strengths[0])
-    dend_2or5_andnot_4and6.add_input(dend_4and6, connection_strength = ANDNOT_connection_strengths[1])
-    dend_5or8_andnot_4and6.add_input(dend_5or8, connection_strength = ANDNOT_connection_strengths[0])
-    dend_5or8_andnot_4and6.add_input(dend_4and6, connection_strength = ANDNOT_connection_strengths[1])
-    dend_1or3_andnot_7and9.add_input(dend_1or3, connection_strength = ANDNOT_connection_strengths[0])
-    dend_1or3_andnot_7and9.add_input(dend_7and9, connection_strength = ANDNOT_connection_strengths[1])
-    dend_4or6_andnot_2and5.add_input(dend_4or6, connection_strength = ANDNOT_connection_strengths[0])
-    dend_4or6_andnot_2and5.add_input(dend_2and5, connection_strength = ANDNOT_connection_strengths[1])
-    dend_7or9_andnot_1and3.add_input(dend_7or9, connection_strength = ANDNOT_connection_strengths[0])
-    dend_7or9_andnot_1and3.add_input(dend_1and3, connection_strength = ANDNOT_connection_strengths[1])
-    dend_4or6_andnot_5and8.add_input(dend_4or6, connection_strength = ANDNOT_connection_strengths[0])
-    dend_4or6_andnot_5and8.add_input(dend_5and8, connection_strength = ANDNOT_connection_strengths[1])
-    return dend_2or5_andnot_4and6,dend_5or8_andnot_4and6,dend_1or3_andnot_7and9,dend_4or6_andnot_2and5,dend_7or9_andnot_1and3,dend_4or6_andnot_5and8
-
-def nine_pixel_add_stage_two_dendrites_to_stage_three_dendrites(dend_2or5_andnot_4and6,dend_5or8_andnot_4and6,dend_1or3_andnot_7and9,dend_4or6_andnot_2and5,dend_7or9_andnot_1and3,dend_4or6_andnot_5and8,dend_z,dend_v,dend_n,AND_connection_strengths):
-    dend_z.add_input(dend_2or5_andnot_4and6, connection_strength = AND_connection_strengths[0])
-    dend_z.add_input(dend_5or8_andnot_4and6, connection_strength = AND_connection_strengths[1])
-    dend_v.add_input(dend_1or3_andnot_7and9, connection_strength = AND_connection_strengths[0])
-    dend_v.add_input(dend_4or6_andnot_2and5, connection_strength = AND_connection_strengths[1])
-    dend_n.add_input(dend_7or9_andnot_1and3, connection_strength = AND_connection_strengths[0])
-    dend_n.add_input(dend_4or6_andnot_5and8, connection_strength = AND_connection_strengths[1])
-    return dend_z,dend_v,dend_n
-
-def nine_pixel_add_stage_three_dendrites_and_output_synapse_to_neuron(dend_z2,dend_v2,dend_n2,syn_out,neuron_1,connection_strength):
-    neuron_1.add_input(dend_z2, connection_strength = connection_strength)
-    neuron_1.add_input(dend_v2, connection_strength = connection_strength)
-    neuron_1.add_input(dend_n2, connection_strength = connection_strength)
-    neuron_1.add_output(syn_out)
-    return neuron_1
-
-def nine_pixel_add_stage_three_dendrites_to_logic_level_restoration(dend_z,dend_v,dend_n,dend_z2,dend_v2,dend_n2,connections_strengths__logic_level_restoration):
-    dend_z2.add_input(dend_z, connection_strength = connections_strengths__logic_level_restoration)
-    dend_v2.add_input(dend_v, connection_strength = connections_strengths__logic_level_restoration)
-    dend_n2.add_input(dend_n, connection_strength = connections_strengths__logic_level_restoration)
-    return dend_z2,dend_v2,dend_n2
-
-def nine_pixel_generate_inputs_and_add_to_synapses(syn_1, syn_2, syn_3, syn_4, syn_5, syn_6, syn_7, syn_8, syn_9, drive_dict, input_strings, t_on, Dt, with_jitter = False, num_photons_per_spike = 1):
-    
-    spike_times__array = []
-    for ii in range(9):
-        spike_times__array.append([])
-        
-        for jj in range(len(input_strings)):
-            
-            drive_vec = drive_dict[input_strings[jj]]
-        
-            if drive_vec[ii] == 1:
-                spike_times__array[ii].append(t_on+jj*Dt)
-            # elif drive_vec[ii] == 0:
-                # spike_times__array[ii].append()
-            
-    if with_jitter:
-        in_1 = input_signal(name = 'in_1', input_temporal_form = 'arbitrary_spike_train_with_jitter', spike_times = np.asarray(spike_times__array[0]), source_type = 'qd', num_photons_per_spike = num_photons_per_spike)
-        in_2 = input_signal(name = 'in_2', input_temporal_form = 'arbitrary_spike_train_with_jitter', spike_times = np.asarray(spike_times__array[1]), source_type = 'qd', num_photons_per_spike = num_photons_per_spike)
-        in_3 = input_signal(name = 'in_3', input_temporal_form = 'arbitrary_spike_train_with_jitter', spike_times = np.asarray(spike_times__array[2]), source_type = 'qd', num_photons_per_spike = num_photons_per_spike)
-        in_4 = input_signal(name = 'in_4', input_temporal_form = 'arbitrary_spike_train_with_jitter', spike_times = np.asarray(spike_times__array[3]), source_type = 'qd', num_photons_per_spike = num_photons_per_spike)
-        in_5 = input_signal(name = 'in_5', input_temporal_form = 'arbitrary_spike_train_with_jitter', spike_times = np.asarray(spike_times__array[4]), source_type = 'qd', num_photons_per_spike = num_photons_per_spike)
-        in_6 = input_signal(name = 'in_6', input_temporal_form = 'arbitrary_spike_train_with_jitter', spike_times = np.asarray(spike_times__array[5]), source_type = 'qd', num_photons_per_spike = num_photons_per_spike)
-        in_7 = input_signal(name = 'in_7', input_temporal_form = 'arbitrary_spike_train_with_jitter', spike_times = np.asarray(spike_times__array[6]), source_type = 'qd', num_photons_per_spike = num_photons_per_spike)
-        in_8 = input_signal(name = 'in_8', input_temporal_form = 'arbitrary_spike_train_with_jitter', spike_times = np.asarray(spike_times__array[7]), source_type = 'qd', num_photons_per_spike = num_photons_per_spike)
-        in_9 = input_signal(name = 'in_9', input_temporal_form = 'arbitrary_spike_train_with_jitter', spike_times = np.asarray(spike_times__array[8]), source_type = 'qd', num_photons_per_spike = num_photons_per_spike)
-    else:
-        in_1 = input_signal(name = 'in_1', input_temporal_form = 'arbitrary_spike_train', spike_times = np.asarray(spike_times__array[0]))
-        in_2 = input_signal(name = 'in_2', input_temporal_form = 'arbitrary_spike_train', spike_times = np.asarray(spike_times__array[1]))
-        in_3 = input_signal(name = 'in_3', input_temporal_form = 'arbitrary_spike_train', spike_times = np.asarray(spike_times__array[2]))
-        in_4 = input_signal(name = 'in_4', input_temporal_form = 'arbitrary_spike_train', spike_times = np.asarray(spike_times__array[3]))
-        in_5 = input_signal(name = 'in_5', input_temporal_form = 'arbitrary_spike_train', spike_times = np.asarray(spike_times__array[4]))
-        in_6 = input_signal(name = 'in_6', input_temporal_form = 'arbitrary_spike_train', spike_times = np.asarray(spike_times__array[5]))
-        in_7 = input_signal(name = 'in_7', input_temporal_form = 'arbitrary_spike_train', spike_times = np.asarray(spike_times__array[6]))
-        in_8 = input_signal(name = 'in_8', input_temporal_form = 'arbitrary_spike_train', spike_times = np.asarray(spike_times__array[7]))
-        in_9 = input_signal(name = 'in_9', input_temporal_form = 'arbitrary_spike_train', spike_times = np.asarray(spike_times__array[8]))
-    
-    nine_pixel_add_inputs_to_synapses(syn_1, syn_2, syn_3, syn_4, syn_5, syn_6, syn_7, syn_8, syn_9, in_1, in_2, in_3, in_4, in_5, in_6, in_7, in_8, in_9)
-    
-    return syn_1, syn_2, syn_3, syn_4, syn_5, syn_6, syn_7, syn_8, syn_9, spike_times__array
-
-def min_max_finder(vec):
-    _max = np.max(vec)
-    _min = np.min(vec[np.where(vec > 1e-3)])
-    return _min, _max
-
-def and_not_coupling(phi_th_minus,phi_th_plus,s_or_min,s_or_max,c_or,s_and_min,s_and_max):
-    c_max = phi_th_plus/s_and_max # ( phi_th_plus - s_or_max*c_or ) / s_and_min
-    c_min = phi_th_minus/s_and_max # ( phi_th_minus - s_or_min*c_or ) / s_and_max
-    # print('c_4and6__min = {}, c_4and6__max = {}'.format(c_4and6__min,c_4and6__max))
-    c = c_min + (c_max-c_min)/20 # np.average([c_max,c_min])
-    return c, c_min, c_max
-
-def and_coupling(s_a,s_b):
-    
-    c_a = 1/(4*s_a)
-    c_b = s_a*c_a/s_b
-    
-    return c_a, c_b
-
-# =============================================================================
-# end nine pixel helpers
-# =============================================================================
-
-
-# =============================================================================
 # network average path length
 # =============================================================================
 
@@ -957,3 +744,187 @@ def C_per_length(eps_r,w,d,C0):
 # end superconducting wires
 # =============================================================================
 
+# =============================================================================
+# materials
+# =============================================================================
+
+def material_parameters():
+    
+    p = physical_constants()
+    
+    mp = dict(epsilon_sio2 = (1.46**2)*p['epsilon0'], # dc permittivity of silicon dioxide
+              epsilon_si = (3.48**2)*p['epsilon0'], # dc permittivity of silicon
+              epsilon_gaas = 12.85*p['epsilon0'], # dc permittivity of GaAs
+              epsilon_algaas = 12.9*p['epsilon0'], # dc permittivity of AlGaAs
+              n_i__si = 1e16, # electrons per meter cubed in silicon at 300K, grimoire table 5
+              n_i__gaas = 2.25e12, # electrons per meter cubed in GaAs at 300K, grimoire table 6
+              Lsq__MoSi = 160e-12, # kinetic inductance per square for MoSi
+              Lsq__WSi = 400e-12, # kinetic inductance per square for WSi
+              rsq__MoSi = 500, # resistance per square for MoSi,
+              alpha__MoSi = 2e-2, # w_wire = alpha Idi_sat
+              Eg__gaas = 2.275e-19 # GaAs band gap in joules
+              )
+    
+    return mp
+
+# =============================================================================
+# end materials
+# =============================================================================
+
+
+# =============================================================================
+# colors
+# =============================================================================
+
+def color_dictionary():
+
+    colors = dict()    
+
+    ## define colors
+    #blues  lightest to darkest
+    blueVec1 = np.array([145,184,219]); colors['blue1'] = blueVec1/256;
+    blueVec2 = np.array([96,161,219]); colors['blue2'] = blueVec2/256;
+    blueVec3 = np.array([24,90,149]); colors['blue3'] = blueVec3/256;
+    blueVec4 = np.array([44,73,100]); colors['blue4'] = blueVec4/256;
+    blueVec5 = np.array([4,44,80]); colors['blue5'] = blueVec5/256;
+    colors['blue1.5'] = (blueVec1+blueVec2)/(512);
+    colors['blue2.5'] = (blueVec2+blueVec3)/(512);
+    colors['blue3.5'] = (blueVec3+blueVec4)/(512);
+    colors['blue4.5'] = (blueVec4+blueVec5)/(512);
+    #reds  lightest to darkest
+    redVec1 = np.array([246,177,156]); colors['red1'] = redVec1/256;
+    redVec2 = np.array([246,131,98]); colors['red2'] = redVec2/256;
+    redVec3 = np.array([230,69,23]); colors['red3'] = redVec3/256;
+    redVec4 = np.array([154,82,61]); colors['red4'] = redVec4/256;
+    redVec5 = np.array([123,31,4]); colors['red5'] = redVec5/256;
+    colors['red1.5'] = (redVec1+redVec2)/(512);
+    colors['red2.5'] = (redVec2+redVec3)/(512);
+    colors['red3.5'] = (redVec3+redVec4)/(512);
+    colors['red4.5'] = (redVec4+redVec5)/(512);
+    #greens  lightest to darkest
+    greenVec1 = np.array([142,223,180]); colors['green1'] = greenVec1/256;
+    greenVec2 = np.array([89,223,151]); colors['green2'] = greenVec2/256;
+    greenVec3 = np.array([16,162,84]); colors['green3'] = greenVec3/256;
+    greenVec4 = np.array([43,109,74]); colors['green4'] = greenVec4/256;
+    greenVec5 = np.array([3,87,42]); colors['green5'] = greenVec5/256;
+    colors['green1.5'] = (greenVec1+greenVec2)/(512);
+    colors['green2.5'] = (greenVec2+greenVec3)/(512);
+    colors['green3.5'] = (greenVec3+greenVec4)/(512);
+    colors['green4.5'] = (greenVec4+greenVec5)/(512);
+    #yellows  lightest to darkest
+    yellowVec1 = np.array([246,204,156]); colors['yellow1'] = yellowVec1/256;
+    yellowVec2 = np.array([246,185,98]); colors['yellow2'] = yellowVec2/256;
+    yellowVec3 = np.array([230,144,23]); colors['yellow3'] = yellowVec3/256;
+    yellowVec4 = np.array([154,115,61]); colors['yellow4'] = yellowVec4/256;
+    yellowVec5 = np.array([123,74,4]); colors['yellow5'] = yellowVec5/256;
+    colors['yellow1.5'] = (yellowVec1+yellowVec2)/(512);
+    colors['yellow2.5'] = (yellowVec2+yellowVec3)/(512);
+    colors['yellow3.5'] = (yellowVec3+yellowVec4)/(512);
+    colors['yellow4.5'] = (yellowVec4+yellowVec5)/(512);
+    
+    #blue grays
+    gBlueVec1 = np.array([197,199,202]); colors['bluegrey1'] = gBlueVec1/256;
+    gBlueVec2 = np.array([195,198,202]); colors['bluegrey2'] = gBlueVec2/256;
+    gBlueVec3 = np.array([142,145,149]); colors['bluegrey3'] = gBlueVec3/256;
+    gBlueVec4 = np.array([108,110,111]); colors['bluegrey4'] = gBlueVec4/256;
+    gBlueVec5 = np.array([46,73,97]); colors['bluegrey5'] = gBlueVec5/256;
+    colors['bluegrey1.5'] = (gBlueVec1+gBlueVec2)/(512);
+    colors['bluegrey2.5'] = (gBlueVec2+gBlueVec3)/(512);
+    colors['bluegrey3.5'] = (gBlueVec3+gBlueVec4)/(512);
+    colors['bluegrey4.5'] = (gBlueVec4+gBlueVec5)/(512);
+    #red grays
+    gRedVec1 = np.array([242,237,236]); colors['redgrey1'] = gRedVec1/256;
+    gRedVec2 = np.array([242,235,233]); colors['redgrey2'] = gRedVec2/256;
+    gRedVec3 = np.array([230,231,218]); colors['redgrey3'] = gRedVec3/256;
+    gRedVec4 = np.array([172,167,166]); colors['redgrey4'] = gRedVec4/256;
+    gRedVec5 = np.array([149,88,71]); colors['redgrey5'] = gRedVec5/256;
+    colors['redgrey1.5'] = (gRedVec1+gRedVec2)/(512);
+    colors['redgrey2.5'] = (gRedVec2+gRedVec3)/(512);
+    colors['redgrey3.5'] = (gRedVec3+gRedVec4)/(512);
+    colors['redgrey4.5'] = (gRedVec4+gRedVec5)/(512);
+    #green grays
+    gGreenVec1 = np.array([203,209,206]); colors['greengrey1'] = gGreenVec1/256;
+    gGreenVec2 = np.array([201,209,204]); colors['greengrey2'] = gGreenVec2/256;
+    gGreenVec3 = np.array([154,162,158]); colors['greengrey3'] = gGreenVec3/256;
+    gGreenVec4 = np.array([117,122,119]); colors['greengrey4'] = gGreenVec4/256;
+    gGreenVec5 = np.array([50,105,76]); colors['greengrey5'] = gGreenVec5/256;
+    colors['greengrey1.5'] = (gGreenVec1+gGreenVec2)/(512);
+    colors['greengrey2.5'] = (gGreenVec2+gGreenVec3)/(512);
+    colors['greengrey3.5'] = (gGreenVec3+gGreenVec4)/(512);
+    colors['greengrey4.5'] = (gGreenVec4+gGreenVec5)/(512);
+    #yellow grays
+    gYellowVec1 = np.array([242,240,236]); colors['yellowgrey1'] = gYellowVec1/256;
+    gYellowVec2 = np.array([242,239,233]); colors['yellowgrey2'] = gYellowVec2/256;
+    gYellowVec3 = np.array([230,225,218]); colors['yellowgrey3'] = gYellowVec3/256;
+    gYellowVec4 = np.array([172,169,166]); colors['yellowgrey4'] = gYellowVec4/256;
+    gYellowVec5 =np.array( [149,117,71]); colors['yellowgrey5'] = gYellowVec5/256;
+    colors['yellowgrey1.5'] = (gYellowVec1+gYellowVec2)/(512);
+    colors['yellowgrey2.5'] = (gYellowVec2+gYellowVec3)/(512);
+    colors['yellowgrey3.5'] = (gYellowVec3+gYellowVec4)/(512);
+    colors['yellowgrey4.5'] = (gYellowVec4+gYellowVec5)/(512);
+    
+    #pure grays (white to black)
+    gVec1 = np.array([256,256,256]); colors['grey1'] = gVec1/256;
+    colors['white'] = colors['grey1']
+    gVec2 = np.array([242,242,242]); colors['grey2'] = gVec2/256;
+    gVec3 = np.array([230,230,230]); colors['grey3'] = gVec3/256;
+    gVec4 = np.array([204,204,204]); colors['grey4'] = gVec4/256;
+    gVec5 = np.array([179,179,179]); colors['grey5'] = gVec5/256;
+    gVec6 = np.array([153,153,153]); colors['grey6'] = gVec6/256;
+    gVec7 = np.array([128,128,128]); colors['grey7'] = gVec7/256;
+    gVec8 = np.array([102,102,102]); colors['grey8'] = gVec8/256;
+    gVec9 = np.array([77,77,77]); colors['grey9'] = gVec9/256;
+    gVec10 = np.array([51,51,51]); colors['grey10'] = gVec10/256;
+    gVec11 = np.array([26,26,26]); colors['grey11'] = gVec11/256;
+    gVec12 = np.array([0,0,0]); colors['grey12'] = gVec12/256;
+    colors['black'] = np.array([0,0,0]);
+    
+    # alt blue, green, red, yellow
+    alt_blue_light = np.array([162,188,200]); colors['alt_blue_light'] = alt_blue_light/256;
+    alt_blue_dark = np.array([134,154,175]); colors['alt_blue_dark'] = alt_blue_dark/256;
+    alt_green_light = np.array([163,185,169]); colors['alt_green_light'] = alt_green_light/256;
+    alt_green_dark = np.array([117,135,133]); colors['alt_green_dark'] = alt_green_dark/256;
+    alt_red_light = np.array([175,165,175]); colors['alt_red_light'] = alt_red_light/256;
+    alt_red_dark = np.array([145,119,123]); colors['alt_red_dark'] = alt_red_dark/256;
+    alt_yellow_light = np.array([175,165,175]); colors['alt_yellow_light'] = alt_yellow_light/256;
+    alt_yellow_dark = np.array([145,119,123]); colors['alt_yellow_dark'] = alt_yellow_dark/256;
+    
+    return colors
+
+
+    # gist_earth
+def colors_gist(x): # x can be scalar or vector, index of color between 0 (white) and 1 (black)
+    
+    return plt.cm.gist_earth_r(x)
+
+# =============================================================================
+# end colors
+# =============================================================================
+
+
+# =============================================================================
+# the most important function
+# =============================================================================
+
+def index_finder(var_1,var_2):
+    
+    if type(var_1).__name__ == 'float' or type(var_1).__name__ == 'float64' or type(var_1).__name__ == 'int' or type(var_1).__name__ == 'uint8':
+        value = var_1
+        array = np.asarray(var_2)
+    elif type(var_2).__name__ == 'float' or type(var_2).__name__ == 'float64' or type(var_2).__name__ == 'int' or type(var_2).__name__ == 'uint8':
+        value = var_2
+        array = np.asarray(var_1)
+    else:
+        raise ValueError('index_finder: it doesn\'t seem like either input is an integer or float. type(var_1) = {}, type(var_2) = {}'.format(type(var_1).__name__,type(var_2).__name__))
+        
+    if len(np.shape(array)) == 2:
+        _idx_1d = ( np.abs( array[:] - value ) ).argmin()
+        _inds = np.unravel_index(_idx_1d,np.shape(array))
+    elif len(np.shape(array)) == 1:
+        _inds = ( np.abs( array[:] - value ) ).argmin()
+    
+    return _inds
+
+# =============================================================================
+# end the most important function
+# =============================================================================

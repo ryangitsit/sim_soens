@@ -3,12 +3,11 @@ import pickle
 import sys
 from numpy.random import default_rng
 
-from _util import physical_constants, index_finder
-from _util__soen import get_jj_params, dend_load_arrays_thresholds_saturations
+from soen_utilities import get_jj_params, dend_load_arrays_thresholds_saturations, physical_constants, index_finder
 p = physical_constants()
 
-from _functions__soen import run_soen_sim
-from _plotting__soen import plot_dendrite, plot_synapse, plot_neuron, plot_neuron_simple, plot_network
+from soen_functions import run_soen_sim
+from soen_plotting import plot_dendrite, plot_synapse, plot_neuron, plot_neuron_simple, plot_network
 
 class input_signal():
     
