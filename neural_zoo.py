@@ -54,7 +54,7 @@ class NeuralZoo():
         self.dendrite.add_input(self.synapse, connection_strength = self.w_sd)
 
         self.neuron = common_neuron(1, 'ri', self.beta_ni, self.tau_ni, 
-                                      self.ib, self.s_th, 
+                                      self.ib_n, self.s_th, 
                                       self.beta_ref, self.tau_ref, self.ib_ref)
 
         self.neuron.add_input(self.dendrite, connection_strength = self.w_dn)
@@ -65,7 +65,7 @@ class NeuralZoo():
         n = [3,3] # fanning at each layer, (length = H-1), from soma to synapses
 
         fractal_neuron = common_neuron(1, 'ri', self.beta_ni, self.tau_ni, 
-                                       self.ib, self.s_th, 
+                                       self.ib_n, self.s_th, 
                                        self.beta_ref, self.tau_ref, self.ib_ref)
         # fractal_neuron.name = 'name'
         dendrites = [ [] for _ in range(H-1) ]
