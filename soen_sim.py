@@ -588,7 +588,7 @@ class neuron():
 
         self.dend__ref = neuron_refractory_dendrite
         
-        if 'refractory_dendrite_connection_strength' in kwargs: # when in doubt, use 'auto'
+        if 'refractory_dendrite_connection_strength' in kwargs: # options are: scalar value in units of Phi0/Ic, 'auto', 'match_excitatory'; when in doubt, use 'auto' or 'match_excitatory'
             if type(kwargs['refractory_dendrite_connection_strength']).__name__ == 'float' or type(kwargs['refractory_dendrite_connection_strength']).__name__ == 'int':
                 self.refractory_dendrite_connection_strength = kwargs['refractory_dendrite_connection_strength']
             elif kwargs['refractory_dendrite_connection_strength'] == 'auto':
@@ -633,6 +633,11 @@ class neuron():
                 _s_max_refractory = s_max_plus_vec__refractory[_ind_ib_refractory]
                                 
                 self.refractory_dendrite_connection_strength = -delta/_s_max_refractory # ( phi_th_minus + delta/100 ) / s_max
+                
+            elif kwargs['refractory_dendrite_connection_strength'] == 'match_excitatory':
+                
+                self.refractory_dendrite_connection_strength = self.total_excitatory_input_connection_strength
+            
         else:
             self.refractory_dendrite_connection_strength = -0.7 # default, totally arbitrary; when in doubt, use 'auto'
             
