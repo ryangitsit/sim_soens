@@ -1,13 +1,10 @@
 #%%
 import numpy as np
 
-from _util import physical_constants, set_plot_params, index_finder
-from _util__soen import dend_load_rate_array, dend_load_arrays_thresholds_saturations
-from soen_sim import input_signal, synapse, neuron, network
+from soen_utilities import index_finder, dend_load_arrays_thresholds_saturations
+from soen_sim import input_signal, network
 from soen_component_library import common_dendrite, common_synapse, common_neuron
 
-from super_input import SuperInput
-from params import net_args
 """
 ToDo:
  - Find way to generate structure only once, for any input

@@ -182,7 +182,7 @@ class NeuralZoo():
                                 connection_strength=self.weights[i][j][k])
 
         dendrites.insert(0,[[custom_neuron.dend__nr_ni]])
-        print('dendrites:', dendrites)
+        # print('dendrites:', dendrites)
         # if synapses also defined, connect as a function of grouping
         if hasattr(self, 'syns'):
             self.synapses = [[] for _ in range(len(self.syns))]
@@ -205,12 +205,12 @@ class NeuralZoo():
                 for j,group in enumerate(layer):
                     for k,s in enumerate(group):
                         if s != 0:
-                            print('synapse')
+                            # print('synapse')
                             self.synapses[i][j].append(common_synapse(s))
                         else:
-                            print('no synapse')
+                            # print('no synapse')
                             self.synapses[i][j].append(0)
-            print('synapses:', self.synapses)
+            # print('synapses:', self.synapses)
             count=0
             for i,layer in enumerate(self.synapses):
                 for j, subgroup in enumerate(layer):
