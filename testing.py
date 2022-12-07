@@ -24,10 +24,12 @@ TODO
 ################################################################################
 
 from neural_zoo import NeuralZoo
+
+
 from params import weights_3, default_neuron_params, nine_pixel_params
 from super_input import SuperInput
 from soen_sim import input_signal, synapse, neuron, network
-from _plotting__soen import raster_plot
+from soen_plotting import raster_plot
 import numpy as np
 import matplotlib.pyplot as plt
 
@@ -57,6 +59,8 @@ print(mono_dend_ss.synapses[1][0][0].__dict__.keys())
 
 print(mono_dend_ss.synapses[0][0][0].input_signal.__dict__)
 print(mono_dend_ss.synapses[1][0][0].input_signal.spike_times)
+
+
 net = network(name = 'network_under_test')
 net.add_neuron(mono_dend_ss.neuron)
 net.run_sim(dt = .01, tf = 150)

@@ -1,6 +1,6 @@
 import numpy as np
-from _util__soen import dend_load_arrays_thresholds_saturations
-from _util import index_finder
+from soen_utilities import dend_load_arrays_thresholds_saturations, index_finder
+
 
 """
 Parameter dictionaries for call from other class initializations

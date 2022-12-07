@@ -1,20 +1,23 @@
 #%%
 import numpy as np
 
-from _util import (
-    physical_constants, index_finder)
-from _util__soen import (
-    dend_load_rate_array, dend_load_arrays_thresholds_saturations)
-from soen_sim import input_signal, synapse, neuron, network
-from soen_sim_lib__common_components__simple_gates import (
+# from _util import (
+#     physical_constants, index_finder)
+
+from soen_component_library import (
     common_dendrite, common_synapse, common_neuron)
 
-from super_input import SuperInput
-from params import default_neuron_params, nine_pixel_params, weights_3
-from _plotting__soen import raster_plot
+# from soen_utilities import (
+#     dend_load_rate_array, dend_load_arrays_thresholds_saturations,
+#     physical_constants, index_finder)
+
+# from soen_sim import input_signal, synapse, neuron, network
+# from super_input import SuperInput
+# from params import default_neuron_params, nine_pixel_params, weights_3
+# from _plotting__soen import raster_plot
 
 
-from super_input import SuperInput
+# from super_input import SuperInput
 
 '''
 Here a class for calling from a 'zoo' of possible neurons is implemented.

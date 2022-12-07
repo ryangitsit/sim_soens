@@ -2,14 +2,61 @@
 import numpy as np
 
 from soen_sim import input_signal, dendrite, synapse, neuron
+# from soen_sim_lib__util import arg_helper
+# from soen_sim__parameters import common_parameters
 from soen_utilities import dend_load_arrays_thresholds_saturations, color_dictionary
-from soen_sim_lib__util import arg_helper
-from soen_sim__parameters import common_parameters
 
-common_params = common_parameters()
+# common_params = common_parameters()
 ib__list, phi_r__array, i_di__array, r_fq__array, phi_th_plus__vec, phi_th_minus__vec, s_max_plus__vec, s_max_minus__vec, s_max_plus__array, s_max_minus__array = dend_load_arrays_thresholds_saturations('default')
 
 #%% common components
+
+# =============================================================================
+# soen_sim_lib__util
+# =============================================================================
+
+def arg_helper(params,parameter_name,default_value):
+    
+    if parameter_name in params.keys(): 
+        value = params[parameter_name] 
+    else: 
+        value = default_value
+    
+    return value
+
+# =============================================================================
+# end soen_sim_lib__util
+# =============================================================================
+
+# =============================================================================
+# soen_sim__parameters
+# =============================================================================
+
+def common_parameters():
+    
+    jj_params = {'Ic': 100, # uA
+                 'beta_c': 0.3, # dimensionless
+                 }
+    
+    syn_params = {'syn_tau_rise': 0.02, # ns
+                  'syn_tau_fall': 50, # ns
+                  'syn_hotspot_duration': 3, # number of tau rise time constants
+                  'syn_spd_duration': 8, # number of tau fall time constants
+                  'syn_spd_phi_peak': 0.5, # Phi_0
+                  'syn_spd_reset_time': 50, # time that must elapse between spd detection events
+                  }
+    
+    neu_params = neu_params = {'absolute_refractory_period': 20}
+    
+    params = {**jj_params, **syn_params, **neu_params}
+    
+    return params
+
+# =============================================================================
+# end soen_sim__parameters
+# =============================================================================
+
+common_params = common_parameters()
 
 # =============================================================================
 # common synapse
@@ -274,7 +321,7 @@ def nine_pixel_classifier_drive(plot_drive_array = False):
     
     return drive_dict # drive_array, 
 
-from soen_sim_lib__common_components__simple_gates import common_synapse, common_dendrite
+from soen_component_library import common_synapse, common_dendrite
 from soen_sim import input_signal
 
 def nine_pixel_synapses():
@@ -458,3 +505,5 @@ def and_coupling(s_a,s_b):
 # =============================================================================
 # end nine pixel helpers
 # =============================================================================
+
+
