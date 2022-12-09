@@ -57,6 +57,7 @@ def common_parameters():
 # =============================================================================
 
 common_params = common_parameters()
+# print(common_parameters)
 
 # =============================================================================
 # common synapse
@@ -102,8 +103,8 @@ def monosynaptic_neuron(name,beta_di,tau_di,ib_dendrite,beta_ni,tau_ni,ib_neuron
     neu = neuron(name = 'ne', 
                       
                       # neuron receiving/integrating dendrite
-loops_present = 'ri', circuit_betas = [2*np.pi*1/4, 2*np.pi*1/4, beta_ni], junction_critical_current = common_params['Ic'], junction_beta_c = common_params['beta_c'],
-bias_current = ib_neuron, integration_loop_time_constant = tau_ni, normalize_input_connection_strengths = True, total_excitatory_input_connection_strength = 1, total_inhibitory_input_connection_strength = -0.5,
+                      loops_present = 'ri', circuit_betas = [2*np.pi*1/4, 2*np.pi*1/4, beta_ni], junction_critical_current = common_params['Ic'], junction_beta_c = common_params['beta_c'],
+                      bias_current = ib_neuron, integration_loop_time_constant = tau_ni, normalize_input_connection_strengths = True, total_excitatory_input_connection_strength = 1, total_inhibitory_input_connection_strength = -0.5,
                       
                       # neuron refractory dendrite
                       loops_present__refraction = 'ri', circuit_betas__refraction = [2*np.pi*1/4, 2*np.pi*1/4, beta_refractory], junction_critical_current__refraction = common_params['Ic'], junction_beta_c__refraction = common_params['beta_c'],

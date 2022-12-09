@@ -2,6 +2,7 @@
 THIS FILE IS FOR LOCAL DEVELOPMENT PURPOSES ONLY
 
 TODO
+ - DENDRITE IN NEURON, ENTRIES METHOD
  - Add multi-synapse connections
  - Plotting for phi_nr
  - Flag for rollover
@@ -45,41 +46,69 @@ def_spikes = [indices,times]
 input = SuperInput(channels=1, type='defined', defined_spikes=def_spikes, duration=150)
 default_ib = default_neuron_params['ib_n']
 
-
 default_neuron_params['beta_ni'] = 2*np.pi*1e2
 default_neuron_params['ib_n'] = default_ib
-default_neuron_params['s_th'] = 0.75
+default_neuron_params['s_th'] = 0.3
 synaptic_structure = [[[0]],[[1]]]
+weights = [[[.5]]]
+mono_dend = NeuralZoo(type="custom",weights=weights, synaptic_structure=synaptic_structure,**default_neuron_params)
 
-W = np.arange(0,1.6,.2)
+mono_dend.synapses[1][0][0].add_input(input.signals[0])
+net = network(name = 'network_under_test')
+net.add_neuron(mono_dend.neuron)
+net.run_sim(dt = .01, tf = 150)
+net.get_recordings()
 
-plt.figure(figsize=(24,8))
-for w in W:
-
-    weights = [[[w]]]
-    mono_dend = NeuralZoo(type="custom",weights=weights, synaptic_structure=synaptic_structure,**default_neuron_params)
-
-    mono_dend.synapses[1][0][0].add_input(input.signals[0])
-    # mono_dend.synapses[0][0][0].add_input(input.signals[0])
-
-
-    net = network(name = 'network_under_test')
-    net.add_neuron(mono_dend.neuron)
-    net.run_sim(dt = .01, tf = 150)
-    net.get_recordings()
-
-    spd = mono_dend.synapses[1][0][0].phi_spd
-    signal = mono_dend.dendrites[0][0][0].s
-    dend_s = mono_dend.dendrites[1][0][0].s
-    ref = mono_dend.neuron.dend__ref.s
-
-    # plt.plot(net.t,spd, label='phi_spd')
-    plt.plot(net.t,signal, label=f'soma signal, w = {np.round(w,1)}')
-    # plt.plot(net.t,dend_s, label='dendrite signal')
-    # plt.plot(net.t,ref, label='refractory signal')
+spd = mono_dend.synapses[1][0][0].phi_spd
+signal = mono_dend.dendrites[0][0][0].s
+dend_s = mono_dend.dendrites[1][0][0].s
+ref = mono_dend.neuron.dend__ref.s
+print(mono_dend.s_th)
+print(mono_dend.dendrites[0][0][0].integrated_current_threshold)
+plt.figure(figsize=(12,4))
+plt.plot(net.t,spd, label='phi_spd')
+plt.plot(net.t,signal, label='soma signal')
+plt.plot(net.t,ref, label='refractory signal')
 plt.axhline(y = mono_dend.s_th, color = 'purple', linestyle = '--',label='Threshold')
-plt.legend(loc='center left', bbox_to_anchor=(1, 0.5))
+plt.legend()
 plt.show()
+
+
+
+# default_neuron_params['beta_ni'] = 2*np.pi*1e2
+# default_neuron_params['ib_n'] = default_ib
+# default_neuron_params['s_th'] = 0.75
+# synaptic_structure = [[[0]],[[1]]]
+
+# W = np.arange(0,1.6,.2)
+
+# plt.figure(figsize=(24,8))
+# for w in W:
+
+#     weights = [[[w]]]
+#     mono_dend = NeuralZoo(type="custom",weights=weights, synaptic_structure=synaptic_structure,**default_neuron_params)
+
+#     mono_dend.synapses[1][0][0].add_input(input.signals[0])
+#     # mono_dend.synapses[0][0][0].add_input(input.signals[0])
+
+
+#     net = network(name = 'network_under_test')
+#     net.add_neuron(mono_dend.neuron)
+#     net.run_sim(dt = .01, tf = 150)
+#     net.get_recordings()
+
+#     spd = mono_dend.synapses[1][0][0].phi_spd
+#     signal = mono_dend.dendrites[0][0][0].s
+#     dend_s = mono_dend.dendrites[1][0][0].s
+#     ref = mono_dend.neuron.dend__ref.s
+
+#     # plt.plot(net.t,spd, label='phi_spd')
+#     plt.plot(net.t,signal, label=f'soma signal, w = {np.round(w,1)}')
+#     # plt.plot(net.t,dend_s, label='dendrite signal')
+#     # plt.plot(net.t,ref, label='refractory signal')
+# plt.axhline(y = mono_dend.s_th, color = 'purple', linestyle = '--',label='Threshold')
+# plt.legend(loc='center left', bbox_to_anchor=(1, 0.5))
+# plt.show()
 
 
 ## control

@@ -33,6 +33,7 @@ Plan:
 class NeuralZoo():
 
     def __init__(self,**entries):
+        
         self.__dict__.update(entries)
 
         if self.type == '3fractal':
@@ -42,7 +43,7 @@ class NeuralZoo():
             self.single()
 
         if self.type == 'custom':
-            self.custom()
+            self.custom(entries)
     
     def single(self):
 
@@ -102,7 +103,7 @@ class NeuralZoo():
         self.fractal_neuron = fractal_neuron
 
 
-    def custom(self):
+    def custom(self,entries):
         '''
         Arbitrary neuron generation
             - Define dendritic structure with weight or structure input
@@ -113,9 +114,17 @@ class NeuralZoo():
         else:
             self.s_th = self.s_th_factor_n*self.s_max_n
         # create a neuron body (soma and refractory loop) with called params
-        custom_neuron = common_neuron(1,'ri',self.beta_ni, self.tau_ni,
-                                      self.ib_n, self.s_th, self.beta_ref, 
-                                      self.tau_ref, self.ib_ref)
+        # custom_neuron = common_neuron(1,'ri',self.beta_ni, self.tau_ni,
+        #                               self.ib_n, self.s_th, self.beta_ref, 
+        #                               self.tau_ref, self.ib_ref)
+
+
+        entries['num_photons_out_factor'] = 100
+        from soen_sim import neuron
+        custom_neuron = neuron(**entries)
+
+
+
         # custom_neuron.name = 'custom_neuron'
         custom_neuron.normalize_input_connection_strengths=1
         self.neuron = custom_neuron
@@ -160,8 +169,19 @@ class NeuralZoo():
                             self.tau_di = self.taus[i][j][k]
                         else:
                             type = 'ri'
-                        sub.append(common_dendrite(f"lay{i}_branch{j}_den{k}", type, 
-                                            self.beta_di,self.tau_di, self.ib))
+                        # sub.append(common_dendrite(f"lay{i}_branch{j}_den{k}", type, 
+                        #                     self.beta_di,self.tau_di, self.ib))
+
+
+                        # print("ENTRIES",entries)
+                        # print("SOMETHING")
+                        from soen_sim import dendrite
+                        entries['name'] = f"lay{i}_branch{j}_den{k}"
+                        entries['type'] = type
+                        sub.append(dendrite(**entries))
+
+
+
                         den_count+=1
                         c+=1
                     dendrites[i].append(sub)
