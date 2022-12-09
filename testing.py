@@ -34,24 +34,50 @@ from neural_zoo import NeuralZoo
 
 
 from params import default_neuron_params
-# from super_input import SuperInput
-# from soen_sim import input_signal, synapse, neuron, network
+from super_input import SuperInput
+from soen_sim import input_signal, synapse, neuron, network
 # from soen_plotting import raster_plot
-# import numpy as np
-# import matplotlib.pyplot as plt
+import numpy as np
+import matplotlib.pyplot as plt
 
-# times = np.arange(0,150,25)
-# indices = np.zeros(len(times)).astype(int)
-# def_spikes = [indices,times]
-# input = SuperInput(channels=1, type='defined', defined_spikes=def_spikes, duration=150)
-# default_ib = default_neuron_params['ib_n']
+times = np.arange(0,150,25)
+indices = np.zeros(len(times)).astype(int)
+def_spikes = [indices,times]
+input = SuperInput(channels=1, type='defined', defined_spikes=def_spikes, duration=150)
+default_ib = default_neuron_params['ib_n']
+
+synaptic_structure = [[[1]]]
+default_neuron_params['s_th'] = 0.75
+
+default_neuron_params['beta_ni'] = 400
+mono = NeuralZoo(type="custom",synaptic_structure=synaptic_structure,**default_neuron_params)
+mono.synapses[0][0][0].add_input(input.signals[0])
+
+net = network(name = 'network_under_test')
+net.add_neuron(mono.neuron)
+net.run_sim(dt = .01, tf = 150)
+net.get_recordings()
+# print(mono.dendrites[0][0][0].tau_ni)
+spd = mono.synapses[0][0][0].phi_spd
+signal = mono.dendrites[0][0][0].s
+ref = mono.neuron.dend__ref.s
+
+plt.figure(figsize=(12,4))
+
+plt.plot(net.t,spd, label='phi_spd')
+plt.plot(net.t,signal, label='soma signal')
+plt.plot(net.t,ref, label='refractory signal')
+
+plt.axhline(y = mono.s_th, color = 'purple', linestyle = '--',label='Threshold')
+plt.legend()
+plt.show()
 
 # default_neuron_params['beta_ni'] = 2*np.pi*1e2
 # default_neuron_params['ib_n'] = default_ib
 # default_neuron_params['s_th'] = 0.1
-synaptic_structure = [[[0]],[[1]]]
-weights = [[[.5]]]
-mono_dend = NeuralZoo(type="custom",weights=weights, synaptic_structure=synaptic_structure,**default_neuron_params)
+# synaptic_structure = [[[0]],[[1]]]
+# weights = [[[.5]]]
+# mono_dend = NeuralZoo(type="custom",weights=weights, synaptic_structure=synaptic_structure,**default_neuron_params)
 
 # mono_dend.synapses[1][0][0].add_input(input.signals[0])
 # net = network(name = 'network_under_test')
@@ -73,14 +99,14 @@ mono_dend = NeuralZoo(type="custom",weights=weights, synaptic_structure=synaptic
 # plt.legend()
 # plt.show()
 
-import time
-startTime = time.time()
-synaptic_structure = [[[0]],[[1]]]
-weights = [[[.5]]]
-for i in range(1000):
-    mono_dend = NeuralZoo(type="custom",weights=weights, synaptic_structure=synaptic_structure,**default_neuron_params)
-executionTime = (time.time() - startTime)
-print('Execution time in seconds: ' + str(executionTime))
+# import time
+# startTime = time.time()
+# synaptic_structure = [[[0]],[[1]]]
+# weights = [[[.5]]]
+# for i in range(1000):
+#     mono_dend = NeuralZoo(type="custom",weights=weights, synaptic_structure=synaptic_structure,**default_neuron_params)
+# executionTime = (time.time() - startTime)
+# print('Execution time in seconds: ' + str(executionTime))
 
 # default_neuron_params['beta_ni'] = 2*np.pi*1e2
 # default_neuron_params['ib_n'] = default_ib

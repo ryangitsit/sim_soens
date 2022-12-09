@@ -119,7 +119,8 @@ class NeuralZoo():
         #                               self.tau_ref, self.ib_ref)
 
 
-        entries['num_photons_out_factor'] = 100
+        # entries['num_photons_out_factor'] = 100
+        # print(entries['tau_ni'])
         from soen_sim import neuron
         custom_neuron = neuron(**entries)
 

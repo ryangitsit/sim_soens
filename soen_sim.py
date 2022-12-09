@@ -395,10 +395,11 @@ class neuron():
             self.loops_present = params['loops_present']
         else:
             self.loops_present = 'ri'
+        self.beta_ni = 2*np.pi*1e2
         if self.loops_present == 'ri':
-            self.circuit_betas = [2*np.pi* 1/4, 2*np.pi* 1/4, 2*np.pi*1e2]         
+            self.circuit_betas = [2*np.pi* 1/4, 2*np.pi* 1/4, self.beta_ni]         
         if self.loops_present == 'rtti':
-            self.circuit_betas = [2*np.pi* 1/4, 2*np.pi* 1/4, 2*np.pi*1e2]
+            self.circuit_betas = [2*np.pi* 1/4, 2*np.pi* 1/4, self.beta_ni]  
         self.Ic =  100
         self.beta_c =  0.3
         if self.loops_present == 'ri':
@@ -415,17 +416,17 @@ class neuron():
         self.self_feedback_coupling_strength = 0
         self.s_th = 0.5 # units of Ic
 
-
         # refractory dendrite
         if 'loops_present__refraction' in params:
             self.loops_present__refraction = params['loops_present__refraction']
         else:
             self.loops_present__refraction = 'ri'
+        self.beta_ref = 2*np.pi*1e2
         if self.loops_present__refraction == 'ri':
-            self.circuit_betas__refraction = [2*np.pi* 1/4, 2*np.pi* 1/4, 2*np.pi*1e2]         
+            self.circuit_betas__refraction = [2*np.pi* 1/4, 2*np.pi* 1/4, self.beta_ref]         
         if self.loops_present__refraction  == 'rtti':
             self.circuit_betas__refraction = [2*np.pi* 1/4, 2*np.pi* 1/4, 2*np.pi*0.5, 
-                                  2*np.pi*0.5, 2*np.pi*1e2]
+                                  2*np.pi*0.5, self.beta_ref]
         self.Ic__refraction =  100
         self.beta_c__refraction =  0.3
         if self.loops_present__refraction == 'ri':
@@ -452,8 +453,8 @@ class neuron():
 
         # UPDATE TO CUSTOM PARAMS
         self.__dict__.update(params)
-
-
+        
+        
         params = self.__dict__
 
         # for k,v in params.items():
@@ -483,7 +484,7 @@ class neuron():
             [soen_sim] loops_present_refraction must be:
                 \'ri\', \'pri\', \'rtti\', \'prtti\'. ''')
 
-
+        self.circuit_betas[-1] = self.beta_ni
         # circuit_betas
         if type(self.circuit_betas) == list and len(self.circuit_betas) == 3:
             if self.loops_present == 'ri':
@@ -499,7 +500,7 @@ class neuron():
             The third element represents the total inductance of the DI loop, 
             including the integrating kinetic inductor and the output 
             inductance.''')
-
+        
         # misc
         self.Ic = self.Ic
         self.beta_c = self.beta_c
@@ -512,9 +513,10 @@ class neuron():
         rni = Lni/tau_ni
         self.alpha = rni/jj_params['r_j']
         self.jj_params = jj_params
-        self.tau_ni = self.integration_loop_time_constant
+
 
         ### refractory dendrite ###
+        self.circuit_betas__refraction[-1] = self.beta_ref
         if (type(self.circuit_betas__refraction) == list 
             and (len(self.circuit_betas__refraction) == 3 
             or len(self.circuit_betas__refraction) == 5)):
@@ -540,7 +542,7 @@ class neuron():
             self.tau_ref = self.tau_ref
         else:
             self.tau_ref = self.tau_ref 
-
+        
         tau_ref = self.tau_ref * 1e-9
         beta_nr = self.circuit_betas__refraction[-1]
         Ic = self.Ic__refraction * 1e-6
@@ -716,7 +718,6 @@ class neuron():
         self.synaptic_outputs = dict()
 
         neuron.neurons[self.name] = self
-        
         return    
         
     def add_input(self, connection_object, connection_strength = 1):
@@ -747,7 +748,7 @@ class neuron():
     def __del__(self):
         # print('dendrite deleted')
         return
-
+    
 
 class network():
     
