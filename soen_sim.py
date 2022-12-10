@@ -757,11 +757,13 @@ class network():
     # from scipy.sparse import csr_matrix
     
     def __init__(self, **kwargs):
-
+        self.sim = False
         # make network
         self.uid = network._next_uid
         network._next_uid += 1
         self.unique_label = 'net{}'.format(self.uid)
+
+        self.__dict__.update(kwargs)
 
         # name the network
         if 'name' in kwargs:
@@ -777,6 +779,9 @@ class network():
         
         # prepare network to have neurons
         self.neurons = dict()
+
+        if self.sim==True:
+            self.simulate()
  
     def add_neuron(self, neuron_object):
         self.neurons[neuron_object.name] = neuron_object
@@ -821,3 +826,12 @@ class network():
         self.phi_r = Phi_r
         self.signal = S
         neuron.spike_times = []
+
+    def simulate(self):
+        print(self.nodes)
+        # net = network(name = 'network_under_test')
+        for n in self.nodes:
+            self.add_neuron(n.neuron)
+        self.run_sim(dt=self.dt, tf=self.tf)
+        self.get_recordings()
+

@@ -7,6 +7,8 @@ import numpy as np
 from soen_component_library import (
     common_dendrite, common_synapse, common_neuron)
 
+from soen_sim import neuron, dendrite
+
 # from soen_utilities import (
 #     dend_load_rate_array, dend_load_arrays_thresholds_saturations,
 #     physical_constants, index_finder)
@@ -44,6 +46,24 @@ class NeuralZoo():
 
         if self.type == 'custom':
             self.custom(entries)
+
+        if self.type == 'mono_point':
+            self.mono_point(entries)
+
+        if self.type == 'mono_dendrite':
+            self.mono_dend(entries)
+
+        if self.type == 'mono_dend_soma':
+            self.mono_dend_soma(entries)
+
+        if self.type == 'self_feed':
+            self.self_feed(entries)
+
+        if self.type == 'mono_plus_minus':
+            self.mono_plus_minus(entries)
+
+        if self.type == 'point_3ex_1in':
+            self.point_3ex_1in(entries)
     
     def single(self):
 
@@ -113,18 +133,9 @@ class NeuralZoo():
             self.s_th = self.s_th
         else:
             self.s_th = self.s_th_factor_n*self.s_max_n
-        # create a neuron body (soma and refractory loop) with called params
-        # custom_neuron = common_neuron(1,'ri',self.beta_ni, self.tau_ni,
-        #                               self.ib_n, self.s_th, self.beta_ref, 
-        #                               self.tau_ref, self.ib_ref)
 
-
-        # entries['num_photons_out_factor'] = 100
-        # print(entries['tau_ni'])
-        from soen_sim import neuron
+        entries = self.__dict__
         custom_neuron = neuron(**entries)
-
-
 
         # custom_neuron.name = 'custom_neuron'
         custom_neuron.normalize_input_connection_strengths=1
@@ -170,13 +181,7 @@ class NeuralZoo():
                             self.tau_di = self.taus[i][j][k]
                         else:
                             type = 'ri'
-                        # sub.append(common_dendrite(f"lay{i}_branch{j}_den{k}", type, 
-                        #                     self.beta_di,self.tau_di, self.ib))
-
-
-                        # print("ENTRIES",entries)
-                        # print("SOMETHING")
-                        from soen_sim import dendrite
+                        entries = self.__dict__
                         entries['name'] = f"lay{i}_branch{j}_den{k}"
                         entries['type'] = type
                         sub.append(dendrite(**entries))
@@ -257,6 +262,97 @@ class NeuralZoo():
         if dendrites:
             self.dendrites = dendrites
 
+
+    def mono_point(self,params):
+        '''
+        Monosynaptic Point Neuron
+        '''
+        self.synaptic_structure = [[[1]]]
+        mono_p = self.custom(params)
+        
+        return mono_p
+
+    def mono_dend(self,params):
+        '''
+        Monosynaptic Point Neuron
+        '''
+        self.synaptic_structure = [[[0]],[[1]]]
+        self.weights = [[[.5]]]
+        mono_d = self.custom(params)
+        
+        return mono_d
+
+    def mono_dend_soma(self,params):
+        '''
+        Monosynaptic Point Neuron
+        '''
+        self.synaptic_structure = [[[1]],[[1]]]
+        self.weights = [[[.5]]]
+        mono_dend_soma = self.custom(params)
+        return mono_dend_soma
+
+    def self_feed(self,params):
+        '''
+        Monosynaptic Point Neuron
+        '''
+        self.synaptic_structure = [[[0]],[[1]]]
+        self.weights = [[[.5]]]
+        mono_dend_soma = self.custom(params)
+        self.dendrites[1][0][0].self_feedback_coupling_strength = .75
+        return mono_dend_soma
+
+    def mono_plus_minus(self,params):
+        '''
+        Monosynaptic Point Neuron
+        '''
+        self.synaptic_structure = [[[1]],[[.8,.9]]]
+        self.weights = [[[.4,.2]]]
+        neuron = self.custom(params)
+        return neuron
+
+    '''
+    add multi-synapse functionality
+    '''
+    # def point_3ex_1in(self,params):
+    #     '''
+    #     Monosynaptic Point Neuron
+    #     '''
+    #     self.synaptic_structure = [[[1,1,1,-1]]]
+    #     neuron = self.custom(params)
+    #     return neuron
+
+
+
+    def plot_neuron_activity(self,net):
+
+        signal = self.dendrites[0][0][0].s
+        ref = self.neuron.dend__ref.s
+
+        import matplotlib.pyplot as plt
+        plt.figure(figsize=(12,4))
+        # spd_indices = np.array(self.synapses).shape
+        # spd = self.synapses[spd_indices[0]-1][spd_indices[1]-1][spd_indices[2]-1].phi_spd
+        # plt.plot(net.t,spd, label='phi_spd')
+        plt.plot(net.t,signal,  label='soma signal', linewidth=4)
+
+        for i,layer in enumerate(self.dendrites):
+            for j,branch in enumerate(layer):
+                for k,dendrite in enumerate(branch):
+                    if i == 0 and j == 0 and k ==0:
+                        pass
+                    else:
+                        print(dendrite.__dict__.keys())
+                        print(dendrite.external_connection_strengths)
+                        plt.plot(net.t,dendrite.s,'--', label='dend layer '+str(i))
+
+                    # print(dendrite.__dict__.keys())
+                    # print(print(self.weights[i][j][k]))
+                    # linewidth=dendrite.external_connection_strengths[0],
+
+        plt.plot(net.t,ref, ':',color = 'r', label='refractory signal')
+        plt.axhline(y = self.s_th, color = 'purple', linestyle = '--',label='Threshold')
+        plt.legend()
+        plt.show()
                     
     def plot_structure(self):
         '''
@@ -293,9 +389,6 @@ class NeuralZoo():
         plt.ylim(-1, max(Ns))
         plt.title('Dendritic Arbor')
         plt.show()
-
-
-
 
 
     def get_structure(self):

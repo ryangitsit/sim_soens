@@ -44,33 +44,89 @@ times = np.arange(0,150,25)
 indices = np.zeros(len(times)).astype(int)
 def_spikes = [indices,times]
 input = SuperInput(channels=1, type='defined', defined_spikes=def_spikes, duration=150)
-default_ib = default_neuron_params['ib_n']
 
-synaptic_structure = [[[1]]]
+
 default_neuron_params['s_th'] = 0.75
+# default_neuron_params["normalize_input_connection_strengths"] = False
+# default_neuron_params['tau_di'] = 10 
 
-default_neuron_params['beta_ni'] = 400
-mono = NeuralZoo(type="custom",synaptic_structure=synaptic_structure,**default_neuron_params)
-mono.synapses[0][0][0].add_input(input.signals[0])
 
-net = network(name = 'network_under_test')
-net.add_neuron(mono.neuron)
-net.run_sim(dt = .01, tf = 150)
-net.get_recordings()
-# print(mono.dendrites[0][0][0].tau_ni)
-spd = mono.synapses[0][0][0].phi_spd
-signal = mono.dendrites[0][0][0].s
-ref = mono.neuron.dend__ref.s
 
-plt.figure(figsize=(12,4))
+# mono_point = NeuralZoo(type='mono_point',**default_neuron_params)
+# mono_point.synapses[0][0][0].add_input(input.signals[0])
+# net = network(sim=True,dt=.01,tf=150,nodes=[mono_point])
+# mono_point.plot_neuron_activity(net)
 
-plt.plot(net.t,spd, label='phi_spd')
-plt.plot(net.t,signal, label='soma signal')
-plt.plot(net.t,ref, label='refractory signal')
+# mono_dend = NeuralZoo(type='mono_dendrite',**default_neuron_params)
+# mono_dend.synapses[1][0][0].add_input(input.signals[0])
+# net = network(sim=True,dt=.01,tf=150,nodes=[mono_dend])
+# mono_dend.plot_neuron_activity(net)
 
-plt.axhline(y = mono.s_th, color = 'purple', linestyle = '--',label='Threshold')
-plt.legend()
-plt.show()
+# mono_dend_soma = NeuralZoo(type='mono_dend_soma',**default_neuron_params)
+# mono_dend_soma.synapses[1][0][0].add_input(input.signals[0])
+# net = network(sim=True,dt=.01,tf=150,nodes=[mono_dend_soma])
+# mono_dend_soma.plot_neuron_activity(net)
+
+
+# self_feed = NeuralZoo(type='self_feed',**default_neuron_params)
+# self_feed.synapses[1][0][0].add_input(input.signals[0])
+# net = network(sim=True,dt=.01,tf=150,nodes=[self_feed])
+# self_feed.plot_neuron_activity(net)
+
+
+# mono_plus_minus = NeuralZoo(type='mono_plus_minus',**default_neuron_params)
+# mono_plus_minus.synapses[1][0][0].add_input(input.signals[0])
+# mono_plus_minus.synapses[1][0][1].add_input(input.signals[0])
+# mono_plus_minus.synapses[0][0][0].add_input(input.signals[0])
+# net = network(sim=True,dt=.01,tf=150,nodes=[mono_plus_minus])
+# mono_plus_minus.plot_neuron_activity(net)
+
+# point_3ex_1in = NeuralZoo(type='point_3ex_1in',**default_neuron_params)
+# print(point_3ex_1in.synapses)
+# point_3ex_1in.synapses[0][0][0].add_input(input.signals[0])
+# point_3ex_1in.synapses[0][0][1].add_input(input.signals[0])
+# point_3ex_1in.synapses[0][0][2].add_input(input.signals[0])
+# point_3ex_1in.synapses[0][0][3].add_input(input.signals[0])
+# net = network(sim=True,dt=.01,tf=150,nodes=[point_3ex_1in])
+# point_3ex_1in.plot_neuron_activity(net)
+
+
+
+
+
+
+
+
+
+
+# synaptic_structure = [[[0]],[[.4,.5,.6]]]
+# weights = [[[1,1,1]]]
+# mono_dend = NeuralZoo(type="custom",weights=weights, synaptic_structure=synaptic_structure,**default_neuron_params)
+# mono_dend.plot_custom_structure()
+# mono_dend.synapses[1][0][0].add_input(input.signals[0])
+# mono_dend.synapses[1][0][1].add_input(input.signals[0])
+# mono_dend.synapses[1][0][2].add_input(input.signals[0])
+
+# net = network(name = 'network_under_test')
+# net.add_neuron(mono_dend.neuron)
+# net.run_sim(dt = .01, tf = 150)
+# net.get_recordings()
+
+
+# print(mono_dend.dendrites[0][0][0].dendritic_connection_strengths)
+
+
+
+
+# plt.figure(figsize=(12,4))
+# plt.plot(net.t,spd, label='phi_spd')
+# plt.plot(net.t,signal,  label='soma signal', linewidth=4)
+# for d in mono_dend.dendrites[1][0]:
+#     plt.plot(net.t,d.s, label='dendrite signal')
+# plt.plot(net.t,ref, ':',color = 'r', label='refractory signal')
+# plt.axhline(y = mono_dend.s_th, color = 'purple', linestyle = '--',label='Threshold')
+# plt.legend()
+# plt.show()
 
 # default_neuron_params['beta_ni'] = 2*np.pi*1e2
 # default_neuron_params['ib_n'] = default_ib
