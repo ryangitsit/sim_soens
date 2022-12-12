@@ -436,6 +436,7 @@ class neuron():
         self.tau_ref= 50
         self.refractory_dendrite_connection_strength = 'auto'
         auto = True
+        self.second_ref=False
 
         ### synapse to receiving dendrite ###
         self.tau_rise__refraction = 0.02
@@ -624,6 +625,14 @@ class neuron():
         neuroref_params['name'] = '{}__dend_{}'.format(self.name,'refraction')
         self.dend__ref = dendrite(**neuroref_params)
         # self.dend__ref = neuron_refractory_dendrite
+
+        if self.second_ref==True:
+            print("SECOND REF")
+            neuroref_params = params
+            neuroref_params['dentype'] = 'refractory'
+            neuroref_params['name'] = '{}__dend_{}_2'.format(self.name,'refraction')
+            self.dend__ref_2 = dendrite(**neuroref_params)
+            self.dend__nr_ni.add_input(self.dend__ref_2, connection_strength = self.refractory_dendrite_connection_strength)
         
         if auto:
             
@@ -670,8 +679,7 @@ class neuron():
                 self.refractory_dendrite_connection_strength = -delta/_s_max_refractory # ( phi_th_minus + delta/100 ) / s_max
                 
         self.dend__nr_ni.add_input(self.dend__ref, connection_strength = self.refractory_dendrite_connection_strength)
- 
-        
+
         # =============================================================================
         #         end refractory dendrite
         # =============================================================================
@@ -828,7 +836,7 @@ class network():
         neuron.spike_times = []
 
     def simulate(self):
-        print(self.nodes)
+        # print(self.nodes)
         # net = network(name = 'network_under_test')
         for n in self.nodes:
             self.add_neuron(n.neuron)

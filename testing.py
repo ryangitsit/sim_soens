@@ -53,49 +53,109 @@ default_neuron_params['s_th'] = 0.75
 
 
 # mono_point = NeuralZoo(type='mono_point',**default_neuron_params)
-# mono_point.synapses[0][0][0].add_input(input.signals[0])
+# mono_point.synapses[0][0][0][0].add_input(input.signals[0])
 # net = network(sim=True,dt=.01,tf=150,nodes=[mono_point])
-# mono_point.plot_neuron_activity(net)
+# mono_point.plot_neuron_activity(net,title="Monosynaptic Point Neuron")
 
 # mono_dend = NeuralZoo(type='mono_dendrite',**default_neuron_params)
-# mono_dend.synapses[1][0][0].add_input(input.signals[0])
+# mono_dend.synapses[0][1][0][0].add_input(input.signals[0])
 # net = network(sim=True,dt=.01,tf=150,nodes=[mono_dend])
-# mono_dend.plot_neuron_activity(net)
+# title = "Monosynaptic Neuron with Intermediate Dendrite"
+# mono_dend.plot_neuron_activity(net,title=title)
 
 # mono_dend_soma = NeuralZoo(type='mono_dend_soma',**default_neuron_params)
-# mono_dend_soma.synapses[1][0][0].add_input(input.signals[0])
+# mono_dend_soma.synapses[0][1][0][0].add_input(input.signals[0])
 # net = network(sim=True,dt=.01,tf=150,nodes=[mono_dend_soma])
-# mono_dend_soma.plot_neuron_activity(net)
+# title = "Monosynaptic Neuron; Synapse Feeds Intermediate Dendrite and Soma"
+# mono_dend_soma.plot_neuron_activity(net,title=title)
 
 
 # self_feed = NeuralZoo(type='self_feed',**default_neuron_params)
-# self_feed.synapses[1][0][0].add_input(input.signals[0])
+# self_feed.synapses[0][1][0][0].add_input(input.signals[0])
 # net = network(sim=True,dt=.01,tf=150,nodes=[self_feed])
-# self_feed.plot_neuron_activity(net)
-
+# title = "Monosynaptic Neuron with Intermediate Self-Feeding Dendrite"
+# self_feed.plot_neuron_activity(net,title=title)
 
 # mono_plus_minus = NeuralZoo(type='mono_plus_minus',**default_neuron_params)
-# mono_plus_minus.synapses[1][0][0].add_input(input.signals[0])
-# mono_plus_minus.synapses[1][0][1].add_input(input.signals[0])
-# mono_plus_minus.synapses[0][0][0].add_input(input.signals[0])
+# mono_plus_minus.synapses[0][1][0][0].add_input(input.signals[0])
+# mono_plus_minus.synapses[0][1][0][1].add_input(input.signals[0])
+# mono_plus_minus.synapses[0][0][0][0].add_input(input.signals[0])
 # net = network(sim=True,dt=.01,tf=150,nodes=[mono_plus_minus])
-# mono_plus_minus.plot_neuron_activity(net)
+# title = "Monosynaptic Neuron; Synapse Feeds Exctiatory and Inhibitory Dendrites, and Soma"
+# mono_plus_minus.plot_neuron_activity(net,title=title,input=input)
+# # print(mono_plus_minus.neuron.dend__nr_ni.synaptic_connection_strengths)
+# # print(mono_plus_minus.neuron.dend__nr_ni.dendritic_connection_strengths)
+
+# default_neuron_params['s_th'] = 0.3
+# # default_neuron_params['second_ref'] = True
+# double_ref = NeuralZoo(type='double_ref',**default_neuron_params)
+# print(double_ref.neuron)
+# double_ref.synapses[0][1][0][0].add_input(input.signals[0])
+# print(double_ref.neuron.dend__nr_ni.dendritic_connection_strengths)
+# net = network(sim=True,dt=.01,tf=150,nodes=[double_ref])
+
+# print(double_ref.second_ref.s)
+
+# title = "double_ref"
+# double_ref.plot_neuron_activity(net,title=title)
 
 # point_3ex_1in = NeuralZoo(type='point_3ex_1in',**default_neuron_params)
-# print(point_3ex_1in.synapses)
-# point_3ex_1in.synapses[0][0][0].add_input(input.signals[0])
-# point_3ex_1in.synapses[0][0][1].add_input(input.signals[0])
-# point_3ex_1in.synapses[0][0][2].add_input(input.signals[0])
-# point_3ex_1in.synapses[0][0][3].add_input(input.signals[0])
+# point_3ex_1in.synapses[0][0][0][0].add_input(input.signals[0])
+# point_3ex_1in.synapses[1][0][0][0].add_input(input.signals[0])
+# point_3ex_1in.synapses[2][0][0][0].add_input(input.signals[0])
+# point_3ex_1in.synapses[3][0][0][0].add_input(input.signals[0])
 # net = network(sim=True,dt=.01,tf=150,nodes=[point_3ex_1in])
-# point_3ex_1in.plot_neuron_activity(net)
+# title = "3 Excitatory and 1 Inhibitory Synapse to Soma"
+# point_3ex_1in.plot_neuron_activity(net,title=title,input=input)
+
+# # print(point_3ex_1in.neuron.dend__nr_ni.synaptic_connection_strengths)
+# # print(point_3ex_1in.neuron.dend__nr_ni.dendritic_connection_strengths)
+
+# asym_plus_minus = NeuralZoo(type='asym_plus_minus',**default_neuron_params)
+# asym_plus_minus.synapses[0][1][0][0].add_input(input.signals[0])
+# asym_plus_minus.synapses[1][1][0][0].add_input(input.signals[0])
+# asym_plus_minus.synapses[2][1][0][0].add_input(input.signals[0])
+# asym_plus_minus.synapses[3][1][0][0].add_input(input.signals[0])
+# asym_plus_minus.synapses[4][1][0][1].add_input(input.signals[0])
+# net = network(sim=True,dt=.01,tf=150,nodes=[asym_plus_minus])
+# title = "3 Excitatory and 1 Inhibitory Dendrite; Each with +3,-1 Synapses"
+# asym_plus_minus.plot_neuron_activity(net,title=title,input=input)
+
+# print(asym_plus_minus.dendrites[1][0][0].synaptic_connection_strengths)
+# print(asym_plus_minus.dendrites[1][0][1].synaptic_connection_strengths)
+# # print(asym_plus_minus.neuron.dend__nr_ni.dendritic_connection_strengths)
+
+
+# denex3_denin1 = NeuralZoo(type='denex3_denin1',**default_neuron_params)
+
+# denex3_denin1.synapses[0][1][0][0].add_input(input.signals[0])
+# denex3_denin1.synapses[1][1][0][0].add_input(input.signals[0])
+# denex3_denin1.synapses[2][1][0][0].add_input(input.signals[0])
+# denex3_denin1.synapses[3][1][0][0].add_input(input.signals[0])
+
+# denex3_denin1.synapses[4][1][0][1].add_input(input.signals[0])
+# denex3_denin1.synapses[5][1][0][1].add_input(input.signals[0])
+# denex3_denin1.synapses[6][1][0][1].add_input(input.signals[0])
+# denex3_denin1.synapses[7][1][0][1].add_input(input.signals[0])
+
+# denex3_denin1.synapses[8][1][0][2].add_input(input.signals[0])
+# denex3_denin1.synapses[9][1][0][2].add_input(input.signals[0])
+# denex3_denin1.synapses[10][1][0][2].add_input(input.signals[0])
+# denex3_denin1.synapses[11][1][0][2].add_input(input.signals[0])
+
+# denex3_denin1.synapses[12][1][0][3].add_input(input.signals[0])
+
+# net = network(sim=True,dt=.01,tf=150,nodes=[denex3_denin1])
+# title = "Monosynaptic Point Neuron with Intermediate Dendrite"
+# denex3_denin1.plot_neuron_activity(net,title=title,input=input)
 
 
 
 
-
-
-
+'''
+todo:
+factor dens by weighting?
+'''
 
 
 

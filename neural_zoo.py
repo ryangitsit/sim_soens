@@ -62,9 +62,21 @@ class NeuralZoo():
         if self.type == 'mono_plus_minus':
             self.mono_plus_minus(entries)
 
+        if self.type == 'double_ref':
+            self.double_ref(entries)
+
         if self.type == 'point_3ex_1in':
             self.point_3ex_1in(entries)
-    
+
+        if self.type == 'asym_plus_minus':
+                self.asym_plus_minus(entries)
+
+        if self.type == 'denex3_denin1':
+                self.denex3_denin1(entries)
+
+        if self.type == 'proximal_basal':
+                self.proximal_basal(entries)
+
     def single(self):
 
         self.synapse = common_synapse(1)
@@ -225,27 +237,52 @@ class NeuralZoo():
                     count+=1
 
         elif hasattr(self, 'synaptic_structure'):
+            # self.synapses = [[] for _ in range(len(self.synaptic_structure))]
+            # for i,layer in enumerate(self.synaptic_structure):
+            #     self.synapses[i] = [[] for _ in range(len(self.synaptic_structure[i]))]
+            #     for j,group in enumerate(layer):
+            #         for k,s in enumerate(group):
+            #             if s != 0:
+            #                 # print('synapse')
+            #                 self.synapses[i][j].append(common_synapse(s))
+            #             else:
+            #                 # print('no synapse')
+            #                 self.synapses[i][j].append(0)
+            # # print('synapses:', self.synapses)
+            # count=0
+            # for i,layer in enumerate(self.synapses):
+            #     for j, subgroup in enumerate(layer):
+            #         for k,d in enumerate(subgroup):
+            #             s=self.synapses[i][j][k]
+            #             if s !=0:
+            #                 dendrites[i][j][k].add_input(s, 
+            #                     connection_strength = self.synaptic_structure[i][j][k])
+            #             count+=1
+
             self.synapses = [[] for _ in range(len(self.synaptic_structure))]
-            for i,layer in enumerate(self.synaptic_structure):
-                self.synapses[i] = [[] for _ in range(len(self.synaptic_structure[i]))]
-                for j,group in enumerate(layer):
-                    for k,s in enumerate(group):
-                        if s != 0:
-                            # print('synapse')
-                            self.synapses[i][j].append(common_synapse(s))
-                        else:
-                            # print('no synapse')
-                            self.synapses[i][j].append(0)
+            for ii,S in enumerate(self.synaptic_structure):
+                syns = [[] for _ in range(len(S))]
+                for i,layer in enumerate(S):
+                    syns[i] = [[] for _ in range(len(S[i]))]
+                    for j,group in enumerate(layer):
+                        for k,s in enumerate(group):
+                            if s != 0:
+                                # print('synapse')
+                                syns[i][j].append(common_synapse(f'{ii}_{s}'))
+                            else:
+                                # print('no synapse')
+                                syns[i][j].append(0)
+                self.synapses[ii]=syns
             # print('synapses:', self.synapses)
-            count=0
-            for i,layer in enumerate(self.synapses):
-                for j, subgroup in enumerate(layer):
-                    for k,d in enumerate(subgroup):
-                        s=self.synapses[i][j][k]
-                        if s !=0:
-                            dendrites[i][j][k].add_input(s, 
-                                connection_strength = self.synaptic_structure[i][j][k])
-                        count+=1
+            for ii,S in enumerate(self.synapses):
+                for i,layer in enumerate(S):
+                    for j, subgroup in enumerate(layer):
+                        for k,d in enumerate(subgroup):
+                            s=S[i][j][k]
+                            if s !=0:
+                                dendrites[i][j][k].add_input(s, 
+                                    connection_strength = self.synaptic_structure[ii][i][j][k])
+
             # else:
             #     for i in self.synapses[0][0]:
             #         self.neuron.dend__nr_ni.add_input(self.synapses[0][0][i],
@@ -267,16 +304,15 @@ class NeuralZoo():
         '''
         Monosynaptic Point Neuron
         '''
-        self.synaptic_structure = [[[1]]]
+        self.synaptic_structure = [[[[1]]]]
         mono_p = self.custom(params)
-        
         return mono_p
 
     def mono_dend(self,params):
         '''
         Monosynaptic Point Neuron
         '''
-        self.synaptic_structure = [[[0]],[[1]]]
+        self.synaptic_structure = [[[[0]],[[1]]]]
         self.weights = [[[.5]]]
         mono_d = self.custom(params)
         
@@ -286,7 +322,7 @@ class NeuralZoo():
         '''
         Monosynaptic Point Neuron
         '''
-        self.synaptic_structure = [[[1]],[[1]]]
+        self.synaptic_structure = [[[[1]],[[1]]]]
         self.weights = [[[.5]]]
         mono_dend_soma = self.custom(params)
         return mono_dend_soma
@@ -295,7 +331,7 @@ class NeuralZoo():
         '''
         Monosynaptic Point Neuron
         '''
-        self.synaptic_structure = [[[0]],[[1]]]
+        self.synaptic_structure = [[[[0]],[[1]]]]
         self.weights = [[[.5]]]
         mono_dend_soma = self.custom(params)
         self.dendrites[1][0][0].self_feedback_coupling_strength = .75
@@ -305,28 +341,142 @@ class NeuralZoo():
         '''
         Monosynaptic Point Neuron
         '''
-        self.synaptic_structure = [[[1]],[[.8,.9]]]
+        self.synaptic_structure = [[[[1]],[[.8,.9]]]]
         self.weights = [[[.4,.2]]]
         neuron = self.custom(params)
         return neuron
 
-    '''
-    add multi-synapse functionality
-    '''
-    # def point_3ex_1in(self,params):
-    #     '''
-    #     Monosynaptic Point Neuron
-    #     '''
-    #     self.synaptic_structure = [[[1,1,1,-1]]]
-    #     neuron = self.custom(params)
-    #     return neuron
+    def double_ref(self,params):
+        '''
+        Monosynaptic Point Neuron
+        '''
+        self.synaptic_structure = [[[[0]],[[1]]]]
+        self.weights = [[[.5]]]
+        neuron = self.custom(params)
+        ref2 = dendrite(**params)
+        self.neuron.add_input(ref2, connection_strength=-.67)
+        ref2.add_input(self.neuron.dend__nr_ni, connection_strength=1)
+        self.second_ref = ref2
+        return neuron
+
+    def point_3ex_1in(self,params):
+        '''
+        Monosynaptic Point Neuron
+        '''
+        self.synaptic_structure = [[[[1]]],[[[1]]],[[[1]]],[[[-1]]]]
+        neuron = self.custom(params)
+        return neuron
+
+
+    def asym_plus_minus(self,params):
+        '''
+        Monosynaptic Point Neuron
+        '''
+        self.synaptic_structure = [
+            [
+                [[0]],
+                [[1,0]]
+            ],
+            [
+                [[0]],
+                [[1,0]]
+            ],
+            [
+                [[0]],
+                [[1,0]]
+            ],
+            [
+                [[0]],
+                [[-1,0]]
+            ],
+            [
+                [[0]],
+                [[0,-1]]
+            ],
+        ]
+        self.weights = [[[.4,-.4]]]
+        neuron = self.custom(params)
+        return neuron
+
+    def denex3_denin1(self,params):
+        '''
+        Monosynaptic Point Neuron
+        '''
+        self.synaptic_structure = [
+            [
+                [[0]],
+                [[1,0,0,0]]
+            ],
+            [
+                [[0]],
+                [[1,0,0,0]]
+            ],
+            [
+                [[0]],
+                [[1,0,0,0]]
+            ],
+            [
+                [[0]],
+                [[-1,0,0,0]]
+            ],
+            [
+                [[0]],
+                [[0,1,0,0]]
+            ],
+            [
+                [[0]],
+                [[0,1,0,0]]
+            ],
+            [
+                [[0]],
+                [[0,1,0,0]]
+            ],
+            [
+                [[0]],
+                [[0,-1,0,0]]
+            ],
+            [
+                [[0]],
+                [[0,0,1,0]]
+            ],
+            [
+                [[0]],
+                [[0,0,1,0]]
+            ],
+            [
+                [[0]],
+                [[0,0,10]]
+            ],
+            [
+                [[0]],
+                [[0,0,-1,0]]
+            ],
+            [
+                [[0]],
+                [[0,0,0,-1]]
+            ],
+        ]
+        self.weights = [[[.25,.25,.25,-.25]]]
+        neuron = self.custom(params)
+        return neuron
+
+    def proximal_basal(self,params):
+        '''
+        Monosynaptic Point Neuron
+        '''
+        self.synaptic_structure = [[[[1]]],[[[1]]],[[[1]]],[[[-1]]]]
+        neuron = self.custom(params)
+        return neuron
 
 
 
-    def plot_neuron_activity(self,net):
+
+
+    def plot_neuron_activity(self,net,dend=True,title=None,input=None):
 
         signal = self.dendrites[0][0][0].s
         ref = self.neuron.dend__ref.s
+        phi_r = self.dendrites[0][0][0].phi_r
 
         import matplotlib.pyplot as plt
         plt.figure(figsize=(12,4))
@@ -334,24 +484,38 @@ class NeuralZoo():
         # spd = self.synapses[spd_indices[0]-1][spd_indices[1]-1][spd_indices[2]-1].phi_spd
         # plt.plot(net.t,spd, label='phi_spd')
         plt.plot(net.t,signal,  label='soma signal', linewidth=4)
+        plt.plot(net.t,phi_r,  label='phi_r (soma)')
+        if dend:
+            for i,layer in enumerate(self.dendrites):
+                for j,branch in enumerate(layer):
+                    for k,dendrite in enumerate(branch):
+                        if i == 0 and j == 0 and k ==0:
+                            pass
+                        else:
+                            # print(dendrite.__dict__.keys())
+                            # print(dendrite.external_connection_strengths)
+                            plt.plot(net.t,dendrite.s,'--', label=dendrite.name)
 
-        for i,layer in enumerate(self.dendrites):
-            for j,branch in enumerate(layer):
-                for k,dendrite in enumerate(branch):
-                    if i == 0 and j == 0 and k ==0:
-                        pass
-                    else:
-                        print(dendrite.__dict__.keys())
-                        print(dendrite.external_connection_strengths)
-                        plt.plot(net.t,dendrite.s,'--', label='dend layer '+str(i))
-
-                    # print(dendrite.__dict__.keys())
-                    # print(print(self.weights[i][j][k]))
-                    # linewidth=dendrite.external_connection_strengths[0],
+                        # print(dendrite.__dict__.keys())
+                        # print(print(self.weights[i][j][k]))
+                        # linewidth=dendrite.external_connection_strengths[0],
 
         plt.plot(net.t,ref, ':',color = 'r', label='refractory signal')
-        plt.axhline(y = self.s_th, color = 'purple', linestyle = '--',label='Threshold')
-        plt.legend()
+        plt.axhline(y = self.s_th, color = 'purple', linestyle = '--',label='Firing Threshold')
+        ## add input/output spikes
+        if len(net.spikes[0]) > 0:
+            plt.plot(net.spikes[1],net.spike_signals[0],'xk', markersize=8, label='neuron fires')
+        if input:
+            plt.plot(input.spike_arrays[1],np.zeros(len(input.spike_arrays[1])),'xr', markersize=5, label='neuron fires')
+        # print(self.synapses[0][0][0].__dict__)
+        # print(net.spikes[0])
+        plt.xlabel("Simulation Time (ns)")
+        plt.ylabel("Signal (Ic)")
+        if title:
+            plt.title(title)
+        plt.legend(loc='center left', bbox_to_anchor=(1, 0.5))
+        plt.subplots_adjust(right=.8)
+        # plt.legend()
         plt.show()
                     
     def plot_structure(self):
@@ -748,3 +912,5 @@ class NeuralZoo():
         plt.title('Dendritic Arbor',fontsize=20)
         plt.show()
 
+
+# %%
