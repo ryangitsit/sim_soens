@@ -308,19 +308,20 @@ class NeuralZoo():
         mono_p = self.custom(params)
         return mono_p
 
-    def mono_dend(self,params):
+    def mono_dend(self,params,w=0.5):
         '''
-        Monosynaptic Point Neuron
+        Monosynaptic Neuron with intermediate dendrite
         '''
         self.synaptic_structure = [[[[0]],[[1]]]]
-        self.weights = [[[.5]]]
+        self.weights = [[[w]]]
         mono_d = self.custom(params)
         
         return mono_d
 
     def mono_dend_soma(self,params):
         '''
-        Monosynaptic Point Neuron
+        Monosynaptic Neuron with intermediate dendrite and skip connection to
+        soma
         '''
         self.synaptic_structure = [[[[1]],[[1]]]]
         self.weights = [[[.5]]]
@@ -329,7 +330,7 @@ class NeuralZoo():
 
     def self_feed(self,params):
         '''
-        Monosynaptic Point Neuron
+        Monosynaptic Neuron with intermediate self-feeding dendrite
         '''
         self.synaptic_structure = [[[[0]],[[1]]]]
         self.weights = [[[.5]]]
@@ -339,7 +340,8 @@ class NeuralZoo():
 
     def mono_plus_minus(self,params):
         '''
-        Monosynaptic Point Neuron
+        Monosynaptic Neuron where synapse feeds one excitatory dendrite, one 
+        inhibitory, and the soma directly
         '''
         self.synaptic_structure = [[[[1]],[[.8,.9]]]]
         self.weights = [[[.4,.2]]]
@@ -348,20 +350,22 @@ class NeuralZoo():
 
     def double_ref(self,params):
         '''
-        Monosynaptic Point Neuron
+        Monosynaptic Neuron with intermediate dendrite and extra refractory dend
+        **Not working, need to edit time stepper
         '''
         self.synaptic_structure = [[[[0]],[[1]]]]
         self.weights = [[[.5]]]
+        # self.second_ref=True
         neuron = self.custom(params)
-        ref2 = dendrite(**params)
-        self.neuron.add_input(ref2, connection_strength=-.67)
-        ref2.add_input(self.neuron.dend__nr_ni, connection_strength=1)
-        self.second_ref = ref2
+        # ref2 = dendrite(**params)
+        # self.neuron.add_input(ref2, connection_strength=-.67)
+        # ref2.add_input(self.neuron.dend__nr_ni, connection_strength=1)
+        # self.second_ref = ref2
         return neuron
 
     def point_3ex_1in(self,params):
         '''
-        Monosynaptic Point Neuron
+        Three excitatory synapses and one inhibitory synapse, all feeding soma
         '''
         self.synaptic_structure = [[[[1]]],[[[1]]],[[[1]]],[[[-1]]]]
         neuron = self.custom(params)
@@ -370,7 +374,9 @@ class NeuralZoo():
 
     def asym_plus_minus(self,params):
         '''
-        Monosynaptic Point Neuron
+        Three excitatory synapses and one inhibitory synapse, all feeding one
+        intermediate dendrite.  Another dendrite is fed with one inhibitory
+        synapse
         '''
         self.synaptic_structure = [
             [
@@ -400,7 +406,7 @@ class NeuralZoo():
 
     def denex3_denin1(self,params):
         '''
-        Monosynaptic Point Neuron
+        x3 on E/I dens above
         '''
         self.synaptic_structure = [
             [
@@ -445,7 +451,7 @@ class NeuralZoo():
             ],
             [
                 [[0]],
-                [[0,0,10]]
+                [[0,0,1]]
             ],
             [
                 [[0]],
@@ -462,10 +468,50 @@ class NeuralZoo():
 
     def proximal_basal(self,params):
         '''
-        Monosynaptic Point Neuron
+        One 3/1-E/I dendrite feeds another 3/1-E/I dendrite and soma.  Latter 
+        dendrite only feeds soma. Third denrite has inihibitory synapse only.
         '''
-        self.synaptic_structure = [[[[1]]],[[[1]]],[[[1]]],[[[-1]]]]
+        self.synaptic_structure = [
+            [
+                [[0]],
+                [[1,0,0]]
+            ],
+            [
+                [[0]],
+                [[1,0,0]]
+            ],
+            [
+                [[0]],
+                [[1,0,0]]
+            ],
+            [
+                [[0]],
+                [[-1,0,0]]
+            ],
+            [
+                [[0]],
+                [[0,1,0]]
+            ],
+            [
+                [[0]],
+                [[0,1,0]]
+            ],
+            [
+                [[0]],
+                [[0,1,0]]
+            ],
+            [
+                [[0]],
+                [[0,-1,0]]
+            ],
+            [
+                [[0]],
+                [[0,0,-1]]
+            ],
+        ]
+        self.weights = [[[.25,.25,-.25]]]
         neuron = self.custom(params)
+        self.dendrites[1][0][1].add_input(self.dendrites[1][0][0], connection_strength=.5)
         return neuron
 
 
@@ -494,17 +540,19 @@ class NeuralZoo():
                         else:
                             # print(dendrite.__dict__.keys())
                             # print(dendrite.external_connection_strengths)
-                            plt.plot(net.t,dendrite.s,'--', label=dendrite.name)
-
-                        # print(dendrite.__dict__.keys())
+                            weighting = dendrite.weights[i-1][j][k]
+                            plt.plot(net.t,dendrite.s*weighting,'--', label=dendrite.name)
+                        # if i==1 and j==0 and k==0:
+                        #     print(dendrite.__dict__.keys())
+                        #     print(dendrite.weights[i-1][j][k])
                         # print(print(self.weights[i][j][k]))
                         # linewidth=dendrite.external_connection_strengths[0],
 
         plt.plot(net.t,ref, ':',color = 'r', label='refractory signal')
-        plt.axhline(y = self.s_th, color = 'purple', linestyle = '--',label='Firing Threshold')
         ## add input/output spikes
         if len(net.spikes[0]) > 0:
             plt.plot(net.spikes[1],net.spike_signals[0],'xk', markersize=8, label='neuron fires')
+            plt.axhline(y = self.s_th, color = 'purple', linestyle = '--',label='Firing Threshold')
         if input:
             plt.plot(input.spike_arrays[1],np.zeros(len(input.spike_arrays[1])),'xr', markersize=5, label='neuron fires')
         # print(self.synapses[0][0][0].__dict__)

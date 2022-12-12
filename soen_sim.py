@@ -630,7 +630,7 @@ class neuron():
             print("SECOND REF")
             neuroref_params = params
             neuroref_params['dentype'] = 'refractory'
-            neuroref_params['name'] = '{}__dend_{}_2'.format(self.name,'refraction')
+            neuroref_params['name'] = '{}_2__dend_{}'.format(self.name,'refraction')
             self.dend__ref_2 = dendrite(**neuroref_params)
             self.dend__nr_ni.add_input(self.dend__ref_2, connection_strength = self.refractory_dendrite_connection_strength)
         
@@ -679,6 +679,7 @@ class neuron():
                 self.refractory_dendrite_connection_strength = -delta/_s_max_refractory # ( phi_th_minus + delta/100 ) / s_max
                 
         self.dend__nr_ni.add_input(self.dend__ref, connection_strength = self.refractory_dendrite_connection_strength)
+
 
         # =============================================================================
         #         end refractory dendrite

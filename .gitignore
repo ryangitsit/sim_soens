@@ -1,2 +1,6 @@
 testing/
+__pycache__/
+*.pyc/
+.vscode/
+.ipynb_checkpoints/
 testing_

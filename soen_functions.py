@@ -515,7 +515,11 @@ def network_time_stepper(network_object,tau_vec,d_tau):
                 
                 # add spike to refractory dendrite
                 network_object.neurons[neuron_key].dend__ref.synaptic_inputs['{}__syn_refraction'.format(network_object.neurons[neuron_key].name)].spike_times_converted = np.append(network_object.neurons[neuron_key].dend__ref.synaptic_inputs['{}__syn_refraction'.format(network_object.neurons[neuron_key].name)].spike_times_converted,tau_vec[ii+1])
-                
+
+                if network_object.neurons[neuron_key].second_ref == True:
+                    network_object.neurons[neuron_key].dend__ref_2.synaptic_inputs['{}__syn_refraction'.format(network_object.neurons[neuron_key].name)].spike_times_converted = np.append(network_object.neurons[neuron_key].dend__ref_2.synaptic_inputs['{}__syn_refraction'.format(network_object.neurons[neuron_key].name)].spike_times_converted,tau_vec[ii+1])
+
+
                 # add spike to output synapses
                 if network_object.neurons[neuron_key].source_type == 'qd' or network_object.neurons[neuron_key].source_type == 'ec':
     
@@ -585,6 +589,9 @@ def neuron_time_stepper(neuron_object,tau_vec,d_tau):
             # add spike to refractory dendrite
             neuron_object.dend__ref.synaptic_inputs['{}__syn_refraction'.format(neuron_object.name)].spike_times_converted = np.append(neuron_object.dend__ref.synaptic_inputs['{}__syn_refraction'.format(neuron_object.name)].spike_times_converted,tau_vec[ii+1])
             
+            if neuron_object.second_ref == True:
+                 neuron_object.dend__ref_2.synaptic_inputs['{}__syn_refraction'.format(neuron_object.name)].spike_times_converted = np.append(neuron_object.dend__ref_2.synaptic_inputs['{}__syn_refraction'.format(neuron_object.name)].spike_times_converted,tau_vec[ii+1])
+
             # add spike to output synapses
             if neuron_object.source_type == 'qd' or neuron_object.source_type == 'ec':
 

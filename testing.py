@@ -87,15 +87,10 @@ default_neuron_params['s_th'] = 0.75
 # # print(mono_plus_minus.neuron.dend__nr_ni.dendritic_connection_strengths)
 
 # default_neuron_params['s_th'] = 0.3
-# # default_neuron_params['second_ref'] = True
 # double_ref = NeuralZoo(type='double_ref',**default_neuron_params)
-# print(double_ref.neuron)
 # double_ref.synapses[0][1][0][0].add_input(input.signals[0])
 # print(double_ref.neuron.dend__nr_ni.dendritic_connection_strengths)
 # net = network(sim=True,dt=.01,tf=150,nodes=[double_ref])
-
-# print(double_ref.second_ref.s)
-
 # title = "double_ref"
 # double_ref.plot_neuron_activity(net,title=title)
 
@@ -149,6 +144,24 @@ default_neuron_params['s_th'] = 0.75
 # title = "Monosynaptic Point Neuron with Intermediate Dendrite"
 # denex3_denin1.plot_neuron_activity(net,title=title,input=input)
 
+
+# proximal_basal = NeuralZoo(type='proximal_basal',**default_neuron_params)
+
+# proximal_basal.synapses[0][1][0][0].add_input(input.signals[0])
+# proximal_basal.synapses[1][1][0][0].add_input(input.signals[0])
+# proximal_basal.synapses[2][1][0][0].add_input(input.signals[0])
+# proximal_basal.synapses[3][1][0][0].add_input(input.signals[0])
+
+# proximal_basal.synapses[4][1][0][1].add_input(input.signals[0])
+# proximal_basal.synapses[5][1][0][1].add_input(input.signals[0])
+# proximal_basal.synapses[6][1][0][1].add_input(input.signals[0])
+# proximal_basal.synapses[7][1][0][1].add_input(input.signals[0])
+
+# proximal_basal.synapses[8][1][0][2].add_input(input.signals[0])
+
+# net = network(sim=True,dt=.01,tf=150,nodes=[proximal_basal])
+# title = "Monosynaptic Point Neuron with Intermediate Dendrite"
+# proximal_basal.plot_neuron_activity(net,title=title,input=input)
 
 
 
