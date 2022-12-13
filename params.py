@@ -12,12 +12,12 @@ ib__list__rtti, phi_r__array__rtti, i_di__array__rtti, r_fq__array__rtti, phi_th
 default_neuron_params = {
     # dendrites
     "beta_di": 2*np.pi*1e2,
-    "tau_di": 1000,
+    "tau_di": 500,
     "ib": ib__list__ri[9], 
 
     # neurons
     "ib_n": ib__list__ri[9], 
-    "s_th_factor_n": 0.1,
+    # "s_th_factor_n": 0.1,
     "s_th":0.2,
     # "phi_th_n":,
     "beta_ni": 2*np.pi*1e2,
@@ -27,12 +27,12 @@ default_neuron_params = {
     "w_sd": 1,
     "w_sid": 1, 
     "w_dd": 0.5,
-    "w_dn": .5, 
+    "w_dn": 0.5, 
 
     # refraction loop
     "ib_ref": ib__list__ri[8], 
     "beta_ref": 2*np.pi*1e2,
-    "tau_ref": 35,
+    "tau_ref": 50,
 
     'ib_list_ri':ib__list__ri[:]
 }

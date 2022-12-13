@@ -976,5 +976,15 @@ def chi_squared_error(target_data,actual_data):
     return error/norm
 
 
+def phi_thresholds(neuron_object):
+    if neuron_object.loops_present == 'ri':
+        ib__list__ri, phi_r__array__ri, i_di__array__ri, r_fq__array__ri, phi_th_plus__vec__ri, phi_th_minus__vec__ri, s_max_plus__vec__ri, s_max_minus__vec__ri, s_max_plus__array__ri, s_max_minus__array__ri = dend_load_arrays_thresholds_saturations('default_ri')
+        _ind_ib = ( np.abs( ib__list__ri[:] - neuron_object.dend__nr_ni.ib ) ).argmin()
+        return [phi_th_minus__vec__ri[_ind_ib],phi_th_plus__vec__ri[_ind_ib]]
+    elif neuron_object.loops_present == 'rtti':
+        ib__list__rtti, phi_r__array__rtti, i_di__array__rtti, r_fq__array__rtti, phi_th_plus__vec__rtti, phi_th_minus__vec__rtti, s_max_plus__vec__rtti, s_max_minus__vec__rtti, s_max_plus__array__rtti, s_max_minus__array__rtti = dend_load_arrays_thresholds_saturations('default_rtti')
+        _ind_ib = ( np.abs( ib__list__rtti[:] - neuron_object.dend__nr_ni.ib ) ).argmin()
+        return [phi_th_minus__vec__rtti[_ind_ib],phi_th_plus__vec__rtti[_ind_ib]]
+
 
 
