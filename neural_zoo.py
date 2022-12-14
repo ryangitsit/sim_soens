@@ -312,6 +312,7 @@ class NeuralZoo():
         '''
         Monosynaptic Neuron with intermediate dendrite
         '''
+        w = self.w_dn
         self.synaptic_structure = [[[[0]],[[1]]]]
         self.weights = [[[w]]]
         mono_d = self.custom(params)
@@ -518,7 +519,7 @@ class NeuralZoo():
 
 
 
-    def plot_neuron_activity(self,net,dend=True,title=None,input=None):
+    def plot_neuron_activity(self,net,phir=False,dend=True,title=None,input=None):
 
         signal = self.dendrites[0][0][0].s
         ref = self.neuron.dend__ref.s
@@ -530,7 +531,15 @@ class NeuralZoo():
         # spd = self.synapses[spd_indices[0]-1][spd_indices[1]-1][spd_indices[2]-1].phi_spd
         # plt.plot(net.t,spd, label='phi_spd')
         plt.plot(net.t,signal,  label='soma signal', linewidth=4)
-        plt.plot(net.t,phi_r,  label='phi_r (soma)')
+        if phir:
+            print(phi_r)
+            from soen_functions import phi_thresholds
+            phi_ths = phi_thresholds(self.neuron)
+            plt.axhline(y = phi_ths[1], color = 'purple', linestyle = '--',linewidth=.5,label="phi_th")
+            if any(ele < 0 for ele in phi_r):
+                print("True")
+                plt.axhline(y = phi_ths[0], color = 'purple', linestyle = '--',linewidth=.5)
+            plt.plot(net.t,phi_r,  label='phi_r (soma)')
         if dend:
             for i,layer in enumerate(self.dendrites):
                 for j,branch in enumerate(layer):
@@ -563,6 +572,7 @@ class NeuralZoo():
             plt.title(title)
         plt.legend(loc='center left', bbox_to_anchor=(1, 0.5))
         plt.subplots_adjust(right=.8)
+        plt.subplots_adjust(bottom=.15)
         # plt.legend()
         plt.show()
                     
