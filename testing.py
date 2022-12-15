@@ -2,18 +2,18 @@
 THIS FILE IS FOR LOCAL DEVELOPMENT PURPOSES ONLY
 
 TODO
- - DENDRITE IN NEURON, ENTRIES METHOD
- - Add multi-synapse connections
- - Plotting for phi_nr
+ - Make library_tour more interactive, introduce custom input
+ - Check that extra synapses aren't generated at each connection for multi-syns
+ - Fix required spike times in syanpse object
  - Flag for rollover
  - Dendrite after skip/intermediate
  - Experiment with auto refraction
- - Try self-connect
  - Fix defined_spikes
  - Finish recursive search and plotting
  - Finish activity plotting
+ - Fix structure plotting
  - Make callable plotting functions
- - Integrate jeff's new changes
+ - Merge with main after jeff check
  - Neural motifs
  - Networking
  - Preliminary sweep
@@ -43,69 +43,121 @@ import matplotlib.pyplot as plt
 times = np.arange(0,150,25)
 indices = np.zeros(len(times)).astype(int)
 def_spikes = [indices,times]
-input = SuperInput(channels=1, type='defined', defined_spikes=def_spikes, duration=150)
+# input = SuperInput(channels=1, type='defined', defined_spikes=def_spikes, duration=150)
+input = SuperInput(channels=4, type='random', total_spikes=30, duration=150)
 
 
-default_neuron_params['s_th'] = 0.75
+################################################################################
+                        ###  Begin Motifs  ###
+################################################################################
+
+# default_neuron_params['s_th'] = .2
 # default_neuron_params["normalize_input_connection_strengths"] = False
 # default_neuron_params['tau_di'] = 10 
 
 
-
+# # Monosynaptic point neuron
 # mono_point = NeuralZoo(type='mono_point',**default_neuron_params)
 # mono_point.synapses[0][0][0][0].add_input(input.signals[0])
 # net = network(sim=True,dt=.01,tf=150,nodes=[mono_point])
+# mono_point.neuron.plot_simple = True
+# net.plot()
 # mono_point.plot_neuron_activity(net,title="Monosynaptic Point Neuron")
 
+
+# Monosynaptic neuron with dendrite
+# check wobbles
+# default_neuron_params['w_dn'] = 0.2
 # mono_dend = NeuralZoo(type='mono_dendrite',**default_neuron_params)
 # mono_dend.synapses[0][1][0][0].add_input(input.signals[0])
-# net = network(sim=True,dt=.01,tf=150,nodes=[mono_dend])
+# net = network(sim=True,dt=.1,tf=150,nodes=[mono_dend])
 # title = "Monosynaptic Neuron with Intermediate Dendrite"
-# mono_dend.plot_neuron_activity(net,title=title)
+# mono_dend.neuron.plot_simple = True
+# net.plot()
+# mono_dend.plot_neuron_activity(net,phir=True,title=title)
 
+
+# # Monosynaptic neuron with dendrite and skip connection
 # mono_dend_soma = NeuralZoo(type='mono_dend_soma',**default_neuron_params)
 # mono_dend_soma.synapses[0][1][0][0].add_input(input.signals[0])
 # net = network(sim=True,dt=.01,tf=150,nodes=[mono_dend_soma])
 # title = "Monosynaptic Neuron; Synapse Feeds Intermediate Dendrite and Soma"
-# mono_dend_soma.plot_neuron_activity(net,title=title)
+# print(mono_dend_soma.synapses)
+# mono_dend_soma.neuron.plot_simple = True
+# net.plot()
+# mono_dend_soma.plot_neuron_activity(net,title=title,input=input,phir=True)
 
 
+# # # Self-feeding intermediate dendrite
+# # # check rollover
 # self_feed = NeuralZoo(type='self_feed',**default_neuron_params)
 # self_feed.synapses[0][1][0][0].add_input(input.signals[0])
 # net = network(sim=True,dt=.01,tf=150,nodes=[self_feed])
 # title = "Monosynaptic Neuron with Intermediate Self-Feeding Dendrite"
-# self_feed.plot_neuron_activity(net,title=title)
+# self_feed.neuron.plot_simple = True
+# net.plot()
+# self_feed.plot_neuron_activity(net,title=title,phir=True,input=input)
 
+# # Synapse feeds 1E, 1I, and soma
 # mono_plus_minus = NeuralZoo(type='mono_plus_minus',**default_neuron_params)
 # mono_plus_minus.synapses[0][1][0][0].add_input(input.signals[0])
 # mono_plus_minus.synapses[0][1][0][1].add_input(input.signals[0])
 # mono_plus_minus.synapses[0][0][0][0].add_input(input.signals[0])
 # net = network(sim=True,dt=.01,tf=150,nodes=[mono_plus_minus])
 # title = "Monosynaptic Neuron; Synapse Feeds Exctiatory and Inhibitory Dendrites, and Soma"
-# mono_plus_minus.plot_neuron_activity(net,title=title,input=input)
+# mono_plus_minus.neuron.plot_simple = True
+# net.plot()
+# mono_plus_minus.plot_neuron_activity(net,title=title,input=input,phir=True)
 # # print(mono_plus_minus.neuron.dend__nr_ni.synaptic_connection_strengths)
 # # print(mono_plus_minus.neuron.dend__nr_ni.dendritic_connection_strengths)
 
-# default_neuron_params['s_th'] = 0.3
+
+
+# # Double refractory
+# # default_neuron_params['s_th'] = 0.3
 # double_ref = NeuralZoo(type='double_ref',**default_neuron_params)
 # double_ref.synapses[0][1][0][0].add_input(input.signals[0])
-# print(double_ref.neuron.dend__nr_ni.dendritic_connection_strengths)
+# # print(double_ref.neuron.dend__nr_ni.dendritic_connection_strengths)
 # net = network(sim=True,dt=.01,tf=150,nodes=[double_ref])
 # title = "double_ref"
+# double_ref.neuron.plot_simple = True
+# net.plot()
 # double_ref.plot_neuron_activity(net,title=title)
 
+
+# 3 excitatory and 1 inhibitory synapse, all feeding soma
+# # default_neuron_params['s_th'] = 10
 # point_3ex_1in = NeuralZoo(type='point_3ex_1in',**default_neuron_params)
-# point_3ex_1in.synapses[0][0][0][0].add_input(input.signals[0])
-# point_3ex_1in.synapses[1][0][0][0].add_input(input.signals[0])
-# point_3ex_1in.synapses[2][0][0][0].add_input(input.signals[0])
-# point_3ex_1in.synapses[3][0][0][0].add_input(input.signals[0])
+# # point_3ex_1in.synapses[0][0][0][0].add_input(input.signals[0])
+# # point_3ex_1in.synapses[1][0][0][0].add_input(input.signals[0])
+# # point_3ex_1in.synapses[2][0][0][0].add_input(input.signals[0])
+# # point_3ex_1in.synapses[3][0][0][0].add_input(input.signals[0])
+
+# # point_3ex_1in.uniform_input(input)
+# # point_3ex_1in.custom_input(input,[0,1,2,3])
+# connectivity = [[0,3],[1,1],[2,2],[3,0]]
+# point_3ex_1in.multi_channel_input(input,connectivity)
+
+# print(point_3ex_1in.synapses[0][0][0][0].input_signal.spike_times)
+# print(point_3ex_1in.synapses[1][0][0][0].input_signal.spike_times)
+# print(point_3ex_1in.synapses[2][0][0][0].input_signal.spike_times)
+# print(point_3ex_1in.synapses[3][0][0][0].input_signal.spike_times)
+
+# print(input.spike_rows)
+
 # net = network(sim=True,dt=.01,tf=150,nodes=[point_3ex_1in])
 # title = "3 Excitatory and 1 Inhibitory Synapse to Soma"
-# point_3ex_1in.plot_neuron_activity(net,title=title,input=input)
-
+# # point_3ex_1in.neuron.plot_simple = True
+# # net.plot()
+# point_3ex_1in.plot_neuron_activity(net,title=title,input=input,phir=True)
+# # from soen_plotting import raster_plot
+# # raster_plot(input.spike_arrays)
 # # print(point_3ex_1in.neuron.dend__nr_ni.synaptic_connection_strengths)
 # # print(point_3ex_1in.neuron.dend__nr_ni.dendritic_connection_strengths)
 
+
+# Assymmetrical neuron
+# default_neuron_params['s_th'] = .4
 # asym_plus_minus = NeuralZoo(type='asym_plus_minus',**default_neuron_params)
 # asym_plus_minus.synapses[0][1][0][0].add_input(input.signals[0])
 # asym_plus_minus.synapses[1][1][0][0].add_input(input.signals[0])
@@ -113,14 +165,17 @@ default_neuron_params['s_th'] = 0.75
 # asym_plus_minus.synapses[3][1][0][0].add_input(input.signals[0])
 # asym_plus_minus.synapses[4][1][0][1].add_input(input.signals[0])
 # net = network(sim=True,dt=.01,tf=150,nodes=[asym_plus_minus])
-# title = "3 Excitatory and 1 Inhibitory Dendrite; Each with +3,-1 Synapses"
-# asym_plus_minus.plot_neuron_activity(net,title=title,input=input)
 
+# title = "asym_plus_minus"
+# asym_plus_minus.neuron.plot_simple = True
+# net.plot()
+# asym_plus_minus.plot_neuron_activity(net,title=title,input=input,phir=True)
 # print(asym_plus_minus.dendrites[1][0][0].synaptic_connection_strengths)
 # print(asym_plus_minus.dendrites[1][0][1].synaptic_connection_strengths)
-# # print(asym_plus_minus.neuron.dend__nr_ni.dendritic_connection_strengths)
+# print(asym_plus_minus.neuron.dend__nr_ni.dendritic_connection_strengths)
 
 
+# # Three Dends with 3/1 E/I Synapse and One Dendrite with 1 I Synapse
 # denex3_denin1 = NeuralZoo(type='denex3_denin1',**default_neuron_params)
 
 # denex3_denin1.synapses[0][1][0][0].add_input(input.signals[0])
@@ -141,10 +196,17 @@ default_neuron_params['s_th'] = 0.75
 # denex3_denin1.synapses[12][1][0][3].add_input(input.signals[0])
 
 # net = network(sim=True,dt=.01,tf=150,nodes=[denex3_denin1])
-# title = "Monosynaptic Point Neuron with Intermediate Dendrite"
-# denex3_denin1.plot_neuron_activity(net,title=title,input=input)
+# title = "Three Dends with 3/1 E/I Synapse and One Dendrite with 1 I Synapse"
+# denex3_denin1.neuron.plot_simple = True
+# net.plot()
+# denex3_denin1.plot_neuron_activity(net,title=title,input=input,phir=True)
+# print(denex3_denin1.dendrites)
+# print(denex3_denin1.synapses)
+# denex3_denin1.plot_structure()
 
 
+# # Proximal/basal neuron
+# # # check soma input
 # proximal_basal = NeuralZoo(type='proximal_basal',**default_neuron_params)
 
 # proximal_basal.synapses[0][1][0][0].add_input(input.signals[0])
@@ -160,15 +222,22 @@ default_neuron_params['s_th'] = 0.75
 # proximal_basal.synapses[8][1][0][2].add_input(input.signals[0])
 
 # net = network(sim=True,dt=.01,tf=150,nodes=[proximal_basal])
-# title = "Monosynaptic Point Neuron with Intermediate Dendrite"
-# proximal_basal.plot_neuron_activity(net,title=title,input=input)
+# print("basalsomainput: ",proximal_basal.dendrites[0][0][0].dendritic_inputs)
+# title = '''
+#         One 3/1-E/I dendrite feeds another 3/1-E/I dendrite and soma.  Latter 
+#         dendrite only feeds soma. Third denrite has inihibitory synapse only.
+#         '''
+# proximal_basal.neuron.plot_simple = True
+# net.plot()
+# proximal_basal.plot_neuron_activity(net,title=title,input=input,phir=True)
+
+
+################################################################################
+                        ###  End Motifs  ###
+################################################################################
 
 
 
-'''
-todo:
-factor dens by weighting?
-'''
 
 
 

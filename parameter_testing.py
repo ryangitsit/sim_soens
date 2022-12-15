@@ -88,7 +88,7 @@ type='mono_point'
 
 def sweeper(type,params,names,ranges,input):
     # plt.figure(figsize=(12,6))
-    fig, axs = plt.subplots(len(ranges[0]), 2,figsize=(22,12))
+    fig, axs = plt.subplots(len(ranges[0]), 1,figsize=(22,16))
     params['s_th'] = 10
     for i,r in enumerate(ranges[0]):
         params[names[0]] = r
@@ -109,34 +109,34 @@ def sweeper(type,params,names,ranges,input):
             signal2 = neuron2.dendrites[0][0][0].s
             signal21 = neuron2.dendrites[1][0][0].s
             phi_r2 = neuron2.dendrites[0][0][0].phi_r
-            axs[i,1].plot(net2.t,signal2, label=f'soma signal, {names[1]} = {np.round(rr,2)}')
+            axs[i].plot(net2.t,signal2, label=f'soma signal, {names[1]} = {np.round(rr,2)}')
             # axs[i,1].plot(net.t,phi_r, label=f'phi_r, {names[1]} = {np.round(rr,2)}')
-        axs[i,0].plot(net2.t,signal21, label=f'dendritic signal, {names[1]} = {np.round(rr,2)}')
-        axs[i,0].plot(net2.t,phi_r2, label=f'soma flux received, {names[1]} = {np.round(rr,2)}')
-        axs[0,0].legend()
+        # axs[i,0].plot(net2.t,signal21, label=f'dendritic signal, {names[1]} = {np.round(rr,2)}')
+        # axs[i,0].plot(net2.t,phi_r2, label=f'soma flux received, {names[1]} = {np.round(rr,2)}')
+        # axs[0,0].legend()
         if i != len(ranges[0]):
-            axs[i,0].tick_params(
+            axs[i].tick_params(
                 axis='x',          
                 which='both',      
                 bottom=False,     
                 top=False,        
                 labelbottom=False)
-        if i != len(ranges[0]):
-            axs[i,1].tick_params(
-                axis='x',          
-                which='both',      
-                bottom=False,     
-                top=False,        
-                labelbottom=False)
+        # if i != len(ranges[0]):
+        #     axs[i,1].tick_params(
+        #         axis='x',          
+        #         which='both',      
+        #         bottom=False,     
+        #         top=False,        
+        #         labelbottom=False)
     plt.legend(loc='center left', bbox_to_anchor=(1, 3))
     plt.subplots_adjust(right=.75)
     rounded = []
     for i in ranges[0]:
         # rounded.append(np.format_float_scientific(i, unique=False, precision=4))
         rounded.append(np.round(i,2))
-    plt.suptitle(f"{names[0]} Plots for Different Values of {names[1]}\n {names[0]} = {rounded}") 
-    axs[0,0].set_title(f"Intermediate Dendrite")
-    axs[0,1].set_title(f"Somatic Dendrite") 
+    # plt.suptitle(f"{names[0]} Plots for Different Values of {names[1]}\n {names[0]} = {rounded}") 
+    # axs[0,0].set_title(f"Intermediate Dendrite")
+    # axs[0,1].set_title(f"Somatic Dendrite") 
     plt.subplots_adjust(top=.85)
     plt.show()
 

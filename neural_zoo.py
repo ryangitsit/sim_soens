@@ -259,8 +259,11 @@ class NeuralZoo():
             #                     connection_strength = self.synaptic_structure[i][j][k])
             #             count+=1
 
+            self.synapse_list = []
             self.synapses = [[] for _ in range(len(self.synaptic_structure))]
             for ii,S in enumerate(self.synaptic_structure):
+                syn = common_synapse(f'{ii}')
+                self.synapse_list.append(syn)
                 syns = [[] for _ in range(len(S))]
                 for i,layer in enumerate(S):
                     syns[i] = [[] for _ in range(len(S[i]))]
@@ -268,7 +271,7 @@ class NeuralZoo():
                         for k,s in enumerate(group):
                             if s != 0:
                                 # print('synapse')
-                                syns[i][j].append(common_synapse(f'{ii}_{s}'))
+                                syns[i][j].append(syn)
                             else:
                                 # print('no synapse')
                                 syns[i][j].append(0)
@@ -300,6 +303,33 @@ class NeuralZoo():
             self.dendrites = dendrites
 
 
+    def uniform_input(self,input):
+        '''
+        Add the same input channel to all available synapses
+        '''
+        for S in self.synapse_list:
+            S.add_input(input.signals[0])
+
+    def custom_input(self,input,connections):
+        '''
+        Add the same input channel to specific synapses
+         - Simple defined list of indice tuples
+        '''
+        for connect in connections:
+            self.synapses_list[connect].add_input(input.signals[0])
+                            
+    def multi_channel_input(self,input,connectivity=None):
+        '''
+        Add the same input channel to specific synapses
+         - Simple defined list of indice tuples
+        '''
+        for connect in connectivity:
+            print(connect[0],connect[1])
+            self.synapse_list[connect[0]].add_input(input.signals[connect[1]])  
+
+        
+
+
     def mono_point(self,params):
         '''
         Monosynaptic Point Neuron
@@ -325,7 +355,7 @@ class NeuralZoo():
         soma
         '''
         self.synaptic_structure = [[[[1]],[[1]]]]
-        self.weights = [[[.5]]]
+        self.weights = [[[.1]]]
         mono_dend_soma = self.custom(params)
         return mono_dend_soma
 
@@ -345,7 +375,7 @@ class NeuralZoo():
         inhibitory, and the soma directly
         '''
         self.synaptic_structure = [[[[1]],[[.8,.9]]]]
-        self.weights = [[[.4,.2]]]
+        self.weights = [[[-.4,.2]]]
         neuron = self.custom(params)
         return neuron
 
@@ -401,7 +431,7 @@ class NeuralZoo():
                 [[0,-1]]
             ],
         ]
-        self.weights = [[[.4,-.4]]]
+        self.weights = [[[.8,-.4]]]
         neuron = self.custom(params)
         return neuron
 
@@ -463,7 +493,7 @@ class NeuralZoo():
                 [[0,0,0,-1]]
             ],
         ]
-        self.weights = [[[.25,.25,.25,-.25]]]
+        self.weights = [[[.2,.25,.3,-.25]]]
         neuron = self.custom(params)
         return neuron
 
@@ -532,12 +562,12 @@ class NeuralZoo():
         # plt.plot(net.t,spd, label='phi_spd')
         plt.plot(net.t,signal,  label='soma signal', linewidth=4)
         if phir:
-            print(phi_r)
+            # print(phi_r)
             from soen_functions import phi_thresholds
             phi_ths = phi_thresholds(self.neuron)
             plt.axhline(y = phi_ths[1], color = 'purple', linestyle = '--',linewidth=.5,label="phi_th")
             if any(ele < 0 for ele in phi_r):
-                print("True")
+                # print("True")
                 plt.axhline(y = phi_ths[0], color = 'purple', linestyle = '--',linewidth=.5)
             plt.plot(net.t,phi_r,  label='phi_r (soma)')
         if dend:
@@ -550,7 +580,7 @@ class NeuralZoo():
                             # print(dendrite.__dict__.keys())
                             # print(dendrite.external_connection_strengths)
                             weighting = dendrite.weights[i-1][j][k]
-                            plt.plot(net.t,dendrite.s*weighting,'--', label=dendrite.name)
+                            plt.plot(net.t,dendrite.s*weighting,'--', label='w * '+dendrite.name)
                         # if i==1 and j==0 and k==0:
                         #     print(dendrite.__dict__.keys())
                         #     print(dendrite.weights[i-1][j][k])
