@@ -94,6 +94,7 @@ class SuperInput():
         self.data = {}
         channels = 28*28
         X = X_train[self.index].reshape(channels)
+        print(y_train[self.index])
         P = brian2.PoissonGroup(channels, rates=(X/self.slow_down)*brian2.Hz)
         MP = brian2.SpikeMonitor(P)
         net = brian2.Network(P, MP)

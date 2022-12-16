@@ -29,22 +29,98 @@ TODO
 ################################################################################
 ################################################################################
 ################################################################################
-
+#%%
 from neural_zoo import NeuralZoo
 
 
 from params import default_neuron_params
 from super_input import SuperInput
 from soen_sim import input_signal, synapse, neuron, network
-# from soen_plotting import raster_plot
+from soen_plotting import raster_plot
 import numpy as np
 import matplotlib.pyplot as plt
 
-times = np.arange(0,150,25)
-indices = np.zeros(len(times)).astype(int)
-def_spikes = [indices,times]
-# input = SuperInput(channels=1, type='defined', defined_spikes=def_spikes, duration=150)
-input = SuperInput(channels=4, type='random', total_spikes=30, duration=150)
+# times = np.arange(0,150,25)
+# indices = np.zeros(len(times)).astype(int)
+# def_spikes = [indices,times]
+# # input = SuperInput(channels=1, type='defined', defined_spikes=def_spikes, duration=150)
+input = SuperInput(channels=27*6, type='random', total_spikes=600, duration=150)
+
+
+# input = SuperInput(type='MNIST', index=0, slow_down=50, duration=1000)
+raster_plot(input.spike_arrays)
+#%%
+weights = [
+    [[.3,.3,.3]],
+    [[.3,.3,.3],[.3,.3,.3],[.3,.3,.3]],
+    [[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3],[.3,.3,.3]]
+]
+
+# synaptic_structure = [
+
+# ]
+
+pop = []
+
+for n in range(6):
+    print(n)
+    pop.append(NeuralZoo(type='custom',weights=weights,**default_neuron_params))
+    # mnist_neuron.plot_custom_structure()
+    pop[n].synaptic_layer()
+
+    connectivity = []
+    for i in range(27):
+        chunk = n*27
+        connectivity.append([i,chunk+i])
+    # print(connectivity)
+
+    pop[n].multi_channel_input(input,connectivity)
+
+
+#%%
+# print(input.spike_arrays)
+# for i in range(27*6):
+#     if len(input.spike_rows[i]) > 0:
+#         # print(input.spike_rows[i])
+#         print(i)
+# print(input.signals[700].__dict__)
+# for i in range(27):
+#     print(pop[2].synapse_list[i].input_signal.spike_times)
+# raster_plot(input.spike_arrays)
+# print(pop[0].dendrites[3][0][1].synaptic_inputs['1'])
+
+#%%
+net = network(sim=True,dt=.1,tf=1000,nodes=pop)
+
+net.get_recordings()
+for s in net.signal:
+    plt.plot(net.t,s)
+plt.show()
+
+#%%
+pop[5].plot_neuron_activity(net)
+
+
+
+#%%
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 ################################################################################

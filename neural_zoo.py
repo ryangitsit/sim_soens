@@ -290,18 +290,31 @@ class NeuralZoo():
             #     for i in self.synapses[0][0]:
             #         self.neuron.dend__nr_ni.add_input(self.synapses[0][0][i],
             #         connection_strength=self.synaptic_structure[0][0][i])
-        else:
-            self.synapses = []
-            count=0
-            for j,g in enumerate(dendrites[-1]):
-                for k,d in enumerate(g):
-                    self.synapses.append([common_synapse(f'branch_{j}syn_{k}')])
-                    self.synapses[count][0].spd_duration=2
-                    d.add_input(self.synapses[count][0],connection_strength=self.w_sd)
-                    count+=1
+        # else:
+        #     self.synapses = []
+        #     self.synapse_list = []
+        #     count=0
+        #     for j,g in enumerate(dendrites[-1]):
+        #         for k,d in enumerate(g):
+        #             syn = common_synapse(f'branch_{j}syn_{k}')
+        #             self.synapses.append([syn])
+        #             self.synapses[count][0].spd_duration=2
+        #             d.add_input(self.synapses[count][0],connection_strength=self.w_sd)
+        #             count+=1
         if dendrites:
             self.dendrites = dendrites
 
+
+    def synaptic_layer(self):
+        self.synapse_list = []
+        count = 0
+        for g in self.dendrites[len(self.dendrites)-1]:
+            for d in g:
+                syn = common_synapse(f'{count}')
+                self.synapse_list.append(syn)
+                count+=1
+                d.add_input(syn,connection_strength=self.w_sd)
+                
 
     def uniform_input(self,input):
         '''
@@ -324,7 +337,8 @@ class NeuralZoo():
          - Simple defined list of indice tuples
         '''
         for connect in connectivity:
-            print(connect[0],connect[1])
+            # print(connect[0],connect[1])
+            # if len(input.signals[connect[1]].spike_times) > 0:
             self.synapse_list[connect[0]].add_input(input.signals[connect[1]])  
 
         
