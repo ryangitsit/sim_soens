@@ -37,6 +37,7 @@ class NeuralZoo():
     def __init__(self,**entries):
         
         self.__dict__.update(entries)
+        self.params = self.__dict__
 
         if self.type == '3fractal':
             self.fractal_three()
@@ -45,37 +46,37 @@ class NeuralZoo():
             self.single()
 
         if self.type == 'custom':
-            self.custom(entries)
+            self.custom()
 
         if self.type == 'mono_point':
-            self.mono_point(entries)
+            self.mono_point()
 
         if self.type == 'mono_dendrite':
-            self.mono_dend(entries)
+            self.mono_dend()
 
         if self.type == 'mono_dend_soma':
-            self.mono_dend_soma(entries)
+            self.mono_dend_soma()
 
         if self.type == 'self_feed':
-            self.self_feed(entries)
+            self.self_feed()
 
         if self.type == 'mono_plus_minus':
-            self.mono_plus_minus(entries)
+            self.mono_plus_minus()
 
         if self.type == 'double_ref':
-            self.double_ref(entries)
+            self.double_ref()
 
         if self.type == 'point_3ex_1in':
-            self.point_3ex_1in(entries)
+            self.point_3ex_1in()
 
         if self.type == 'asym_plus_minus':
-                self.asym_plus_minus(entries)
+                self.asym_plus_minus()
 
         if self.type == 'denex3_denin1':
-                self.denex3_denin1(entries)
+                self.denex3_denin1()
 
         if self.type == 'proximal_basal':
-                self.proximal_basal(entries)
+                self.proximal_basal()
 
     def single(self):
 
@@ -135,16 +136,16 @@ class NeuralZoo():
         self.fractal_neuron = fractal_neuron
 
 
-    def custom(self,entries):
+    def custom(self):
         '''
         Arbitrary neuron generation
             - Define dendritic structure with weight or structure input
         '''    
-        if hasattr(self, 's_th'):
-            # print("structure")
-            self.s_th = self.s_th
-        else:
-            self.s_th = self.s_th_factor_n*self.s_max_n
+        # if hasattr(self, 's_th'):
+        #     # print("structure")
+        #     self.s_th = self.s_th
+        # else:
+        #     self.s_th = self.s_th_factor_n*self.s_max_n
 
         entries = self.__dict__
         custom_neuron = neuron(**entries)
@@ -344,56 +345,57 @@ class NeuralZoo():
         
 
 
-    def mono_point(self,params):
+    def mono_point(self):
         '''
         Monosynaptic Point Neuron
         '''
         self.synaptic_structure = [[[[1]]]]
-        mono_p = self.custom(params)
+        mono_p = self.custom()
         return mono_p
 
-    def mono_dend(self,params,w=0.5):
+    def mono_dend(self,w=0.5):
         '''
         Monosynaptic Neuron with intermediate dendrite
         '''
-        w = self.w_dn
+        if hasattr(self, 'w_dn'):
+            w = self.w_dn
         self.synaptic_structure = [[[[0]],[[1]]]]
         self.weights = [[[w]]]
-        mono_d = self.custom(params)
+        mono_d = self.custom()
         
         return mono_d
 
-    def mono_dend_soma(self,params):
+    def mono_dend_soma(self):
         '''
         Monosynaptic Neuron with intermediate dendrite and skip connection to
         soma
         '''
         self.synaptic_structure = [[[[1]],[[1]]]]
         self.weights = [[[.1]]]
-        mono_dend_soma = self.custom(params)
+        mono_dend_soma = self.custom()
         return mono_dend_soma
 
-    def self_feed(self,params):
+    def self_feed(self):
         '''
         Monosynaptic Neuron with intermediate self-feeding dendrite
         '''
         self.synaptic_structure = [[[[0]],[[1]]]]
         self.weights = [[[.5]]]
-        mono_dend_soma = self.custom(params)
+        mono_dend_soma = self.custom()
         self.dendrites[1][0][0].self_feedback_coupling_strength = .75
         return mono_dend_soma
 
-    def mono_plus_minus(self,params):
+    def mono_plus_minus(self):
         '''
         Monosynaptic Neuron where synapse feeds one excitatory dendrite, one 
         inhibitory, and the soma directly
         '''
         self.synaptic_structure = [[[[1]],[[.8,.9]]]]
         self.weights = [[[-.4,.2]]]
-        neuron = self.custom(params)
+        neuron = self.custom()
         return neuron
 
-    def double_ref(self,params):
+    def double_ref(self):
         '''
         Monosynaptic Neuron with intermediate dendrite and extra refractory dend
         **Not working, need to edit time stepper
@@ -401,23 +403,23 @@ class NeuralZoo():
         self.synaptic_structure = [[[[0]],[[1]]]]
         self.weights = [[[.5]]]
         # self.second_ref=True
-        neuron = self.custom(params)
+        neuron = self.custom()
         # ref2 = dendrite(**params)
         # self.neuron.add_input(ref2, connection_strength=-.67)
         # ref2.add_input(self.neuron.dend__nr_ni, connection_strength=1)
         # self.second_ref = ref2
         return neuron
 
-    def point_3ex_1in(self,params):
+    def point_3ex_1in(self):
         '''
         Three excitatory synapses and one inhibitory synapse, all feeding soma
         '''
         self.synaptic_structure = [[[[1]]],[[[1]]],[[[1]]],[[[-1]]]]
-        neuron = self.custom(params)
+        neuron = self.custom()
         return neuron
 
 
-    def asym_plus_minus(self,params):
+    def asym_plus_minus(self):
         '''
         Three excitatory synapses and one inhibitory synapse, all feeding one
         intermediate dendrite.  Another dendrite is fed with one inhibitory
@@ -446,10 +448,10 @@ class NeuralZoo():
             ],
         ]
         self.weights = [[[.8,-.4]]]
-        neuron = self.custom(params)
+        neuron = self.custom()
         return neuron
 
-    def denex3_denin1(self,params):
+    def denex3_denin1(self):
         '''
         x3 on E/I dens above
         '''
@@ -508,10 +510,10 @@ class NeuralZoo():
             ],
         ]
         self.weights = [[[.2,.25,.3,-.25]]]
-        neuron = self.custom(params)
+        neuron = self.custom()
         return neuron
 
-    def proximal_basal(self,params):
+    def proximal_basal(self):
         '''
         One 3/1-E/I dendrite feeds another 3/1-E/I dendrite and soma.  Latter 
         dendrite only feeds soma. Third denrite has inihibitory synapse only.
@@ -554,8 +556,8 @@ class NeuralZoo():
                 [[0,0,-1]]
             ],
         ]
-        self.weights = [[[.25,.25,-.25]]]
-        neuron = self.custom(params)
+        self.weights = [[[.5,.5,-.25]]]
+        neuron = self.custom()
         self.dendrites[1][0][1].add_input(self.dendrites[1][0][0], connection_strength=.5)
         return neuron
 
@@ -563,8 +565,18 @@ class NeuralZoo():
 
 
 
-    def plot_neuron_activity(self,net,phir=False,dend=True,title=None,input=None):
-
+    def plot_neuron_activity(self,net,phir=False,dend=True,title=None,
+                            input=None,weighting=True,docstring=False):
+        '''
+        Plots signal activity for a given network or neuron
+         - phir      -> plot phi_r of soma and phi_r thresholds
+         - dend      -> plot dendritic signals
+         - input     -> mark moments of input events with red spikes
+         - weighting -> weight dendritic signals by their connection strength
+        '''
+        if docstring == True:
+            print(self.plot_neuron_activity.__doc__)
+            return
         signal = self.dendrites[0][0][0].s
         ref = self.neuron.dend__ref.s
         phi_r = self.dendrites[0][0][0].phi_r
@@ -593,8 +605,12 @@ class NeuralZoo():
                         else:
                             # print(dendrite.__dict__.keys())
                             # print(dendrite.external_connection_strengths)
-                            weighting = dendrite.weights[i-1][j][k]
-                            plt.plot(net.t,dendrite.s*weighting,'--', label='w * '+dendrite.name)
+                            if weighting == True:
+                                weight = dendrite.weights[i-1][j][k]
+                                dend_s = dendrite.s*weight
+                            else:
+                                dend_s = dendrite.s
+                            plt.plot(net.t,dend_s,'--', label='w * '+dendrite.name)
                         # if i==1 and j==0 and k==0:
                         #     print(dendrite.__dict__.keys())
                         #     print(dendrite.weights[i-1][j][k])
@@ -605,7 +621,7 @@ class NeuralZoo():
         ## add input/output spikes
         if len(net.spikes[0]) > 0:
             plt.plot(net.spikes[1],net.spike_signals[0],'xk', markersize=8, label='neuron fires')
-            plt.axhline(y = self.s_th, color = 'purple', linestyle = '--',label='Firing Threshold')
+            plt.axhline(y = self.neuron.s_th, color = 'purple', linestyle = '--',label='Firing Threshold')
         if input:
             plt.plot(input.spike_arrays[1],np.zeros(len(input.spike_arrays[1])),'xr', markersize=5, label='neuron fires')
         # print(self.synapses[0][0][0].__dict__)

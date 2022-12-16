@@ -403,9 +403,11 @@ class neuron():
         self.Ic =  100
         self.beta_c =  0.3
         if self.loops_present == 'ri':
-            self.ib = 1.7 # dimensionless bias current        
+            self.ib = 1.7 # dimensionless bias current   
+            self.ib_n = 1.802395858835221
         elif self.loops_present == 'rtti':
             self.ib = 2.0 # dimensionless bias current
+            self.ib_n = 2.19
         self.integration_loop_time_constant = 250
         self.absolute_refractory_period = 10
         self.normalize_input_connection_strengths = False
@@ -415,6 +417,12 @@ class neuron():
         # J_ii, units of phi/s (normalized flux / normalized current in DI loop)
         self.self_feedback_coupling_strength = 0
         self.s_th = 0.5 # units of Ic
+
+        self.tau_ni = 50
+        self.beta_di = 2*np.pi*1e2
+        self.tau_di = 500
+        self.s_th = 0.5
+        self.integrated_current_threshold = self.s_th
 
         # refractory dendrite
         if 'loops_present__refraction' in params:
@@ -449,13 +457,11 @@ class neuron():
         self.source_type = 'qd'
         self.num_photons_out_factor = 10
 
-        if 's_th' in params:
-            params['integrated_current_threshold'] = params['s_th']
 
         # UPDATE TO CUSTOM PARAMS
         self.__dict__.update(params)
         
-        
+        self.integrated_current_threshold = self.s_th
         params = self.__dict__
 
         # for k,v in params.items():
