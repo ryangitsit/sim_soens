@@ -40,11 +40,29 @@ from soen_plotting import raster_plot
 import numpy as np
 import matplotlib.pyplot as plt
 
-times = np.arange(0,150,25)
-indices = np.zeros(len(times)).astype(int)
-def_spikes = [indices,times]
-input = SuperInput(channels=1, type='defined', defined_spikes=def_spikes, duration=150)
+
+times_basal_0 = np.arange(500,500,500)
+indices_basal_0 = np.zeros(len(times_basal_0)).astype(int)
+def_spikes_basal_0 = [indices_basal_0,times_basal_0]
+input_basal_0 = SuperInput(channels=1, type='defined', defined_spikes=def_spikes_basal_0, duration=500)
+print(input_basal_0.spike_arrays)
+
+times_basal = np.arange(0,500,50)
+indices_basal = np.zeros(len(times_basal)).astype(int)
+def_spikes_basal = [indices_basal,times_basal]
+input_basal = SuperInput(channels=1, type='defined', defined_spikes=def_spikes_basal, duration=500)
+print(input_basal.spike_arrays)
+
+
+times_proximal = np.arange(325,500,50)
+indices_proximal = np.zeros(len(times_proximal)).astype(int)
+def_spikes_proximal = [indices_proximal,times_proximal]
+input_proximal = SuperInput(channels=1, type='defined', defined_spikes=def_spikes_proximal, duration=500)
+print(input_proximal.spike_arrays)
 # input = SuperInput(channels=27*6, type='random', total_spikes=600, duration=150)
+
+
+
 
 syn_struct = [
             [
@@ -84,33 +102,138 @@ syn_struct = [
                 [[0,0,-1]]
             ],
         ]
-W = [[[.25,.25,-.25]]]
+W = [[[.35,.65,-.5]]]
 
-proximal_basal = NeuralZoo(type='custom',synaptic_structure=syn_struct,weights=W,s_th=1)
+
+proximal_basal = NeuralZoo(type='custom',synaptic_structure=syn_struct,weights=W,s_th=.5,tau_ni=500,tau_di=500)
 
 # adding the lateral dendritic connection
 proximal_basal.dendrites[1][0][1].add_input(proximal_basal.dendrites[1][0][0], connection_strength=.5)
 
-proximal_basal.synapses[0][1][0][0].add_input(input.signals[0])
-proximal_basal.synapses[1][1][0][0].add_input(input.signals[0])
-proximal_basal.synapses[2][1][0][0].add_input(input.signals[0])
-proximal_basal.synapses[3][1][0][0].add_input(input.signals[0])
+proximal_basal.synapses[0][1][0][0].add_input(input_basal.signals[0])
+proximal_basal.synapses[1][1][0][0].add_input(input_basal.signals[0])
+proximal_basal.synapses[2][1][0][0].add_input(input_basal.signals[0])
+proximal_basal.synapses[3][1][0][0].add_input(input_basal.signals[0])
 
-proximal_basal.synapses[4][1][0][1].add_input(input.signals[0])
-proximal_basal.synapses[5][1][0][1].add_input(input.signals[0])
-proximal_basal.synapses[6][1][0][1].add_input(input.signals[0])
-proximal_basal.synapses[7][1][0][1].add_input(input.signals[0])
+proximal_basal.synapses[4][1][0][1].add_input(input_proximal.signals[0])
+proximal_basal.synapses[5][1][0][1].add_input(input_proximal.signals[0])
+proximal_basal.synapses[6][1][0][1].add_input(input_proximal.signals[0])
+proximal_basal.synapses[7][1][0][1].add_input(input_proximal.signals[0])
 
-proximal_basal.synapses[8][1][0][2].add_input(input.signals[0])
+proximal_basal.synapses[8][1][0][2].add_input(input_proximal.signals[0])
 
-print(proximal_basal.neuron.dend__nr_ni.dendritic_connection_strengths)
+# net = network(sim=True,dt=.01,tf=500,nodes=[proximal_basal])
 
-net = network(sim=True,dt=.01,tf=150,nodes=[proximal_basal])
-title = '''
-        One 3/1-E/I dendrite feeds another 3/1-E/I dendrite and soma.  Latter 
-        dendrite only feeds soma. Third denrite has inihibitory synapse only.
-        '''
-proximal_basal.plot_neuron_activity(net,title=title,input=input,phir=True,weighting=True)
+
+proximal_basal_2 = NeuralZoo(type='custom',synaptic_structure=syn_struct,weights=W,s_th=.5,tau_ni=500,tau_di=500)
+
+# adding the lateral dendritic connection
+proximal_basal_2.dendrites[1][0][1].add_input(proximal_basal_2.dendrites[1][0][0], connection_strength=.5)
+
+proximal_basal_2.synapses[0][1][0][0].add_input(input_basal_0.signals[0])
+proximal_basal_2.synapses[1][1][0][0].add_input(input_basal_0.signals[0])
+proximal_basal_2.synapses[2][1][0][0].add_input(input_basal_0.signals[0])
+proximal_basal_2.synapses[3][1][0][0].add_input(input_basal_0.signals[0])
+
+proximal_basal_2.synapses[4][1][0][1].add_input(input_proximal.signals[0])
+proximal_basal_2.synapses[5][1][0][1].add_input(input_proximal.signals[0])
+proximal_basal_2.synapses[6][1][0][1].add_input(input_proximal.signals[0])
+proximal_basal_2.synapses[7][1][0][1].add_input(input_proximal.signals[0])
+
+proximal_basal_2.synapses[8][1][0][2].add_input(input_proximal.signals[0])
+
+proximal_basal.neuron.add_output(proximal_basal_2.synapses[8][1][0][2])
+proximal_basal_2.neuron.add_output(proximal_basal.synapses[8][1][0][2])
+
+net = network(sim=True,dt=.01,tf=500,nodes=[proximal_basal,proximal_basal_2])
+
+title = "Neuron 1: Enters Predictive State"
+
+# '''
+#         Neuron 1: One 3/1-E/I dendrite feeds another 3/1-E/I dendrite and soma.  \n Latter dendrite only feeds soma. Third denrite has inihibitory synapse only.
+#         '''
+proximal_basal.plot_neuron_activity(net,title=title,phir=True,weighting=True)
+
+
+title = title = "Neuron 2: Not in Predictive State"
+# '''
+#         One 3/1-E/I dendrite feeds another 3/1-E/I dendrite and soma.  \n Latter dendrite only feeds soma. Third denrite has inihibitory synapse only.
+#         '''
+proximal_basal_2.plot_neuron_activity(net,title=title,phir=True,weighting=True,input=input_proximal)
+
+
+'''
+QUESTIONS:
+    - How to compound signal such that consecutive incoming events will staircase up to a spike?
+    - How to be sure that primed neuron doesn't respond more slowly to proximal event due to saturation?
+'''
+
+print(net.spikes)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 # mono_dend = NeuralZoo(type='mono_dendrite',w_dn=.5)
 # mono_dend.synapses[0][1][0][0].add_input(input.signals[0])

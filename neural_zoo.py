@@ -620,7 +620,7 @@ class NeuralZoo():
         plt.plot(net.t,ref, ':',color = 'r', label='refractory signal')
         ## add input/output spikes
         if len(net.spikes[0]) > 0:
-            plt.plot(net.spikes[1],net.spike_signals[0],'xk', markersize=8, label='neuron fires')
+            # plt.plot(net.spikes[1],net.spike_signals[0],'xk', markersize=8, label='neuron fires')
             plt.axhline(y = self.neuron.s_th, color = 'purple', linestyle = '--',label='Firing Threshold')
         if input:
             plt.plot(input.spike_arrays[1],np.zeros(len(input.spike_arrays[1])),'xr', markersize=5, label='neuron fires')
