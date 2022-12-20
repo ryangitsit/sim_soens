@@ -40,6 +40,11 @@ from soen_plotting import raster_plot
 import numpy as np
 import matplotlib.pyplot as plt
 
+times_empty = np.arange(500,500,50)
+indices_empty = np.zeros(len(times_empty)).astype(int)
+def_spikes_empty = [indices_empty,times_empty]
+input_empty = SuperInput(channels=1, type='defined', defined_spikes=def_spikes_empty, duration=500)
+# print(input_empty.spike_arrays)
 
 times_basal_0 = np.arange(500,500,500)
 indices_basal_0 = np.zeros(len(times_basal_0)).astype(int)
@@ -47,65 +52,111 @@ def_spikes_basal_0 = [indices_basal_0,times_basal_0]
 input_basal_0 = SuperInput(channels=1, type='defined', defined_spikes=def_spikes_basal_0, duration=500)
 print(input_basal_0.spike_arrays)
 
+
 times_basal = np.arange(0,500,50)
 indices_basal = np.zeros(len(times_basal)).astype(int)
 def_spikes_basal = [indices_basal,times_basal]
 input_basal = SuperInput(channels=1, type='defined', defined_spikes=def_spikes_basal, duration=500)
-print(input_basal.spike_arrays)
-
+# print(input_basal.spike_arrays)
+# raster_plot(input_basal.spike_arrays)
+# input_basal = input_basal_0
 
 times_proximal = np.arange(325,500,50)
 indices_proximal = np.zeros(len(times_proximal)).astype(int)
 def_spikes_proximal = [indices_proximal,times_proximal]
 input_proximal = SuperInput(channels=1, type='defined', defined_spikes=def_spikes_proximal, duration=500)
-print(input_proximal.spike_arrays)
+# print(input_proximal.spike_arrays)
 # input = SuperInput(channels=27*6, type='random', total_spikes=600, duration=150)
+# raster_plot(input_proximal.spike_arrays,duration=470)
 
-
-
-
+# syn_struct = [
+#             [
+#                 [[0]],
+#                 [[1,0,0]]
+#             ],
+#             [
+#                 [[0]],
+#                 [[1,0,0]]
+#             ],
+#             [
+#                 [[0]],
+#                 [[1,0,0]]
+#             ],
+#             [
+#                 [[0]],
+#                 [[-1,0,0]]
+#             ],
+#             [
+#                 [[0]],
+#                 [[0,1,0]]
+#             ],
+#             [
+#                 [[0]],
+#                 [[0,1,0]]
+#             ],
+#             [
+#                 [[0]],
+#                 [[0,1,0]]
+#             ],
+#             [
+#                 [[0]],
+#                 [[0,-1,0]]
+#             ],
+#             [
+#                 [[0]],
+#                 [[0,0,-1]]
+#             ],
+#         ]
+# W = [[[.35,.65,-.1]]]
 syn_struct = [
             [
                 [[0]],
-                [[1,0,0]]
+                [[.5,0,0]]
             ],
             [
                 [[0]],
-                [[1,0,0]]
+                [[.5,0,0]]
             ],
             [
                 [[0]],
-                [[1,0,0]]
+                [[.5,0,0]]
             ],
             [
                 [[0]],
-                [[-1,0,0]]
+                [[-.5,0,0]]
+            ],
+
+            [
+                [[0]],
+                [[0,.5,0]]
             ],
             [
                 [[0]],
-                [[0,1,0]]
+                [[0,.5,0]]
             ],
             [
                 [[0]],
-                [[0,1,0]]
+                [[0,.5,0]]
             ],
             [
                 [[0]],
-                [[0,1,0]]
+                [[0,-.5,0]]
             ],
-            [
-                [[0]],
-                [[0,-1,0]]
-            ],
+
             [
                 [[0]],
                 [[0,0,-1]]
             ],
         ]
-W = [[[.35,.65,-.5]]]
+W = [[[.35,.7,-.1]]]
 
 
-proximal_basal = NeuralZoo(type='custom',synaptic_structure=syn_struct,weights=W,s_th=.5,tau_ni=500,tau_di=500)
+proximal_basal = NeuralZoo(type='custom',synaptic_structure=syn_struct,weights=W,s_th=.5,tau_ni=500,tau_di=500,beta_ni=2*np.pi*1e3)
+proximal_basal_2 = NeuralZoo(type='custom',synaptic_structure=syn_struct,weights=W,s_th=.5,tau_ni=500,tau_di=500,beta_ni=2*np.pi*1e3)
+
+proximal_basal.neuron.add_output(proximal_basal_2.synapses[8][1][0][2])
+proximal_basal_2.neuron.add_output(proximal_basal.synapses[8][1][0][2])
+
 
 # adding the lateral dendritic connection
 proximal_basal.dendrites[1][0][1].add_input(proximal_basal.dendrites[1][0][0], connection_strength=.5)
@@ -120,12 +171,12 @@ proximal_basal.synapses[5][1][0][1].add_input(input_proximal.signals[0])
 proximal_basal.synapses[6][1][0][1].add_input(input_proximal.signals[0])
 proximal_basal.synapses[7][1][0][1].add_input(input_proximal.signals[0])
 
-proximal_basal.synapses[8][1][0][2].add_input(input_proximal.signals[0])
+proximal_basal.synapses[8][1][0][2].add_input(input_empty.signals[0])
 
 # net = network(sim=True,dt=.01,tf=500,nodes=[proximal_basal])
 
 
-proximal_basal_2 = NeuralZoo(type='custom',synaptic_structure=syn_struct,weights=W,s_th=.5,tau_ni=500,tau_di=500)
+# proximal_basal_2 = NeuralZoo(type='custom',synaptic_structure=syn_struct,weights=W,s_th=.5,tau_ni=500,tau_di=500,beta_ni=2*np.pi*1e3)
 
 # adding the lateral dendritic connection
 proximal_basal_2.dendrites[1][0][1].add_input(proximal_basal_2.dendrites[1][0][0], connection_strength=.5)
@@ -140,26 +191,20 @@ proximal_basal_2.synapses[5][1][0][1].add_input(input_proximal.signals[0])
 proximal_basal_2.synapses[6][1][0][1].add_input(input_proximal.signals[0])
 proximal_basal_2.synapses[7][1][0][1].add_input(input_proximal.signals[0])
 
-proximal_basal_2.synapses[8][1][0][2].add_input(input_proximal.signals[0])
+proximal_basal_2.synapses[8][1][0][2].add_input(input_empty.signals[0])
 
-proximal_basal.neuron.add_output(proximal_basal_2.synapses[8][1][0][2])
-proximal_basal_2.neuron.add_output(proximal_basal.synapses[8][1][0][2])
 
-net = network(sim=True,dt=.01,tf=500,nodes=[proximal_basal,proximal_basal_2])
+
+net = network(sim=True,dt=.1,tf=500,nodes=[proximal_basal,proximal_basal_2])
+# print(net.neurons['unnamed_neuron__n1__nr_ni__dend_refraction'].spike_t)
 
 title = "Neuron 1: Enters Predictive State"
-
-# '''
-#         Neuron 1: One 3/1-E/I dendrite feeds another 3/1-E/I dendrite and soma.  \n Latter dendrite only feeds soma. Third denrite has inihibitory synapse only.
-#         '''
-proximal_basal.plot_neuron_activity(net,title=title,phir=True,weighting=True)
+# plt.plot(net.t,proximal_basal.dendrites[1][0][0].phi_r)
+proximal_basal.plot_basal_proximal(net,title=title,phir=True,weighting=True,input=input_proximal,input_2=input_basal)
 
 
 title = title = "Neuron 2: Not in Predictive State"
-# '''
-#         One 3/1-E/I dendrite feeds another 3/1-E/I dendrite and soma.  \n Latter dendrite only feeds soma. Third denrite has inihibitory synapse only.
-#         '''
-proximal_basal_2.plot_neuron_activity(net,title=title,phir=True,weighting=True,input=input_proximal)
+proximal_basal_2.plot_basal_proximal(net,title=title,phir=True,weighting=True,input=input_proximal)
 
 
 '''
@@ -242,7 +287,7 @@ print(net.spikes)
 # mono_dend.plot_neuron_activity(net,phir=True,title=title,weighting=False,docstring=True)
 # # mono_dend.plot_neuron_activity(net,phir=True,title=title,weighting=False)
 
-print(NeuralZoo.plot_neuron_activity.__doc__)
+# print(NeuralZoo.plot_neuron_activity.__doc__)
 
 # input = SuperInput(type='MNIST', index=0, slow_down=50, duration=1000)
 # raster_plot(input.spike_arrays)

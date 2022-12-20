@@ -178,10 +178,12 @@ class dendrite():
                 self.Ic = self.Ic__refraction
                 self.beta_c = self.beta_c__refraction
                 self.ib = self.ib_ref
-                self.tau_di = self.tau_ref              
+                self.tau_di = self.tau_ref   
+                self.name = '{}__dend_{}'.format(self.name,'refraction')  
             elif self.dentype == 'soma':
                 self.tau_di = self.tau_ni
                 self.ib = self.ib_n
+                self.name = '{}__{}'.format(self.name,'nr_ni')
                 # print("SOMATIC DENDRITE")
         else:
             self.ib = self.ib
@@ -606,7 +608,7 @@ class neuron():
         
         neuroden_params = params
         neuroden_params['dentype'] = 'soma'
-        neuroden_params['name'] = '{}__{}'.format(self.name,'nr_ni')
+        # neuroden_params['name'] = '{}__{}'.format(self.name,'nr_ni')
         neuron_dendrite = dendrite(**neuroden_params)
         neuron_dendrite.is_soma = True    
         
@@ -628,7 +630,7 @@ class neuron():
         #                                       bias_current = self.ib_ref, integration_loop_time_constant = self.integration_loop_time_constant__refraction)
         neuroref_params = params
         neuroref_params['dentype'] = 'refractory'
-        neuroref_params['name'] = '{}__dend_{}'.format(self.name,'refraction')
+        # neuroref_params['name'] = '{}__dend_{}'.format(self.name,'refraction')
         self.dend__ref = dendrite(**neuroref_params)
         # self.dend__ref = neuron_refractory_dendrite
 
@@ -636,7 +638,7 @@ class neuron():
             print("SECOND REF")
             neuroref_params = params
             neuroref_params['dentype'] = 'refractory'
-            neuroref_params['name'] = '{}_2__dend_{}'.format(self.name,'refraction')
+            # neuroref_params['name'] = '{}_2__dend_{}'.format(self.name,'refraction')
             self.dend__ref_2 = dendrite(**neuroref_params)
             self.dend__nr_ni.add_input(self.dend__ref_2, connection_strength = self.refractory_dendrite_connection_strength)
         
@@ -736,12 +738,13 @@ class neuron():
         return    
         
     def add_input(self, connection_object, connection_strength = 1):
+        # print(self.name, "<--", connection_object.name)
         self.dend__nr_ni.add_input(connection_object, connection_strength)
         return
         
     def add_output(self, connection_object):
-        
         if type(connection_object).__name__ == 'synapse':
+            # print(self.name, "-->", connection_object.name)
             self.synaptic_outputs[connection_object.name] = synapse.synapses[connection_object.name]
             synapse.synapses[connection_object.name].add_input(self)
         else: 
@@ -819,20 +822,23 @@ class network():
         Phi_r = []
         spike_signals = []
         count = 0
+        # print(self.neurons)
         for neuron_key in self.neurons:
             neuron = self.neurons[neuron_key]
             s = neuron.dend__nr_ni.s
             S.append(s)
             phi_r = neuron.dend__nr_ni.phi_r
             Phi_r.append(phi_r)
-            spike_t = neuron.spike_times
+            spike_t = neuron.spike_times/neuron.time_params['t_tau_conversion']
+            self.neurons[neuron_key].spike_t = spike_t
+            # print(spike_t)
             spikes[0].append(np.ones(len(spike_t))*count)
-            spikes[1].append((spike_t/neuron.time_params['t_tau_conversion']))
+            spikes[1].append((spike_t))
             spike_signal = []
             spike_times = spike_t/neuron.time_params['t_tau_conversion']
             for spike in spike_times:
                 spike_signal.append(s[int(spike/self.dt)])
-                spike_signals.append(spike_signal)
+            spike_signals.append(spike_signal)
             count+=1
         spikes[0] = np.concatenate(spikes[0])
         spikes[1] = np.concatenate(spikes[1])
@@ -841,6 +847,8 @@ class network():
         self.phi_r = Phi_r
         self.signal = S
         neuron.spike_times = []
+        # print(spike_signal)
+        # print(spike_signals)
 
     def simulate(self):
         # print(self.nodes)

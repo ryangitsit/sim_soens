@@ -195,7 +195,7 @@ class NeuralZoo():
                         else:
                             type = 'ri'
                         entries = self.__dict__
-                        entries['name'] = f"lay{i}_branch{j}_den{k}"
+                        entries['name'] = f"{self.neuron.name[-2:]}_lay{i}_branch{j}_den{k}"
                         entries['type'] = type
                         sub.append(dendrite(**entries))
 
@@ -263,7 +263,7 @@ class NeuralZoo():
             self.synapse_list = []
             self.synapses = [[] for _ in range(len(self.synaptic_structure))]
             for ii,S in enumerate(self.synaptic_structure):
-                syn = common_synapse(f'{ii}')
+                syn = common_synapse(f'{self.neuron.name[-2:]}_syn{ii}')
                 self.synapse_list.append(syn)
                 syns = [[] for _ in range(len(S))]
                 for i,layer in enumerate(S):
@@ -620,12 +620,100 @@ class NeuralZoo():
         plt.plot(net.t,ref, ':',color = 'r', label='refractory signal')
         ## add input/output spikes
         if len(net.spikes[0]) > 0:
-            # plt.plot(net.spikes[1],net.spike_signals[0],'xk', markersize=8, label='neuron fires')
+            plt.plot(net.spikes[1],net.spike_signals[0],'xk', markersize=8, label='neuron fires')
             plt.axhline(y = self.neuron.s_th, color = 'purple', linestyle = '--',label='Firing Threshold')
         if input:
             plt.plot(input.spike_arrays[1],np.zeros(len(input.spike_arrays[1])),'xr', markersize=5, label='neuron fires')
         # print(self.synapses[0][0][0].__dict__)
         # print(net.spikes[0])
+        plt.xlabel("Simulation Time (ns)")
+        plt.ylabel("Signal (Ic)")
+        if title:
+            plt.title(title)
+        plt.legend(loc='center left', bbox_to_anchor=(1, 0.5))
+        plt.subplots_adjust(right=.8)
+        plt.subplots_adjust(bottom=.15)
+        # plt.legend()
+        plt.show()
+
+
+    def plot_basal_proximal(self,net,phir=False,dend=True,title=None,
+                            input=None,input_2=None,weighting=True,docstring=False):
+        '''
+        Plots signal activity for a given network or neuron
+         - phir      -> plot phi_r of soma and phi_r thresholds
+         - dend      -> plot dendritic signals
+         - input     -> mark moments of input events with red spikes
+         - weighting -> weight dendritic signals by their connection strength
+        '''
+        if docstring == True:
+            print(self.plot_neuron_activity.__doc__)
+            return
+        signal = self.dendrites[0][0][0].s
+        ref = self.neuron.dend__ref.s
+        phi_r = self.dendrites[0][0][0].phi_r
+
+        import matplotlib.pyplot as plt
+        plt.figure(figsize=(12,4))
+        # spd_indices = np.array(self.synapses).shape
+        # spd = self.synapses[spd_indices[0]-1][spd_indices[1]-1][spd_indices[2]-1].phi_spd
+        # plt.plot(net.t,spd, label='phi_spd')
+        plt.plot(net.t,signal,  label='soma signal', linewidth=2.5)
+        # if phir:
+        #     # print(phi_r)
+        #     from soen_functions import phi_thresholds
+        #     phi_ths = phi_thresholds(self.neuron)
+        #     plt.axhline(y = phi_ths[1], color = 'purple', linestyle = '--',linewidth=.5,label="phi_th")
+        #     if any(ele < 0 for ele in phi_r):
+        #         print("True")
+        #         plt.axhline(y = phi_ths[0], color = 'purple', linestyle = '--',linewidth=.5)
+            # plt.plot(net.t,phi_r,  label='phi_r (soma)')
+        dend_names = ['basal', 'proximal', 'inhibitory']
+        if dend:
+            for i,layer in enumerate(self.dendrites):
+                for j,branch in enumerate(layer):
+                    for k,dendrite in enumerate(branch):
+                        if i == 0 and j == 0 and k ==0:
+                            pass
+                        else:
+                            # print(dendrite.__dict__.keys())
+                            # print(dendrite.external_connection_strengths)
+                            if weighting == True:
+                                weight = dendrite.weights[i-1][j][k]
+                                dend_s = dendrite.s*weight
+                            else:
+                                dend_s = dendrite.s
+
+                            plt.plot(net.t,dend_s,'--', label='w * '+dend_names[k])
+                            # plt.plot(net.t,dendrite.phi_r,label='phi '+dendrite.name)
+                        # if i==1 and j==0 and k==0:
+                        #     print(dendrite.__dict__.keys())
+                        #     print(dendrite.weights[i-1][j][k])
+                        # print(print(self.weights[i][j][k]))
+                        # linewidth=dendrite.external_connection_strengths[0],
+
+        # plt.plot(net.t,self.dendrites[1][0][0].phi_r,color='r',label='basal_phi')
+
+        # plt.plot(net.t,ref, ':',color = 'r', label='refractory signal')
+        ## add input/output spike
+        colors = ['r','g']
+        # for neuron_key in net.neurons:
+        #     if neuron_key == self.neuron.name:
+        #         neuron = net.neurons[neuron_key]
+        #         spike_times = neuron.spike_times/neuron.time_params['t_tau_conversion']
+        #         print(spike_times)
+        #         plt.plot(spike_times,np.ones(len(spike_times))*self.neuron.s_th,'xk', markersize=8, label=f'neuron fires')
+        spike_times = net.neurons[self.neuron.name].spike_t
+        # print(spike_times)
+
+        plt.plot(spike_times,np.ones(len(spike_times))*self.neuron.s_th,'xk', markersize=8, label=f'neuron fires')
+
+        plt.axhline(y = self.neuron.s_th, color = 'purple', linestyle = ':',label='Firing Threshold')
+        if input:
+            plt.plot(input.spike_arrays[1],np.zeros(len(input.spike_arrays[1])),'x',color='orange', markersize=5, label='proximal input event')
+        if input_2:
+            plt.plot(input_2.spike_arrays[1],np.zeros(len(input_2.spike_arrays[1])),'xg', markersize=5, label='basal input event')
+        # plt.plot(net.t,phi_r,  label='phi_r (soma)')
         plt.xlabel("Simulation Time (ns)")
         plt.ylabel("Signal (Ic)")
         if title:

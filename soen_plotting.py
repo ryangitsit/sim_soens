@@ -676,6 +676,7 @@ def plot_neuron(neuron_object):
     else:
         neuron_object.plot_simple = False
         _num = 4
+        
     neuron_object.bias_current = neuron_object.ib_n
     neuron_object.bias_current__refraction = neuron_object.ib_ref
     neuron_object.integration_loop_time_constant__refraction = neuron_object.tau_ref
