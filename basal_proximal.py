@@ -52,7 +52,7 @@ def gen_input(case='Predictive'):
 
 
 
-def run_prox_basal_experiment(n1,n2,case,input_basal,input_proximal,input_empty):
+def run_prox_basal_experiment(set,n1,n2,case,input_basal,input_proximal,input_empty):
     '''
     Wires neurons exactly as shown in img/neurons/basal_proximal.png
      - Run two-neuron network and returns results
@@ -63,8 +63,12 @@ def run_prox_basal_experiment(n1,n2,case,input_basal,input_proximal,input_empty)
     n2.neuron.add_output(n1.synapses[8][1][0][2])
 
     # adding the lateral dendritic connections for each neuron
-    n1.dendrites[1][0][1].add_input(n1.dendrites[1][0][0], connection_strength=.5)
-    n2.dendrites[1][0][1].add_input(n2.dendrites[1][0][0], connection_strength=.5)
+    if set == 'staircase':
+        strength = 0.5
+    elif set == 'race':
+        strength = 0.1
+    n1.dendrites[1][0][1].add_input(n1.dendrites[1][0][0], connection_strength=strength)
+    n2.dendrites[1][0][1].add_input(n2.dendrites[1][0][0], connection_strength=strength)
 
     ### n_1 synapses ###
     # basal synapses 
@@ -114,123 +118,203 @@ def run_prox_basal_experiment(n1,n2,case,input_basal,input_proximal,input_empty)
 
 
 
-def bas_prox_plot(net,neurons,input_basal,input_prox,title):
+def bas_prox_plot(nets,neurons, input_basal,input_prox,title):
     '''
     Plots both neuron activities
      - 
     '''
-    fig, axs = plt.subplots(len(neurons), 1,figsize=(12,8))
+    fig, axs = plt.subplots(len(nets), len(neurons[0]),figsize=(18,8),
+                            sharex=True, sharey=True)
     
     for ii in range(2):
+        for jj in range(2):
+            # plot somatic signal
+            signal = neurons[ii][jj].dendrites[0][0][0].s
+            axs[jj,ii].plot(nets[ii].t,signal,  label='soma signal', linewidth=2.5)
 
-        # plot somatic signal
-        signal = neurons[ii].dendrites[0][0][0].s
-        axs[ii].plot(net.t,signal,  label='soma signal', linewidth=2.5)
+            # plot dendritic signals
+            dend_names = ['basal', 'proximal', 'inhibitory']
+            for i,layer in enumerate(neurons[ii][jj].dendrites):
+                for j,branch in enumerate(layer):
+                    for k,dendrite in enumerate(branch):
+                        if i == 0 and j == 0 and k ==0:
+                            pass
+                        else:
+                            weight = dendrite.weights[i-1][j][k]
+                            dend_s = dendrite.s*weight
+                            axs[jj,ii].plot(nets[ii].t,dend_s,'--', label='w * '+dend_names[k])
 
-        # plot dendritic signals
-        dend_names = ['basal', 'proximal', 'inhibitory']
-        for i,layer in enumerate(neurons[ii].dendrites):
-            for j,branch in enumerate(layer):
-                for k,dendrite in enumerate(branch):
-                    if i == 0 and j == 0 and k ==0:
-                        pass
-                    else:
-                        weight = dendrite.weights[i-1][j][k]
-                        dend_s = dendrite.s*weight
-                        axs[ii].plot(net.t,dend_s,'--', label='w * '+dend_names[k])
+            spike_times = nets[ii].neurons[neurons[ii][jj].neuron.name].spike_t
+            # print(spike_times)
 
-        spike_times = net.neurons[neurons[ii].neuron.name].spike_t
-        # print(spike_times)
+            axs[jj,ii].plot(spike_times,np.ones(len(spike_times))*neurons[ii][jj].neuron.s_th,
+                        'xk', markersize=8, label=f'neuron fires')
 
-        axs[ii].plot(spike_times,np.ones(len(spike_times))*neurons[ii].neuron.s_th,
-                     'xk', markersize=8, label=f'neuron fires')
+            axs[jj,ii].axhline(y = neurons[ii][jj].neuron.s_th, 
+                            color = 'purple', linestyle = ':',label='Firing Threshold')
 
-        axs[ii].axhline(y = neurons[ii].neuron.s_th, 
-                        color = 'purple', linestyle = ':',label='Firing Threshold')
+            axs[jj,ii].plot(input_prox.spike_arrays[1],np.zeros(len(input_prox.spike_arrays[1])),
+                        'xg', markersize=8, label='proximal input event')
 
-        axs[ii].plot(input_prox.spike_arrays[1],np.zeros(len(input_prox.spike_arrays[1])),
-                     'xg', markersize=8, label='proximal input event')
 
     # axs[i].plot(net.t,phi_r,  label='phi_r (soma)')
-    axs[0].plot(input_basal.spike_arrays[1],np.zeros(len(input_basal.spike_arrays[1])),
+    axs[0,1].plot(input_basal[1].spike_arrays[1],np.zeros(len(input_basal[1].spike_arrays[1])),
                 'x',color='orange', markersize=8, label='basal input event')
 
-    axs[0].set_title(f"Neuron 1")
-    axs[1].set_title(f"Neuron 2")
-    plt.suptitle(f"Basal Proximal Neuron Pair for Case: {title}")
-    plt.xlabel("Simulation Time (ns)")
-    plt.ylabel("Signal (Ic)")
-    axs[0].legend(loc='center left', bbox_to_anchor=(1, 0.5))
-    plt.subplots_adjust(right=.8)
+    axs[0,0].set_title(f"No Basal Input for Either Neuron")
+    axs[0,1].set_title(f"Basal Input for One Neuron")
+
+    plt.suptitle(f"Non-Predictive vs Predictive State Neuron Couples")
+    axs[1,0].set_xlabel("Simulation Time (ns)", fontsize = 12)
+    axs[1,0].set_ylabel("Signal (Ic)", fontsize = 12)
+    # fig.supxlabel("Simulation Time (ns)")
+    # fig.supylabel("Signal (Ic)")
+    axs[1,0].yaxis.set_label_coords(-.1, 1.1)
+    axs[1,0].xaxis.set_label_coords(1.1, -.2)
+    axs[0,1].legend(loc='center left', bbox_to_anchor=(1, 0.5))
+    plt.subplots_adjust(right=.85)
     plt.subplots_adjust(bottom=.15)
     # plt.legend()
     plt.show()
 
+def get_params(set):
+    if set == 'stair_case':
+        # synaptic structure (see library tour for details)
+        syn_struct = [
+                    [
+                        [[0]],
+                        [[.5,0,0]]
+                    ],
+                    [
+                        [[0]],
+                        [[.5,0,0]]
+                    ],
+                    [
+                        [[0]],
+                        [[.5,0,0]]
+                    ],
+                    [
+                        [[0]],
+                        [[-.5,0,0]]
+                    ],
+
+                    [
+                        [[0]],
+                        [[0,.5,0]]
+                    ],
+                    [
+                        [[0]],
+                        [[0,.5,0]]
+                    ],
+                    [
+                        [[0]],
+                        [[0,.5,0]]
+                    ],
+                    [
+                        [[0]],
+                        [[0,-.5,0]]
+                    ],
+
+                    [
+                        [[0]],
+                        [[0,0,-1]]
+                    ],
+                ]
+
+        # dendritic weights
+        W = [[[.35,.7,-.1]]]
+
+        tau_ni=500
+        tau_di=500
+        beta_ni=2*np.pi*1e3
+
+    elif set == 'race':
+        syn_struct = [
+                    [
+                        [[0]],
+                        [[.42,0,0]]
+                    ],
+                    [
+                        [[0]],
+                        [[.42,0,0]]
+                    ],
+                    [
+                        [[0]],
+                        [[.42,0,0]]
+                    ],
+                    [
+                        [[0]],
+                        [[-.42,0,0]]
+                    ],
+
+                    [
+                        [[0]],
+                        [[0,.5,0]]
+                    ],
+                    [
+                        [[0]],
+                        [[0,.5,0]]
+                    ],
+                    [
+                        [[0]],
+                        [[0,.5,0]]
+                    ],
+                    [
+                        [[0]],
+                        [[0,-.5,0]]
+                    ],
+
+                    [
+                        [[0]],
+                        [[0,0,-1]]
+                    ],
+                ]
+
+        W = [[[.35,.7,-.1]]]
+
+        tau_ni=500
+        tau_di=250
+        beta_ni=2*np.pi*1e2
+    return syn_struct,W,tau_ni,tau_di,beta_ni
+
+set = 'staircase'
+set = 'race'
+syn_struct,W,tau_ni,tau_di,beta_ni = get_params('race')
 
 
-# synaptic structure (see library tour for details)
-syn_struct = [
-            [
-                [[0]],
-                [[.5,0,0]]
-            ],
-            [
-                [[0]],
-                [[.5,0,0]]
-            ],
-            [
-                [[0]],
-                [[.5,0,0]]
-            ],
-            [
-                [[0]],
-                [[-.5,0,0]]
-            ],
-
-            [
-                [[0]],
-                [[0,.5,0]]
-            ],
-            [
-                [[0]],
-                [[0,.5,0]]
-            ],
-            [
-                [[0]],
-                [[0,.5,0]]
-            ],
-            [
-                [[0]],
-                [[0,-.5,0]]
-            ],
-
-            [
-                [[0]],
-                [[0,0,-1]]
-            ],
-        ]
-
-# dendritic weights
-W = [[[.35,.7,-.1]]]
-
+### Predictive Case ###
 case='Predictive'
-# case='no_basal'
 
 # generate input signals
 input_basal, input_proximal, input_empty = gen_input(case)
 
 # generate neurons 
-# --any neuron/dendritic parameter can be passed in as keyword argument
-
+# any neuron/dendritic parameter can be passed in as keyword argument
 n1 = NeuralZoo(type='custom',synaptic_structure=syn_struct,weights=W,
-               s_th=.5,tau_ni=500,tau_di=500,beta_ni=2*np.pi*1e3)
+               s_th=.5,tau_ni=tau_ni,tau_di=tau_di,beta_ni=beta_ni)
 
 n2 = NeuralZoo(type='custom',synaptic_structure=syn_struct,weights=W,
-               s_th=.5,tau_ni=500,tau_di=500,beta_ni=2*np.pi*1e3)
+               s_th=.5,tau_ni=tau_ni,tau_di=tau_di,beta_ni=beta_ni)
 
-# make neurons and network --run
-net, n1, n2 = run_prox_basal_experiment(n1,n2,case,input_basal,input_proximal,input_empty)
+net, n1, n2 = run_prox_basal_experiment(set,n1,n2,case,input_basal,input_proximal,input_empty)
 neurons = [n1,n2]
 
-# plot activity for each neuron
-bas_prox_plot(net,neurons,input_basal,input_proximal,case)
+### Non-Predictive Case ###
+input_basal_ = input_empty
+
+n1_ = NeuralZoo(type='custom',synaptic_structure=syn_struct,weights=W,
+               s_th=.5,tau_ni=tau_ni,tau_di=tau_di,beta_ni=beta_ni)
+
+n2_ = NeuralZoo(type='custom',synaptic_structure=syn_struct,weights=W,
+               s_th=.5,tau_ni=tau_ni,tau_di=tau_di,beta_ni=beta_ni)
+
+net_, n1_, n2_ = run_prox_basal_experiment(set,n1_,n2_,case,input_basal_,input_proximal,input_empty)
+
+### Plotting ###
+neurons_ = [n1_,n2_]
+nets = [net_,net]
+NEURONS = [neurons_,neurons]
+input_bas = [input_basal_,input_basal]
+
+# plot activity for each neuron for each case
+bas_prox_plot(nets,NEURONS,input_bas,input_proximal,case)
