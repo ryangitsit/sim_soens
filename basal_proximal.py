@@ -164,7 +164,7 @@ def bas_prox_plot(nets,neurons, input_basal,input_prox,title):
     axs[0,0].set_title(f"No Basal Input for Either Neuron")
     axs[0,1].set_title(f"Basal Input for One Neuron")
 
-    plt.suptitle(f"Non-Predictive vs Predictive State Neuron Couples")
+    plt.suptitle(f"Non-Predictive vs Predictive State Neuron Couples", fontsize = 14)
     axs[1,0].set_xlabel("Simulation Time (ns)", fontsize = 12)
     axs[1,0].set_ylabel("Signal (Ic)", fontsize = 12)
     # fig.supxlabel("Simulation Time (ns)")
@@ -278,7 +278,7 @@ def get_params(set):
     return syn_struct,W,tau_ni,tau_di,beta_ni
 
 set = 'staircase'
-set = 'race'
+# set = 'race'
 syn_struct,W,tau_ni,tau_di,beta_ni = get_params('race')
 
 
