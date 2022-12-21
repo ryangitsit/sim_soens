@@ -281,7 +281,6 @@ def dend_load_rate_array(load_string):
 
 def dend_load_thresholds_saturations(load_string):
 
-
     _path = pathfinder()
 
     if load_string == 'default' or load_string == 'default_ri':
