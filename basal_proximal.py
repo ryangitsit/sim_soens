@@ -229,8 +229,7 @@ n2 = NeuralZoo(type='custom',synaptic_structure=syn_struct,weights=W,
                s_th=.5,tau_ni=500,tau_di=500,beta_ni=2*np.pi*1e3)
 
 # make neurons and network --run
-net, n1, n2 = run_prox_basal_experiment(n1,n2,syn_struct,W,case,input_basal,
-                                        input_proximal,input_empty)
+net, n1, n2 = run_prox_basal_experiment(n1,n2,case,input_basal,input_proximal,input_empty)
 neurons = [n1,n2]
 
 # plot activity for each neuron

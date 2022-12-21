@@ -200,7 +200,7 @@ class dendrite():
         #     print(k," -> ",v)
         # print(" ************************************************************* ")
         # futher adjustments to parameters
-        print(self.loops_present,self.ib)
+
         if (self.loops_present != 'ri' 
             and self.loops_present != 'pri' 
             and self.loops_present != 'pri' 
