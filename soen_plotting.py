@@ -676,6 +676,11 @@ def plot_neuron(neuron_object):
     else:
         neuron_object.plot_simple = False
         _num = 4
+        
+    neuron_object.bias_current = neuron_object.ib_n
+    neuron_object.bias_current__refraction = neuron_object.ib_ref
+    neuron_object.integration_loop_time_constant__refraction = neuron_object.tau_ref
+
     fig, ax = plt.subplots( nrows = _num+2*depth_of_tree, ncols = 1, sharex = True, sharey = False, figsize = ( fig_size[0] , (3+2*depth_of_tree)*fig_size[1]) )
         
     _str = 'soen neuron: {}, loops present = {}'.format(neuron_object.name,neuron_object.loops_present)

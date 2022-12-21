@@ -138,110 +138,110 @@ class dendrite():
     _next_uid = 0
     dendrites = dict()
 
-    def __init__(self, **kwargs):
+    def __init__(self, **params):
         
-        # make new dendrite
+        # DEFAULT SETTINGS
         self.uid = dendrite._next_uid
         self.unique_label = 'd{}'.format(self.uid)
         dendrite._next_uid += 1
-        
-        # name the dendrite
-        if 'name' in kwargs:
-            self.name = kwargs['name']
-        else:
-            self.name = 'unnamed_dendrite__{}'.format(self.unique_label)
-        # end name 
-        
-        if 'loops_present' in kwargs:
-            if kwargs['loops_present'] == 'ri' or kwargs['loops_present'] == 'pri' or kwargs['loops_present'] == 'rtti' or kwargs['loops_present'] == 'prtti':
-                self.loops_present = kwargs['loops_present']
-            else:
-                raise ValueError('[soen_sim] loops_present must be \'ri\', \'pri\', \'rtti\', \'prtti\'. ')
+        self.name = 'unnamed_dendrite__{}'.format(self.unique_label)
+        if 'loops_present' in params:
+            self.loops_present = params['loops_present']
         else:
             self.loops_present = 'ri'
-                    
-        if 'circuit_betas' in kwargs:
-            if self.loops_present == 'ri':
-                if type(kwargs['circuit_betas']) == list and len(kwargs['circuit_betas']) == 3:
-                    self.circuit_betas = kwargs['circuit_betas']
-                else:
-                    raise ValueError('[soen_sim] circuit_betas for an ri dendrite is a list of three real numbers greater than zero with dimensionless units. The first element represents the self inductance of the left branch of the DR loop. The second element represents the right branch of the DR loop. The third element represents the total inductance of the DI loop, including the integrating kinetic inductor and the output inductance.')
-            elif self.loops_present == 'rtti':
-                if type(kwargs['circuit_betas']) == list and len(kwargs['circuit_betas']) == 3:
-                    self.circuit_betas = kwargs['circuit_betas']
-                else:
-                    raise ValueError('[soen_sim] circuit_betas for an rtti dendrite is a list of three real numbers greater than zero with dimensionless units. The first element represents the self inductance of the left branch of the DR loop. The second element represents the right branch of the DR loop. The third element represents the inductor to the right of the DR loop that goes to the JTL. The fourth element represents the inductor in the JTL. The fifth element represents the total inductance of the DI loop, including the integrating kinetic inductor and the output inductance.')
-        else:
-            if self.loops_present == 'ri':
-                self.circuit_betas = [2*np.pi* 1/4, 2*np.pi* 1/4, 2*np.pi*1e2] # 2*np.pi* 1/4 to match SQUID handbook defintion with beta_L_sq = 1           
-            if self.loops_present == 'rtti':
-                self.circuit_betas = [2*np.pi* 1/4, 2*np.pi* 1/4, 2*np.pi*1e2] # 2*np.pi* 1/4 to match SQUID handbook defintion with beta_L_sq = 1
+        if self.loops_present == 'ri':
+            self.circuit_betas = [2*np.pi* 1/4, 2*np.pi* 1/4, 2*np.pi*1e2]         
+        if self.loops_present == 'rtti':
+            self.circuit_betas = [2*np.pi* 1/4, 2*np.pi* 1/4, 2*np.pi*1e2]
+        self.Ic =  100
+        self.beta_c =  0.3
+        if self.loops_present == 'ri':
+            self.ib = 1.7        
+        elif self.loops_present == 'rtti':
+            self.ib = 2.0 
+        self.tau_di= 250
+        self.normalize_input_connection_strengths = False
+        self.total_excitatory_input_connection_strength = 1
+        self.total_inhibitory_input_connection_strength = -0.5
+        self.offset_flux = 0
+        self.self_feedback_coupling_strength = 0
 
-        if 'junction_critical_current' in kwargs:
-            self.junction_critical_current =  kwargs['junction_critical_current']
+
+        # UPDATE TO CUSTOM PARAMS
+        self.__dict__.update(params)
+        # print(self.type,self.dentype)
+        # self.loops_present = self.type
+        if hasattr(self, 'dentype'):
+            if self.dentype == 'refractory':
+                # print("REFRACTORY DENDRITE")
+                self.loops_present = self.loops_present__refraction
+                self.circuit_betas = self.circuit_betas__refraction 
+                self.Ic = self.Ic__refraction
+                self.beta_c = self.beta_c__refraction
+                self.ib = self.ib_ref
+                self.tau_di = self.tau_ref   
+                self.name = '{}__dend_{}'.format(self.name,'refraction')  
+            elif self.dentype == 'soma':
+                self.tau_di = self.tau_ni
+                self.ib = self.ib_n
+                self.name = '{}__{}'.format(self.name,'nr_ni')
+                # print("SOMATIC DENDRITE")
         else:
-            self.junction_critical_current =  100 # default Ic = 100 uA
-        self.Ic = self.junction_critical_current
+            self.ib = self.ib
+            # print("REGULAR DENDRITE")
+
+        if 'integrated_current_threshold' in params:
+            self.s_th = params['integrated_current_threshold']
         
-        if 'junction_beta_c' in kwargs:
-            self.junction_beta_c =  kwargs['junction_beta_c']
-        else:
-            self.junction_beta_c =  0.3 # default beta_c = 0.3
-        self.beta_c = self.junction_beta_c
-        
-        jj_params = get_jj_params(self.Ic*1e-6,self.beta_c)
-            
-        if 'bias_current' in kwargs:
-            self.bias_current = kwargs['bias_current']
-        else:
+        params = self.__dict__
+        self.bias_current = self.ib
+
+        # for k,v in params.items():
+        #     print(k," -> ",v)
+        # print(" ************************************************************* ")
+        # futher adjustments to parameters
+
+        if (self.loops_present != 'ri' 
+            and self.loops_present != 'pri' 
+            and self.loops_present != 'pri' 
+            and self.loops_present != 'rtti' 
+            and self.loops_present != 'prtti'):
+            raise ValueError('''
+            [soen_sim] loops_present must be:
+                \'ri\', \'pri\', \'rtti\', \'prtti\'. ''')
+
+        if type(self.circuit_betas) == list and (len(self.circuit_betas) == 3 
+                                            or len(self.circuit_betas) == 5):
             if self.loops_present == 'ri':
-                self.bias_current = 1.7 # dimensionless bias current        
+                self.circuit_betas = self.circuit_betas
             elif self.loops_present == 'rtti':
-                self.bias_current = 2.0 # dimensionless bias current
-        self.ib = self.bias_current
-        
-        if 'integration_loop_time_constant' in kwargs: # constant with units of ns or list of tau-s pairs; for list of pairs the form is [[tau_1,s_1],[tau_2,s_2],...] where the temporal decay will have time constant tau_1 from s = 0 to s = s_1, will switch to tau_2 from s_1 to s_2, etc 
-            self.integration_loop_time_constant = kwargs['integration_loop_time_constant']
+                self.circuit_betas = self.circuit_betas
         else:
-            self.integration_loop_time_constant = 250 # default time constant units of ns
-        if type(self.integration_loop_time_constant).__name__ == 'list': 
-            tau_vs_current = self.integration_loop_time_constant
+            raise ValueError('''
+            [soen_sim] circuit_betas for an ri dendrite is a list of three real 
+            numbers greater than zero with dimensionless units. The first 
+            element represents the self inductance of the left branch of the DR 
+            loop. The second element represents the right branch of the DR loop. 
+            The third element represents the total inductance of the DI loop, 
+            including the integrating kinetic inductor and the output 
+            inductance.''')
+
+        jj_params = get_jj_params(self.Ic*1e-6,self.beta_c)
+
+        # if not hasattr(self, 'ib'):
+        #     print('ib switch')
+        #     self.ib = self.ib
+
+        if type(self.tau_di).__name__ == 'list': 
+            tau_vs_current = self.tau_di
             self.tau_list, self.s_list = [], []
             for tau_s in tau_vs_current:
                 self.tau_list.append(tau_s[0])
                 self.s_list.append(tau_s[1])
             self.tau_list.append(self.tau_list[-1]) # add one more entry with very large s
             self.s_list.append(1e6) # add one more entry with very large s
-            self.tau_di = self.tau_list[0] # this is just here to give it an initial value. in time stepper it's broken down by s
-        else:
-            self.tau_di = self.integration_loop_time_constant  
+            self.tau_di = self.tau_list[0] # this is just here to give it an initial value. in time stepper it's broken down by s 
 
-        if 'normalize_input_connection_strengths' in kwargs:
-            if kwargs['normalize_input_connection_strengths'] == True:
-                self.normalize_input_connection_strengths = kwargs['normalize_input_connection_strengths']
-                if 'total_excitatory_input_connection_strength' in kwargs:
-                    self.total_excitatory_input_connection_strength = kwargs['total_excitatory_input_connection_strength']
-                else:
-                    self.total_excitatory_input_connection_strength = 1                     
-                if 'total_inhibitory_input_connection_strength' in kwargs:
-                    self.total_inhibitory_input_connection_strength = kwargs['total_inhibitory_input_connection_strength']
-                else:
-                    self.total_inhibitory_input_connection_strength = -0.5
-            else:
-                self.normalize_input_connection_strengths = False
-        else:
-            self.normalize_input_connection_strengths = False
-                
-        if 'offset_flux' in kwargs: # units of Phi0
-            self.offset_flux = kwargs['offset_flux']
-        else:
-            self.offset_flux = 0
-            
-        if 'self_feedback_coupling_strength' in kwargs: # J_ii, units of phi/s (normalized flux divided by normalized current in DI loop)
-            self.self_feedback_coupling_strength = kwargs['self_feedback_coupling_strength']
-        else:
-            self.self_feedback_coupling_strength = 0
-            
         tau_di = self.tau_di * 1e-9
         beta_di = self.circuit_betas[-1]
         Ic = self.Ic * 1e-6
@@ -252,6 +252,9 @@ class dendrite():
             rdi_list = Ldi/(np.asarray(self.tau_list) * 1e-9)
             self.alpha_list = rdi_list/jj_params['r_j']
         self.jj_params = jj_params
+
+        # print(self.dentype)
+        # print(" ************************************************************* ")
 
         # prepare dendrite to have connections
         self.external_inputs = dict()
@@ -382,113 +385,136 @@ class neuron():
     _next_uid = 0
     neurons = dict()
     
-    def __init__(self, **kwargs):
+    def __init__(self, **params):
 
-        # make new neuron
+        # DEFAULT SETTINGS
         self.uid = neuron._next_uid
         neuron._next_uid += 1
         self.unique_label = 'n{}'.format(self.uid)
+        self.name = 'unnamed_neuron__{}'.format(self.unique_label)
 
-        # name the neuron
-        if 'name' in kwargs:
-            self.name = kwargs['name']
-        else:
-            self.name = 'unnamed_neuron__{}'.format(self.unique_label)
-        # end name 
-        
-        # =============================================================================
-        #         receiving and integration dendrite
-        # =============================================================================
-        
-        if 'loops_present' in kwargs:
-            if kwargs['loops_present'] == 'ri' or kwargs['loops_present'] == 'pri' or kwargs['loops_present'] == 'rtti' or kwargs['loops_present'] == 'prtti':
-                self.loops_present = kwargs['loops_present']
-            else:
-                raise ValueError('[soen_sim] loops_present must be \'ri\', \'pri\', \'rtti\', \'prtti\'. ')
+        # receiving and integration dendrite
+        if 'loops_present' in params:
+            self.loops_present = params['loops_present']
         else:
             self.loops_present = 'ri'
-                    
-        if 'circuit_betas' in kwargs:
-            if self.loops_present == 'ri':
-                if type(kwargs['circuit_betas']) == list and len(kwargs['circuit_betas']) == 3:
-                    self.circuit_betas = kwargs['circuit_betas']
-                else:
-                    raise ValueError('[soen_sim] circuit_betas for an ri dendrite is a list of three real numbers greater than zero with dimensionless units. The first element represents the self inductance of the left branch of the DR loop. The second element represents the right branch of the DR loop. The third element represents the total inductance of the DI loop, including the integrating kinetic inductor and the output inductance.')
-            elif self.loops_present == 'rtti':
-                if type(kwargs['circuit_betas']) == list and len(kwargs['circuit_betas']) == 3:
-                    self.circuit_betas = kwargs['circuit_betas']
-                else:
-                    raise ValueError('[soen_sim] circuit_betas for an ri dendrite is a list of three real numbers greater than zero with dimensionless units. The first element represents the self inductance of the left branch of the DR loop. The second element represents the right branch of the DR loop. The third element represents the inductor to the right of the DR loop that goes to the JTL. The fourth element represents the inductor in the JTL. The fifth element represents the total inductance of the DI loop, including the integrating kinetic inductor and the output inductance.')
-        else:
-            if self.loops_present == 'ri':
-                self.circuit_betas = [2*np.pi* 1/4, 2*np.pi* 1/4, 2*np.pi*1e2] # 2*np.pi* 1/4 to match SQUID handbook defintion with beta_L_sq = 1           
-            if self.loops_present == 'rtti':
-                self.circuit_betas = [2*np.pi* 1/4, 2*np.pi* 1/4, 2*np.pi*1e2] # 2*np.pi* 1/4 to match SQUID handbook defintion with beta_L_sq = 1
+        self.beta_ni = 2*np.pi*1e2
+        if self.loops_present == 'ri':
+            self.circuit_betas = [2*np.pi* 1/4, 2*np.pi* 1/4, self.beta_ni]         
+        if self.loops_present == 'rtti':
+            self.circuit_betas = [2*np.pi* 1/4, 2*np.pi* 1/4, self.beta_ni]  
+        self.Ic =  100
+        self.beta_c =  0.3
+        if self.loops_present == 'ri':
+            self.ib = 1.7 # dimensionless bias current   
+            self.ib_n = 1.802395858835221
+        elif self.loops_present == 'rtti':
+            self.ib = 2.0 # dimensionless bias current
+            self.ib_n = 2.19
+        self.integration_loop_time_constant = 250
+        self.absolute_refractory_period = 10
+        self.normalize_input_connection_strengths = False
+        self.total_excitatory_input_connection_strength = 1
+        self.total_inhibitory_input_connection_strength = -0.5
+        self.offset_flux = 0 
+        # J_ii, units of phi/s (normalized flux / normalized current in DI loop)
+        self.self_feedback_coupling_strength = 0
+        self.s_th = 0.5 # units of Ic
 
-        if 'junction_critical_current' in kwargs:
-            self.junction_critical_current =  kwargs['junction_critical_current'] # units of microamps
+        self.tau_ni = 50
+        self.beta_di = 2*np.pi*1e2
+        self.tau_di = 500
+        self.s_th = 0.5
+        self.integrated_current_threshold = self.s_th
+
+        # refractory dendrite
+        if 'loops_present__refraction' in params:
+            self.loops_present__refraction = params['loops_present__refraction']
         else:
-            self.junction_critical_current =  100 # default Ic = 100 uA
-        self.Ic = self.junction_critical_current
+            self.loops_present__refraction = 'ri'
+        self.beta_ref = 2*np.pi*1e2
+        if self.loops_present__refraction == 'ri':
+            self.circuit_betas__refraction = [2*np.pi* 1/4, 2*np.pi* 1/4, self.beta_ref]         
+        if self.loops_present__refraction  == 'rtti':
+            self.circuit_betas__refraction = [2*np.pi* 1/4, 2*np.pi* 1/4, 2*np.pi*0.5, 
+                                  2*np.pi*0.5, self.beta_ref]
+        self.Ic__refraction =  100
+        self.beta_c__refraction =  0.3
+        if self.loops_present__refraction == 'ri':
+            self.ib_ref = 1.7    
+        elif self.loops_present__refraction == 'rtti':
+            self.ib_ref = 3.1 
+        self.tau_ref= 50
+        self.refractory_dendrite_connection_strength = 'auto'
+        auto = True
+        self.second_ref=False
+
+        ### synapse to receiving dendrite ###
+        self.tau_rise__refraction = 0.02
+        self.tau_fall__refraction = 50
+        self.hotspot_duration__refraction =  2
+        self.spd_duration__refraction = 8
+        self.phi_peak__refraction = 0.5
+
+        ### transmitter ###
+        self.source_type = 'qd'
+        self.num_photons_out_factor = 10
+
+
+        # UPDATE TO CUSTOM PARAMS
+        self.__dict__.update(params)
         
-        if 'junction_beta_c' in kwargs:
-            self.junction_beta_c =  kwargs['junction_beta_c']
-        else:
-            self.junction_beta_c =  0.3 # default beta_c = 0.3
-        self.beta_c = self.junction_beta_c
-        
-        jj_params = get_jj_params(self.Ic*1e-6,self.beta_c)
-            
-        if 'bias_current' in kwargs:
-            self.bias_current = kwargs['bias_current']
-        else:
+        self.integrated_current_threshold = self.s_th
+        params = self.__dict__
+
+        # for k,v in params.items():
+        #     print(k," -> ",v)
+        # print(" ============================================================= ")
+
+        # futher adjustments to parameters
+
+        ### receiving and integration dendrite ###
+        # loops
+        if (self.loops_present != 'ri' 
+            and self.loops_present != 'pri' 
+            and self.loops_present != 'pri' 
+            and self.loops_present != 'rtti' 
+            and self.loops_present != 'prtti'):
+            raise ValueError('''
+            [soen_sim] loops_present must be:
+                \'ri\', \'pri\', \'rtti\', \'prtti\'. ''')
+
+        if (self.loops_present__refraction != 'ri' 
+            and self.loops_present__refraction != 'pri' 
+            and self.loops_present__refraction != 'pri' 
+            and self.loops_present__refraction != 'rtti' 
+            and self.loops_present__refraction != 'prtti'):
+            raise ValueError('''
+            [soen_sim] loops_present_refraction must be:
+                \'ri\', \'pri\', \'rtti\', \'prtti\'. ''')
+
+        self.circuit_betas[-1] = self.beta_ni
+        # circuit_betas
+        if type(self.circuit_betas) == list and len(self.circuit_betas) == 3:
             if self.loops_present == 'ri':
-                self.bias_current = 1.7 # dimensionless bias current        
+                self.circuit_betas = self.circuit_betas
             elif self.loops_present == 'rtti':
-                self.bias_current = 2.0 # dimensionless bias current
+                self.circuit_betas = self.circuit_betas
+        else:
+            raise ValueError('''
+            [soen_sim] circuit_betas for an ri dendrite is a list of three real 
+            numbers greater than zero with dimensionless units. The first 
+            element represents the self inductance of the left branch of the DR 
+            loop. The second element represents the right branch of the DR loop. 
+            The third element represents the total inductance of the DI loop, 
+            including the integrating kinetic inductor and the output 
+            inductance.''')
         
-        if 'integration_loop_time_constant' in kwargs: # units of ns
-            self.integration_loop_time_constant = kwargs['integration_loop_time_constant']
-            self.tau_ni = self.integration_loop_time_constant            
-        else:
-            self.integration_loop_time_constant = 250 # default time constant units of ns
-            
-        if 'absolute_refractory_period' in kwargs: # units of ns
-            self.absolute_refractory_period = kwargs['absolute_refractory_period']
-        else:
-            self.absolute_refractory_period = 10
-                      
-        if 'normalize_input_connection_strengths' in kwargs:
-            self.normalize_input_connection_strengths = kwargs['normalize_input_connection_strengths']
-        else:
-            self.normalize_input_connection_strengths = False
-            
-        if 'total_excitatory_input_connection_strength' in kwargs:
-            self.total_excitatory_input_connection_strength = kwargs['total_excitatory_input_connection_strength']
-        else:
-            self.total_excitatory_input_connection_strength = 1 
-            
-        if 'total_inhibitory_input_connection_strength' in kwargs:
-            self.total_inhibitory_input_connection_strength = kwargs['total_inhibitory_input_connection_strength']
-        else:
-            self.total_inhibitory_input_connection_strength = -0.5
-                
-        if 'offset_flux' in kwargs: # units of Phi0
-            self.offset_flux = kwargs['offset_flux']
-        else:
-            self.offset_flux = 0                 
-            
-        if 'self_feedback_coupling_strength' in kwargs: # J_ii, units of phi/s (normalized flux divided by normalized current in DI loop)
-            self.self_feedback_coupling_strength = kwargs['self_feedback_coupling_strength']
-        else:
-            self.self_feedback_coupling_strength = 0
-                                
-        if 'integrated_current_threshold' in kwargs:
-            self.integrated_current_threshold = kwargs['integrated_current_threshold']
-        else:
-            self.integrated_current_threshold = 0.5 # units of Ic
-        self.s_th = self.integrated_current_threshold
-            
+        # misc
+        self.Ic = self.Ic
+        self.beta_c = self.beta_c
+        jj_params = get_jj_params(self.Ic*1e-6,self.beta_c)
+
         tau_ni = self.tau_ni * 1e-9
         beta_ni = self.circuit_betas[-1]
         Ic = self.Ic * 1e-6
@@ -496,83 +522,36 @@ class neuron():
         rni = Lni/tau_ni
         self.alpha = rni/jj_params['r_j']
         self.jj_params = jj_params
-        
-        # create dendrite for neuronal receiving and integration loop
-        neuron_dendrite = dendrite(name = '{}__{}'.format(self.name,'nr_ni'), loops_present = self.loops_present, 
-                      circuit_betas = self.circuit_betas, junction_critical_current = self.junction_critical_current, junction_beta_c = self.junction_beta_c,
-                      bias_current = self.bias_current, 
-                      integration_loop_time_constant = self.integration_loop_time_constant, 
-                      normalize_input_connection_strengths = self.normalize_input_connection_strengths, 
-                      total_excitatory_input_connection_strength = self.total_excitatory_input_connection_strength, 
-                      total_inhibitory_input_connection_strength = self.total_inhibitory_input_connection_strength, 
-                      offset_flux = self.offset_flux,
-                      self_feedback_coupling_strength = self.self_feedback_coupling_strength)
-        neuron_dendrite.is_soma = True    
-        
-        self.dend__nr_ni = neuron_dendrite
-        self.dend__nr_ni.absolute_refractory_period = self.absolute_refractory_period
-        
-        # =============================================================================
-        #         end receiving and integration dendrite
-        # =============================================================================
-        
-        # =============================================================================
-        #         refractory dendrite
-        # =============================================================================
-        
-        if 'loops_present__refraction' in kwargs:
-            if kwargs['loops_present__refraction'] == 'ri' or kwargs['loops_present__refraction'] == 'pri' or kwargs['loops_present__refraction'] == 'rtti' or kwargs['loops_present__refraction'] == 'prtti':
-                self.loops_present__refraction = kwargs['loops_present__refraction']
-            else:
-                raise ValueError('[soen_sim] loops_present must be \'ri\', \'pri\', \'rtti\', \'prtti\'. ')
-        else:
-            self.loops_present__refraction = 'ri'
-                    
-        if 'circuit_betas__refraction' in kwargs:
-            if self.loops_present__refraction == 'ri':
-                if type(kwargs['circuit_betas__refraction']) == list and len(kwargs['circuit_betas__refraction']) == 3:
-                    self.circuit_betas__refraction = kwargs['circuit_betas__refraction']
-                else:
-                    raise ValueError('[soen_sim] circuit_betas for an ri dendrite is a list of three real numbers greater than zero with dimensionless units. The first element represents the self inductance of the left branch of the DR loop. The second element represents the right branch of the DR loop. The third element represents the total inductance of the DI loop, including the integrating kinetic inductor and the output inductance.')
-            elif self.loops_present__refraction == 'rtti':
-                if type(kwargs['circuit_betas__refraction']) == list and len(kwargs['circuit_betas__refraction']) == 3:
-                    self.circuit_betas__refraction = kwargs['circuit_betas__refraction']
-                else:
-                    raise ValueError('[soen_sim] circuit_betas for an rtti dendrite is a list of three real numbers greater than zero with dimensionless units. The first element represents the self inductance of the left branch of the DR loop. The second element represents the right branch of the DR loop. The third element represents the total inductance of the DI loop, including the integrating kinetic inductor and the output inductance.')
-        else:
-            if self.loops_present__refraction == 'ri':
-                self.circuit_betas__refraction = [2*np.pi* 1/4, 2*np.pi* 1/4, 2*np.pi*1e2] # 2*np.pi* 1/4 to match SQUID handbook defintion with beta_L_sq = 1           
-            if self.loops_present__refraction == 'rtti':
-                self.circuit_betas__refraction = [2*np.pi* 1/4, 2*np.pi* 1/4, 2*np.pi*0.5, 2*np.pi*0.5, 2*np.pi*1e2] # 2*np.pi* 1/4 to match SQUID handbook defintion with beta_L_sq = 1
 
-        if 'junction_critical_current__refraction' in kwargs:
-            self.junction_critical_current__refraction =  kwargs['junction_critical_current__refraction'] # units of microamps
-        else:
-            self.junction_critical_current__refraction =  100 # default Ic = 100 uA
-        self.Ic__refraction = self.junction_critical_current__refraction
-        
-        if 'junction_beta_c__refraction' in kwargs:
-            self.junction_beta_c__refraction =  kwargs['junction_beta_c__refraction']
-        else:
-            self.junction_beta_c__refraction =  0.3 # default beta_c = 0.3
-        self.beta_c__refraction = self.junction_beta_c__refraction
-        
-        jj_params__refraction = get_jj_params(self.Ic__refraction*1e-6,self.beta_c__refraction)
-            
-        if 'bias_current__refraction' in kwargs:
-            self.bias_current__refraction = kwargs['bias_current__refraction']
-        else:
+
+        ### refractory dendrite ###
+        self.circuit_betas__refraction[-1] = self.beta_ref
+        if (type(self.circuit_betas__refraction) == list 
+            and (len(self.circuit_betas__refraction) == 3 
+            or len(self.circuit_betas__refraction) == 5)):
+
             if self.loops_present__refraction == 'ri':
-                self.bias_current__refraction = 1.7 # dimensionless bias current        
-            elif self.loops_present__refraction == 'rtti':
-                self.bias_current__refraction = 3.1 # dimensionless bias current
-        
-        if 'integration_loop_time_constant__refraction' in kwargs: # units of ns
-            self.integration_loop_time_constant__refraction = kwargs['integration_loop_time_constant__refraction']
+                self.circuit_betas__refraction = self.circuit_betas__refraction
+            elif self.loops_present == 'rtti':
+                self.circuit_betas__refraction = self.circuit_betas__refraction
         else:
-            self.integration_loop_time_constant__refraction = 50 # default time constant units of ns
-        self.tau_ref = self.integration_loop_time_constant__refraction    
-            
+            raise ValueError('''
+            [soen_sim] circuit_betas for an ri dendrite is a list of three real 
+            numbers greater than zero with dimensionless units. The first 
+            element represents the self inductance of the left branch of the DR 
+            loop. The second element represents the right branch of the DR loop. 
+            The third element represents the total inductance of the DI loop, 
+            including the integrating kinetic inductor and the output 
+            inductance.''')
+
+        jj_params__refraction = get_jj_params(self.Ic__refraction*1e-6,
+                                              self.beta_c__refraction)
+
+        if hasattr(self, 'tau_ref'):
+            self.tau_ref = self.tau_ref
+        else:
+            self.tau_ref = self.tau_ref 
+        
         tau_ref = self.tau_ref * 1e-9
         beta_nr = self.circuit_betas__refraction[-1]
         Ic = self.Ic__refraction * 1e-6
@@ -580,25 +559,88 @@ class neuron():
         r_ref = Lnr/tau_ref
         self.alpha__refraction = r_ref/jj_params['r_j']
         self.jj_params__refraction = jj_params__refraction
+
+        if type(self.refractory_dendrite_connection_strength).__name__ != 'str':
+            auto = False
+        elif self.refractory_dendrite_connection_strength == 'auto':
+            auto = True
+        elif self.refractory_dendrite_connection_strength == 'match_excitatory':
+            self.refractory_dendrite_connection_strength = self.total_excitatory_input_connection_strength
+            auto = False
+
+
+        ### synapse to receiving dendrite ###
+        #none
+
+        ### transmitter ###
+        # print(self.source_type)
+        if (self.source_type != 'ec' 
+            and self.source_type != 'qd' 
+            and self.source_type != 'delay_delta'):
+            raise ValueError('''[soen_sim] sources presently defined are: 
+                                    'qd', 'ec', or 'delay_delta' ''')
+
+        if self.source_type == 'delay_delta':
+            if hasattr(self, 'light_production_delay'):
+                self.light_production_delay = self.light_production_delay
+            else:
+                self.light_production_delay = 2
+        else:
+            self.num_photons_out_factor = self.num_photons_out_factor
+
+        # print(self.num_photons_out_factor)
+        # print(" ============================================================= ")
+                                
+        # ======================================================================
+        #         receiving and integration dendrite
+        # ======================================================================
+                
+        # create dendrite for neuronal receiving and integration loop
+        # neuron_dendrite = dendrite(name = '{}__{}'.format(self.name,'nr_ni'), loops_present = self.loops_present, 
+        #               circuit_betas = self.circuit_betas, junction_critical_current = self.Ic, junction_beta_c = self.beta_c,
+        #               bias_current = self.bias_current, 
+        #               integration_loop_time_constant = self.integration_loop_time_constant, 
+        #               normalize_input_connection_strengths = self.normalize_input_connection_strengths, 
+        #               total_excitatory_input_connection_strength = self.total_excitatory_input_connection_strength, 
+        #               total_inhibitory_input_connection_strength = self.total_inhibitory_input_connection_strength, 
+        #               offset_flux = self.offset_flux,
+        #               self_feedback_coupling_strength = self.self_feedback_coupling_strength)
+        
+        neuroden_params = params
+        neuroden_params['dentype'] = 'soma'
+        # neuroden_params['name'] = '{}__{}'.format(self.name,'nr_ni')
+        neuron_dendrite = dendrite(**neuroden_params)
+        neuron_dendrite.is_soma = True    
+        
+        self.dend__nr_ni = neuron_dendrite
+        self.dend__nr_ni.absolute_refractory_period = self.absolute_refractory_period
+        
+        # ======================================================================
+        #         end receiving and integration dendrite
+        # ======================================================================
+        
+        # ======================================================================
+        #         refractory dendrite
+        # ======================================================================
+        
         
         # create dendrite for neuronal refraction
-        neuron_refractory_dendrite = dendrite(name = '{}__dend_{}'.format(self.name,'refraction'), loops_present = self.loops_present__refraction, circuit_betas = self.circuit_betas__refraction, 
-                                              junction_critical_current = self.junction_critical_current__refraction, junction_beta_c = self.junction_beta_c__refraction,
-                                              bias_current = self.bias_current__refraction, integration_loop_time_constant = self.integration_loop_time_constant__refraction)
+        # neuron_refractory_dendrite = dendrite(name = '{}__dend_{}'.format(self.name,'refraction'), loops_present = self.loops_present__refraction, circuit_betas = self.circuit_betas__refraction, 
+        #                                       junction_critical_current = self.Ic__refraction, junction_beta_c = self.beta_c__refraction,
+        #                                       bias_current = self.ib_ref, integration_loop_time_constant = self.integration_loop_time_constant__refraction)
+        neuroref_params = params
+        neuroref_params['dentype'] = 'refractory'
+        # neuroref_params['name'] = '{}__dend_{}'.format(self.name,'refraction')
+        self.dend__ref = dendrite(**neuroref_params)
+        # self.dend__ref = neuron_refractory_dendrite
 
-        self.dend__ref = neuron_refractory_dendrite
-        
-        if 'refractory_dendrite_connection_strength' in kwargs: # options are: scalar value in units of Phi0/Ic, 'auto', or 'match_excitatory'; default is 'auto'; when in doubt, use 'auto'
-            if type(kwargs['refractory_dendrite_connection_strength']).__name__ == 'float' or type(kwargs['refractory_dendrite_connection_strength']).__name__ == 'int':
-                self.refractory_dendrite_connection_strength = kwargs['refractory_dendrite_connection_strength']
-                auto = False
-            elif kwargs['refractory_dendrite_connection_strength'] == 'auto':
-                auto = True
-            elif kwargs['refractory_dendrite_connection_strength'] == 'match_excitatory':                
-                self.refractory_dendrite_connection_strength = self.total_excitatory_input_connection_strength
-                auto = False
-        else:
-            auto = True
+        if self.second_ref==True:
+            print("SECOND REF")
+            neuroref_params = params
+            neuroref_params['dentype'] = 'refractory'
+            # neuroref_params['name'] = '{}_2__dend_{}'.format(self.name,'refraction')
+            self.dend__ref_2 = dendrite(**neuroref_params)
+            self.dend__nr_ni.add_input(self.dend__ref_2, connection_strength = self.refractory_dendrite_connection_strength)
         
         if auto:
             
@@ -645,43 +687,26 @@ class neuron():
                 self.refractory_dendrite_connection_strength = -delta/_s_max_refractory # ( phi_th_minus + delta/100 ) / s_max
                 
         self.dend__nr_ni.add_input(self.dend__ref, connection_strength = self.refractory_dendrite_connection_strength)
- 
-        
+
+
         # =============================================================================
         #         end refractory dendrite
         # =============================================================================
         
+
+
         # =============================================================================
         #         synapse to refractory dendrite
         # =============================================================================
-        
-        if 'tau_rise__refraction' in kwargs:
-            tau_rise__refraction = kwargs['tau_rise__refraction'] # units of ns
-        else:
-            tau_rise__refraction = 0.02 # 20ps is default rise time (L_tot/r_ph = 100nH/5kOhm)
-        
-        if 'tau_fall__refraction' in kwargs:
-            tau_fall__refraction = kwargs['tau_fall__refraction'] # units of ns
-        else:
-            tau_fall__refraction = 50 # 50ns is default fall time for SPD recovery
-            
-        if 'hotspot_duration__refraction' in kwargs: # specified in units of number of tau_rise time constants
-            hotspot_duration__refraction = kwargs['hotspot_duration__refraction']
-        else:
-            hotspot_duration__refraction =  2
-            
-        if 'spd_duration__refraction' in kwargs: # specified in units of number of tau_fall time constants
-            spd_duration__refraction = kwargs['spd_duration__refraction']
-        else:
-            spd_duration__refraction = 8 # eight time constants is default
-        
-        if 'phi_peak__refraction' in kwargs:
-            phi_peak__refraction = kwargs['phi_peak__refraction'] # units of Phi0
-        else:
-            phi_peak__refraction = 0.5 # default peak flux is Phi0/2
             
         # create synapse for neuronal refraction
-        synapse__ref = synapse(name = '{}__syn_{}'.format(self.name,'refraction'), tau_rise = tau_rise__refraction, tau_fall = tau_fall__refraction, hotspot_duration = hotspot_duration__refraction, spd_duration = spd_duration__refraction, phi_peak = phi_peak__refraction)
+        synapse__ref = synapse(
+            name = '{}__syn_{}'.format(self.name,'refraction'), 
+            tau_rise = self.tau_rise__refraction, 
+            tau_fall = self.tau_fall__refraction, 
+            hotspot_duration = self.hotspot_duration__refraction, 
+            spd_duration = self.spd_duration__refraction, 
+            phi_peak = self.phi_peak__refraction)
         
         # add neuronal output as synaptic input
         synapse__ref.add_input(self)
@@ -697,26 +722,6 @@ class neuron():
         #         transmitter
         # =============================================================================
             
-        if 'source_type' in kwargs: 
-            if kwargs['source_type'] == 'ec' or kwargs['source_type'] == 'qd' or kwargs['source_type'] == 'delay_delta':
-                self.source_type = kwargs['source_type']
-            else:
-                raise ValueError('[soen_sim] sources presently defined are ''qd'', ''ec'', or ''delay_delta''')
-        else:
-            self.source_type = 'qd' # 'qd', 'ec', or 'delay_delta'
-            
-        if self.source_type == 'delay_delta':
-            if 'light_production_delay' in kwargs: # only necessary if source_type = delta_delay
-                self.light_production_delay = kwargs['light_production_delay']
-            else:
-                self.light_production_delay = 2 # ns
-            
-        if self.source_type == 'qd' or self.source_type == 'ec':
-            if 'num_photons_out_factor' in kwargs:
-                self.num_photons_out_factor = kwargs['num_photons_out_factor']
-            else:
-                self.num_photons_out_factor = 10 # produce num_photons = num_photons_out_factor * len(synaptic_outputs) each time the neuron fires
-            
         # =============================================================================
         #         end transmitter
         # =============================================================================
@@ -730,16 +735,16 @@ class neuron():
         self.synaptic_outputs = dict()
 
         neuron.neurons[self.name] = self
-        
         return    
         
     def add_input(self, connection_object, connection_strength = 1):
+        # print(self.name, "<--", connection_object.name)
         self.dend__nr_ni.add_input(connection_object, connection_strength)
         return
         
     def add_output(self, connection_object):
-        
         if type(connection_object).__name__ == 'synapse':
+            # print(self.name, "-->", connection_object.name)
             self.synaptic_outputs[connection_object.name] = synapse.synapses[connection_object.name]
             synapse.synapses[connection_object.name].add_input(self)
         else: 
@@ -761,7 +766,7 @@ class neuron():
     def __del__(self):
         # print('dendrite deleted')
         return
-
+    
 
 class network():
     
@@ -770,11 +775,13 @@ class network():
     # from scipy.sparse import csr_matrix
     
     def __init__(self, **kwargs):
-
+        self.sim = False
         # make network
         self.uid = network._next_uid
         network._next_uid += 1
         self.unique_label = 'net{}'.format(self.uid)
+
+        self.__dict__.update(kwargs)
 
         # name the network
         if 'name' in kwargs:
@@ -790,6 +797,9 @@ class network():
         
         # prepare network to have neurons
         self.neurons = dict()
+
+        if self.sim==True:
+            self.simulate()
  
     def add_neuron(self, neuron_object):
         self.neurons[neuron_object.name] = neuron_object
@@ -812,20 +822,23 @@ class network():
         Phi_r = []
         spike_signals = []
         count = 0
+        # print(self.neurons)
         for neuron_key in self.neurons:
             neuron = self.neurons[neuron_key]
             s = neuron.dend__nr_ni.s
             S.append(s)
             phi_r = neuron.dend__nr_ni.phi_r
             Phi_r.append(phi_r)
-            spike_t = neuron.spike_times
+            spike_t = neuron.spike_times/neuron.time_params['t_tau_conversion']
+            self.neurons[neuron_key].spike_t = spike_t
+            # print(spike_t)
             spikes[0].append(np.ones(len(spike_t))*count)
-            spikes[1].append((spike_t/neuron.time_params['t_tau_conversion']))
+            spikes[1].append((spike_t))
             spike_signal = []
             spike_times = spike_t/neuron.time_params['t_tau_conversion']
             for spike in spike_times:
                 spike_signal.append(s[int(spike/self.dt)])
-                spike_signals.append(spike_signal)
+            spike_signals.append(spike_signal)
             count+=1
         spikes[0] = np.concatenate(spikes[0])
         spikes[1] = np.concatenate(spikes[1])
@@ -834,3 +847,14 @@ class network():
         self.phi_r = Phi_r
         self.signal = S
         neuron.spike_times = []
+        # print(spike_signal)
+        # print(spike_signals)
+
+    def simulate(self):
+        # print(self.nodes)
+        # net = network(name = 'network_under_test')
+        for n in self.nodes:
+            self.add_neuron(n.neuron)
+        self.run_sim(dt=self.dt, tf=self.tf)
+        self.get_recordings()
+

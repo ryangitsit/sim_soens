@@ -1,4 +1,4 @@
-# Superconducting Optoelectronic Network Simulator (`sim_soens`)
+# Superconducting Optoelectronic Network Simulator
 ![plot](./img/wafer_tilted.png)
 Superconducting Optoelectronic Networks (SOENs) are an in-development neuromorphic hardware that offer *lightspeed communication* and *brain-level scalability*.\
 This repo is for the coders, neuroscientists, and machine-learners that want to play with the computational properties of SOENs through simulations, based on the phenomological model linked here:
