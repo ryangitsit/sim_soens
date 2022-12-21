@@ -169,7 +169,8 @@ class dendrite():
 
         # UPDATE TO CUSTOM PARAMS
         self.__dict__.update(params)
-
+        # print(self.type,self.dentype)
+        # self.loops_present = self.type
         if hasattr(self, 'dentype'):
             if self.dentype == 'refractory':
                 # print("REFRACTORY DENDRITE")
@@ -191,7 +192,7 @@ class dendrite():
 
         if 'integrated_current_threshold' in params:
             self.s_th = params['integrated_current_threshold']
-
+        
         params = self.__dict__
         self.bias_current = self.ib
 
@@ -199,7 +200,7 @@ class dendrite():
         #     print(k," -> ",v)
         # print(" ************************************************************* ")
         # futher adjustments to parameters
-
+        print(self.loops_present,self.ib)
         if (self.loops_present != 'ri' 
             and self.loops_present != 'pri' 
             and self.loops_present != 'pri' 
@@ -473,7 +474,6 @@ class neuron():
         # futher adjustments to parameters
 
         ### receiving and integration dendrite ###
-
         # loops
         if (self.loops_present != 'ri' 
             and self.loops_present != 'pri' 

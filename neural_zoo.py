@@ -188,12 +188,13 @@ class NeuralZoo():
                                     self.ib= self.ib_list_rtti[self.biases[i][j][k]]
                             else:
                                 self.ib= self.ib_list_ri[self.biases[i][j][k]]
-                        if hasattr(self, 'types'):
-                            type = self.types[i][j][k]
                         if hasattr(self, 'taus'):
                             self.tau_di = self.taus[i][j][k]
+
+                        if hasattr(self, 'types'):
+                            entries['loops_present'] = self.types[i][j][k]
                         else:
-                            type = 'ri'
+                            entries['loops_present'] = 'ri'
                         entries = self.__dict__
                         entries['name'] = f"{self.neuron.name[-2:]}_lay{i}_branch{j}_den{k}"
                         entries['type'] = type
