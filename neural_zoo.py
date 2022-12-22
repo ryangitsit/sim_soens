@@ -567,7 +567,7 @@ class NeuralZoo():
 
 
     def plot_neuron_activity(self,net,phir=False,dend=True,title=None,
-                            input=None,weighting=True,docstring=False):
+                            input=None,weighting=True,docstring=False,lay=100000):
         '''
         Plots signal activity for a given network or neuron
          - phir      -> plot phi_r of soma and phi_r thresholds
@@ -599,20 +599,21 @@ class NeuralZoo():
             plt.plot(net.t,phi_r,  label='phi_r (soma)')
         if dend:
             for i,layer in enumerate(self.dendrites):
-                for j,branch in enumerate(layer):
-                    for k,dendrite in enumerate(branch):
-                        if i == 0 and j == 0 and k ==0:
-                            pass
-                        else:
-                            # print(dendrite.__dict__.keys())
-                            # print(dendrite.external_connection_strengths)
-                            if weighting == True:
-                                weight = dendrite.weights[i-1][j][k]
-                                dend_s = dendrite.s*weight
+                if i < lay +1 :
+                    for j,branch in enumerate(layer):
+                        for k,dendrite in enumerate(branch):
+                            if i == 0 and j == 0 and k ==0:
+                                pass
                             else:
-                                dend_s = dendrite.s
-                            plt.plot(net.t,dend_s,'--', label='w * '+dendrite.name)
-                        # if i==1 and j==0 and k==0:
+                                # print(dendrite.__dict__.keys())
+                                # print(dendrite.external_connection_strengths)
+                                if weighting == True:
+                                    weight = dendrite.weights[i-1][j][k]
+                                    dend_s = dendrite.s*weight
+                                else:
+                                    dend_s = dendrite.s
+                                plt.plot(net.t,dend_s,'--', label='w * '+dendrite.name)
+                            # if i==1 and j==0 and k==0:
                         #     print(dendrite.__dict__.keys())
                         #     print(dendrite.weights[i-1][j][k])
                         # print(print(self.weights[i][j][k]))

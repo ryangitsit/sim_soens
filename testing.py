@@ -41,35 +41,159 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 print("here")
+from params import pred_params
 
-from basal_proximal import *
+# from basal_proximal import *
 def nine_pixel_predictor(params):
 
 
+    ### input ### 
+    z = np.array([0,1,4,7,8]) # z-pixel array
+    v = np.array([1,4,3,6,8])-1 # v
+    n = np.array([2,4,6,7,9])-1 # n
+
+    letters = [z,v,n]
+    letter_strs = ['z','v','n']
+
+    indices = np.concatenate([z,v])
+    times = np.concatenate([np.ones(int(len(indices)/2))*10,np.ones(int(len(indices)/2))*10])
+    def_spikes = [indices,times]
+    print(def_spikes)
+    input = SuperInput(channels=9, type='defined', defined_spikes=def_spikes, duration=200)
+    # raster_plot(input.spike_arrays)
+
+    # indices = letters[0]
+    # times = np.ones(len(indices))*20
+    # def_spikes = [indices,times]
+
+    # input = SuperInput(channels=9, type='defined', defined_spikes=def_spikes, duration=100)
+
+    N9 = NeuralZoo(type='custom',**params)
+    # N9.dendrites[1][0][1].add_input(N9.dendrites[1][0][0], connection_strength=0.5)
+
+    count = 0
+    # print(len(N9.synapses))
+    for g in N9.synapses:
+        for s in g:
+            for i,row in enumerate(input.spike_rows):
+                if i == int(s.name)-1:
+                    # print(i,int(s.name)-1)
+                    s.add_input(input_signal(name = 'input_synaptic_drive', 
+                    input_temporal_form = 'arbitrary_spike_train', spike_times = input.spike_rows[i]))
+                    count+=1
+
+    net = network(sim=True,dt=.1,tf=200,nodes=[N9])
+    N9.plot_neuron_activity(net,title="title",lay=1)
+
+    N9.arbor_activity_plot()
+    # print(inputs)
+
+
+nine_pixel_predictor(pred_params)
+
+print("break")
+
+# def nine_pixel_predictor(params):
+
+
+#     ### neurons ### 
+#     # W_z = [
+#     #     [[.5]],
+#     #     [[.5,.5]],
+#     #     [[0.35,-0.65],[0.35,-0.65]]
+#     # ]
+#     # W_v = [
+#     #     [[.5]],
+#     #     [[.5,.5]],
+#     #     [[0.35,-0.65],[0.35,-0.65]]
+#     # ]
+#     # W_n = [
+#     #     [[.5]],
+#     #     [[.5,.5]],
+#     #     [[0.35,-0.65],[0.35,-0.65]]
+#     # ]
+
+#     # syn_z = [['2','5'],['4','6'],['5','8'],['4','6']]
+#     # syn_v = [['1','3'],['7','9'],['4','6'],['2','5']]
+#     # syn_n = [['7','9'],['1','3'],['4','6'],['5','8']]
+
+#     # syn_w_z = [[.6,.6],[.5,.5],[.6,.6],[.5,.5]]
+#     # syn_w_v = [[.6,.6],[.5,.5],[.6,.6],[.5,.5]]
+#     # syn_w_n = [[.6,.6],[.5,.5],[.6,.6],[.5,.5]]
+
+#     # N_z = NeuralZoo(type='custom',syns=syn_z,syn_w=syn_w_z,weights=W_z)
+#     # N_v = NeuralZoo(type='custom',syns=syn_v,syn_w=syn_w_v,weights=W_v)
+#     # N_n = NeuralZoo(type='custom',syns=syn_n,syn_w=syn_w_n,weights=W_n)
+
+#     # N_z.plot_custom_structure()
+#     # N_v.plot_custom_structure()
+#     # N_n.plot_custom_structure()
+
+
+#     # N9 = NeuralZoo(type='custom',**params)
+
+#     ### input ### 
+#     z = np.array([0,1,4,7,8]) # z-pixel array
+#     v = np.array([1,4,3,6,8])-1 # v
+#     n = np.array([2,4,6,7,9])-1 # n
+#     letters = [z,v,n]
+#     letter_strs = ['z','v','n']
+
+#     inputs = {}
+#     for ii,let in enumerate(letters):
+        
+#         N9 = NeuralZoo(type='custom',**params)
+
+#         indices = let
+#         times = np.ones(len(indices))*20
+#         def_spikes = [indices,times]
+
+#         inputs[letter_strs[ii]] = SuperInput(channels=9, type='defined', defined_spikes=def_spikes, duration=100)
+
+#         count = 0
+#         print(len(N9.synapses))
+#         for g in N9.synapses:
+#             for s in g:
+#                 for i,row in enumerate(inputs[letter_strs[ii]].spike_rows):
+#                     if i == int(s.name)-1:
+#                         print(i,int(s.name)-1)
+#                         s.add_input(input_signal(name = 'input_synaptic_drive', 
+#                         input_temporal_form = 'arbitrary_spike_train', spike_times = inputs[letter_strs[ii]].spike_rows[i]))
+#                         count+=1
+#         print(count)
+
+#         net = network(sim=True,dt=.1,tf=100,nodes=[N9])
+#         N9.arbor_activity_plot()
+# nine_pixel_predictor(pred_params)
+
+
+
+
+
     ### neurons ### 
-    W_z = [
-        [[.5]],
-        [[.5,.5]],
-        [[0.35,-0.65],[0.35,-0.65]]
-    ]
-    W_v = [
-        [[.5]],
-        [[.5,.5]],
-        [[0.35,-0.65],[0.35,-0.65]]
-    ]
-    W_n = [
-        [[.5]],
-        [[.5,.5]],
-        [[0.35,-0.65],[0.35,-0.65]]
-    ]
+    # W_z = [
+    #     [[.5]],
+    #     [[.5,.5]],
+    #     [[0.35,-0.65],[0.35,-0.65]]
+    # ]
+    # W_v = [
+    #     [[.5]],
+    #     [[.5,.5]],
+    #     [[0.35,-0.65],[0.35,-0.65]]
+    # ]
+    # W_n = [
+    #     [[.5]],
+    #     [[.5,.5]],
+    #     [[0.35,-0.65],[0.35,-0.65]]
+    # ]
 
-    syn_z = [['2','5'],['4','6'],['5','8'],['4','6']]
-    syn_v = [['1','3'],['7','9'],['4','6'],['2','5']]
-    syn_n = [['7','9'],['1','3'],['4','6'],['5','8']]
+    # syn_z = [['2','5'],['4','6'],['5','8'],['4','6']]
+    # syn_v = [['1','3'],['7','9'],['4','6'],['2','5']]
+    # syn_n = [['7','9'],['1','3'],['4','6'],['5','8']]
 
-    syn_w_z = [[.6,.6],[.5,.5],[.6,.6],[.5,.5]]
-    syn_w_v = [[.6,.6],[.5,.5],[.6,.6],[.5,.5]]
-    syn_w_n = [[.6,.6],[.5,.5],[.6,.6],[.5,.5]]
+    # syn_w_z = [[.6,.6],[.5,.5],[.6,.6],[.5,.5]]
+    # syn_w_v = [[.6,.6],[.5,.5],[.6,.6],[.5,.5]]
+    # syn_w_n = [[.6,.6],[.5,.5],[.6,.6],[.5,.5]]
 
     # N_z = NeuralZoo(type='custom',syns=syn_z,syn_w=syn_w_z,weights=W_z)
     # N_v = NeuralZoo(type='custom',syns=syn_v,syn_w=syn_w_v,weights=W_v)
@@ -78,46 +202,6 @@ def nine_pixel_predictor(params):
     # N_z.plot_custom_structure()
     # N_v.plot_custom_structure()
     # N_n.plot_custom_structure()
-
-
-    # N9 = NeuralZoo(type='custom',**params)
-
-    ### input ### 
-    z = np.array([0,1,4,7,8]) # z-pixel array
-    v = np.array([1,4,3,6,8])-1 # v
-    n = np.array([2,4,6,7,9])-1 # n
-    letters = [z,v,n]
-    letter_strs = ['z','v','n']
-
-    inputs = {}
-    for ii,let in enumerate(letters):
-        
-        N9 = NeuralZoo(type='custom',**params)
-        
-        # for layer in N9.dendrites:
-        #     for group in layer:
-        #         for dend in group:
-        #             print(dend.type)
-
-        indices = let
-        times = np.ones(len(indices))*20
-        def_spikes = [indices,times]
-
-        inputs[letter_strs[ii]] = SuperInput(channels=9, type='defined', defined_spikes=def_spikes, duration=100)
-
-        count = 0
-        for g in N9.synapses:
-            for s in g:
-                for i,row in enumerate(inputs[letter_strs[ii]].spike_rows):
-                    if i == int(s.name)-1:
-                        s.add_input(input_signal(name = 'input_synaptic_drive', 
-                        input_temporal_form = 'arbitrary_spike_train', spike_times = inputs[letter_strs[ii]].spike_rows[i]))
-                        count+=1
-        # print(count)
-
-        net = network(sim=True,dt=.1,tf=100,nodes=[N9])
-        N9.arbor_activity_plot()
-    # print(inputs)
 
 # synaptic structure (see library tour for details)
 # syn_struct = [
