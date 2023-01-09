@@ -178,7 +178,7 @@ def bas_prox_plot(nets,neurons, input_basal,input_prox,title):
     plt.show()
 
 def get_params(set):
-    if set == 'stair_case':
+    if set == 'staircase':
         # synaptic structure (see library tour for details)
         syn_struct = [
                     [
@@ -279,7 +279,7 @@ def get_params(set):
 
 set = 'staircase'
 # set = 'race'
-syn_struct,W,tau_ni,tau_di,beta_ni = get_params('race')
+syn_struct,W,tau_ni,tau_di,beta_ni = get_params(set)
 
 
 ### Predictive Case ###

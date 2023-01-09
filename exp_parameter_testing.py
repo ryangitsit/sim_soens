@@ -1,3 +1,5 @@
+import sys
+sys.path.append('../soen_sims')
 from neural_zoo import NeuralZoo
 
 
