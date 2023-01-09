@@ -1,4 +1,3 @@
-#%%
 import numpy as np
 
 from soen_utilities import index_finder, dend_load_arrays_thresholds_saturations
@@ -24,8 +23,6 @@ network = Network(input,neuron_population,monitor)
 
 network.run(simulation_time*ns)
 """
-
-#%%
 
 class SuperNet:
     '''
