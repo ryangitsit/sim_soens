@@ -5,6 +5,7 @@ from soen_sim import input_signal, network
 from soen_component_library import common_dendrite, common_synapse, common_neuron
 
 """
+### THIS FILE TO BE REWRITTEN ###
 ToDo:
  - Find way to generate structure only once, for any input
  - Find cleaner way of dealing with parameter adjustments
