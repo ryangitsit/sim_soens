@@ -3,4 +3,4 @@ __pycache__/
 *.pyc/
 .vscode/
 .ipynb_checkpoints/
-testing_
+testing.py
