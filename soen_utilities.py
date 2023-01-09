@@ -251,7 +251,7 @@ def pathfinder():
     for _str in sys.path:
         dir_index = _str.find("sim_soens")
         if _str[dir_index:dir_index+9] == 'sim_soens':
-            path = _str.replace('\\','/')[:dir_index+9] +'/src'
+            path = _str.replace('\\','/')[:dir_index+9] +'/'
             break
     return path
 

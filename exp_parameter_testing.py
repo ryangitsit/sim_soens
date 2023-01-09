@@ -1,6 +1,6 @@
 import sys
 sys.path.append('../soen_sims')
-from neural_zoo import NeuralZoo
+from super_library import NeuralZoo
 
 
 from params import default_neuron_params
