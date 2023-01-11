@@ -280,7 +280,7 @@ def recursive_synapse_initialization(dendrite_object,tau_vec,t_tau_conversion):
         else:
             dendrite_object.synaptic_inputs[synapse_key].input_signal = dict()
             # dendrite_object.synaptic_inputs[synapse_key].input_signal
-        
+        # print(dendrite_object.synaptic_inputs)#[synapse_key].input_signal,synapse_key)
         dendrite_object.synaptic_inputs[synapse_key].spike_times_converted = np.asarray(dendrite_object.synaptic_inputs[synapse_key].input_signal.spike_times) * t_tau_conversion
         dendrite_object.synaptic_inputs[synapse_key].tau_rise_converted = dendrite_object.synaptic_inputs[synapse_key].tau_rise * t_tau_conversion
         dendrite_object.synaptic_inputs[synapse_key].tau_fall_converted = dendrite_object.synaptic_inputs[synapse_key].tau_fall * t_tau_conversion

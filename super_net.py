@@ -48,6 +48,10 @@ class FractalNet():
             self.run_network()
 
     def make_neurons(self):
+        '''
+        Make required number of neurons with default parameters
+         - Store in a list `neurons`
+        '''
         self.neurons = []
         W = [
             [[.3,.3,.3]],
@@ -65,11 +69,42 @@ class FractalNet():
         # print(neurons[0].neuron.dend__nr_ni.dendritic_inputs['n0_lay0_branch0_den1'].dendritic_inputs['n0_lay1_branch1_den0'].synaptic_inputs['3'].name)
 
     def make_net(self):
-        layer_n = 3
-        for i in range(layer_n):
-            print(self.neurons[0].synapse_list)
+        self.layer_n = 3
+        branches = 3
+        for i in range(1,self.layer_n+1):
+            # print(self.neurons[i].synapse_list)
+            for j in range(branches):
+                self.neurons[i].neuron.add_output(self.neurons[0].synapse_list[(j*3)+(i-1)])
+                print(self.neurons[0].neuron.name, i, (j*3)+(i-1), self.neurons[0].synapse_list[(j*3)+(i-1)].name)
+        # print(self.neurons[0].neuron.dend__nr_ni.dendritic_inputs['n0_lay0_branch0_den1'].dendritic_inputs['n0_lay1_branch1_den0'].synaptic_inputs['3'].__dict__)
+        # print(self.neurons[1].neuron.__dict__)
+        for i in range(self.N):
+            print(i," - ", self.neurons[i].synapse_list[0].__dict__)
+        # for i in range(9):
+        #     print(self.neurons[0].synapse_list[i].input_signal.name)
+        print("\n\n")    
+
+    def connect_input(self,inputs):
+        count=0
+        for i in range(1,self.layer_n+1):
+            for j in range(9):
+                input = input_signal(name = 'input_synaptic_drive'+str(i)+str(j), 
+                                    input_temporal_form = 'arbitrary_spike_train', 
+                                    spike_times = inputs.spike_rows[count])
+                # print(input.spike_times)
+                self.neurons[i].synapse_list[j].add_input(input)
+                # print(self.neurons[i].synapse_list[j].input_signal.__dict__)
+                count+=1 
+        for i in range(self.N):
+            print(i," - ", self.neurons[i].synapse_list[0].__dict__)
+            if i !=0:
+                print(self.neurons[i].synapse_list[4].input_signal.name)
 
     def run_network(self):
+        self.net = network(dt=0.1,tf=100,nodes=self.neurons)
+        # for n in range(self.N):
+        #     self.net.add_neuron(self.neurons[n])
+        self.net.simulate()
         print("running network")
 
 

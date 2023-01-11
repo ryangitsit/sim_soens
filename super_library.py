@@ -178,6 +178,10 @@ class NeuralZoo():
                 for j,dens in enumerate(layer):
                     sub = []
                     for k,d in enumerate(dens):
+                        #** add verbose list structure for all variables
+                        #** error message for wrong structure
+                        #** tutorial for syn/weight structure
+                        #** add flags and auto connects for empty connections
                         if hasattr(self, 'betas'):
                             self.beta_di=(np.pi*2)*10**self.betas[i][j][k]
                         if hasattr(self, 'biases'):
@@ -199,9 +203,6 @@ class NeuralZoo():
                         entries['name'] = f"{self.neuron.name[-2:]}_lay{i}_branch{j}_den{k}"
                         entries['type'] = type
                         sub.append(dendrite(**entries))
-
-
-
                         den_count+=1
                         c+=1
                     dendrites[i].append(sub)
@@ -316,7 +317,7 @@ class NeuralZoo():
             w_sd = 1
         for g in self.dendrites[len(self.dendrites)-1]:
             for d in g:
-                syn = common_synapse(f'{count}')
+                syn = common_synapse(f'{self.neuron.name}_{count}')
                 self.synapse_list.append(syn)
                 count+=1
                 d.add_input(syn,connection_strength=w_sd)
