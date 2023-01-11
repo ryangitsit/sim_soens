@@ -3,7 +3,7 @@ import numpy as np
 from soen_utilities import index_finder, dend_load_arrays_thresholds_saturations
 from soen_sim import input_signal, network
 from soen_component_library import common_dendrite, common_synapse, common_neuron
-
+from super_library import NeuralZoo
 """
 ### THIS FILE TO BE REWRITTEN ###
 ToDo:
@@ -25,6 +25,58 @@ network = Network(input,neuron_population,monitor)
 network.run(simulation_time*ns)
 """
 
+class BaseNet:
+    pass
+
+class FractalNet():
+    '''
+    
+    '''
+    def __init__(self,**params):
+        # default params
+        self.N = 4
+        self.duration = 100
+        self.run=False
+
+        # custom input params
+        self.__dict__.update(params)
+
+        # make and potentially run neurons and network
+        self.make_neurons()
+        self.make_net()
+        if self.run == True:
+            self.run_network()
+
+    def make_neurons(self):
+        self.neurons = []
+        W = [
+            [[.3,.3,.3]],
+            [[.3,.3,.3],[.3,.3,.3],[.3,.3,.3]]
+            ]
+        
+        for i in range(self.N):
+            neuron = NeuralZoo(type='custom', weights=W)
+            neuron.synaptic_layer()
+            self.neurons.append(neuron)
+        # print(neurons[0].synapses)
+        # for k,v in neurons[0].__dict__.items():
+        #     print(k,": ",v,"\n")
+        # neurons[0].plot_custom_structure()
+        # print(neurons[0].neuron.dend__nr_ni.dendritic_inputs['n0_lay0_branch0_den1'].dendritic_inputs['n0_lay1_branch1_den0'].synaptic_inputs['3'].name)
+
+    def make_net(self):
+        layer_n = 3
+        for i in range(layer_n):
+            print(self.neurons[0].synapse_list)
+
+    def run_network(self):
+        print("running network")
+
+
+
+
+
+
 class SuperNet:
     '''
     Organizes a system and structure of loop neurons
@@ -34,7 +86,7 @@ class SuperNet:
         self.N = 10
         self.duration = 100
         self.name = 'Super_Net'
-        self.connecivity = 'random'
+        self.connectivity = 'random'
         self.in_connect = 'ordered'
         self.dend_type = 'default_ri'
         self.recurrence = None
@@ -237,6 +289,4 @@ class SuperNet:
                 f.write('\n')
 
 
-
-print("Complete!")
     

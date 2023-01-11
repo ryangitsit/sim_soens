@@ -310,12 +310,16 @@ class NeuralZoo():
     def synaptic_layer(self):
         self.synapse_list = []
         count = 0
+        if hasattr(self,'w_sd'):
+            w_sd = self.w_sd
+        else:
+            w_sd = 1
         for g in self.dendrites[len(self.dendrites)-1]:
             for d in g:
                 syn = common_synapse(f'{count}')
                 self.synapse_list.append(syn)
                 count+=1
-                d.add_input(syn,connection_strength=self.w_sd)
+                d.add_input(syn,connection_strength=w_sd)
                 
 
     def uniform_input(self,input):
@@ -978,7 +982,7 @@ class NeuralZoo():
 
         x_ticks=[]
         x_labels=[]
-        print(Ns)
+        # print(Ns)
         for i,n in enumerate(Ns):
             if (np.max(Ns)) < 10:
                 size = 15
@@ -1020,17 +1024,20 @@ class NeuralZoo():
         for i,l in enumerate(den_arb):
             for j,g in enumerate(l):
                 for k,d in enumerate(g):
+                    soma=0
+                    if i==0 and j==0 and k==0:
+                        soma=1
                     if i < 10:
                         s = d.s[::10]
                         t = np.linspace(0,1,len(s))
                         S.append(d.s)
                         # print(i,j,k,'  --  ',np.max(d.s))
                         # print(len(l),len(den_arb[i-1]))
-                        plt.plot(t+(L-i)*1.2,(s+j*4.2+k*1.5)*(M/len(l))+1.75*(M-i), 
+                        plt.plot(t+(L-i)*1.2,(s+j*4.2+k*1.5)*(M/len(l))+1.75*(M-i) + 7*soma, 
                                  linewidth=2, label=f'{i} mean dendritic signal')
         T = t + L*1.6
-        s_n = signal[::10]+19.5
-        plt.plot(T,s_n,linewidth=3,color='r')
+        # s_n = signal[::10]+19.5
+        # plt.plot(T,s_n,linewidth=3,color='r')
         plt.xticks([],[])
         plt.yticks([],[])
         plt.title('Signal Propagation Across Arbor')
