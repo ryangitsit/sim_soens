@@ -42,24 +42,24 @@ class FractalNet():
         self.__dict__.update(params)
 
         # make and potentially run neurons and network
-        self.make_neurons()
+        self.make_neurons(**params)
         self.make_net()
         if self.run == True:
             self.run_network()
 
-    def make_neurons(self):
+    def make_neurons(self,**params):
         '''
         Make required number of neurons with default parameters
          - Store in a list `neurons`
         '''
         self.neurons = []
         W = [
-            [[.3,.3,.3]],
-            [[.3,.3,.3],[.3,.3,.3],[.3,.3,.3]]
+            [[.5,.5,.5]],
+            [[.5,.5,.5],[.5,.5,.5],[.5,.5,.5]]
             ]
         
         for i in range(self.N):
-            neuron = NeuralZoo(type='custom', weights=W)
+            neuron = NeuralZoo(type='custom',weights=W,**params)
             neuron.synaptic_layer()
             self.neurons.append(neuron)
         # print(neurons[0].synapses)
@@ -75,14 +75,14 @@ class FractalNet():
             # print(self.neurons[i].synapse_list)
             for j in range(branches):
                 self.neurons[i].neuron.add_output(self.neurons[0].synapse_list[(j*3)+(i-1)])
-                print(self.neurons[0].neuron.name, i, (j*3)+(i-1), self.neurons[0].synapse_list[(j*3)+(i-1)].name)
+                # print(self.neurons[0].neuron.name, i, (j*3)+(i-1), self.neurons[0].synapse_list[(j*3)+(i-1)].name)
         # print(self.neurons[0].neuron.dend__nr_ni.dendritic_inputs['n0_lay0_branch0_den1'].dendritic_inputs['n0_lay1_branch1_den0'].synaptic_inputs['3'].__dict__)
         # print(self.neurons[1].neuron.__dict__)
-        for i in range(self.N):
-            print(i," - ", self.neurons[i].synapse_list[0].__dict__)
+        # for i in range(self.N):
+        #     print(i," - ", self.neurons[i].synapse_list[0].__dict__)
         # for i in range(9):
         #     print(self.neurons[0].synapse_list[i].input_signal.name)
-        print("\n\n")    
+        # print("\n\n")    
 
     def connect_input(self,inputs):
         count=0
@@ -95,17 +95,17 @@ class FractalNet():
                 self.neurons[i].synapse_list[j].add_input(input)
                 # print(self.neurons[i].synapse_list[j].input_signal.__dict__)
                 count+=1 
-        for i in range(self.N):
-            print(i," - ", self.neurons[i].synapse_list[0].__dict__)
-            if i !=0:
-                print(self.neurons[i].synapse_list[4].input_signal.name)
+        # for i in range(self.N):
+        #     print(i," - ", self.neurons[i].synapse_list[0].__dict__)
+        #     if i !=0:
+        #         print(self.neurons[i].synapse_list[4].input_signal.name)
 
     def run_network(self):
-        self.net = network(dt=0.1,tf=100,nodes=self.neurons)
+        self.net = network(dt=0.1,tf=5000,nodes=self.neurons)
         # for n in range(self.N):
         #     self.net.add_neuron(self.neurons[n])
-        self.net.simulate()
         print("running network")
+        self.net.simulate()
 
 
 

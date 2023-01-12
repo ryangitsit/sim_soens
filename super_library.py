@@ -572,7 +572,8 @@ class NeuralZoo():
 
 
     def plot_neuron_activity(self,net,phir=False,dend=True,title=None,
-                            input=None,weighting=True,docstring=False,lay=100000):
+                            input=None,weighting=True,docstring=False,lay=100000,
+                            spikes=True):
         '''
         Plots signal activity for a given network or neuron
          - phir      -> plot phi_r of soma and phi_r thresholds
@@ -626,11 +627,12 @@ class NeuralZoo():
 
         plt.plot(net.t,ref, ':',color = 'r', label='refractory signal')
         ## add input/output spikes
-        if len(net.spikes[0]) > 0:
-            plt.plot(net.spikes[1],net.spike_signals[0],'xk', markersize=8, label='neuron fires')
-            plt.axhline(y = self.neuron.s_th, color = 'purple', linestyle = '--',label='Firing Threshold')
-        if input:
-            plt.plot(input.spike_arrays[1],np.zeros(len(input.spike_arrays[1])),'xr', markersize=5, label='neuron fires')
+        if spikes==True:
+            if len(net.spikes[0]) > 0:
+                plt.plot(net.spikes[1],net.spike_signals[0],'xk', markersize=8, label='neuron fires')
+                plt.axhline(y = self.neuron.s_th, color = 'purple', linestyle = '--',label='Firing Threshold')
+            if input:
+                plt.plot(input.spike_arrays[1],np.zeros(len(input.spike_arrays[1])),'xr', markersize=5, label='neuron fires')
         # print(self.synapses[0][0][0].__dict__)
         # print(net.spikes[0])
         plt.xlabel("Simulation Time (ns)")
