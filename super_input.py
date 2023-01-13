@@ -25,7 +25,7 @@ class SuperInput():
             self.spike_rows = self.array_to_rows(self.spike_arrays)
 
         if self.type == "defined":
-            print("Generating pre-defined input...")
+            # print("Generating pre-defined input...")
             self.spike_arrays = self.defined_spikes
             self.spike_rows = self.array_to_rows(self.spike_arrays)
         
