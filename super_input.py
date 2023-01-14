@@ -31,9 +31,13 @@ class SuperInput():
         
         self.signals = []
         for i in range(self.channels):
+            array = np.sort(self.spike_rows[i])
+            array = np.append(array,np.max(array)+.001)
             self.signals.append(input_signal(name = 'input_synaptic_drive', 
-                       input_temporal_form = 'arbitrary_spike_train', 
-                       spike_times = self.spike_rows[i]))
+                                input_temporal_form = 'arbitrary_spike_train', 
+                                spike_times = array) )
+            # print(self.spike_rows[i])
+
 
     def gen_rand_input(self,spiking_indices,max_amounts):
         # self.input = np.random.randint(self.duration, size=())

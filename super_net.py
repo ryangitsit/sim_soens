@@ -109,8 +109,50 @@ class FractalNet():
 
 
 
+class PointReservoir:
+    '''
+    
+    '''
+    def __init__(self,**params):
+        # default params
+        self.N = 100
+        self.duration = 1000
+        self.run=False
 
+        # custom input params
+        self.__dict__.update(params)
 
+        # make and potentially run neurons and network
+        self.make_neurons(**params)
+        self.make_net()
+        if self.run == True:
+            self.run_network()
+
+    def make_neurons(self,**params):
+        '''
+        Start with ideal situation
+            - Input in
+            - Internal connectivity
+        '''
+        self.neurons = []
+        syn_struct = [[[[1,1,1,1,1,1,1]]]]
+        
+        for i in range(self.N):
+            neuron = NeuralZoo(type='custom',synaptic_structure=syn_struct,**params)
+            neuron.synaptic_layer()
+            self.neurons.append(neuron)
+
+    def make_net(self):
+        pass
+
+    def connect_input(self,inputs):
+        # self.neurons[i].synapse_list[j].add_input(input)
+        pass
+
+    def run_network(self):
+        self.net = network(dt=0.1,tf=1000,nodes=self.neurons)
+        print("running network")
+        self.net.simulate()
 
 class SuperNet:
     '''

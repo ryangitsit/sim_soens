@@ -317,7 +317,7 @@ class NeuralZoo():
             w_sd = 1
         for g in self.dendrites[len(self.dendrites)-1]:
             for d in g:
-                syn = common_synapse(f'{self.neuron.name}_{count}')
+                syn = common_synapse(f'{self.neuron.name}_syn{count}')
                 self.synapse_list.append(syn)
                 count+=1
                 d.add_input(syn,connection_strength=w_sd)
@@ -1023,7 +1023,7 @@ class NeuralZoo():
         L = len(den_arb)
         M = len(den_arb[-1])
         # print(M)
-        plt.figure(figsize=(6,8))
+        plt.figure(figsize=(16,8))
         for i,l in enumerate(den_arb):
             for j,g in enumerate(l):
                 for k,d in enumerate(g):
@@ -1032,12 +1032,15 @@ class NeuralZoo():
                         soma=1
                     if i < 10:
                         s = d.s[::10]
-                        t = np.linspace(0,1,len(s))
+                        phi = d.phi_r[::10]
+                        t = np.linspace(0,1,len(s)) # self.neuron.time_params['time_vec'] #
                         S.append(d.s)
                         # print(i,j,k,'  --  ',np.max(d.s))
                         # print(len(l),len(den_arb[i-1]))
-                        plt.plot(t+(L-i)*1.2,(s+j*4.2+k*1.5)*(M/len(l))+1.75*(M-i) + 7*soma, 
+                        plt.plot(t+(L-i)*1.2,(s+j*4.2+k*1.5)*(M/len(l))+1.75*(M-i) + 3*soma, 
                                  linewidth=2, label=f'{i} mean dendritic signal')
+                        plt.plot(t+(L-i)*1.2,(phi+j*4.2+k*1.5)*(M/len(l))+1.75*(M-i) + 3*soma, 
+                                 '--', linewidth=2, label=f'{i} mean dendritic signal')
         T = t + L*1.6
         # s_n = signal[::10]+19.5
         # plt.plot(T,s_n,linewidth=3,color='r')
