@@ -11,9 +11,9 @@ from super_functions import array_to_rows
 from soen_plotting import raster_plot
 
 def main():
-
+    fan_in = 2
     eurekas=0
-    runs = 100
+    runs = 1000
     for run in range(runs):
         z = np.array([0,1,4,7,8]) # z-pixel np.array
         v = np.array([1,4,3,6,8])-1 # v
@@ -28,29 +28,57 @@ def main():
 
         def_spikes = [indices,times]
         input = SuperInput(channels=9, type='defined', defined_spikes=def_spikes, duration=window*len(letters)+window)
+        
+        if fan_in == 3:
+            params= {
+                "N":4,
+                "s_th":.42,
+                "ib":1.7,
+                "ib_n":1.7,
+                # "tau_ni":5,
+                # "tau_di":5,
+                "tau_ref":1,
+                }
+            c=.75
+            W1 = [
+                [np.random.rand(3)*c],
+                [np.random.rand(3)*c,np.random.rand(3)*c,np.random.rand(3)*c]
+                ]
+            W2 = [
+                [np.random.rand(3)*c],
+                [np.random.rand(3)*c,np.random.rand(3)*c,np.random.rand(3)*c]
+                ]
+            W3 = [
+                [np.random.rand(3)*c],
+                [np.random.rand(3)*c,np.random.rand(3)*c,np.random.rand(3)*c]
+                ]
 
-        params= {
-            "N":4,
-            "s_th":.42,
-            "ib":1.7,
-            "ib_n":1.7,
-            # "tau_ni":5,
-            # "tau_di":5,
-            "tau_ref":1,
-            }
-        c=.75
-        W1 = [
-            [np.random.rand(3)*c],
-            [np.random.rand(3)*c,np.random.rand(3)*c,np.random.rand(3)*c]
-            ]
-        W2 = [
-            [np.random.rand(3)*c],
-            [np.random.rand(3)*c,np.random.rand(3)*c,np.random.rand(3)*c]
-            ]
-        W3 = [
-            [np.random.rand(3)*c],
-            [np.random.rand(3)*c,np.random.rand(3)*c,np.random.rand(3)*c]
-            ]
+        elif fan_in == 2:
+            params= {
+                "N":4,
+                "s_th":.1,
+                "ib":1.7,
+                "ib_n":1.7,
+                # "tau_ni":5,
+                # "tau_di":5,
+                "tau_ref":1,
+                }
+            c=1.2
+            W1 = [
+                [np.random.rand(2)*c],
+                [np.random.rand(2)*c,np.random.rand(2)*c],
+                [np.random.rand(2)*c,np.random.rand(2)*c,np.random.rand(2)*c,np.random.rand(2)*c]
+                ]
+            W2 = [
+                [np.random.rand(2)*c],
+                [np.random.rand(2)*c,np.random.rand(2)*c],
+                [np.random.rand(2)*c,np.random.rand(2)*c,np.random.rand(2)*c,np.random.rand(2)*c]
+                ]
+            W3 = [
+                [np.random.rand(2)*c],
+                [np.random.rand(2)*c,np.random.rand(2)*c],
+                [np.random.rand(2)*c,np.random.rand(2)*c,np.random.rand(2)*c,np.random.rand(2)*c]
+                ]
 
         ### some winning weights
         # W1 =  [[np.array([0.61995577, 0.40528169, 0.61201274])], 
@@ -73,7 +101,8 @@ def main():
         n_3.synaptic_layer()
 
         neurons = [n_1,n_2,n_3]
-        for i in range(len(input.spike_rows)):
+        # for i in range(len(input.spike_rows)):
+        for i in range(len(n_1.synapse_list)):
             for n in neurons:
                 n.synapse_list[i].add_input(input.signals[i])
         
@@ -119,7 +148,7 @@ def main():
             eurekas+=1
             print("-----------------------------------------\n")
         else:
-            print(f"Attempt {run+1} --> Try again")
+            print(f"Attempt {run+1} --> Try again, {len(rows[0]),len(rows[1]),len(rows[2])}")
 
     print(f"Percent natural success: {eurekas}/{runs} = {eurekas/runs}")
 

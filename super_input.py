@@ -1,6 +1,7 @@
 #%%
 import numpy as np
 from soen_sim import input_signal
+from super_functions import *
 
 class SuperInput():
     def __init__(self,**entries):
@@ -30,17 +31,21 @@ class SuperInput():
             self.spike_rows = self.array_to_rows(self.spike_arrays)
 
         if self.type == "saccade_MNIST":
-            self.saccade_MNIST()
-            
+            self.spike_arrays = self.saccade_MNIST()
+            self.spike_rows = self.array_to_rows(self.spike_arrays)
+
+        else:
+            print("Please provide valid input type")
+            pass
         
-        # self.signals = []
-        # for i in range(self.channels):
-        #     array = np.sort(self.spike_rows[i])
-        #     array = np.append(array,np.max(array)+.001)
-        #     self.signals.append(input_signal(name = 'input_synaptic_drive', 
-        #                         input_temporal_form = 'arbitrary_spike_train', 
-        #                         spike_times = array) )
-        #     # print(self.spike_rows[i])
+        self.signals = []
+        for i in range(self.channels):
+            array = np.sort(self.spike_rows[i])
+            array = np.append(array,np.max(array)+.001)
+            self.signals.append(input_signal(name = 'input_synaptic_drive', 
+                                input_temporal_form = 'arbitrary_spike_train', 
+                                spike_times = array) )
+            # print(self.spike_rows[i])
 
 
     def gen_rand_input(self,spiking_indices,max_amounts):
@@ -120,9 +125,28 @@ class SuperInput():
         (X_train, y_train), (X_test, y_test) = mnist.load_data()
         X = X_train[(y_train == 0) | (y_train == 1) | (y_train == 2)]
         y = y_train[(y_train == 0) | (y_train == 1) | (y_train == 2)]
-        print(len(X),len(y))
-        print(y[:100])#[18000])
-        fig = plt.figure
-        plt.imshow(X[2], cmap='gray')
-        plt.show()
-        return X, y
+        
+        dataset = [[] for i in range(3)]
+        stream = [[],[]]
+        count = 0
+        for i in range(20):
+            if len(dataset[y[i]]) < 3:
+                print(y[i])
+                dataset[y[i]].append(aug_digit(X[i]))
+
+        for data in dataset:
+            for sample in data:
+                tiles = tile_img(sample)
+                tile_spikes = tiles_to_spikes(tiles)
+                stream[0].extend(tile_spikes[0])
+                stream[1].extend(np.array(tile_spikes[1])+30000*count)
+                # print(tile_spikes[1])
+                count+=1
+        # print(len(dataset))
+        # print(len(dataset[0]),len(dataset[1]),len(dataset[2]))
+
+        # print(len(stream))
+        # print(len(stream[0]))
+        # from soen_plotting import raster_plot
+        # raster_plot(stream)
+        return stream
