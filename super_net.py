@@ -154,6 +154,7 @@ class PointReservoir:
         print("running network")
         self.net.simulate()
 
+
 class SuperNet:
     '''
     Organizes a system and structure of loop neurons

@@ -28,15 +28,19 @@ class SuperInput():
             # print("Generating pre-defined input...")
             self.spike_arrays = self.defined_spikes
             self.spike_rows = self.array_to_rows(self.spike_arrays)
+
+        if self.type == "saccade_MNIST":
+            self.saccade_MNIST()
+            
         
-        self.signals = []
-        for i in range(self.channels):
-            array = np.sort(self.spike_rows[i])
-            array = np.append(array,np.max(array)+.001)
-            self.signals.append(input_signal(name = 'input_synaptic_drive', 
-                                input_temporal_form = 'arbitrary_spike_train', 
-                                spike_times = array) )
-            # print(self.spike_rows[i])
+        # self.signals = []
+        # for i in range(self.channels):
+        #     array = np.sort(self.spike_rows[i])
+        #     array = np.append(array,np.max(array)+.001)
+        #     self.signals.append(input_signal(name = 'input_synaptic_drive', 
+        #                         input_temporal_form = 'arbitrary_spike_train', 
+        #                         spike_times = array) )
+        #     # print(self.spike_rows[i])
 
 
     def gen_rand_input(self,spiking_indices,max_amounts):
@@ -110,4 +114,15 @@ class SuperInput():
 
         return self.indices, self.times
 
-# %%
+    def saccade_MNIST(self):
+        import matplotlib.pyplot as plt
+        from keras.datasets import mnist
+        (X_train, y_train), (X_test, y_test) = mnist.load_data()
+        X = X_train[(y_train == 0) | (y_train == 1) | (y_train == 2)]
+        y = y_train[(y_train == 0) | (y_train == 1) | (y_train == 2)]
+        print(len(X),len(y))
+        print(y[:100])#[18000])
+        fig = plt.figure
+        plt.imshow(X[2], cmap='gray')
+        plt.show()
+        return X, y
