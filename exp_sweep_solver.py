@@ -13,22 +13,21 @@ from soen_plotting import raster_plot
 def main():
     fan_in = 2
     eurekas=0
+    z = np.array([0,1,4,7,8]) # z-pixel np.array
+    v = np.array([1,4,3,6,8])-1 # v
+    n = np.array([2,4,6,7,9])-1 # n
+    letters = [z,v,n]
+
+    window = 100
+    indices = np.concatenate(letters)
+    times = np.concatenate([np.ones(len(z)),
+                            np.ones(len(v))*(2+window),
+                            np.ones(len(n))*(2+window*2)])
+
+    def_spikes = [indices,times]
+    input = SuperInput(channels=9, type='defined', defined_spikes=def_spikes, duration=window*len(letters)+window)
     runs = 1000
     for run in range(runs):
-        z = np.array([0,1,4,7,8]) # z-pixel np.array
-        v = np.array([1,4,3,6,8])-1 # v
-        n = np.array([2,4,6,7,9])-1 # n
-        letters = [z,v,n]
-
-        window = 100
-        indices = np.concatenate(letters)
-        times = np.concatenate([np.ones(len(z)),
-                                np.ones(len(v))*(2+window),
-                                np.ones(len(n))*(2+window*2)])
-
-        def_spikes = [indices,times]
-        input = SuperInput(channels=9, type='defined', defined_spikes=def_spikes, duration=window*len(letters)+window)
-        
         if fan_in == 3:
             params= {
                 "N":4,
@@ -52,6 +51,9 @@ def main():
                 [np.random.rand(3)*c],
                 [np.random.rand(3)*c,np.random.rand(3)*c,np.random.rand(3)*c]
                 ]
+            # W1 =  [[array([0.5185973 , 0.08859934])], [array([0.8364571 , 1.11023959]), array([1.01050156, 0.36978657])], [array([0.22807812, 0.77334947]), array([0.44326369, 0.35082848]), array([0.17582426, 1.00827661]), array([0.28652707, 0.10167135])]]
+            # W2 =  [[array([0.70313158, 0.68237736])], [array([0.17591605, 0.63316584]), array([0.37303057, 0.65283589])], [array([0.58550773, 0.60827389]), array([0.61303645, 0.92577863]), array([0.23380835, 0.08352806]), array([0.77747619, 0.41303903])]]
+            # W3 =  [[array([0.54903516, 0.27614041])], [array([0.487539  , 0.72172765]), array([1.15864806, 0.72621142])], [array([0.07032772, 0.39300242]), array([0.52805035, 0.43731229]), array([0.11327929, 0.28317854]), array([1.11306904, 0.99890398])]]
 
         elif fan_in == 2:
             params= {

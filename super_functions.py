@@ -27,7 +27,7 @@ def aug_digit(digit):
     X_aug = np.append(X_aug,[np.zeros((30))],axis=0)
     return X_aug
 
-def tiles_to_spikes(tiles):
+def tiles_to_spikes(tiles,tile_time):
     import brian2
     indices = []
     times = []
@@ -35,12 +35,12 @@ def tiles_to_spikes(tiles):
     for i,tile in enumerate(tiles):
         unraveled = np.concatenate(tile)
         # print(i,unraveled)
-        P = brian2.PoissonGroup(len(unraveled), rates=unraveled*brian2.Hz/10)
+        P = brian2.PoissonGroup(len(unraveled), rates=unraveled*brian2.Hz)
         MP = brian2.SpikeMonitor(P)
         net = brian2.Network(P, MP)
-        net.run(1000*brian2.ms)
+        net.run(tile_time*brian2.ms)
         spikes_i = np.array(MP.i[:])
-        spikes_t = np.array(MP.t[:])*1000+i*1000
+        spikes_t = np.array(MP.t[:])*tile_time+i*tile_time
         indices.extend(spikes_i)
         times.extend(spikes_t)
         spikes = [indices,times]

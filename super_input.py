@@ -131,16 +131,17 @@ class SuperInput():
         count = 0
         for i in range(20):
             if len(dataset[y[i]]) < 3:
-                print(y[i])
+                # print(y[i])
                 dataset[y[i]].append(aug_digit(X[i]))
 
         for data in dataset:
             for sample in data:
                 tiles = tile_img(sample)
-                tile_spikes = tiles_to_spikes(tiles)
+                tile_spikes = tiles_to_spikes(tiles,self.tile_time)
                 stream[0].extend(tile_spikes[0])
-                stream[1].extend(np.array(tile_spikes[1])+30000*count)
+                stream[1].extend(np.array(tile_spikes[1])+(self.tile_time*36)*count)
                 # print(tile_spikes[1])
+                # print(self.tile_time*36,count)
                 count+=1
         # print(len(dataset))
         # print(len(dataset[0]),len(dataset[1]),len(dataset[2]))
