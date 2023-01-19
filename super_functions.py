@@ -29,6 +29,7 @@ def aug_digit(digit):
 
 def tiles_to_spikes(tiles,tile_time):
     import brian2
+    np.random.seed(10)
     indices = []
     times = []
     scarf = [[] for i in range(36)]
@@ -58,3 +59,38 @@ def tile_img(digit):
             tiles.append(img)
     return tiles
 
+
+def spks_to_txt(spikes,N,prec,dir,name):
+    """
+    Convert Brain spikes to txt file
+    - Each line is a neuron index
+    - Firing times are recorded at at their appropriate neuron row
+    """
+    import os
+    dirName = f"results/{dir}"
+    try:
+        os.makedirs(dirName)    
+    except FileExistsError:
+        pass
+
+    indices = spikes[0]
+    times = spikes[1]
+    with open(f'{dirName}/{name}.txt', 'w') as f:
+        for row in range(N):
+            for i in range(len(indices)):
+                if row == indices[i]:
+                    if row == 0:
+                        f.write(str(np.round(times[i],prec)))
+                        f.write(" ")
+                    else:
+                        f.write(str(np.round(times[i],prec)))
+                        f.write(" ")
+            f.write('\n')
+
+def np_save(exp,name,**kwargs):
+    import os
+    dirName = f"results/{dir}"
+    try:
+        os.makedirs(dirName)    
+    except FileExistsError:
+        pass
