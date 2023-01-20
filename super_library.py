@@ -573,7 +573,7 @@ class NeuralZoo():
 
     def plot_neuron_activity(self,net,phir=False,dend=True,title=None,
                             input=None,weighting=True,docstring=False,lay=100000,
-                            spikes=True):
+                            spikes=True, path=None):
         '''
         Plots signal activity for a given network or neuron
          - phir      -> plot phi_r of soma and phi_r thresholds
@@ -643,6 +643,8 @@ class NeuralZoo():
         plt.subplots_adjust(right=.8)
         plt.subplots_adjust(bottom=.15)
         # plt.legend()
+        if path:
+            plt.savefig(path)
         plt.show()
 
 
@@ -1013,7 +1015,7 @@ class NeuralZoo():
         plt.title('Dendritic Arbor',fontsize=20)
         plt.show()
 
-    def arbor_activity_plot(self):
+    def arbor_activity_plot(self,path=None):
         import matplotlib.pyplot as plt
         # signal = net.neurons["custom_neuron"].dend__nr_ni.s
         # ref = net.neurons["custom_neuron"].dend__ref.s
@@ -1047,7 +1049,16 @@ class NeuralZoo():
         plt.xticks([],[])
         plt.yticks([],[])
         plt.title('Signal Propagation Across Arbor')
-        plt.show()
+        if path:
+            import os
+            try:
+                os.makedirs(path)    
+            except FileExistsError:
+                pass
+            plt.savefig(path)
+            plt.close()
+        else:
+            plt.show()
 
     def arbor_activity_plot_(self):
         import matplotlib.pyplot as plt

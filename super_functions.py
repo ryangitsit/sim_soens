@@ -94,3 +94,48 @@ def np_save(exp,name,**kwargs):
         os.makedirs(dirName)    
     except FileExistsError:
         pass
+
+def txt_to_spks(file):
+    """"
+    Convert txt file back to Brian style spikes
+     - Two parallel arrays of spike times and associated neuron indices
+    """
+    mat = []
+    with open(file) as f:
+        for line in f:
+            arr = line.split(' ')
+            mat.append(np.array(arr))
+    indices = []
+    times = []
+    for i in range(len(mat)):
+        row = []
+        for j in range(len(mat[i])):
+            if mat[i][j] != '\n':
+                indices.append(i)
+                row.append(float(mat[i][j]))
+                times.append(float(mat[i][j]))
+    indices = np.array(indices)
+    times = np.array(times)
+    return [indices,times]
+
+def picklit(obj,path,name):
+    import os
+    import pickle
+    try:
+        os.makedirs(path)    
+    except FileExistsError:
+        pass
+    pick = f'{path}/{name}.pickle'
+    filehandler = open(pick, 'wb') 
+    pickle.dump(obj, filehandler)
+    filehandler.close()
+
+def picklin(path,name):
+    import os
+    import pickle
+    file = os.path.join(path, name)
+    file = file + '.pickle'
+    file_to_read = open(file, "rb")
+    obj = pickle.load(file_to_read)
+    file_to_read.close()
+    return obj

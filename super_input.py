@@ -141,7 +141,7 @@ class SuperInput():
                 stream[0].extend(tile_spikes[0])
                 stream[1].extend(np.array(tile_spikes[1])+(self.tile_time*36)*count)
                 # print(tile_spikes[1])
-                # print(self.tile_time*36,count)
+                # print(self.tile_time*36,count, self.tile_time*36*count)
                 count+=1
         # print(len(dataset))
         # print(len(dataset[0]),len(dataset[1]),len(dataset[2]))
