@@ -2,10 +2,11 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 from soen_sim import input_signal, network
+from soen_component_library import common_synapse
 
 from super_library import NeuralZoo
 from super_input import SuperInput
-from super_functions import array_to_rows, spks_to_txt, picklit, picklin
+from super_functions import array_to_rows, spks_to_txt, picklit, picklin,save_dict
 
 from soen_plotting import raster_plot
 import random
@@ -16,6 +17,8 @@ def main():
     args = setup_argument_parser()
     run = args.run
     runs = args.runs
+    form = args.form
+    path = f'results/{args.dir}/'
 
     tile_time = 10
     classes = [0,1,2]
@@ -34,23 +37,28 @@ def main():
     params= {
         "N":4,
         # "s_th":.3,
-        "s_th":.4,
+        "s_th":.5,
         # "ib":1.7,
         # "ib_n":1.7,
         "ib":1.802395858835221,
         "ib_n":1.802395858835221,
         # "tau_ni":5,
         # "tau_di":5,
-        "tau_ref":75,
+        "tau_ref":150,
+        "c":0.6,
+        "range":[-1,1]
         }
+
+    save_dict(params,path,'params')
 
     # np.random.seed(None)
     def rnd_pm(vals):
         c=.6
-        arr = np.random.rand(vals)*c*[-1,1][random.randrange(2)]
+        arr = np.random.rand(vals)*params['c']*params['range'][random.randrange(2)]
         # print(arr)
         return arr
 
+    
     W1 = [
         [rnd_pm(3)],
         [rnd_pm(3),rnd_pm(3),rnd_pm(3)],
@@ -67,6 +75,7 @@ def main():
         [rnd_pm(4),rnd_pm(4),rnd_pm(4),rnd_pm(4),rnd_pm(4),rnd_pm(4),rnd_pm(4),rnd_pm(4),rnd_pm(4)]
         ]
 
+
     # The lost winner
     # W1 =  [[np.array([0.10027454, 0.58133644, 0.55944452])], [np.array([0.24048415, 0.68690423, 0.26635529]), np.array([0.43997153, 0.22140561, 0.60989458]), np.array([0.84197269, 0.75627611, 0.05974083])], [np.array([0.84229829, 0.10177496, 0.33385362, 0.00593317]), np.array([0.25905758, 0.36695748, 0.33077299, 0.67711857]), np.array([0.75972404, 0.76973308, 0.72250814, 0.39805298]), np.array([0.31977279, 0.56224649, 0.27373613, 0.26746589]), np.array([0.24285249, 0.06188361, 0.6210575 , 0.09703051]), np.array([0.37902298, 0.6922418 , 0.05391373, 0.60615722]), np.array([0.5249293 , 0.0367024 , 0.49675437, 0.40722666]), np.array([0.6217751 , 0.55227423, 0.41749913, 0.77550667]), np.array([0.59720308, 0.53510703, 0.36952971, 0.22036814])]]
     # W2 =  [[np.array([0.78851345, 0.27407871, 0.30803972])], [np.array([0.2549654 , 0.67385715, 0.57587251]), np.array([0.559625  , 0.44622867, 0.60465558]), np.array([0.04828061, 0.27477089, 0.69585055])], [np.array([0.11005697, 0.19632138, 0.39042952, 0.12591339]), np.array([0.16299855, 0.33534171, 0.1850659 , 0.45389967]), np.array([0.06385376, 0.51709817, 0.82845702, 0.01157012]), np.array([0.23659099, 0.31359119, 0.75644638, 0.4096279 ]), np.array([0.20260746, 0.14851041, 0.051098  , 0.05830404]), np.array([0.62678092, 0.75935016, 0.03536966, 0.49896926]), np.array([0.037     , 0.66069881, 0.48698776, 0.35310226]), np.array([0.55448332, 0.2248576 , 0.53403215, 0.33103462]), np.array([0.19723041, 0.06784297, 0.63379481, 0.78139109])]]
@@ -80,9 +89,49 @@ def main():
     n_2.synaptic_layer()
     n_3.synaptic_layer()
 
+    if form == 'standalone':
+        pass
+    elif form == 'WTA':
+        syn11=common_synapse(f'soma_synapse_1{n_1.neuron.name}')
+        n_1.neuron.dend__nr_ni.add_input(syn11,connection_strength=-.25)
+        n_1.synapse_list.append(syn11)
+
+        syn12=common_synapse(f'soma_synapse_2{n_1.neuron.name}')
+        n_1.neuron.dend__nr_ni.add_input(syn12,connection_strength=-.25)
+        n_1.synapse_list.append(syn12)
+
+        syn21=common_synapse(f'soma_synapse_1{n_2.neuron.name}')
+        n_2.neuron.dend__nr_ni.add_input(syn21,connection_strength=-.25)
+        n_2.synapse_list.append(syn21)
+
+        syn22=common_synapse(f'soma_synapse_2{n_2.neuron.name}')
+        n_2.neuron.dend__nr_ni.add_input(syn22,connection_strength=-.25)
+        n_2.synapse_list.append(syn22)
+
+        syn31=common_synapse(f'soma_synapse_1{n_3.neuron.name}')
+        n_3.neuron.dend__nr_ni.add_input(syn31,connection_strength=-.25)
+        n_3.synapse_list.append(syn31)
+
+        syn32=common_synapse(f'soma_synapse_2{n_3.neuron.name}')
+        n_3.neuron.dend__nr_ni.add_input(syn32,connection_strength=-.25)
+        n_3.synapse_list.append(syn32)
+
+    
+        n_1.neuron.add_output(n_2.synapse_list[-1])
+        n_1.neuron.add_output(n_3.synapse_list[-1])
+
+        n_2.neuron.add_output(n_1.synapse_list[-1])
+        n_2.neuron.add_output(n_3.synapse_list[-2])
+
+        n_3.neuron.add_output(n_1.synapse_list[-2])
+        n_3.neuron.add_output(n_2.synapse_list[-2])
+    # print(len(n_3.synapse_list))  
+    # print(n_2.synapse_list[-1].name)  
+    # pass
+
     neurons = [n_1,n_2,n_3]
     # for i in range(len(input.spike_rows)):
-    for i in range(len(n_1.synapse_list)):
+    for i in range(len(n_1.synapse_list)-2):
         for n in neurons:
             n.synapse_list[i].add_input(input.signals[i])
     # print('tf = ',np.max(input.spike_arrays[1])+100)
@@ -110,17 +159,9 @@ def main():
                     if winset[0]<val<winset[1]]
             counts[i] .append(len(frame))
     counts = np.transpose(counts)
-    print(counts)
+    # print(counts)
     maxes = [np.argmax(arr) for arr in counts]
     peaks = [np.max(arr) for arr in counts]
-
-    # path1 = f'results/single_layer_symm/{run}_act1.png'
-    # path2 = f'results/single_layer_symm/{run}_act2.png'
-    # path3 = f'results/single_layer_symm/{run}_act3.png'
-    # neurons[0].arbor_activity_plot(path=path1)
-    # neurons[1].arbor_activity_plot(path=path2)
-    # neurons[2].arbor_activity_plot(path=path3)
-
 
     if len(set(maxes))==3 and np.min(peaks)>0:
         print(f"Attempt {run} --> EUREKA!")
@@ -135,7 +176,7 @@ def main():
         # neurons[1].arbor_activity_plot(path=path2)
         # neurons[2].arbor_activity_plot(path=path3)
 
-        with open(f'results/single_layer_symm/winner_weights_{run}.txt', 'w') as f:
+        with open(f'{path}winner_weights_{run}.txt', 'w') as f:
             f.write("W1=")
             f.write(str(W1))
             f.write("\n")
@@ -144,7 +185,7 @@ def main():
             f.write("\n")
             f.write("W3=")
             f.write(str(W3))
-        spks_to_txt(net.spikes,3,10,"single_layer_symm",f"winner_spikes_{run}")
+        spks_to_txt(net.spikes,3,10,args.dir,f"winner_spikes_{run}")
 
         # eurekas+=1
         print("-----------------------------------------\n")

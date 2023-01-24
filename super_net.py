@@ -115,7 +115,7 @@ class PointReservoir:
     '''
     def __init__(self,**params):
         # default params
-        self.N = 100
+        self.N = 72
         self.duration = 1000
         self.run=False
 
@@ -125,6 +125,7 @@ class PointReservoir:
         # make and potentially run neurons and network
         self.make_neurons(**params)
         self.make_net()
+
         if self.run == True:
             self.run_network()
 
@@ -135,7 +136,7 @@ class PointReservoir:
             - Internal connectivity
         '''
         self.neurons = []
-        syn_struct = [[[[1,1,1,1,1,1,1]]]]
+        syn_struct = [[[[1,1,1,1,1,1,1,1]]]]
         
         for i in range(self.N):
             neuron = NeuralZoo(type='custom',synaptic_structure=syn_struct,**params)
@@ -143,7 +144,13 @@ class PointReservoir:
             self.neurons.append(neuron)
 
     def make_net(self):
-        pass
+        for i in range(self.N):
+            for j in range(self.N):
+                if i != j:
+                    num = np.random.randint(100)
+                    # print(num)
+                    if num < 10:
+                        pass
 
     def connect_input(self,inputs):
         # self.neurons[i].synapse_list[j].add_input(input)

@@ -139,3 +139,15 @@ def picklin(path,name):
     obj = pickle.load(file_to_read)
     file_to_read.close()
     return obj
+
+def save_dict(dict,path,name):
+    import os
+    import json
+    try:
+        os.makedirs(path)    
+    except FileExistsError:
+        pass
+    json = json.dumps(dict)
+    f = open(path+name+".json","w")
+    f.write(json)
+    f.close()
