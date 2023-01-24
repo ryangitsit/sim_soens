@@ -18,6 +18,10 @@ def main():
     run = args.run
     runs = args.runs
     form = args.form
+    beta = 2*np.pi*10**(args.beta)
+    tau = args.tau
+    tau_ref = args.tau_ref
+    inhibit = -(1/args.inhibit)
     path = f'results/{args.dir}/'
 
     tile_time = 10
@@ -42,11 +46,14 @@ def main():
         # "ib_n":1.7,
         "ib":1.802395858835221,
         "ib_n":1.802395858835221,
-        # "tau_ni":5,
-        # "tau_di":5,
+        "beta_di":beta,
+        "beta_ni":beta,
+        "tau_ni":tau,
+        "tau_di":tau,
         "tau_ref":150,
         "c":0.6,
-        "range":[-1,1]
+        "range":[-1,1],
+        "inhibtion":inhibit,
         }
 
     save_dict(params,path,'params')
@@ -93,27 +100,27 @@ def main():
         pass
     elif form == 'WTA':
         syn11=common_synapse(f'soma_synapse_1{n_1.neuron.name}')
-        n_1.neuron.dend__nr_ni.add_input(syn11,connection_strength=-.25)
+        n_1.neuron.dend__nr_ni.add_input(syn11,connection_strength=inhibit)
         n_1.synapse_list.append(syn11)
 
         syn12=common_synapse(f'soma_synapse_2{n_1.neuron.name}')
-        n_1.neuron.dend__nr_ni.add_input(syn12,connection_strength=-.25)
+        n_1.neuron.dend__nr_ni.add_input(syn12,connection_strength=inhibit)
         n_1.synapse_list.append(syn12)
 
         syn21=common_synapse(f'soma_synapse_1{n_2.neuron.name}')
-        n_2.neuron.dend__nr_ni.add_input(syn21,connection_strength=-.25)
+        n_2.neuron.dend__nr_ni.add_input(syn21,connection_strength=inhibit)
         n_2.synapse_list.append(syn21)
 
         syn22=common_synapse(f'soma_synapse_2{n_2.neuron.name}')
-        n_2.neuron.dend__nr_ni.add_input(syn22,connection_strength=-.25)
+        n_2.neuron.dend__nr_ni.add_input(syn22,connection_strength=inhibit)
         n_2.synapse_list.append(syn22)
 
         syn31=common_synapse(f'soma_synapse_1{n_3.neuron.name}')
-        n_3.neuron.dend__nr_ni.add_input(syn31,connection_strength=-.25)
+        n_3.neuron.dend__nr_ni.add_input(syn31,connection_strength=inhibit)
         n_3.synapse_list.append(syn31)
 
         syn32=common_synapse(f'soma_synapse_2{n_3.neuron.name}')
-        n_3.neuron.dend__nr_ni.add_input(syn32,connection_strength=-.25)
+        n_3.neuron.dend__nr_ni.add_input(syn32,connection_strength=inhibit)
         n_3.synapse_list.append(syn32)
 
     
@@ -190,7 +197,7 @@ def main():
         # eurekas+=1
         print("-----------------------------------------\n")
     else:
-        print(f"Attempt {run} --> Try again, {len(rows[0]),len(rows[1]),len(rows[2])}")
+        print(f"{path} - Attempt {run} --> Try again, {len(rows[0]),len(rows[1]),len(rows[2])}")
 
     # print(f"Percent natural success: {eurekas}/{runs} = {eurekas/runs}")
 if __name__=='__main__':
