@@ -2,7 +2,7 @@
 from super_functions import *
 from sklearn.linear_model import LogisticRegression
 import os
-
+# from soen_plotting import raster_plot
 
 def main():
 
@@ -23,8 +23,8 @@ def main():
 
             spikes = net.net.spikes
             mat = spks_to_binmatrix(N,T,spikes)
-
-            model = LogisticRegression()
+            # raster_plot(spikes)
+            model = LogisticRegression(max_iter=1000)
             correct = 0
             X = []
             y = []

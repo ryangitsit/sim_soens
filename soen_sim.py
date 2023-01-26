@@ -850,11 +850,22 @@ class network():
         # print(spike_signal)
         # print(spike_signals)
 
-    def simulate(self):
+    def simulate(self,prune_synapses=False):
         # print(self.nodes)
         # net = network(name = 'network_under_test')
         for n in self.nodes:
             self.add_neuron(n.neuron)
+        if prune_synapses == True:
+            count=0
+            for n in self.nodes:
+                for syn in n.synapse_list:
+                    if "synaptic_input" not in syn.__dict__:
+                        syn.add_input(input_signal(name = 'input_synaptic_drive', 
+                                            input_temporal_form = 'arbitrary_spike_train', 
+                                            spike_times = []) )
+                        count+=1
+            # print(f"{count} synapses recieving no input.")
+                
         self.run_sim(dt=self.dt, tf=self.tf)
         self.get_recordings()
 

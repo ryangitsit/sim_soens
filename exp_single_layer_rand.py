@@ -1,21 +1,21 @@
 import numpy as np
-import matplotlib.pyplot as plt
+# import matplotlib.pyplot as plt
 
 from soen_sim import input_signal, network
 from soen_component_library import common_synapse
 
 from super_library import NeuralZoo
-from super_input import SuperInput
+# from super_input import SuperInput
 from super_functions import array_to_rows, spks_to_txt, picklit, picklin,save_dict
 
-from soen_plotting import raster_plot
+# from soen_plotting import raster_plot
 import random
 from super_argparse import setup_argument_parser
 
 def main():
 
     args = setup_argument_parser()
-    run = args.run
+    run = args.run + 16
     runs = args.runs
     form = args.form
     beta = 2*np.pi*10**(args.beta)
@@ -171,7 +171,7 @@ def main():
     peaks = [np.max(arr) for arr in counts]
 
     if len(set(maxes))==3 and np.min(peaks)>0:
-        print(f"Attempt {run} --> EUREKA!")
+        print(f"{path} - Attempt {run} --> EUREKA!")
         print(counts)
         print("W1 = ",W1,"\nW2 = ",W2,"\nW3 = ",W3,"\n")
         # print(net.spikes)
