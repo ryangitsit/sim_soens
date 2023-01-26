@@ -5,3 +5,4 @@ __pycache__/
 .ipynb_checkpoints/
 testing.py
 testing_.py
+results/
