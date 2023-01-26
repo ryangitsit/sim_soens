@@ -151,3 +151,9 @@ def save_dict(dict,path,name):
     f = open(path+name+".json","w")
     f.write(json)
     f.close()
+
+def spks_to_binmatrix(N,T,spikes):
+    binned = np.zeros((N,T))
+    for i in range(len(spikes[0])):
+        binned[int(spikes[0][i])][int(np.floor(spikes[1][i]))] += 1
+    return binned
