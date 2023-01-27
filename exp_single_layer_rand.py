@@ -15,14 +15,14 @@ from super_argparse import setup_argument_parser
 def main():
 
     args = setup_argument_parser()
-    run = args.run + 16
+    run = args.run + 21
     runs = args.runs
     form = args.form
     beta = 2*np.pi*10**(args.beta)
     tau = args.tau
     tau_ref = args.tau_ref
     inhibit = -(1/args.inhibit)
-    path = f'results/{args.dir}/'
+    path = f'results/single_inhibit/{args.dir}/'
 
     tile_time = 10
     classes = [0,1,2]

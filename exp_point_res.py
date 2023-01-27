@@ -21,7 +21,7 @@ def main():
         
     params.update(args.__dict__)
     params["beta"] = 2*np.pi*10**(params["beta"])
-    path = f'reservoirs_2/'
+    path = f'reservoirs_3/'
     name = f'res_{int(params["beta"])}_{params["tau"]}_{params["tau_ref"]}_run_{args.run}'
     print(f"Run: {args.run} -- {name}")
     # print(params)

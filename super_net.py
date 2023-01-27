@@ -149,7 +149,7 @@ class PointReservoir:
         ]
         
         for i in range(self.N):
-            neuron = NeuralZoo(type='custom',synaptic_structure=syn_struct,**params)
+            neuron = NeuralZoo(type='custom',synaptic_structure=syn_struct,seed=self.run*1000+i,**params)
             # neuron.synaptic_layer()
             self.neurons.append(neuron)
 

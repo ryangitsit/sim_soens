@@ -36,6 +36,7 @@ class NeuralZoo():
 
     def __init__(self,**entries):
         
+        self.random_syn = False
         self.__dict__.update(entries)
         self.params = self.__dict__
 
@@ -153,6 +154,10 @@ class NeuralZoo():
         # custom_neuron.name = 'custom_neuron'
         custom_neuron.normalize_input_connection_strengths=1
         self.neuron = custom_neuron
+        np.random.seed(None)
+        if hasattr(self, 'seed'):
+            np.random.seed(self.run)
+            # print("random seed: ",self.seed)
 
         # check how arbor is defined
         # structure just gives arbor form
@@ -286,9 +291,14 @@ class NeuralZoo():
                         for k,d in enumerate(subgroup):
                             s=S[i][j][k]
                             if s !=0:
+                                if self.random_syn == False:
+                                    connect = self.synaptic_structure[ii][i][j][k]
+                                elif self.random_syn == True:
+                                    connect = np.random.rand()
                                 dendrites[i][j][k].add_input(s, 
-                                    connection_strength = self.synaptic_structure[ii][i][j][k])
-
+                                    connection_strength = connect)
+            #                     print(connect)
+            # print("\n\n")
             # else:
             #     for i in self.synapses[0][0]:
             #         self.neuron.dend__nr_ni.add_input(self.synapses[0][0][i],
