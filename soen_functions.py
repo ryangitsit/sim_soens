@@ -416,11 +416,15 @@ def recursive_dendrite_updater(dendrite_object,time_index,present_time,d_tau):
                     
         dendrite_object.phi_r[time_index+1] += dendrite_object.synaptic_inputs[synapse_key].phi_spd[time_index+1]
         
-    # if np.abs(dendrite_object.phi_r[time_index+1]) > 1:
-    #     # print('\nWarning: absolute value of flux drive to dendrite {} exceeded 1 on time step {} (phi_r = {:5.3f})'.format(dendrite_object.name,time_index+1,dendrite_object.phi_r[time_index+1]))
-    #     if np.abs(dendrite_object.phi_r[time_index+1]) > 1.5:
+    if np.abs(dendrite_object.phi_r[time_index+1]) > .5:
+        # print('\nWarning: absolute value of flux drive to dendrite {} exceeded 1 on time step {} (phi_r = {:5.3f})'.format(dendrite_object.name,time_index+1,dendrite_object.phi_r[time_index+1]))
+        dendrite_object.rollover+=1
+        if np.abs(dendrite_object.phi_r[time_index+1]) > 1:
+            dendrite_object.valleyedout+=1
+            if np.abs(dendrite_object.phi_r[time_index+1]) > 1.5:
+                dendrite_object.doubleroll+=1
     #         print('phi_r = {:5.3f}? Calm the fuck down, bro.'.format(dendrite_object.phi_r[time_index+1]))
-        # print('\n')
+    #     print('\n')
     # print("*")
     # find relevant entry in r_fq__array
     _ind__phi_r = ( np.abs( dendrite_object.phi_r__vec[:] - dendrite_object.phi_r[time_index+1] ) ).argmin()

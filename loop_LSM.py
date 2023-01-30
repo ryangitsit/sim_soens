@@ -6,10 +6,10 @@ from soen_plotting import raster_plot
 
 def main():
 
-    directory = 'results/reservoirs_2/'
+    directory = 'results/reservoirs_3/'
     count = 0
     correct = 0
-    for filename in os.listdir(directory)[:1]:
+    for filename in os.listdir(directory):
         f = os.path.join(directory, filename)
         if os.path.isfile(f):
             # net = picklin(directory,f[len(directory):-7])
@@ -28,7 +28,6 @@ def main():
             # raster_plot(spikes)
             model = LogisticRegression(max_iter=100000)
             model_fine = LogisticRegression(max_iter=100000)
-            correct = 0
             X = []
             y = []
             X_f = []
@@ -68,21 +67,21 @@ def main():
                         fit = model_fine.predict(slice)
                         # print(fit)
                         pred_slice.append(fit)
-                        print(np.concatenate(pred_slice))
+                        # print(np.concatenate(pred_slice))
                     pred_fine.append(np.bincount(np.concatenate(pred_slice)).argmax())
 
 
-            # predictions=model.predict(X_test)
-            predictions = pred_fine
+            predictions=model.predict(X_test)
+            predictions_fine = pred_fine
             
-            if np.array_equal(predictions, [0,1,2]):
-                print(predictions, " --> Classified! --> ", f)
+            if np.array_equal(predictions, [0,1,2]) or np.array_equal(predictions_fine, [0,1,2]):
+                print(predictions, predictions_fine, " --> Classified! --> ", f)
                 correct+=1
-                raster_plot(spikes)
+                # raster_plot(spikes)
             else:
-                print(predictions)
+                print(predictions, predictions_fine)
             count +=1
-    print(f"{correct} correct out of {count} --> {correct/count}\% configurations")
+    print(f"{correct} correct out of {count} --> {correct/count}% of configurations")
 
 if __name__=='__main__':
     main()

@@ -15,7 +15,7 @@ from super_argparse import setup_argument_parser
 def main():
 
     args = setup_argument_parser()
-    run = args.run + 21
+    run = args.run + 31
     runs = args.runs
     form = args.form
     beta = 2*np.pi*10**(args.beta)
