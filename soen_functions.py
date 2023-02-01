@@ -93,17 +93,36 @@ def run_soen_sim(obj, **kwargs):
         tau_vec = time_vec*t_tau_conversion
         d_tau = obj.time_params['dt']*t_tau_conversion
         obj.time_params.update({'tau_vec': tau_vec, 'd_tau': d_tau})
-        
+        net = obj
         # initialize all neurons
         for neuron_key in obj.neurons:
-            
+            print(neuron_key)
             # add time params to each neuron (shouldn't have to do this; do it once for the network)
             obj.neurons[neuron_key].time_params = obj.time_params
-                        
+
+            for n in net.nodes:
+                print(n.neuron.name)
+                if n.neuron.name == neuron_key:
+                    neuron_now = n
+
             # initialize dendrites (phi_r vector) and make drive signals
             # print('\n')
-            recursive_dendrite_initialization_and_drive_construction(obj.neurons[neuron_key].dend__nr_ni,tau_vec,t_tau_conversion,d_tau) # go through all other dendrites in the neuron's arbor
+            recursive_dendrite_initialization_and_drive_construction(obj.neurons[neuron_key].dend__nr_ni,tau_vec,t_tau_conversion,d_tau,neuron_now) 
+            # ref = f'{neuron_now.name}__dend_refraction'
+            recursive_dendrite_initialization_and_drive_construction(obj.neurons[neuron_key].dend__ref,tau_vec,t_tau_conversion,d_tau,neuron_now) 
+            for dend in neuron_now.dend_list:
+                # print(dend.name)
+                recursive_dendrite_initialization_and_drive_construction(dend,tau_vec,t_tau_conversion,d_tau,neuron_now) # go through all other dendrites in the neuron's arbor
+            # recursive_dendrite_initialization_and_drive_construction(obj.neurons[neuron_key].dend__nr_ni,tau_vec,t_tau_conversion,d_tau,neuron_now) # go through all other dendrites in the neuron's arbor
             # print('\n')
+
+            recursive_rate_array_attachment(obj.neurons[neuron_key].dend__nr_ni)
+            # ref = f'{neuron_now.name}__dend_refraction'
+            recursive_rate_array_attachment(obj.neurons[neuron_key].dend__ref)
+            for dend in neuron_now.dend_list:
+                # print(dend.name)
+                recursive_rate_array_attachment(dend)
+                # recursive_dendrite_initialization_and_drive_construction(dend,tau_vec,t_tau_conversion,d_tau,neuron_now)
             
             # load rate arrays to all dendrites
             recursive_rate_array_attachment(obj.neurons[neuron_key].dend__nr_ni)
@@ -127,8 +146,8 @@ def run_soen_sim(obj, **kwargs):
             
     return obj
 
-def recursive_dendrite_initialization_and_drive_construction(dendrite_object,tau_vec,t_tau_conversion,d_tau):
-    print("initializing")          
+def recursive_dendrite_initialization_and_drive_construction(dendrite_object,tau_vec,t_tau_conversion,d_tau,neuron_now):
+    print("initializing -- ",dendrite_object.name)          
     dendrite_object.phi_r_external__vec = np.zeros([len(tau_vec)]) # from external drives
     dendrite_object.phi_r = np.zeros([len(tau_vec)]) # from synapses and dendrites
     dendrite_object.s = np.zeros([len(tau_vec)]) # output variable
@@ -231,9 +250,10 @@ def recursive_dendrite_initialization_and_drive_construction(dendrite_object,tau
         
     # step through all dendrites input to this one and call the present function recursively
     # for dendrite_key in dendrite_object.dendritic_inputs:
-    #     recursive_dendrite_initialization_and_drive_construction(dendrite_object.dendritic_inputs[dendrite_key],tau_vec,t_tau_conversion,d_tau) 
-    for dendrite_key in dendrite_object.dendritic_inputs:
-        recursive_dendrite_initialization_and_drive_construction(dendrite_object.dendritic_inputs[dendrite_key],tau_vec,t_tau_conversion,d_tau) 
+    #     recursive_dendrite_initialization_and_drive_construction(dendrite_object.dendritic_inputs[dendrite_key],tau_vec,t_tau_conversion,d_tau,neuron_now) 
+    # for n in net.nodes:
+    #     for dendrite_key in net.nodes:
+    #         recursive_dendrite_initialization_and_drive_construction(dendrite_object.dendritic_inputs[dendrite_key],tau_vec,t_tau_conversion,d_tau) 
 
     return
 
@@ -249,10 +269,10 @@ def recursive_rate_array_attachment(dendrite_object):
     dendrite_object.phi_r__vec = np.asarray(phi_r__array[_ind__ib])
     dendrite_object.i_di__subarray = np.asarray(i_di__array[_ind__ib],dtype=object)
     dendrite_object.r_fq__subarray = np.asarray(r_fq__array[_ind__ib],dtype=object)
-        
+    print(dendrite_object.name,np.sum(dendrite_object.r_fq__subarray[0]))
     # iterate recursively through all input dendrites
-    for dendrite_key in dendrite_object.dendritic_inputs:
-        recursive_rate_array_attachment(dendrite_object.dendritic_inputs[dendrite_key])        
+    # for dendrite_key in dendrite_object.dendritic_inputs:
+    #     recursive_rate_array_attachment(dendrite_object.dendritic_inputs[dendrite_key])        
     
     return
 
@@ -443,7 +463,7 @@ def recursive_dendrite_updater(dendrite_object,time_index,present_time,d_tau):
     i_di__vec = np.asarray(dendrite_object.i_di__subarray[_ind__phi_r])
     _ind__s = ( np.abs( i_di__vec[:] - dendrite_object.s[time_index] ) ).argmin()
     r_fq = dendrite_object.r_fq__subarray[_ind__phi_r][_ind__s]
-        
+    print(dendrite_object.name,_ind__phi_r,_ind__s)
     # get alpha
     if hasattr(dendrite_object,'alpha_list'):
         _ind = np.where(dendrite_object.s_list > dendrite_object.s[time_index])
@@ -452,10 +472,10 @@ def recursive_dendrite_updater(dendrite_object,time_index,present_time,d_tau):
         alpha = dendrite_object.alpha    
     
     ### vvv SIGNAL UPDATE vvv ###
-
+    # print(dendrite_object.name,r_fq)
     if update == True:
         dendrite_object.s[time_index+1] = dendrite_object.s[time_index] * ( 1 - d_tau*alpha/dendrite_object.beta) + (d_tau/dendrite_object.beta) * r_fq
-
+        # print(dendrite_object.name,dendrite_object.s[time_index+1],( 1 - d_tau*alpha/dendrite_object.beta),(d_tau/dendrite_object.beta),r_fq)
     ### ^^^ SIGNAL UPDATE ^^^ ###
 
     for dendrite in dendrite_object.dendritic_inputs:
@@ -506,10 +526,26 @@ def network_time_stepper(network_object,tau_vec,d_tau):
     for ii in range(len(tau_vec)-1):
         # print(ii)
         # step through neurons
+        net = network_object
         for neuron_key in network_object.neurons:
-        
-            # update all input synapses and dendrites
-            recursive_dendrite_updater(network_object.neurons[neuron_key].dend__nr_ni,ii,tau_vec[ii+1],d_tau)
+
+            for n in net.nodes:
+                # print(n.neuron.name)
+                if n.neuron.name == neuron_key:
+                    neuron_now = n
+
+            # initialize dendrites (phi_r vector) and make drive signals
+            # print('\n')
+            recursive_dendrite_updater(network_object.neurons[neuron_key].dend__nr_ni,ii,tau_vec[ii+1],d_tau) 
+            # ref = f'{neuron_now.name}__dend_refraction'
+            recursive_dendrite_updater(network_object.neurons[neuron_key].dend__ref,ii,tau_vec[ii+1],d_tau)
+            for dend in neuron_now.dend_list:
+                # print(dend.name)
+                recursive_dendrite_updater(dend,ii,tau_vec[ii+1],d_tau)
+
+
+            # # update all input synapses and dendrites
+            # recursive_dendrite_updater(network_object.neurons[neuron_key].dend__nr_ni,ii,tau_vec[ii+1],d_tau)
             
             # update all output synapses
             output_synapse_updater(network_object.neurons[neuron_key],ii,tau_vec[ii+1])

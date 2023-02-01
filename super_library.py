@@ -172,6 +172,7 @@ class NeuralZoo():
             arbor = []
             # dendrites = [[[]]]
         dendrites = [ [] for _ in range(len(arbor)) ]
+        self.dend_list = []
         if len(arbor)>0:
             # initialize a list of lists for holding dendrits in each arbor layer
             # iterate over the defined structure
@@ -207,7 +208,9 @@ class NeuralZoo():
                         entries = self.__dict__
                         entries['name'] = f"{self.neuron.name[-2:]}_lay{i}_branch{j}_den{k}"
                         entries['type'] = type
-                        sub.append(dendrite(**entries))
+                        new_dend = dendrite(**entries)
+                        sub.append(new_dend)
+                        self.dend_list.append(new_dend)
                         den_count+=1
                         c+=1
                     dendrites[i].append(sub)
