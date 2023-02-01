@@ -331,7 +331,6 @@ class NeuralZoo():
                 self.synapse_list.append(syn)
                 count+=1
                 d.add_input(syn,connection_strength=w_sd)
-                
 
     def uniform_input(self,input):
         '''

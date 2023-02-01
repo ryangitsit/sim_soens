@@ -128,7 +128,7 @@ def run_soen_sim(obj, **kwargs):
     return obj
 
 def recursive_dendrite_initialization_and_drive_construction(dendrite_object,tau_vec,t_tau_conversion,d_tau):
-            
+    # print("initializing")          
     dendrite_object.phi_r_external__vec = np.zeros([len(tau_vec)]) # from external drives
     dendrite_object.phi_r = np.zeros([len(tau_vec)]) # from synapses and dendrites
     dendrite_object.s = np.zeros([len(tau_vec)]) # output variable
@@ -230,6 +230,8 @@ def recursive_dendrite_initialization_and_drive_construction(dendrite_object,tau
         # print('{}'.format(_str))
         
     # step through all dendrites input to this one and call the present function recursively
+    # for dendrite_key in dendrite_object.dendritic_inputs:
+    #     recursive_dendrite_initialization_and_drive_construction(dendrite_object.dendritic_inputs[dendrite_key],tau_vec,t_tau_conversion,d_tau) 
     for dendrite_key in dendrite_object.dendritic_inputs:
         recursive_dendrite_initialization_and_drive_construction(dendrite_object.dendritic_inputs[dendrite_key],tau_vec,t_tau_conversion,d_tau) 
 
@@ -376,10 +378,16 @@ def recursive_dendrite_updater(dendrite_object,time_index,present_time,d_tau):
     # directly applied flux
     dendrite_object.phi_r[time_index+1] = dendrite_object.phi_r_external__vec[time_index+1]
     
+
+    ### VVV May insert simulation learning here VVV ###
+
     # applied flux from dendrites
     for dendrite_key in dendrite_object.dendritic_inputs:
         dendrite_object.phi_r[time_index+1] += dendrite_object.dendritic_inputs[dendrite_key].s[time_index] * dendrite_object.dendritic_connection_strengths[dendrite_key]        
-        
+        # print(dendrite_object.name,dendrite_object.s[time_index],dendrite_object.dendritic_inputs[dendrite_key].name,dendrite_object.dendritic_inputs[dendrite_key].s[time_index])
+
+    ### ^^^ May insert simulation learning here ^^^ ###
+
     # self-feedback
     dendrite_object.phi_r[time_index+1] += dendrite_object.self_feedback_coupling_strength * dendrite_object.s[time_index]
     
@@ -410,6 +418,10 @@ def recursive_dendrite_updater(dendrite_object,time_index,present_time,d_tau):
                         dendrite_object.synaptic_inputs[synapse_key].phi_spd[time_index+1] = dendrite_object.synaptic_inputs[synapse_key]._phi_spd_memory
                     else:
                         dendrite_object.synaptic_inputs[synapse_key].phi_spd[time_index+1] = _phi_spd * dendrite_object.synaptic_connection_strengths[synapse_key]
+
+                        # dendrite_object.synaptic_connection_strengths[synapse_key] = dendrite_object.synaptic_connection_strengths[synapse_key]*2
+                        # print(dendrite_object.synaptic_connection_strengths[synapse_key])
+
                         dendrite_object.synaptic_inputs[synapse_key]._phi_spd_memory = 0
                 
             dendrite_object.synaptic_inputs[synapse_key]._st_ind_last = _st_ind
@@ -439,9 +451,13 @@ def recursive_dendrite_updater(dendrite_object,time_index,present_time,d_tau):
     else:
         alpha = dendrite_object.alpha    
     
+    ### vvv SIGNAL UPDATE vvv ###
+
     if update == True:
         dendrite_object.s[time_index+1] = dendrite_object.s[time_index] * ( 1 - d_tau*alpha/dendrite_object.beta) + (d_tau/dendrite_object.beta) * r_fq
-        
+
+    ### ^^^ SIGNAL UPDATE ^^^ ###
+
     for dendrite in dendrite_object.dendritic_inputs:
         recursive_dendrite_updater(dendrite_object.dendritic_inputs[dendrite],time_index,present_time,d_tau)
         
@@ -488,7 +504,7 @@ def network_time_stepper(network_object,tau_vec,d_tau):
     # step through time
     _t0 = time.time_ns()
     for ii in range(len(tau_vec)-1):
-        
+        # print(ii)
         # step through neurons
         for neuron_key in network_object.neurons:
         

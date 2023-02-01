@@ -166,7 +166,8 @@ class dendrite():
         self.offset_flux = 0
         self.self_feedback_coupling_strength = 0
         self.rollover = 0
-        self.fullroll = 0
+        self.valleyedout = 0
+        self.doubleroll = 0
 
 
         # UPDATE TO CUSTOM PARAMS
