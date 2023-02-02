@@ -582,7 +582,7 @@ class NeuralZoo():
 
     def plot_neuron_activity(self,net,phir=False,dend=True,title=None,
                             input=None,weighting=True,docstring=False,lay=100000,
-                            spikes=True, path=None):
+                            spikes=True, path=None,SPD=False,ref=False):
         '''
         Plots signal activity for a given network or neuron
          - phir      -> plot phi_r of soma and phi_r thresholds
@@ -594,7 +594,7 @@ class NeuralZoo():
             print(self.plot_neuron_activity.__doc__)
             return
         signal = self.dendrites[0][0][0].s
-        ref = self.neuron.dend__ref.s
+        refractory = self.neuron.dend__ref.s
         phi_r = self.dendrites[0][0][0].phi_r
 
         import matplotlib.pyplot as plt
@@ -628,20 +628,27 @@ class NeuralZoo():
                                 else:
                                     dend_s = dendrite.s
                                 plt.plot(net.t,dend_s,'--', label='w * '+dendrite.name)
+                            if SPD==True:
+                                print("Plotting SPD")
+                                for spd in dendrite.synaptic_inputs:
+                                    plt.plot(net.t,dendrite.synaptic_inputs[spd].phi_spd,label="SPD")
                             # if i==1 and j==0 and k==0:
                         #     print(dendrite.__dict__.keys())
                         #     print(dendrite.weights[i-1][j][k])
                         # print(print(self.weights[i][j][k]))
                         # linewidth=dendrite.external_connection_strengths[0],
-
-        plt.plot(net.t,ref, ':',color = 'r', label='refractory signal')
+        if ref==True:
+            plt.plot(net.t,refractory, ':',color = 'r', label='refractory signal')
         ## add input/output spikes
         if spikes==True:
             if len(net.spikes[0]) > 0:
                 plt.plot(net.spikes[1],net.spike_signals[0],'xk', markersize=8, label='neuron fires')
                 plt.axhline(y = self.neuron.s_th, color = 'purple', linestyle = '--',label='Firing Threshold')
             if input:
-                plt.plot(input.spike_arrays[1],np.zeros(len(input.spike_arrays[1])),'xr', markersize=5, label='neuron fires')
+                plt.plot(input.spike_arrays[1],np.zeros(len(input.spike_arrays[1])),'xr', markersize=5, label='input event')
+        if SPD==True:
+            # plt.plot(net.t,)
+            pass
         # print(self.synapses[0][0][0].__dict__)
         # print(net.spikes[0])
         plt.xlabel("Simulation Time (ns)")
