@@ -96,12 +96,12 @@ def run_soen_sim(obj, **kwargs):
         net = obj
         # initialize all neurons
         for neuron_key in obj.neurons:
-            print(neuron_key)
+            # print(neuron_key)
             # add time params to each neuron (shouldn't have to do this; do it once for the network)
             obj.neurons[neuron_key].time_params = obj.time_params
 
             for n in net.nodes:
-                print(n.neuron.name)
+                # print(n.neuron.name)
                 if n.neuron.name == neuron_key:
                     neuron_now = n
 
@@ -147,7 +147,7 @@ def run_soen_sim(obj, **kwargs):
     return obj
 
 def recursive_dendrite_initialization_and_drive_construction(dendrite_object,tau_vec,t_tau_conversion,d_tau,neuron_now):
-    print("initializing -- ",dendrite_object.name)          
+    # print("initializing -- ",dendrite_object.name)          
     dendrite_object.phi_r_external__vec = np.zeros([len(tau_vec)]) # from external drives
     dendrite_object.phi_r = np.zeros([len(tau_vec)]) # from synapses and dendrites
     dendrite_object.s = np.zeros([len(tau_vec)]) # output variable
@@ -269,7 +269,7 @@ def recursive_rate_array_attachment(dendrite_object):
     dendrite_object.phi_r__vec = np.asarray(phi_r__array[_ind__ib])
     dendrite_object.i_di__subarray = np.asarray(i_di__array[_ind__ib],dtype=object)
     dendrite_object.r_fq__subarray = np.asarray(r_fq__array[_ind__ib],dtype=object)
-    print(dendrite_object.name,np.sum(dendrite_object.r_fq__subarray[0]))
+    # print(dendrite_object.name,np.sum(dendrite_object.r_fq__subarray[0]))
     # iterate recursively through all input dendrites
     # for dendrite_key in dendrite_object.dendritic_inputs:
     #     recursive_rate_array_attachment(dendrite_object.dendritic_inputs[dendrite_key])        
@@ -463,7 +463,7 @@ def recursive_dendrite_updater(dendrite_object,time_index,present_time,d_tau):
     i_di__vec = np.asarray(dendrite_object.i_di__subarray[_ind__phi_r])
     _ind__s = ( np.abs( i_di__vec[:] - dendrite_object.s[time_index] ) ).argmin()
     r_fq = dendrite_object.r_fq__subarray[_ind__phi_r][_ind__s]
-    print(dendrite_object.name,_ind__phi_r,_ind__s)
+    # print(dendrite_object.name,_ind__phi_r,_ind__s)
     # get alpha
     if hasattr(dendrite_object,'alpha_list'):
         _ind = np.where(dendrite_object.s_list > dendrite_object.s[time_index])
