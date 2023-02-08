@@ -838,9 +838,12 @@ class network():
             spikes[0].append(np.ones(len(spike_t))*count)
             spikes[1].append((spike_t))
             spike_signal = []
-            spike_times = spike_t/neuron.time_params['t_tau_conversion']
+            spike_times = spike_t #/neuron.time_params['t_tau_conversion']
             for spike in spike_times:
-                spike_signal.append(s[int(spike/self.dt)])
+                spot = int(spike/self.dt)
+                # spread = int(5/self.dt)
+                # spike_signal.append(np.max(s[np.max([0,spot-spread]):spot+spread]))
+                spike_signal.append(s[spot])
             spike_signals.append(spike_signal)
             count+=1
         spikes[0] = np.concatenate(spikes[0])

@@ -77,7 +77,7 @@ def main():
             if np.array_equal(predictions, [0,1,2]) or np.array_equal(predictions_fine, [0,1,2]):
                 print(predictions, predictions_fine, " --> Classified! --> ", f)
                 correct+=1
-                # raster_plot(spikes)
+                raster_plot(spikes)
             else:
                 print(predictions, predictions_fine)
             count +=1

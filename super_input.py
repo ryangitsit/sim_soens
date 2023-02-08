@@ -134,6 +134,30 @@ class SuperInput():
             if len(dataset[y[i]]) < 3:
                 # print(y[i])
                 dataset[y[i]].append(aug_digit(X[i]))
+                # X_aug = aug_digit(X[i])
+                # import matplotlib.pyplot as plt
+                # fig, axs = plt.subplots(5, 5,figsize=(8,8))
+                # tiles = []
+                # for i in range(5):
+                #     for j in range(5):
+                #         x1=i*6
+                #         x2=i*6+6
+                #         y1=j*6
+                #         y2=j*6+6
+                #         print(x1,x2,y1,y2)
+                #         img = X_aug[x1:x2,y1:y2]
+
+                #         tiles.append(img)
+                #         # fig = plt.figure
+                #         axs[i,j].imshow(img, cmap='gray')
+                #         axs[i,j].set_xticks([])
+                #         axs[i,j].set_yticks([])
+                #         # axs[i,j].set_title(f'{x1},{x2}-{y1},{y2}')
+                # # for ax in axs:
+                # #     ax.set_xticks([])
+                # #     ax.set_yticks([])
+                # plt.show()
+
 
         for data in dataset:
             for sample in data:

@@ -582,7 +582,8 @@ class NeuralZoo():
 
     def plot_neuron_activity(self,net,phir=False,dend=True,title=None,
                             input=None,weighting=True,docstring=False,lay=100000,
-                            spikes=True, path=None,SPD=False,ref=False):
+                            spikes=True, path=None,SPD=False,ref=False,legend_out=False,
+                            size=(12,4)):
         '''
         Plots signal activity for a given network or neuron
          - phir      -> plot phi_r of soma and phi_r thresholds
@@ -598,7 +599,7 @@ class NeuralZoo():
         phi_r = self.dendrites[0][0][0].phi_r
 
         import matplotlib.pyplot as plt
-        plt.figure(figsize=(12,4))
+        plt.figure(figsize=size)
         # spd_indices = np.array(self.synapses).shape
         # spd = self.synapses[spd_indices[0]-1][spd_indices[1]-1][spd_indices[2]-1].phi_spd
         # plt.plot(net.t,spd, label='phi_spd')
@@ -607,11 +608,11 @@ class NeuralZoo():
             # print(phi_r)
             from soen_functions import phi_thresholds
             phi_ths = phi_thresholds(self.neuron)
-            plt.axhline(y = phi_ths[1], color = 'purple', linestyle = '--',linewidth=.5,label="phi_th")
+            plt.axhline(y = phi_ths[1], color = 'purple', linestyle = '--',linewidth=.5,label=r"$\phi_{th}$")
             if any(ele < 0 for ele in phi_r):
                 # print("True")
                 plt.axhline(y = phi_ths[0], color = 'purple', linestyle = '--',linewidth=.5)
-            plt.plot(net.t,phi_r,  label='phi_r (soma)')
+            plt.plot(net.t,phi_r,  label=r'$\phi_r$ (soma)')
         if dend:
             for i,layer in enumerate(self.dendrites):
                 if i < lay +1 :
@@ -629,7 +630,7 @@ class NeuralZoo():
                                     dend_s = dendrite.s
                                 plt.plot(net.t,dend_s,'--', label='w * '+dendrite.name)
                             if SPD==True:
-                                print("Plotting SPD")
+                                # print("Plotting SPD")
                                 for spd in dendrite.synaptic_inputs:
                                     plt.plot(net.t,dendrite.synaptic_inputs[spd].phi_spd,label="SPD")
                             # if i==1 and j==0 and k==0:
@@ -651,13 +652,18 @@ class NeuralZoo():
             pass
         # print(self.synapses[0][0][0].__dict__)
         # print(net.spikes[0])
+        plt.plot(net.t,signal,  color='#1f77b4',linewidth=4)
         plt.xlabel("Simulation Time (ns)")
         plt.ylabel("Signal (Ic)")
+        plt.subplots_adjust(bottom=.25)
         if title:
             plt.title(title)
-        plt.legend(loc='center left', bbox_to_anchor=(1, 0.5))
-        plt.subplots_adjust(right=.8)
-        plt.subplots_adjust(bottom=.15)
+        if legend_out==True:
+            plt.legend(loc='center left', bbox_to_anchor=(1, 0.5))
+            plt.subplots_adjust(right=.8)
+            plt.subplots_adjust(bottom=.15)
+        else:
+            plt.legend()
         # plt.legend()
         if path:
             plt.savefig(path)

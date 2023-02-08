@@ -145,12 +145,13 @@ def main():
     # print('total input spikes = ', len(input.spike_arrays[1]))
     net = network(dt=0.1,tf=np.max(input.spike_arrays[1])+360,nodes=neurons)
     net.simulate()
+    from soen_plotting import raster_plot
+    neurons[0].plot_custom_structure()
+    neurons[0].arbor_activity_plot()
+    neurons[1].arbor_activity_plot()
+    neurons[2].arbor_activity_plot()
+    raster_plot(net.spikes)
 
-    # neurons[0].plot_custom_structure()
-    # neurons[0].arbor_activity_plot()
-    # neurons[1].arbor_activity_plot()
-    # neurons[2].arbor_activity_plot()
-    # raster_plot(net.spikes)
 
     rows = array_to_rows(net.spikes,3)
     counts = [ [] for _ in range(len(rows))]

@@ -74,18 +74,18 @@ def main():
     # tau_nis = np.arange(0,10,1)
 
 
-    # beta_factor = np.arange(1,6,1)
+    beta_factor = np.arange(1,6,1)
     neuron_biases = np.arange(1.4,2.4,.2)
-    # ranges = [2*np.pi*(10**beta_factor),neuron_biases]
-    # names = ['beta_ni','ib_n']
+    ranges = [2*np.pi*(10**beta_factor),neuron_biases]
+    names = ['beta_ni','ib_n']
 
 
     # neuron_biases = np.ones(len(dts))
     # ranges = [dts,neuron_biases]
     # names = ['dt','ib_n']
 
-    ranges = [w_dns,neuron_biases]
-    names = ['w_dn','ib_n']
+    # ranges = [w_dns,neuron_biases]
+    # names = ['w_dn','ib_n']
 
     params = default_neuron_params
     type='mono_point'
