@@ -1800,9 +1800,6 @@ def activity_plot(neurons,net,phir=False,dend=True,title=None,
         return
     fig, axs = plt.subplots(len(neurons), 1,figsize=(size))
     for ii,n in enumerate(neurons):
-        print(ii)
-        if input:
-            axs[ii].plot(input.spike_arrays[1],np.zeros(len(input.spike_arrays[1])),'xr', markersize=5, label='input event')
         if ii != len(neurons)-1:
             axs[ii].get_xaxis().set_visible(False)
         # axs[ii].get_yaxis().set_visible(False)
@@ -1821,7 +1818,6 @@ def activity_plot(neurons,net,phir=False,dend=True,title=None,
         #     axs[1].set_ylim([-.01,.22])
         #     axs[2].set_ylim(-.22,.1)
         if phir==True:
-            print("phi_r")
             from soen_functions import phi_thresholds
             phi_ths = phi_thresholds(n.neuron)
             axs[ii].axhline(y = phi_ths[1], color = 'purple', linestyle = '--',linewidth=.5,label=r"$\phi_{th}$")
@@ -1854,8 +1850,10 @@ def activity_plot(neurons,net,phir=False,dend=True,title=None,
                         #     print(dendrite.weights[i-1][j][k])
                         # print(print(n.weights[ii][j][k]))
                         # linewidth=dendrite.external_connection_strengths[0],
-        print(ii)
+
         axs[ii].plot(net.t,signal, color='#1f77b4',linewidth=4)
+        if input:
+            axs[ii].plot(input.spike_arrays[1],np.zeros(len(input.spike_arrays[1])),'xr', markersize=5, label='input event')
         if ref==True:
             axs[ii].plot(net.t,refractory, ':',color = 'r', label='refractory signal')
         ## add input/output spikes
@@ -1870,40 +1868,30 @@ def activity_plot(neurons,net,phir=False,dend=True,title=None,
             pass
         if ii != len(neurons)-1:
             axs[ii].set_xticks([])
-        # if i != 0:
-        #     axs[ii].set_xticks([])
-        #     axs[ii].axis("off")
-        
-    # print(n.synapses[0][0][0].__dict__)
-    # print(net.spikes[0])
-    # plt.plot(net.t,signal, color='#1f77b4',linewidth=4)
-    plt.xlabel("Simulation Time (ns)",fontsize=np.min([10+2*len(neurons),16]))
-    axs[int(np.floor(len(neurons)/2))].set_ylabel("Signal (Ic)",fontsize=np.min([10+2*len(neurons),16]))#, labelpad=20)
+    label_size = np.min([10+2*len(neurons),16])
+    plt.xlabel("Simulation Time (ns)",fontsize=label_size)
+    axs[int(np.floor(len(neurons)/2))].set_ylabel("Signal (Ic)",fontsize=label_size)#, labelpad=20)
+    axs[int(np.floor(len(neurons)/2))].yaxis.set_label_coords(-.05,1)
+    # fig.set_ylabel("ylabel")
     # plt.subplots_adjust(bottom=.25)
     if title:
-        # print(np.max([10+2*len(neurons)+2,14]))
-        fig.suptitle(title,fontsize=np.min([10+2*len(neurons)+2,18])) #, x=.5, y=len(neurons),fontsize=np.min([10+2*len(neurons)+2,18]))
+        title_size=np.min([10+2*len(neurons)+2,18])
+        if subtitles:
+            fig.suptitle(title,fontsize=title_size) #, x=.5, y=len(neurons),fontsize=np.min([10+2*len(neurons)+2,18]))
+        else:
+            axs[0].set_title(title,fontsize=title_size)
     if subtitles:
         for i,sub in enumerate(subtitles):
             axs[i].set_title(sub)
     if legend_out==True:
-        plt.legend(loc='center left', bbox_to_anchor=(1, 0.5))
+        plt.legend(loc='center left', bbox_to_anchor=(1, 1.2))
         plt.subplots_adjust(right=.8)
         plt.subplots_adjust(bottom=.15)
     else:
         plt.legend()
-    # plt.legend()
     if path:
         plt.savefig(path)
     plt.show()
-
-
-
-
-
-
-
-
 
 
 
