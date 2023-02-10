@@ -30,8 +30,8 @@ def main():
     res.connect_input(input)
     res.run_network()
     # picklit(res,path,name)
-    spks_to_txt(res.net.spikes,res.N,8,path,name)
-    # raster_plot(res.net.spikes)
+    # spks_to_txt(res.net.spikes,res.N,8,path,name)
+    raster_plot(res.net.spikes)
 
 if __name__=='__main__':
     main()
