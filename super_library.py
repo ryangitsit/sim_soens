@@ -150,6 +150,7 @@ class NeuralZoo():
 
         entries = self.__dict__
         custom_neuron = neuron(**entries)
+        self.dendrite_list = [custom_neuron.dend__nr_ni,custom_neuron.dend__ref]
 
         # custom_neuron.name = 'custom_neuron'
         custom_neuron.normalize_input_connection_strengths=1
@@ -207,7 +208,9 @@ class NeuralZoo():
                         entries = self.__dict__
                         entries['name'] = f"{self.neuron.name[-2:]}_lay{i}_branch{j}_den{k}"
                         entries['type'] = type
-                        sub.append(dendrite(**entries))
+                        dend = dendrite(**entries)
+                        sub.append(dend)
+                        self.dendrite_list.append(dend)
                         den_count+=1
                         c+=1
                     dendrites[i].append(sub)

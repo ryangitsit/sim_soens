@@ -783,6 +783,7 @@ class network():
         self.uid = network._next_uid
         network._next_uid += 1
         self.unique_label = 'net{}'.format(self.uid)
+        self.new_way=True
 
         self.__dict__.update(kwargs)
 

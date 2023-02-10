@@ -35,7 +35,7 @@ n.trace_dendrites = []
 #                 d.add_input(trace_dend,connection_strength=0.001)
 #                 n.trace_dendrites.append(trace_dend)
 
-net = network(sim=True,dt=.1,tf=1000,nodes=[n])
+net = network(sim=True,dt=.1,tf=1000,nodes=[n],new_way=True)
 # print(n.trace_dendrites[0].__dict__,"\n\n")
 # print(n.dendrites[1][0][0].__dict__)
 # plt.plot(n.trace_dendrites)
