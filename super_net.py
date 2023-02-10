@@ -149,7 +149,7 @@ class PointReservoir:
         ]
         
         for i in range(self.N):
-            neuron = NeuralZoo(type='custom',synaptic_structure=syn_struct,seed=self.run*1000+i,**params)
+            neuron = NeuralZoo(type='custom',name=f'res_neuron_{i}',synaptic_structure=syn_struct,seed=self.run*1000+i,**params) # name=f'res_neuron_{i}',
             # neuron.synaptic_layer()
             self.neurons.append(neuron)
 
@@ -218,7 +218,7 @@ class PointReservoir:
 
 
     def run_network(self,prune_synapses=True):
-        self.net = network(dt=self.dt,tf=self.tf,nodes=self.neurons)
+        self.net = network(dt=self.dt,tf=self.tf,nodes=self.neurons,new_way=False)
         print("running network")
         self.net.simulate(prune_synapses)
 

@@ -44,6 +44,7 @@ def run_soen_sim(obj, **kwargs):
         obj.time_params.update({'tau_vec': tau_vec, 'd_tau': d_tau})
         
         if obj.new_way==False:
+            print("old way")
             # initialize all neurons
             for neuron_key in obj.neurons:
                 
@@ -75,14 +76,14 @@ def run_soen_sim(obj, **kwargs):
             for neuron_key in obj.neurons:
                 recursive_dendrite_data_attachment(obj.neurons[neuron_key].dend__nr_ni,obj)
         else:
-
+            print("new way")
             # for name,neuron in obj.neurons.items():
             for neuron in obj.nodes:
-                print("Initializing neuron: ", neuron.name)
+                # print("Initializing neuron: ", neuron.name)
                 neuron.neuron.time_params = obj.time_params
                 # print(neuron.dendrite_list)
                 for dend in neuron.dendrite_list:
-                    print(" Initializing dendrite: ", dend.name)
+                    # print(" Initializing dendrite: ", dend.name)
 
                     dendrite_init_and_drive_construct(dend,tau_vec,t_tau_conversion,d_tau)
                     rate_array_attachment(dend)
@@ -91,7 +92,7 @@ def run_soen_sim(obj, **kwargs):
                 output_synapse_initialization(neuron.neuron,tau_vec,t_tau_conversion)
                 transmitter_initialization(neuron.neuron,t_tau_conversion)
 
-            obj = network_time_stepper(obj,tau_vec,d_tau)
+            obj = net_step(obj,tau_vec,d_tau)
             for dend in neuron.dendrite_list:
                 dendrite_data_attachment(dend,obj)
             # print(obj.neurons)
@@ -101,7 +102,7 @@ def run_soen_sim(obj, **kwargs):
     return obj
 
 def dendrite_init_and_drive_construct(dendrite_object,tau_vec,t_tau_conversion,d_tau):
-    print("  Constructing:",dendrite_object.name)          
+    # print("  Constructing:",dendrite_object.name)          
     dendrite_object.phi_r_external__vec = np.zeros([len(tau_vec)]) # from external drives
     dendrite_object.phi_r = np.zeros([len(tau_vec)]) # from synapses and dendrites
     dendrite_object.s = np.zeros([len(tau_vec)]) # output variable
@@ -222,7 +223,7 @@ def rate_array_attachment(dendrite_object):
 def synapse_initialization(dendrite_object,tau_vec,t_tau_conversion):
     
     for synapse_key in dendrite_object.synaptic_inputs:
-        print("   Initializing synapse: ", dendrite_object.synaptic_inputs[synapse_key].name)
+        # print("   Initializing synapse: ", dendrite_object.synaptic_inputs[synapse_key].name)
         
         # print('recursive_synapse_initialization:\n  dend_name = {}\n  syn_name = {}\n  in_name = {}\n  spike_times = {}'.format(dendrite_object.name,dendrite_object.synaptic_inputs[synapse_key].name,dendrite_object.synaptic_inputs[synapse_key].input_signal.name,dendrite_object.synaptic_inputs[synapse_key].input_signal.spike_times))          
         
@@ -333,6 +334,216 @@ def dendrite_data_attachment(dendrite_object,neuron_object):
 
 
 
+
+def net_step(network_object,tau_vec,d_tau):
+               
+    # set neuron threshold flags
+    for neuron_key in network_object.neurons:
+        network_object.neurons[neuron_key].dend__nr_ni.threshold_flag = False
+    
+    # step through time
+    _t0 = time.time_ns()
+    for ii in range(len(tau_vec)-1):
+        # print(ii)
+        # step through neurons
+        for node in network_object.nodes:
+
+            neuron = node.neuron
+
+            # update all input synapses and dendrites
+            for dend in node.dendrite_list:
+                dendrite_updater(dend,ii,tau_vec[ii+1],d_tau)
+            
+            # update all output synapses
+            output_synapse_updater(neuron,ii,tau_vec[ii+1])
+            
+            # check if ni loop has increased above threshold
+            if neuron.dend__nr_ni.s[ii+1] >= neuron.integrated_current_threshold:
+                
+                neuron.dend__nr_ni.threshold_flag = True
+                neuron.dend__nr_ni.spike_times.append(tau_vec[ii+1])
+                neuron.spike_times.append(tau_vec[ii+1])
+                neuron.spike_indices.append(ii+1)
+                
+                # add spike to refractory dendrite
+                neuron.dend__ref.synaptic_inputs['{}__syn_refraction'.format(neuron.name)].spike_times_converted = np.append(neuron.dend__ref.synaptic_inputs['{}__syn_refraction'.format(neuron.name)].spike_times_converted,tau_vec[ii+1])
+
+                if neuron.second_ref == True:
+                    neuron.dend__ref_2.synaptic_inputs['{}__syn_refraction'.format(neuron.name)].spike_times_converted = np.append(neuron.dend__ref_2.synaptic_inputs['{}__syn_refraction'.format(neuron.name)].spike_times_converted,tau_vec[ii+1])
+
+
+                # add spike to output synapses
+                if neuron.source_type == 'qd' or neuron.source_type == 'ec':
+    
+                    num_samples = neuron.num_photons_out_factor*len(neuron.synaptic_outputs)
+                    random_numbers = rng.random(size = num_samples)
+                    
+                    photon_delay_tau_vec = np.zeros([num_samples])
+                    for qq in range(num_samples):
+                        photon_delay_tau_vec[qq] = neuron.time_params['tau_vec__electroluminescence'][ ( np.abs( neuron.electroluminescence_cumulative_vec[:] - random_numbers[qq] ) ).argmin() ]
+                                           
+                    # assign photons to synapses
+                    for synapse_name in neuron.synaptic_outputs:
+                        neuron.synaptic_outputs[synapse_name].photon_delay_times__temp = []
+                        
+                    while len(photon_delay_tau_vec) > 0:
+                        
+                        for synapse_name in neuron.synaptic_outputs:
+                            neuron.synaptic_outputs[synapse_name].photon_delay_times__temp.append(photon_delay_tau_vec[0])
+                            photon_delay_tau_vec = np.delete(photon_delay_tau_vec, 0)
+                           
+                    for synapse_name in neuron.synaptic_outputs:
+                        _ind = ( np.abs( tau_vec[:] - ( tau_vec[ii+1] + np.min(neuron.synaptic_outputs[synapse_name].photon_delay_times__temp) ) ) ).argmin()
+                                                
+                        if len(neuron.synaptic_outputs[synapse_name].spike_times_converted) > 0: # a prior spd event has occurred at this synapse
+                            if tau_vec[_ind] - neuron.synaptic_outputs[synapse_name].spike_times_converted[-1] >= neuron.synaptic_outputs[synapse_name].spd_reset_time_converted: # the spd has had time to recover                                
+                                neuron.synaptic_outputs[synapse_name].spike_times_converted = np.append(neuron.synaptic_outputs[synapse_name].spike_times_converted,tau_vec[_ind])
+                        else: # a prior spd event has not occurred at this synapse
+                            neuron.synaptic_outputs[synapse_name].spike_times_converted = np.append(neuron.synaptic_outputs[synapse_name].spike_times_converted,tau_vec[_ind])
+                                                
+                elif neuron.source_type == 'delay_delta':
+                    
+                    _ind = ( np.abs( tau_vec[:] - ( tau_vec[ii+1] + neuron.light_production_delay ) ) ).argmin()
+                    
+                    for synapse_name in neuron.synaptic_outputs:
+                        
+                        neuron.synaptic_outputs[synapse_name].spike_times_converted = np.append(neuron.synaptic_outputs[synapse_name].spike_times_converted,tau_vec[_ind])
+                # end add spike to output synapses
+                       
+    _t1 = time.time_ns()
+    # print('done running network time stepper. t_sim = {:7.5e}s\n'.format(1e-9*(_t1-_t0))) # {:7.5e}
+        
+    return network_object
+
+
+def dendrite_updater(dendrite_object,time_index,present_time,d_tau):
+    
+    # make sure dendrite isn't a soma that reached threshold
+    if hasattr(dendrite_object, 'is_soma'):
+        if dendrite_object.threshold_flag == True:
+            update = False
+            if present_time - dendrite_object.spike_times[-1] > dendrite_object.absolute_refractory_period_converted: # wait for absolute refractory period before resetting soma
+                dendrite_object.threshold_flag = False # reset threshold flag
+        else: 
+            update = True
+    else:
+        update = True
+                        
+    # directly applied flux
+    dendrite_object.phi_r[time_index+1] = dendrite_object.phi_r_external__vec[time_index+1]
+    
+
+    ### VVV May insert simulation learning here VVV ###
+
+    # applied flux from dendrites
+    for dendrite_key in dendrite_object.dendritic_inputs:
+        dendrite_object.phi_r[time_index+1] += dendrite_object.dendritic_inputs[dendrite_key].s[time_index] * dendrite_object.dendritic_connection_strengths[dendrite_key]        
+        # print(dendrite_object.name,dendrite_object.s[time_index],dendrite_object.dendritic_inputs[dendrite_key].name,dendrite_object.dendritic_inputs[dendrite_key].s[time_index])
+
+    ### ^^^ May insert simulation learning here ^^^ ###
+
+    # self-feedback
+    dendrite_object.phi_r[time_index+1] += dendrite_object.self_feedback_coupling_strength * dendrite_object.s[time_index]
+    
+    # applied flux from synapses
+    for synapse_key in dendrite_object.synaptic_inputs:
+        
+        # find most recent spike time for this synapse
+        _st_ind = np.where( present_time > dendrite_object.synaptic_inputs[synapse_key].spike_times_converted[:] )[0]
+        
+        if len(_st_ind) > 0:
+            
+            _st_ind = int(_st_ind[-1])
+            if ( dendrite_object.synaptic_inputs[synapse_key].spike_times_converted[_st_ind] <= present_time # the spike happened in the past
+                and (present_time - dendrite_object.synaptic_inputs[synapse_key].spike_times_converted[_st_ind]) < dendrite_object.synaptic_inputs[synapse_key].spd_duration_converted  # the spike happened within a relevant duration                
+                ):
+                    
+                    _dt_spk = present_time - dendrite_object.synaptic_inputs[synapse_key].spike_times_converted[_st_ind]
+                    _phi_spd = spd_response( dendrite_object.synaptic_inputs[synapse_key].phi_peak, 
+                                            dendrite_object.synaptic_inputs[synapse_key].tau_rise_converted,
+                                            dendrite_object.synaptic_inputs[synapse_key].tau_fall_converted,
+                                            dendrite_object.synaptic_inputs[synapse_key].hotspot_duration_converted, _dt_spk)
+                    
+                    # to avoid going too low when a new spike comes in
+                    if _st_ind - dendrite_object.synaptic_inputs[synapse_key]._st_ind_last == 1: 
+                        _phi_spd = np.max( [ _phi_spd , dendrite_object.synaptic_inputs[synapse_key].phi_spd[time_index] ])
+                        dendrite_object.synaptic_inputs[synapse_key]._phi_spd_memory = _phi_spd
+                    if _phi_spd < dendrite_object.synaptic_inputs[synapse_key]._phi_spd_memory:
+                        dendrite_object.synaptic_inputs[synapse_key].phi_spd[time_index+1] = dendrite_object.synaptic_inputs[synapse_key]._phi_spd_memory
+                    else:
+                        dendrite_object.synaptic_inputs[synapse_key].phi_spd[time_index+1] = _phi_spd * dendrite_object.synaptic_connection_strengths[synapse_key]
+
+                        # dendrite_object.synaptic_connection_strengths[synapse_key] = dendrite_object.synaptic_connection_strengths[synapse_key]*2
+                        # print(dendrite_object.synaptic_connection_strengths[synapse_key])
+
+                        dendrite_object.synaptic_inputs[synapse_key]._phi_spd_memory = 0
+                
+            dendrite_object.synaptic_inputs[synapse_key]._st_ind_last = _st_ind
+                    
+        dendrite_object.phi_r[time_index+1] += dendrite_object.synaptic_inputs[synapse_key].phi_spd[time_index+1]
+        
+    if np.abs(dendrite_object.phi_r[time_index+1]) > .5:
+        # print('\nWarning: absolute value of flux drive to dendrite {} exceeded 1 on time step {} (phi_r = {:5.3f})'.format(dendrite_object.name,time_index+1,dendrite_object.phi_r[time_index+1]))
+        dendrite_object.rollover+=1
+        if np.abs(dendrite_object.phi_r[time_index+1]) > 1:
+            dendrite_object.valleyedout+=1
+            if np.abs(dendrite_object.phi_r[time_index+1]) > 1.5:
+                dendrite_object.doubleroll+=1
+    #         print('phi_r = {:5.3f}? Calm the fuck down, bro.'.format(dendrite_object.phi_r[time_index+1]))
+    #     print('\n')
+    # print("*")
+    # find relevant entry in r_fq__array
+    _ind__phi_r = ( np.abs( dendrite_object.phi_r__vec[:] - dendrite_object.phi_r[time_index+1] ) ).argmin()
+    i_di__vec = np.asarray(dendrite_object.i_di__subarray[_ind__phi_r])
+    _ind__s = ( np.abs( i_di__vec[:] - dendrite_object.s[time_index] ) ).argmin()
+    r_fq = dendrite_object.r_fq__subarray[_ind__phi_r][_ind__s]
+        
+    # get alpha
+    if hasattr(dendrite_object,'alpha_list'):
+        _ind = np.where(dendrite_object.s_list > dendrite_object.s[time_index])
+        alpha = dendrite_object.alpha_list[_ind[0][0]]
+    else:
+        alpha = dendrite_object.alpha    
+    
+    ### vvv SIGNAL UPDATE vvv ###
+    if update == True:
+        dendrite_object.s[time_index+1] = dendrite_object.s[time_index] * ( 1 - d_tau*alpha/dendrite_object.beta) + (d_tau/dendrite_object.beta) * r_fq
+    ### ^^^ SIGNAL UPDATE ^^^ ###
+
+    return
+
+
+def output_synapse_updater(neuron_object,time_index,present_time):
+    
+    for synapse_key in neuron_object.synaptic_outputs:
+        
+        # find most recent spike time for this synapse
+        _st_ind = np.where( present_time > neuron_object.synaptic_outputs[synapse_key].spike_times_converted[:] )[0]
+        
+        if len(_st_ind) > 0:
+            
+            _st_ind = int(_st_ind[-1])
+            if ( neuron_object.synaptic_outputs[synapse_key].spike_times_converted[_st_ind] <= present_time 
+                and (present_time - neuron_object.synaptic_outputs[synapse_key].spike_times_converted[_st_ind]) < neuron_object.synaptic_outputs[synapse_key].spd_duration_converted ): # the case that counts    
+                _dt_spk = present_time - neuron_object.synaptic_outputs[synapse_key].spike_times_converted[_st_ind]
+                _phi_spd = spd_response( neuron_object.synaptic_outputs[synapse_key].phi_peak, 
+                                        neuron_object.synaptic_outputs[synapse_key].tau_rise_converted,
+                                        neuron_object.synaptic_outputs[synapse_key].tau_fall_converted,
+                                        neuron_object.synaptic_outputs[synapse_key].hotspot_duration_converted, _dt_spk)
+                    
+                # to avoid going too low when a new spike comes in
+                if _st_ind - neuron_object.synaptic_outputs[synapse_key]._st_ind_last == 1: 
+                    _phi_spd = np.max( [ _phi_spd , neuron_object.synaptic_outputs[synapse_key].phi_spd[time_index] ])
+                    neuron_object.synaptic_outputs[synapse_key]._phi_spd_memory = _phi_spd
+                if _phi_spd < neuron_object.synaptic_outputs[synapse_key]._phi_spd_memory:
+                    neuron_object.synaptic_outputs[synapse_key].phi_spd[time_index+1] = neuron_object.synaptic_outputs[synapse_key]._phi_spd_memory
+                else:
+                    neuron_object.synaptic_outputs[synapse_key].phi_spd[time_index+1] = _phi_spd # * neuron_object.synaptic_connection_strengths[synapse_key]
+                    neuron_object.synaptic_outputs[synapse_key]._phi_spd_memory = 0
+                
+            neuron_object.synaptic_outputs[synapse_key]._st_ind_last = _st_ind
+                        
+    return
 
 
 ################################################################################

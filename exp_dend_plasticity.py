@@ -18,7 +18,7 @@ def_spikes = [indices,times]
 input = SuperInput(channels=1, type='defined', defined_spikes=def_spikes, duration=500)
 
 
-W = [[[.4,.6]]]
+W = [[[.6,.8]]]
 
 n = NeuralZoo(type='custom',weights=W)
 n.synaptic_layer()
@@ -26,18 +26,30 @@ n.uniform_input(input)
 
 exin = ["plus","minus"]
 n.trace_dendrites = []
-# for lay in n.dendrites[1:]:
-#     for group in lay:
-#         for i,d in enumerate(group):
-#             for ei in exin:
-#                 trace_dend = dendrite(name=f'd{i}_{ei}')
-#                 trace_dend.add_input(d,connection_strength=0.2)
-#                 d.add_input(trace_dend,connection_strength=0.001)
-#                 n.trace_dendrites.append(trace_dend)
+for lay in n.dendrites[1:]:
+    for group in lay:
+        for i,d in enumerate(group):
+            cs = W[0][0][i]
+            print(cs)
+            for ei in exin:
+                trace_dend = dendrite(name=f'd{i}_{ei}')
+                trace_dend.add_input(d,connection_strength=cs)#2*np.random.rand())
+                n.trace_dendrites.append(trace_dend)
+                n.dendrite_list.append(trace_dend)
 
-net = network(sim=True,dt=.1,tf=1000,nodes=[n],new_way=True)
-# print(n.trace_dendrites[0].__dict__,"\n\n")
-# print(n.dendrites[1][0][0].__dict__)
-# plt.plot(n.trace_dendrites)
-n.plot_neuron_activity(net,phir=True)
+net = network(sim=True,dt=.01,tf=1000,nodes=[n])
+
+# print(n.trace_dendrites[0].__dict__.keys(),"\n\n")
+
+n.plot_neuron_activity(net,phir=True,input=input)
+
+
+plt.figure(figsize=(16,8))
+for i,trace in enumerate(n.trace_dendrites):
+    plt.plot(net.t,trace.phi_r,'--',label="phi "+str(i))
+    plt.plot(net.t,trace.s, label = "signal "+str(i))
+plt.legend()
+plt.show()
+
+
 

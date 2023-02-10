@@ -149,6 +149,8 @@ class NeuralZoo():
         #     self.s_th = self.s_th_factor_n*self.s_max_n
 
         entries = self.__dict__
+        if "name" not in entries:
+            entries['name'] = f"rand_neuron_{np.random.rand()}"
         custom_neuron = neuron(**entries)
         self.dendrite_list = [custom_neuron.dend__nr_ni,custom_neuron.dend__ref]
 
