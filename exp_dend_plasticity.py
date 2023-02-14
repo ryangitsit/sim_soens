@@ -22,7 +22,7 @@ input = SuperInput(channels=1, type='defined', defined_spikes=def_spikes, durati
 WA = [[[.6,.5]]]
 
 nA = NeuralZoo(type='custom',weights=WA)
-print("NAME: ", nA.name)
+# print("NAME: ", nA.name)
 nA.synaptic_layer()
 nA.uniform_input(input)
 
@@ -73,21 +73,21 @@ net = network(sim=True,dt=.1,tf=1010,nodes=nodes,hardware=HW,null_synapses=True)
 
 # nA.plot_neuron_activity(net,phir=True,input=input)
 
-activity_plot(nodes,net)
+# activity_plot(nodes,net)
 
 
-plt.figure(figsize=(16,8))
-for i,trace in enumerate(nA.trace_dendrites):
-    plt.plot(net.t,trace.phi_r,'--',label="phi "+str(i))
-    # plt.plot(net.t,trace.s, label = "signal "+str(i))
-plt.legend()
-plt.show()
-plt.figure(figsize=(16,8))
-for i,trace in enumerate(nB.trace_dendrites):
-    plt.plot(net.t,trace.phi_r,'--',label="phi "+str(i))
-    # plt.plot(net.t,trace.s, label = "signal "+str(i))
-plt.legend()
-plt.show()
+# plt.figure(figsize=(16,8))
+# for i,trace in enumerate(nA.trace_dendrites):
+#     plt.plot(net.t,trace.phi_r,'--',label="phi "+str(i))
+#     # plt.plot(net.t,trace.s, label = "signal "+str(i))
+# plt.legend()
+# plt.show()
+# plt.figure(figsize=(16,8))
+# for i,trace in enumerate(nB.trace_dendrites):
+#     plt.plot(net.t,trace.phi_r,'--',label="phi "+str(i))
+#     # plt.plot(net.t,trace.s, label = "signal "+str(i))
+# plt.legend()
+# plt.show()
 
 '''
 Backend notes:

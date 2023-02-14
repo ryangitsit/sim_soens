@@ -76,7 +76,7 @@ def run_soen_sim(obj, **kwargs):
             for neuron_key in obj.neurons:
                 recursive_dendrite_data_attachment(obj.neurons[neuron_key].dend__nr_ni,obj)
         else:
-            print("new way")
+            # print("new way")
             # for name,neuron in obj.neurons.items():
             for neuron in obj.nodes:
                 # print("Initializing neuron: ", neuron.name)
@@ -216,7 +216,7 @@ def rate_array_attachment(dendrite_object):
     _ind__ib = ( np.abs( ib__vec[:] - dendrite_object.bias_current ) ).argmin()
     dendrite_object.phi_r__vec = np.asarray(phi_r__array[_ind__ib])
     dendrite_object.i_di__subarray = np.asarray(i_di__array[_ind__ib],dtype=object)
-    dendrite_object.r_fq__subarray = np.asarray(r_fq__array[_ind__ib],dtype=object)     
+    dendrite_object.r_fq__subarray = np.asarray(r_fq__array[_ind__ib],dtype=object) 
     
     return
 
@@ -382,7 +382,7 @@ def net_step(network_object,tau_vec,d_tau):
 
             neuron = node.neuron
 
-            # update all input synapses and dendrites
+            # update all input synapses and dendrites       
             for dend in node.dendrite_list:
                 dendrite_updater(dend,ii,tau_vec[ii+1],d_tau)
             
@@ -525,6 +525,12 @@ def dendrite_updater(dendrite_object,time_index,present_time,d_tau):
     #     print('\n')
     # print("*")
     # find relevant entry in r_fq__array
+
+    # _ind__ib = ( np.abs( ib__vec[:] - dendrite_object.bias_current ) ).argmin()
+    # dendrite_object.phi_r__vec = np.asarray(phi_r__array[_ind__ib])
+    # dendrite_object.i_di__subarray = np.asarray(i_di__array[_ind__ib],dtype=object)
+    # dendrite_object.r_fq__subarray = np.asarray(r_fq__array[_ind__ib],dtype=object)
+
     _ind__phi_r = ( np.abs( dendrite_object.phi_r__vec[:] - dendrite_object.phi_r[time_index+1] ) ).argmin()
     i_di__vec = np.asarray(dendrite_object.i_di__subarray[_ind__phi_r])
     _ind__s = ( np.abs( i_di__vec[:] - dendrite_object.s[time_index] ) ).argmin()

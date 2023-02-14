@@ -156,7 +156,7 @@ class dendrite():
         self.Ic =  100
         self.beta_c =  0.3
         if self.loops_present == 'ri':
-            self.ib = 1.7        
+            self.ib = 1.802395858835221
         elif self.loops_present == 'rtti':
             self.ib = 2.0 
         self.tau_di= 250
@@ -172,6 +172,7 @@ class dendrite():
 
         # UPDATE TO CUSTOM PARAMS
         self.__dict__.update(params)
+        # print(params['ib'])
         
         # print(self.type,self.dentype)
         # self.loops_present = self.type
@@ -195,7 +196,7 @@ class dendrite():
             if "dend_name" in self.__dict__.keys():
                 self.name = self.dend_name
             # print("REGULAR DENDRITE")
-
+        # print(self.ib)
         if 'integrated_current_threshold' in params:
             self.s_th = params['integrated_current_threshold']
         
@@ -412,7 +413,7 @@ class neuron():
         self.Ic =  100
         self.beta_c =  0.3
         if self.loops_present == 'ri':
-            self.ib = 1.7 # dimensionless bias current   
+            self.ib = 1.802395858835221 #1.7 # dimensionless bias current   
             self.ib_n = 1.802395858835221
         elif self.loops_present == 'rtti':
             self.ib = 2.0 # dimensionless bias current

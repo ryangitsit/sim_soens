@@ -210,6 +210,7 @@ class NeuralZoo():
                         entries = self.__dict__
                         entries['dend_name'] = f"{self.neuron.name}_lay{i}_branch{j}_den{k}"
                         entries['type'] = type
+                        
                         dend = dendrite(**entries)
                         sub.append(dend)
                         self.dendrite_list.append(dend)
