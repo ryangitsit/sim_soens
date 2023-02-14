@@ -150,7 +150,7 @@ class NeuralZoo():
 
         entries = self.__dict__
         if "name" not in entries:
-            entries['name'] = f"rand_neuron_{np.random.rand()}"
+            entries['name'] = f"rand_neuron_{np.round(np.random.rand(),5)}"
         custom_neuron = neuron(**entries)
         self.dendrite_list = [custom_neuron.dend__nr_ni,custom_neuron.dend__ref]
 
@@ -208,7 +208,7 @@ class NeuralZoo():
                         else:
                             entries['loops_present'] = 'ri'
                         entries = self.__dict__
-                        entries['name'] = f"{self.neuron.name[-2:]}_lay{i}_branch{j}_den{k}"
+                        entries['dend_name'] = f"{self.neuron.name}_lay{i}_branch{j}_den{k}"
                         entries['type'] = type
                         dend = dendrite(**entries)
                         sub.append(dend)

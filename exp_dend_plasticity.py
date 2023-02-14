@@ -9,6 +9,7 @@ from params import net_args
 from super_library import NeuralZoo
 from super_functions import *
 from soen_sim import network, dendrite, HardwareInTheLoop
+from soen_component_library import common_synapse
 
 
 
@@ -21,6 +22,7 @@ input = SuperInput(channels=1, type='defined', defined_spikes=def_spikes, durati
 WA = [[[.6,.5]]]
 
 nA = NeuralZoo(type='custom',weights=WA)
+print("NAME: ", nA.name)
 nA.synaptic_layer()
 nA.uniform_input(input)
 
@@ -30,12 +32,15 @@ for lay in nA.dendrites[1:]:
     for group in lay:
         for i,d in enumerate(group):
             cs = WA[0][0][i]
-            print(cs)
+            # print(cs)
             for ei in exin:
                 trace_dend = dendrite(name=f'd{i}_{ei}')
                 trace_dend.add_input(d,connection_strength=cs)#2*np.random.rand())
+                syn = common_synapse(f'{d.name}_tracesyn_{trace_dend.name}_{np.random.rand()}')
+                trace_dend.add_input(syn,connection_strength=1)
                 nA.trace_dendrites.append(trace_dend)
                 nA.dendrite_list.append(trace_dend)
+                nA.synapse_list.append(syn)
 
 
 WB = [[[.4,.5]]]
@@ -43,39 +48,46 @@ WB = [[[.4,.5]]]
 nB = NeuralZoo(type='custom',weights=WB)
 nB.synaptic_layer()
 nB.uniform_input(input)
-
 exin = ["plus","minus"]
 nB.trace_dendrites = []
 for lay in nB.dendrites[1:]:
     for group in lay:
         for i,d in enumerate(group):
             cs = WB[0][0][i]
-            print(cs)
+            # print(cs)
             for ei in exin:
                 trace_dend = dendrite(name=f'd{i}_{ei}')
                 trace_dend.add_input(d,connection_strength=cs)#2*np.random.rand())
+                syn = common_synapse(f'{d.name}_tracesyn_{trace_dend.name}_{np.random.rand()}')
+                trace_dend.add_input(syn,connection_strength=1)
                 nB.trace_dendrites.append(trace_dend)
                 nB.dendrite_list.append(trace_dend)
+                nB.synapse_list.append(syn)
 
 HW = HardwareInTheLoop()
-print(HW.__dict__)
+# print(HW.__dict__)
 nodes=[nA,nB]
-net = network(sim=True,dt=.1,tf=1010,nodes=nodes,hardware=HW)
+net = network(sim=True,dt=.1,tf=1010,nodes=nodes,hardware=HW,null_synapses=True)
 
 # # print(nA.trace_dendrites[0].__dict__.keys(),"\n\n")
 
 # nA.plot_neuron_activity(net,phir=True,input=input)
 
-activity_plot(nodes,net)
+# activity_plot(nodes,net)
 
 
 # plt.figure(figsize=(16,8))
 # for i,trace in enumerate(nA.trace_dendrites):
 #     plt.plot(net.t,trace.phi_r,'--',label="phi "+str(i))
-#     plt.plot(net.t,trace.s, label = "signal "+str(i))
+#     # plt.plot(net.t,trace.s, label = "signal "+str(i))
 # plt.legend()
 # plt.show()
-
+# plt.figure(figsize=(16,8))
+# for i,trace in enumerate(nB.trace_dendrites):
+#     plt.plot(net.t,trace.phi_r,'--',label="phi "+str(i))
+#     # plt.plot(net.t,trace.s, label = "signal "+str(i))
+# plt.legend()
+# plt.show()
 
 '''
 Backend notes:

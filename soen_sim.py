@@ -172,6 +172,7 @@ class dendrite():
 
         # UPDATE TO CUSTOM PARAMS
         self.__dict__.update(params)
+        
         # print(self.type,self.dentype)
         # self.loops_present = self.type
         if hasattr(self, 'dentype'):
@@ -191,6 +192,8 @@ class dendrite():
                 # print("SOMATIC DENDRITE")
         else:
             self.ib = self.ib
+            if "dend_name" in self.__dict__.keys():
+                self.name = self.dend_name
             # print("REGULAR DENDRITE")
 
         if 'integrated_current_threshold' in params:
@@ -784,6 +787,7 @@ class network():
         network._next_uid += 1
         self.unique_label = 'net{}'.format(self.uid)
         self.new_way=True
+        self.null_synapses=False
 
         self.__dict__.update(kwargs)
 
@@ -857,12 +861,12 @@ class network():
         # print(spike_signal)
         # print(spike_signals)
 
-    def simulate(self,prune_synapses=False):
+    def simulate(self):
         # print(self.nodes)
         # net = network(name = 'network_under_test')
         for n in self.nodes:
             self.add_neuron(n.neuron)
-        if prune_synapses == True:
+        if self.null_synapses == True:
             count=0
             for n in self.nodes:
                 for syn in n.synapse_list:
