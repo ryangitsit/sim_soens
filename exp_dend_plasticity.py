@@ -13,7 +13,7 @@ from soen_component_library import common_synapse
 
 
 
-times = np.concatenate([np.arange(0,500,50),np.arange(500,1000,51)])
+times = np.concatenate([np.arange(0,500,50),np.arange(500,1000,150)])
 indices = np.zeros(len(times)).astype(int)
 def_spikes = [indices,times]
 input = SuperInput(channels=1, type='defined', defined_spikes=def_spikes, duration=500)
@@ -73,21 +73,21 @@ net = network(sim=True,dt=.1,tf=1010,nodes=nodes,hardware=HW,null_synapses=True)
 
 # nA.plot_neuron_activity(net,phir=True,input=input)
 
-# activity_plot(nodes,net)
+activity_plot(nodes,net)
 
 
-# plt.figure(figsize=(16,8))
-# for i,trace in enumerate(nA.trace_dendrites):
-#     plt.plot(net.t,trace.phi_r,'--',label="phi "+str(i))
-#     # plt.plot(net.t,trace.s, label = "signal "+str(i))
-# plt.legend()
-# plt.show()
-# plt.figure(figsize=(16,8))
-# for i,trace in enumerate(nB.trace_dendrites):
-#     plt.plot(net.t,trace.phi_r,'--',label="phi "+str(i))
-#     # plt.plot(net.t,trace.s, label = "signal "+str(i))
-# plt.legend()
-# plt.show()
+plt.figure(figsize=(16,8))
+for i,trace in enumerate(nA.trace_dendrites):
+    plt.plot(net.t,trace.phi_r,'--',label="phi "+str(i))
+    # plt.plot(net.t,trace.s, label = "signal "+str(i))
+plt.legend()
+plt.show()
+plt.figure(figsize=(16,8))
+for i,trace in enumerate(nB.trace_dendrites):
+    plt.plot(net.t,trace.phi_r,'--',label="phi "+str(i))
+    # plt.plot(net.t,trace.s, label = "signal "+str(i))
+plt.legend()
+plt.show()
 
 '''
 Backend notes:

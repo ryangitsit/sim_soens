@@ -340,7 +340,7 @@ def net_step(network_object,tau_vec,d_tau):
     # set neuron threshold flags
     for neuron_key in network_object.neurons:
         network_object.neurons[neuron_key].dend__nr_ni.threshold_flag = False
-    
+    conversion = network_object.time_params['t_tau_conversion']
     # step through time
     _t0 = time.time_ns()
 
@@ -354,22 +354,26 @@ def net_step(network_object,tau_vec,d_tau):
         if "hardware" in network_object.__dict__.keys():
             if ii == HW.check_time[HW.phase]/network_object.dt:
                 print(ii,tau_vec[ii])
-                HW.forward_error(network_object.nodes,network_object.time_params['t_tau_conversion'])
+                HW.forward_error(network_object.nodes,conversion)
                 error = HW.errors[HW.phase]
                 print("HW ERROR: ", error,"\n")
                 for err in range(len(error)):
-                    for syn in network_object.nodes[err].synapse_list:
-                        # print(syn.name)
-                        if 'tracesyn' in syn.name:
-                            if error[err] < 0:
-                                if 'plus' in syn.name:
-                                    # print("plus: ",error[err])
-                                    syn.input_signal.spike_times = np.arange(HW.check_time[HW.phase],HW.check_time[HW.phase]+HW.interval,50)
-                            elif error[err] > 0:
-                                if 'minus' in syn.name:
-                                    # print("minus: ",error[err])
-                                    syn.input_signal.spike_times = np.arange(HW.check_time[HW.phase],HW.check_time[HW.phase]+HW.interval,50)
-                            print(syn.name,syn.input_signal.spike_times)
+                    # for syn in network_object.nodes[err].synapse_list:
+                    for dend in network_object.nodes[err].dendrite_list:
+                        for name,syn in dend.synaptic_inputs.items():
+                            # print(syn.name)
+                            if 'tracesyn' in syn.name:
+                                if error[err] < 0:
+                                    if 'plus' in syn.name:
+                                        # print("plus: ",error[err])
+                                        syn.input_signal.spike_times = np.arange(HW.check_time[HW.phase],HW.check_time[HW.phase]+HW.interval,50)
+                                        syn.spike_times_converted = np.asarray(syn.input_signal.spike_times) *conversion
+                                elif error[err] > 0:
+                                    if 'minus' in syn.name:
+                                        # print("minus: ",error[err])
+                                        syn.input_signal.spike_times = np.arange(HW.check_time[HW.phase],HW.check_time[HW.phase]+HW.interval,50)
+                                        syn.spike_times_converted = np.asarray(syn.input_signal.spike_times) *conversion
+                                print(syn.name,syn.input_signal.spike_times)
                     print("\n")
                 HW.phase+=1
 
@@ -475,7 +479,7 @@ def dendrite_updater(dendrite_object,time_index,present_time,d_tau):
     
     # applied flux from synapses
     for synapse_key in dendrite_object.synaptic_inputs:
-        
+        # print(dendrite_object.synaptic_inputs[synapse_key])
         # find most recent spike time for this synapse
         _st_ind = np.where( present_time > dendrite_object.synaptic_inputs[synapse_key].spike_times_converted[:] )[0]
         
