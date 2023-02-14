@@ -876,3 +876,40 @@ class network():
         self.run_sim(dt=self.dt, tf=self.tf)
         self.get_recordings()
 
+
+class HardwareInTheLoop:
+    def __init__(self, **params):
+        self.check_time = [500,1000,1500]
+        self.expect = [[5,40],[5,40],[5,40]]
+        self.interval = 500
+        self.phase = 0
+        self.errors = [[] for i in range(len(self.expect[0]))]
+        self.error_factor = 10
+        self.__dict__.update(params)
+
+    def forward_error(self,neurons,conversion):
+        '''
+        Returns difference between actual and expected spikes for each neuron
+            - Only counts spikes for a given interval phase
+            - **rewrite this more optimally (probably with list comprehension)
+        '''
+        counts = [0 for i in range(len(neurons))]
+        for i,n in enumerate(neurons):
+            # print(type(n.neuron))
+            if "spike_times" in n.neuron.__dict__:
+                for spk in n.neuron.spike_times:
+                    spk = spk/conversion
+                    if (spk > self.check_time[self.phase] - self.interval 
+                        and spk < self.check_time[self.phase]):
+                        counts[i]+=1
+            else:
+                counts[i]=0
+        print(counts,self.expect[i])
+        self.errors[self.phase] = np.subtract(counts,self.expect[i])
+        # print(self.errors[self.phase])
+        # self.phase+=1
+        # return 
+
+    def backward_error(self):
+        pass
+    

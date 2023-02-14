@@ -96,7 +96,7 @@ def run_soen_sim(obj, **kwargs):
             for dend in neuron.dendrite_list:
                 dendrite_data_attachment(dend,obj)
             # print(obj.neurons)
-            print("Here!")
+            # print("Here!")
             
             
     return obj
@@ -343,8 +343,21 @@ def net_step(network_object,tau_vec,d_tau):
     
     # step through time
     _t0 = time.time_ns()
+
+    if "hardware" in network_object.__dict__.keys():
+        HW = network_object.hardware
+    print(len(tau_vec))
     for ii in range(len(tau_vec)-1):
-        # print(ii)
+
+        # error check with hardware in the loop at defined moment
+        # ***write better
+        if "hardware" in network_object.__dict__.keys():
+            if ii == HW.check_time[HW.phase]/network_object.dt:
+                print(ii,tau_vec[ii])
+                HW.forward_error(network_object.nodes,network_object.time_params['t_tau_conversion'])
+                print(HW.errors[HW.phase])
+                HW.phase+=1
+
         # step through neurons
         for node in network_object.nodes:
 
@@ -544,6 +557,24 @@ def output_synapse_updater(neuron_object,time_index,present_time):
             neuron_object.synaptic_outputs[synapse_key]._st_ind_last = _st_ind
                         
     return
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 ################################################################################
