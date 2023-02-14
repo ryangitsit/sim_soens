@@ -366,10 +366,10 @@ def net_step(network_object,tau_vec,d_tau):
                 neuron.spike_indices.append(ii+1)
                 
                 # add spike to refractory dendrite
-                neuron.dend__ref.synaptic_inputs['{}__syn_refraction'.format(neuron.name)].spike_times_converted = np.append(neuron.dend__ref.synaptic_inputs['{}__syn_refraction'.format(neuron.name)].spike_times_converted,tau_vec[ii+1])
+                neuron.dend__ref.synaptic_inputs[f'{neuron.name}__syn_refraction'].spike_times_converted = np.append(neuron.dend__ref.synaptic_inputs[f'{neuron.name}__syn_refraction'].spike_times_converted,tau_vec[ii+1])
 
                 if neuron.second_ref == True:
-                    neuron.dend__ref_2.synaptic_inputs['{}__syn_refraction'.format(neuron.name)].spike_times_converted = np.append(neuron.dend__ref_2.synaptic_inputs['{}__syn_refraction'.format(neuron.name)].spike_times_converted,tau_vec[ii+1])
+                    neuron.dend__ref_2.synaptic_inputs[f'{neuron.name}__syn_refraction'].spike_times_converted = np.append(neuron.dend__ref_2.synaptic_inputs[f'{neuron.name}__syn_refraction'].spike_times_converted,tau_vec[ii+1])
 
 
                 # add spike to output synapses

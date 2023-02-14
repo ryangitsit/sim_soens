@@ -52,4 +52,17 @@ plt.legend()
 plt.show()
 
 
-
+'''
+Backend notes:
+ - neuron.source_type
+    - qd, ec, delay_delta
+    - line 383 -> argmin in forloop?
+ - tau_vec
+    - necessary?
+ - just couple 
+ - hardware in the loop module in soen_functions?
+    - perhaps object that gets passed around with internal logic functions
+    - refers to neurons by name and compares to inform update input
+ - if plasiticity, check condition of plastic modules and change r_fq accordingly
+    - pass extra info into dendrite updater?
+'''
