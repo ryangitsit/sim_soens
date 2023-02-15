@@ -13,7 +13,7 @@ from soen_component_library import common_synapse
 
 
 
-times = np.concatenate([np.arange(0,500,50),np.arange(500,1000,150)])
+times = np.concatenate([np.arange(0,500,75),np.arange(500,1000,75)])
 indices = np.zeros(len(times)).astype(int)
 def_spikes = [indices,times]
 input = SuperInput(channels=1, type='defined', defined_spikes=def_spikes, duration=500)
@@ -64,16 +64,30 @@ for lay in nB.dendrites[1:]:
                 nB.dendrite_list.append(trace_dend)
                 nB.synapse_list.append(syn)
 
-HW = HardwareInTheLoop()
+
 # print(HW.__dict__)
 nodes=[nA,nB]
-net = network(sim=True,dt=.1,tf=1010,nodes=nodes,hardware=HW,null_synapses=True)
+
+# plasticity=True
+plasticity=False
+
+if plasticity==True:
+    title="Error Module Engaging Plasticity at t=500ns (Neuron 2 Correct Output)"
+    HW = HardwareInTheLoop()
+else:
+    title="No Plasiticity (Neuron 2 Correct Output)"
+    HW = None
+
+
+net = network(sim=True,dt=.01,tf=1000,nodes=nodes,null_synapses=True,hardware=HW)
 
 # # print(nA.trace_dendrites[0].__dict__.keys(),"\n\n")
 
 # nA.plot_neuron_activity(net,phir=True,input=input)
 
-# activity_plot(nodes,net)
+
+subtitles= ["Neuron 1","Neuron 2"]
+activity_plot(nodes,net,title=title,subtitles=subtitles, size=(16,6))
 
 
 # plt.figure(figsize=(16,8))

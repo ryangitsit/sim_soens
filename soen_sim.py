@@ -885,11 +885,13 @@ class network():
 class HardwareInTheLoop:
     def __init__(self, **params):
         self.check_time = [500,1000,1500]
-        self.expect = [[5,40],[5,40],[5,40]]
+        # self.expect = [[5,40],[5,40],[40,5]]
+        self.expect = [[40,5],[40,5],[5,40]]
         self.interval = 500
         self.phase = 0
         self.errors = [[] for i in range(len(self.expect[0]))]
         self.error_factor = 10
+        self.traces=None
         self.__dict__.update(params)
 
     def forward_error(self,neurons,conversion):

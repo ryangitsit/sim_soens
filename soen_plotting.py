@@ -1840,7 +1840,7 @@ def activity_plot(neurons,net,phir=False,dend=True,title=None,
                                     dend_s = dendrite.s*weight
                                 else:
                                     dend_s = dendrite.s
-                                axs[ii].plot(net.t,dend_s,'--', label='w * '+dendrite.name)
+                                axs[ii].plot(net.t,dend_s,'--', label='w * dendrite_'+str(k))#+dendrite.name)
                             if SPD==True:
                                 # print("Plotting SPD")
                                 for spd in dendrite.synaptic_inputs:
