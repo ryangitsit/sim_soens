@@ -885,7 +885,7 @@ class network():
 class HardwareInTheLoop:
     def __init__(self, **params):
         self.check_time = [500,1000,1500]
-        self.expect = [[5,40],[5,40],[5,40]]
+        self.expect = [[5,40],[40,5],[5,40]]
         # self.expect = [[40,5],[40,5],[5,40]]
         self.interval = 500
         self.phase = 0
@@ -911,8 +911,8 @@ class HardwareInTheLoop:
                         counts[i]+=1
             else:
                 counts[i]=0
-        print(counts,self.expect[i])
-        self.errors[self.phase] = np.subtract(counts,self.expect[i])
+        print(counts,self.expect[self.phase])
+        self.errors[self.phase] = np.subtract(counts,self.expect[self.phase])
         # print(self.errors[self.phase])
         # self.phase+=1
         # return 
@@ -935,7 +935,7 @@ class HardwareInTheLoop:
                                 if 'plus' in syn.name:
                                     print("plus: ",error[err])
 
-                                    freq = np.max([300 - np.abs(error[err])*20,50])
+                                    freq = np.max([300 - np.abs(error[err])*50,50])
                                     print("plus: ",freq)
                                     syn.input_signal.spike_times = np.arange(self.check_time[self.phase],self.check_time[self.phase]+self.interval,freq)
                                     syn.spike_times_converted = np.asarray(syn.input_signal.spike_times) *conversion
@@ -943,7 +943,7 @@ class HardwareInTheLoop:
                             elif error[err] > 0:
                                 if 'minus' in syn.name:
                                     print("minus: ",error[err])
-                                    freq = np.max([300 - np.abs(error[err])*20,50])
+                                    freq = np.max([300 - np.abs(error[err])*50,50])
                                     print("minus: ",freq)
                                     syn.input_signal.spike_times = np.arange(self.check_time[self.phase],self.check_time[self.phase]+self.interval,freq)
                                     syn.spike_times_converted = np.asarray(syn.input_signal.spike_times) *conversion

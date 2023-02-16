@@ -13,7 +13,7 @@ from soen_component_library import common_synapse
 
 
 
-times = np.concatenate([np.arange(0,500,75),np.arange(500,1000,75)])
+times = np.concatenate([np.arange(0,500,75),np.arange(500,1500,75)])
 indices = np.zeros(len(times)).astype(int)
 def_spikes = [indices,times]
 input = SuperInput(channels=1, type='defined', defined_spikes=def_spikes, duration=500)
@@ -79,7 +79,7 @@ else:
     HW = None
 
 
-net = network(sim=True,dt=.1,tf=1000,nodes=nodes,null_synapses=True,hardware=HW)
+net = network(sim=True,dt=.1,tf=1500,nodes=nodes,null_synapses=True,hardware=HW)
 
 # # print(nA.trace_dendrites[0].__dict__.keys(),"\n\n")
 
@@ -99,7 +99,7 @@ for k,v in HW.trace_biases.items():
 plt.legend()
 plt.show()
 
-activity_plot(nodes,net,title=title,subtitles=subtitles,input=input, size=(16,6))
+activity_plot(nodes,net,title=title,subtitles=subtitles,input=input, size=(16,6),phir=True)
 
 
 fig, axs = plt.subplots(2, 1,figsize=(12,6))
