@@ -885,8 +885,8 @@ class network():
 class HardwareInTheLoop:
     def __init__(self, **params):
         self.check_time = [500,1000,1500]
-        # self.expect = [[5,40],[5,40],[40,5]]
-        self.expect = [[40,5],[40,5],[5,40]]
+        self.expect = [[5,40],[5,40],[5,40]]
+        # self.expect = [[40,5],[40,5],[5,40]]
         self.interval = 500
         self.phase = 0
         self.errors = [[] for i in range(len(self.expect[0]))]
@@ -917,6 +917,42 @@ class HardwareInTheLoop:
         # self.phase+=1
         # return 
 
-    def backward_error(self):
-        pass
+    def backward_error(self,net,ii):
+        if ii == self.check_time[self.phase]/net.dt:
+            # print(ii,tau_vec[ii])
+            conversion = net.time_params['t_tau_conversion']
+            self.forward_error(net.nodes,conversion)
+            error = self.errors[self.phase]
+            print("self ERROR: ", error,"\n")
+            for err in range(len(error)):
+                # for syn in net.nodes[err].synapse_list:
+                for dend in net.nodes[err].dendrite_list:
+                    for name,syn in dend.synaptic_inputs.items():
+                        # print(syn.name)
+                        if 'tracesyn' in syn.name:
+                            self.traces.append(dend)
+                            if error[err] < 0:
+                                if 'plus' in syn.name:
+                                    print("plus: ",error[err])
+
+                                    freq = np.max([300 - np.abs(error[err])*20,50])
+                                    print("plus: ",freq)
+                                    syn.input_signal.spike_times = np.arange(self.check_time[self.phase],self.check_time[self.phase]+self.interval,freq)
+                                    syn.spike_times_converted = np.asarray(syn.input_signal.spike_times) *conversion
+
+                            elif error[err] > 0:
+                                if 'minus' in syn.name:
+                                    print("minus: ",error[err])
+                                    freq = np.max([300 - np.abs(error[err])*20,50])
+                                    print("minus: ",freq)
+                                    syn.input_signal.spike_times = np.arange(self.check_time[self.phase],self.check_time[self.phase]+self.interval,freq)
+                                    syn.spike_times_converted = np.asarray(syn.input_signal.spike_times) *conversion
+                            print(syn.name,syn.input_signal.spike_times)
+                            
+                print("\n")
+            self.phase+=1
+            self.trace_biases = {}
+            for trace in self.traces:
+                self.trace_biases[trace.name] = []
+                # return net
     

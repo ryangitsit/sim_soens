@@ -34,7 +34,7 @@ for lay in nA.dendrites[1:]:
             cs = WA[0][0][i]
             # print(cs)
             for ei in exin:
-                trace_dend = dendrite(name=f'd{i}_{ei}')
+                trace_dend = dendrite(name=f'n1_d{i}_{ei}')
                 trace_dend.add_input(d,connection_strength=cs)#2*np.random.rand())
                 syn = common_synapse(f'{d.name}_tracesyn_{trace_dend.name}_{np.random.rand()}')
                 trace_dend.add_input(syn,connection_strength=1)
@@ -56,7 +56,7 @@ for lay in nB.dendrites[1:]:
             cs = WB[0][0][i]
             # print(cs)
             for ei in exin:
-                trace_dend = dendrite(name=f'd{i}_{ei}')
+                trace_dend = dendrite(name=f'n2_d{i}_{ei}')
                 trace_dend.add_input(d,connection_strength=cs)#2*np.random.rand())
                 syn = common_synapse(f'{d.name}_tracesyn_{trace_dend.name}_{np.random.rand()}')
                 trace_dend.add_input(syn,connection_strength=1)
@@ -68,8 +68,8 @@ for lay in nB.dendrites[1:]:
 # print(HW.__dict__)
 nodes=[nA,nB]
 
-# plasticity=True
-plasticity=False
+plasticity=True
+# plasticity=False
 
 if plasticity==True:
     title="Error Module Engaging Plasticity at t=500ns (Neuron 2 Correct Output)"
@@ -79,7 +79,7 @@ else:
     HW = None
 
 
-net = network(sim=True,dt=.01,tf=1000,nodes=nodes,null_synapses=True,hardware=HW)
+net = network(sim=True,dt=.1,tf=1000,nodes=nodes,null_synapses=True,hardware=HW)
 
 # # print(nA.trace_dendrites[0].__dict__.keys(),"\n\n")
 
@@ -87,21 +87,33 @@ net = network(sim=True,dt=.01,tf=1000,nodes=nodes,null_synapses=True,hardware=HW
 
 
 subtitles= ["Neuron 1","Neuron 2"]
-activity_plot(nodes,net,title=title,subtitles=subtitles, size=(16,6))
+
+fig, axs = plt.subplots(2, 1,figsize=(12,6))
+for k,v in HW.trace_biases.items():
+    if "n1" in k:
+        axs[0].plot(v,label=k)
+    else:
+        axs[1].plot(v,label=k)
+    axs[0].set_title("Neuron 1")
+    axs[1].set_title("Neuron 2")
+plt.legend()
+plt.show()
+
+activity_plot(nodes,net,title=title,subtitles=subtitles,input=input, size=(16,6))
 
 
-# plt.figure(figsize=(16,8))
-# for i,trace in enumerate(nA.trace_dendrites):
-#     plt.plot(net.t,trace.phi_r,'--',label="phi "+str(i))
-#     # plt.plot(net.t,trace.s, label = "signal "+str(i))
-# plt.legend()
-# plt.show()
-# plt.figure(figsize=(16,8))
-# for i,trace in enumerate(nB.trace_dendrites):
-#     plt.plot(net.t,trace.phi_r,'--',label="phi "+str(i))
-#     # plt.plot(net.t,trace.s, label = "signal "+str(i))
-# plt.legend()
-# plt.show()
+fig, axs = plt.subplots(2, 1,figsize=(12,6))
+for i,trace in enumerate(nA.trace_dendrites):
+    axs[0].plot(net.t,trace.phi_r,'--',label="phi "+trace.name)
+    axs[0].plot(net.t,trace.s, label = trace.name)
+axs[0].set_title("Neuron 1")
+
+for i,trace in enumerate(nB.trace_dendrites):
+    axs[1].plot(net.t,trace.phi_r,'--',label="phi "+trace.name)
+    axs[1].plot(net.t,trace.s, label = trace.name)
+axs[1].set_title("Neuron 2")
+plt.legend()
+plt.show()
 
 '''
 Backend notes:

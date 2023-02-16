@@ -213,7 +213,11 @@ def rate_array_attachment(dendrite_object):
     ib__vec = np.asarray(ib__list)
     
     # attach data to this dendrite
-    _ind__ib = ( np.abs( ib__vec[:] - dendrite_object.bias_current ) ).argmin()
+
+    bias_current = 2.2 #***
+    _ind__ib = -1 #( np.abs( ib__vec[:] - bias_current ) ).argmin() #***
+    print(ib__vec[-1])
+    # _ind__ib = ( np.abs( ib__vec[:] - dendrite_object.bias_current ) ).argmin()
     dendrite_object.phi_r__vec = np.asarray(phi_r__array[_ind__ib])
     dendrite_object.i_di__subarray = np.asarray(i_di__array[_ind__ib],dtype=object)
     dendrite_object.r_fq__subarray = np.asarray(r_fq__array[_ind__ib],dtype=object) 
@@ -346,6 +350,7 @@ def net_step(network_object,tau_vec,d_tau):
 
     # if "hardware" in network_object.__dict__.keys():
     if network_object.hardware:
+        print("Hardware in the loop.")
         HW = network_object.hardware
         HW.traces = []
         HW.ib__list, HW.phi_r__array, HW.i_di__array, HW.r_fq__array, _, _ = dend_load_rate_array('default_ri') 
@@ -356,37 +361,10 @@ def net_step(network_object,tau_vec,d_tau):
     for ii in range(len(tau_vec)-1):
 
         # error check with hardware in the loop at defined moment
-        # ***write better
-        # if "hardware" in network_object.__dict__.keys():
-        if network_object.hardware:
-            if ii == HW.check_time[HW.phase]/network_object.dt:
-                print(ii,tau_vec[ii])
-                HW.forward_error(network_object.nodes,conversion)
-                error = HW.errors[HW.phase]
-                print("HW ERROR: ", error,"\n")
-                for err in range(len(error)):
-                    # for syn in network_object.nodes[err].synapse_list:
-                    for dend in network_object.nodes[err].dendrite_list:
-                        for name,syn in dend.synaptic_inputs.items():
-                            # print(syn.name)
-                            if 'tracesyn' in syn.name:
-                                HW.traces.append(dend)
-                                if error[err] < 0:
-                                    if 'plus' in syn.name:
-                                        # print("plus: ",error[err])
-                                        syn.input_signal.spike_times = np.arange(HW.check_time[HW.phase],HW.check_time[HW.phase]+HW.interval,50)
-                                        syn.spike_times_converted = np.asarray(syn.input_signal.spike_times) *conversion
-                                elif error[err] > 0:
-                                    if 'minus' in syn.name:
-                                        # print("minus: ",error[err])
-                                        syn.input_signal.spike_times = np.arange(HW.check_time[HW.phase],HW.check_time[HW.phase]+HW.interval,50)
-                                        syn.spike_times_converted = np.asarray(syn.input_signal.spike_times) *conversion
-                                print(syn.name,syn.input_signal.spike_times)
-                                
-                    print("\n")
-                HW.phase+=1
-            
 
+        if network_object.hardware:
+            HW.backward_error(network_object,ii)
+            
         # step through neurons
         for node in network_object.nodes:
 
@@ -400,6 +378,7 @@ def net_step(network_object,tau_vec,d_tau):
                 #         dendrite_updater(dend,ii,tau_vec[ii+1],d_tau,HW)
                 # else:
                 #     dendrite_updater(dend,ii,tau_vec[ii+1],d_tau)
+
             # update all output synapses
             output_synapse_updater(neuron,ii,tau_vec[ii+1])
             
@@ -540,6 +519,9 @@ def dendrite_updater(dendrite_object,time_index,present_time,d_tau,HW=None):
     # print("*")
     # find relevant entry in r_fq__array
 
+    new_bias=dendrite_object.bias_current
+    if time_index == 2500 or time_index == 7500: print(new_bias)
+    # new_bias=None
     if HW:
         if len(HW.traces) > 0:
             for trace in HW.traces:
@@ -550,15 +532,31 @@ def dendrite_updater(dendrite_object,time_index,present_time,d_tau,HW=None):
                     '''
                     Add inhibition!
                     '''
-                    dendrite_object.bias_current = trace.s[time_index] * (2.2-1.4) + 1.4
-                    _ind__ib = ( np.abs( HW.ib__vec[:] - dendrite_object.bias_current ) ).argmin()
-                    dendrite_object.phi_r__vec = np.asarray(HW.phi_r__array[_ind__ib])
-                    dendrite_object.i_di__subarray = np.asarray(HW.i_di__array[_ind__ib],dtype=object)
-                    dendrite_object.r_fq__subarray = np.asarray(HW.r_fq__array[_ind__ib],dtype=object)
+                    if "minus" in trace.name:
+                        new_bias = (1-trace.s[time_index]) * (2.0523958588352214-1.4) + 1.4
+                        if time_index == 2500 or time_index == 7500: 
+                            print("minus",trace.name,dendrite_object.name,new_bias)
+
+                    elif "plus" in trace.name:
+                        new_bias = trace.s[time_index] * (2.0523958588352214-1.4) + 1.4
+                        if time_index == 2500 or time_index == 7500: 
+                            print("plus",trace.name,dendrite_object.name,new_bias)
+
+                    dendrite_object.bias_current = new_bias
+                    HW.trace_biases[trace.name].append(new_bias)
+                    # _ind__ib = ( np.abs( HW.ib__vec[:] - dendrite_object.bias_current ) ).argmin()
+                    # dendrite_object.phi_r__vec = np.asarray(HW.phi_r__array[_ind__ib])
+                    # dendrite_object.i_di__subarray = np.asarray(HW.i_di__array[_ind__ib],dtype=object)
+                    # dendrite_object.r_fq__subarray = np.asarray(HW.r_fq__array[_ind__ib],dtype=object)
 
     _ind__phi_r = ( np.abs( dendrite_object.phi_r__vec[:] - dendrite_object.phi_r[time_index+1] ) ).argmin()
     i_di__vec = np.asarray(dendrite_object.i_di__subarray[_ind__phi_r])
-    _ind__s = ( np.abs( i_di__vec[:] - dendrite_object.s[time_index] ) ).argmin()
+
+    if new_bias:
+        _ind__s = ( np.abs( i_di__vec[:] - (2.0523958588352214-new_bias+dendrite_object.s[time_index]) ) ).argmin() #*** (2.2-new_bias+dendrite_object.s[time_index])
+    else:
+        _ind__s = ( np.abs( i_di__vec[:] - dendrite_object.s[time_index] ) ).argmin()
+
     r_fq = dendrite_object.r_fq__subarray[_ind__phi_r][_ind__s]
         
     # get alpha
