@@ -168,12 +168,13 @@ class dendrite():
         self.rollover = 0
         self.valleyedout = 0
         self.doubleroll = 0
+        
 
 
         # UPDATE TO CUSTOM PARAMS
         self.__dict__.update(params)
         # print(params['ib'])
-        
+    
         # print(self.type,self.dentype)
         # self.loops_present = self.type
         if hasattr(self, 'dentype'):
@@ -202,7 +203,7 @@ class dendrite():
         
         params = self.__dict__
         self.bias_current = self.ib
-
+        self.bias_dynamics = [self.ib]
         # for k,v in params.items():
         #     print(k," -> ",v)
         # print(" ************************************************************* ")
@@ -885,7 +886,7 @@ class network():
 class HardwareInTheLoop:
     def __init__(self, **params):
         self.check_time = [500,1000,1500]
-        self.expect = [[5,40],[40,5],[5,40]]
+        self.expect = [[0,50],[0,50],[5,40],[None,None]]
         # self.expect = [[40,5],[40,5],[5,40]]
         self.interval = 500
         self.phase = 0
@@ -911,6 +912,9 @@ class HardwareInTheLoop:
                         counts[i]+=1
             else:
                 counts[i]=0
+        for i,ex in enumerate(self.expect[self.phase]):
+            if ex==None:
+                self.expect[self.phase][i] = counts[i]
         print(counts,self.expect[self.phase])
         self.errors[self.phase] = np.subtract(counts,self.expect[self.phase])
         # print(self.errors[self.phase])
@@ -918,6 +922,7 @@ class HardwareInTheLoop:
         # return 
 
     def backward_error(self,net,ii):
+        freq_factor = self.freq_factor
         if ii == self.check_time[self.phase]/net.dt:
             # print(ii,tau_vec[ii])
             conversion = net.time_params['t_tau_conversion']
@@ -935,7 +940,7 @@ class HardwareInTheLoop:
                                 if 'plus' in syn.name:
                                     print("plus: ",error[err])
 
-                                    freq = np.max([300 - np.abs(error[err])*50,50])
+                                    freq = np.max([300 - np.abs(error[err])*freq_factor,50])
                                     print("plus: ",freq)
                                     syn.input_signal.spike_times = np.arange(self.check_time[self.phase],self.check_time[self.phase]+self.interval,freq)
                                     syn.spike_times_converted = np.asarray(syn.input_signal.spike_times) *conversion
@@ -943,7 +948,7 @@ class HardwareInTheLoop:
                             elif error[err] > 0:
                                 if 'minus' in syn.name:
                                     print("minus: ",error[err])
-                                    freq = np.max([300 - np.abs(error[err])*50,50])
+                                    freq = np.max([300 - np.abs(error[err])*freq_factor,50])
                                     print("minus: ",freq)
                                     syn.input_signal.spike_times = np.arange(self.check_time[self.phase],self.check_time[self.phase]+self.interval,freq)
                                     syn.spike_times_converted = np.asarray(syn.input_signal.spike_times) *conversion

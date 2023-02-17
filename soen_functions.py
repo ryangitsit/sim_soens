@@ -523,32 +523,27 @@ def dendrite_updater(dendrite_object,time_index,present_time,d_tau,HW=None):
     if time_index == 2500 or time_index == 7500: print(new_bias)
     # new_bias=None
     if HW:
-        if len(HW.traces) > 0:
-            for trace in HW.traces:
-                if dendrite_object.name == list(trace.dendritic_inputs.keys())[0]:
-                    # print(dendrite_object.name, list(trace.dendritic_inputs.keys())[0], trace.name)
+        if HW.expect[HW.phase][0] != None and HW.expect[HW.phase][1] != None:
+            if len(HW.traces) > 0:
+                for trace in HW.traces:
+                    if dendrite_object.name == list(trace.dendritic_inputs.keys())[0]:
+                        # print(dendrite_object.name, list(trace.dendritic_inputs.keys())[0], trace.name)
 
-                    # ib__list, phi_r__array, i_di__array, r_fq__array, _, _ = dend_load_rate_array(load_string)
-                    '''
-                    Add inhibition!
-                    '''
-                    if "minus" in trace.name:
-                        new_bias = (1-trace.s[time_index]) * (2.0523958588352214-1.4) + 1.4
-                        if time_index == 2500 or time_index == 7500: 
-                            print("minus",trace.name,dendrite_object.name,new_bias)
+                        if "minus" in trace.name:
+                            if trace.s[time_index] > 0:
+                                new_bias = (1-trace.s[time_index]) * (2.0523958588352214-.99) + .99
+                            # if time_index == 2500 or time_index == 7500: 
+                            #     print("minus",trace.name,dendrite_object.name,new_bias)
 
-                    elif "plus" in trace.name:
-                        new_bias = trace.s[time_index] * (2.0523958588352214-1.4) + 1.4
-                        if time_index == 2500 or time_index == 7500: 
-                            print("plus",trace.name,dendrite_object.name,new_bias)
+                        elif "plus" in trace.name:
+                            if trace.s[time_index] > 0:
+                                new_bias = trace.s[time_index] * (2.0523958588352214-.99) + .99
+                            # if time_index == 2500 or time_index == 7500: 
+                            #     print("plus",trace.name,dendrite_object.name,new_bias)
 
-                    dendrite_object.bias_current = new_bias
-                    HW.trace_biases[trace.name].append(new_bias)
-                    # _ind__ib = ( np.abs( HW.ib__vec[:] - dendrite_object.bias_current ) ).argmin()
-                    # dendrite_object.phi_r__vec = np.asarray(HW.phi_r__array[_ind__ib])
-                    # dendrite_object.i_di__subarray = np.asarray(HW.i_di__array[_ind__ib],dtype=object)
-                    # dendrite_object.r_fq__subarray = np.asarray(HW.r_fq__array[_ind__ib],dtype=object)
-
+                        dendrite_object.bias_current = new_bias
+                        HW.trace_biases[trace.name].append(new_bias)
+    dendrite_object.bias_dynamics.append(dendrite_object.bias_current)
     _ind__phi_r = ( np.abs( dendrite_object.phi_r__vec[:] - dendrite_object.phi_r[time_index+1] ) ).argmin()
     i_di__vec = np.asarray(dendrite_object.i_di__subarray[_ind__phi_r])
 
