@@ -788,8 +788,9 @@ class network():
         self.uid = network._next_uid
         network._next_uid += 1
         self.unique_label = 'net{}'.format(self.uid)
-        self.new_way=True
+        self.new_way=False
         self.null_synapses=False
+        self.nodes=[]
 
         self.__dict__.update(kwargs)
 
@@ -813,7 +814,9 @@ class network():
  
     def add_neuron(self, neuron_object):
         self.neurons[neuron_object.name] = neuron_object
-        return
+        # if self.neurons[neuron_object.name] not in self.nodes:
+        #     self.nodes.append(self.neurons[neuron_object.name])
+        # return
     
     def run_sim(self, **kwargs):
         self.dt = kwargs['dt']
@@ -885,17 +888,18 @@ class network():
 
 class HardwareInTheLoop:
     def __init__(self, **params):
-        self.check_time = [500,1000,1500]
-        self.expect = [[0,50],[0,50],[5,40],[None,None]]
+        # self.check_time = [500,1000,1500]
+        self.expect = [[0,50],[None,None],[0,50],[5,40],[None,None]]
         # self.expect = [[40,5],[40,5],[5,40]]
         self.interval = 500
         self.phase = 0
+        self.check_time = self.interval*(self.phase+1)
         self.errors = [[] for i in range(len(self.expect[0]))]
         self.error_factor = 10
         self.traces=None
         self.__dict__.update(params)
 
-    def forward_error(self,neurons,conversion):
+    def forward_error(self,neurons):
         '''
         Returns difference between actual and expected spikes for each neuron
             - Only counts spikes for a given interval phase
@@ -906,58 +910,60 @@ class HardwareInTheLoop:
             # print(type(n.neuron))
             if "spike_times" in n.neuron.__dict__:
                 for spk in n.neuron.spike_times:
-                    spk = spk/conversion
-                    if (spk > self.check_time[self.phase] - self.interval 
-                        and spk < self.check_time[self.phase]):
+                    spk = spk/self.conversion
+                    if (spk > self.check_time - self.interval 
+                        and spk < self.check_time):
                         counts[i]+=1
             else:
                 counts[i]=0
-        for i,ex in enumerate(self.expect[self.phase]):
-            if ex==None:
-                self.expect[self.phase][i] = counts[i]
+
+        # If no expectation, error will equal zero
+        # for i,ex in enumerate(self.expect[self.phase]):
+        #     if ex==None:
+                # self.expect[self.phase][i] = counts[i]
+        if self.expect[self.phase][0] == None or self.expect[self.phase][0] == None:
+            self.errors[self.phase] = np.subtract(counts,counts)
+        else:
+            self.errors[self.phase] = np.subtract(counts,self.expect[self.phase])
         print(counts,self.expect[self.phase])
-        self.errors[self.phase] = np.subtract(counts,self.expect[self.phase])
-        # print(self.errors[self.phase])
-        # self.phase+=1
-        # return 
 
-    def backward_error(self,net,ii):
+    def backward_error(self,nodes):
         freq_factor = self.freq_factor
-        if ii == self.check_time[self.phase]/net.dt:
-            # print(ii,tau_vec[ii])
-            conversion = net.time_params['t_tau_conversion']
-            self.forward_error(net.nodes,conversion)
-            error = self.errors[self.phase]
-            print("self ERROR: ", error,"\n")
-            for err in range(len(error)):
-                # for syn in net.nodes[err].synapse_list:
-                for dend in net.nodes[err].dendrite_list:
-                    for name,syn in dend.synaptic_inputs.items():
-                        # print(syn.name)
-                        if 'tracesyn' in syn.name:
-                            self.traces.append(dend)
-                            if error[err] < 0:
-                                if 'plus' in syn.name:
-                                    print("plus: ",error[err])
+        error = self.errors[self.phase]
+        print("self ERROR: ", error,"\n")
+        for i in range(len(error)):
+            for dend in nodes[i].dendrite_list:
+                for name,syn in dend.synaptic_inputs.items():
+                    # print(syn.name)
+                    if 'tracesyn' in syn.name:
+                        self.traces.append(dend)
 
-                                    freq = np.max([300 - np.abs(error[err])*freq_factor,50])
-                                    print("plus: ",freq)
-                                    syn.input_signal.spike_times = np.arange(self.check_time[self.phase],self.check_time[self.phase]+self.interval,freq)
-                                    syn.spike_times_converted = np.asarray(syn.input_signal.spike_times) *conversion
+                        if error[i] < 0:
+                            if 'plus' in syn.name:
+                                print("plus error: ",error[i])
+                                freq = np.max([300 - np.abs(error[i])*freq_factor,50])
+                                print("plus frequency: ",freq)
+                                syn.input_signal.spike_times = np.arange(self.check_time,
+                                                                         self.check_time+self.interval,
+                                                                         freq)
+                                syn.spike_times_converted = np.asarray(syn.input_signal.spike_times)*self.conversion
 
-                            elif error[err] > 0:
-                                if 'minus' in syn.name:
-                                    print("minus: ",error[err])
-                                    freq = np.max([300 - np.abs(error[err])*freq_factor,50])
-                                    print("minus: ",freq)
-                                    syn.input_signal.spike_times = np.arange(self.check_time[self.phase],self.check_time[self.phase]+self.interval,freq)
-                                    syn.spike_times_converted = np.asarray(syn.input_signal.spike_times) *conversion
-                            print(syn.name,syn.input_signal.spike_times)
-                            
-                print("\n")
-            self.phase+=1
-            self.trace_biases = {}
-            for trace in self.traces:
-                self.trace_biases[trace.name] = []
-                # return net
-    
+                        elif error[i] > 0:
+                            if 'minus' in syn.name:
+                                print("minus error: ",error[i])
+                                freq = np.max([300 - np.abs(error[i])*freq_factor,50])
+                                print("minus frequency: ",freq)
+                                syn.input_signal.spike_times = np.arange(self.check_time,
+                                                                         self.check_time+self.interval,
+                                                                         freq)
+                                syn.spike_times_converted = np.asarray(syn.input_signal.spike_times)*self.conversion
+
+                        print(syn.name,syn.input_signal.spike_times)
+                        
+            print("\n")
+        self.phase+=1
+        self.check_time = self.interval*(self.phase+1)
+        self.trace_biases = {}
+        for trace in self.traces:
+            self.trace_biases[trace.name] = []
+            # return net

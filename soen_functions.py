@@ -44,7 +44,7 @@ def run_soen_sim(obj, **kwargs):
         obj.time_params.update({'tau_vec': tau_vec, 'd_tau': d_tau})
         
         if obj.new_way==False:
-            print("old way")
+            # print("old way")
             # initialize all neurons
             for neuron_key in obj.neurons:
                 
@@ -216,7 +216,7 @@ def rate_array_attachment(dendrite_object):
 
     bias_current = 2.2 #***
     _ind__ib = -1 #( np.abs( ib__vec[:] - bias_current ) ).argmin() #***
-    print(ib__vec[-1])
+    # print(ib__vec[-1])
     # _ind__ib = ( np.abs( ib__vec[:] - dendrite_object.bias_current ) ).argmin()
     dendrite_object.phi_r__vec = np.asarray(phi_r__array[_ind__ib])
     dendrite_object.i_di__subarray = np.asarray(i_di__array[_ind__ib],dtype=object)
@@ -348,13 +348,14 @@ def net_step(network_object,tau_vec,d_tau):
     # step through time
     _t0 = time.time_ns()
 
-    # if "hardware" in network_object.__dict__.keys():
-    if network_object.hardware:
+    if "hardware" in network_object.__dict__.keys():
+    # if hasattr('network_object','hardware'):
         print("Hardware in the loop.")
         HW = network_object.hardware
         HW.traces = []
         HW.ib__list, HW.phi_r__array, HW.i_di__array, HW.r_fq__array, _, _ = dend_load_rate_array('default_ri') 
         HW.ib__vec = np.asarray(HW.ib__list)
+        HW.conversion = network_object.time_params['t_tau_conversion']
     else:
         HW=None
     # print(len(tau_vec))
@@ -362,8 +363,12 @@ def net_step(network_object,tau_vec,d_tau):
 
         # error check with hardware in the loop at defined moment
 
-        if network_object.hardware:
-            HW.backward_error(network_object,ii)
+        # if hasattr('network_object','hardware'):
+        if "hardware" in network_object.__dict__.keys():
+            # print("BACKWARD ERROR")
+            if ii == HW.check_time/network_object.dt:
+                HW.forward_error(network_object.nodes)
+                HW.backward_error(network_object.nodes)
             
         # step through neurons
         for node in network_object.nodes:
@@ -373,11 +378,6 @@ def net_step(network_object,tau_vec,d_tau):
             # update all input synapses and dendrites       
             for dend in node.dendrite_list:
                 dendrite_updater(dend,ii,tau_vec[ii+1],d_tau,HW)
-                # if network_object.hardware:
-                #     if HW.traces:
-                #         dendrite_updater(dend,ii,tau_vec[ii+1],d_tau,HW)
-                # else:
-                #     dendrite_updater(dend,ii,tau_vec[ii+1],d_tau)
 
             # update all output synapses
             output_synapse_updater(neuron,ii,tau_vec[ii+1])
@@ -520,29 +520,31 @@ def dendrite_updater(dendrite_object,time_index,present_time,d_tau,HW=None):
     # find relevant entry in r_fq__array
 
     new_bias=dendrite_object.bias_current
-    if time_index == 2500 or time_index == 7500: print(new_bias)
     # new_bias=None
     if HW:
-        if HW.expect[HW.phase][0] != None and HW.expect[HW.phase][1] != None:
-            if len(HW.traces) > 0:
-                for trace in HW.traces:
-                    if dendrite_object.name == list(trace.dendritic_inputs.keys())[0]:
-                        # print(dendrite_object.name, list(trace.dendritic_inputs.keys())[0], trace.name)
+        # if HW.expect[HW.phase][0] != None and HW.expect[HW.phase][1] != None:
+        if len(HW.traces) > 0:
+            for trace in HW.traces:
+                if dendrite_object.name == list(trace.dendritic_inputs.keys())[0]:
+                    # print(dendrite_object.name, list(trace.dendritic_inputs.keys())[0], trace.name)
 
-                        if "minus" in trace.name:
-                            if trace.s[time_index] > 0:
-                                new_bias = (1-trace.s[time_index]) * (2.0523958588352214-.99) + .99
-                            # if time_index == 2500 or time_index == 7500: 
-                            #     print("minus",trace.name,dendrite_object.name,new_bias)
+                    if "minus" in trace.name:
+                        if trace.s[time_index] > 0:
+                            new_bias = (1-trace.s[time_index]) * (2.0523958588352214-.99) + 1.2
+                        # if time_index == 2500 or time_index == 7500: 
+                        #     print("minus",trace.name,dendrite_object.name,new_bias)
 
-                        elif "plus" in trace.name:
-                            if trace.s[time_index] > 0:
-                                new_bias = trace.s[time_index] * (2.0523958588352214-.99) + .99
-                            # if time_index == 2500 or time_index == 7500: 
-                            #     print("plus",trace.name,dendrite_object.name,new_bias)
+                    elif "plus" in trace.name:
+                        if trace.s[time_index] > 0:
+                            new_bias = trace.s[time_index] * (2.0523958588352214-.99) + 1.2
+                        # if time_index == 2500 or time_index == 7500: 
+                        #     print("plus",trace.name,dendrite_object.name,new_bias)
 
-                        dendrite_object.bias_current = new_bias
-                        HW.trace_biases[trace.name].append(new_bias)
+                    # if (time_index == 2500 or time_index == 7500): 
+                        # print("BIAS: ",dendrite_object.name,new_bias)
+
+                    dendrite_object.bias_current = new_bias
+                    HW.trace_biases[trace.name].append(new_bias)
     dendrite_object.bias_dynamics.append(dendrite_object.bias_current)
     _ind__phi_r = ( np.abs( dendrite_object.phi_r__vec[:] - dendrite_object.phi_r[time_index+1] ) ).argmin()
     i_di__vec = np.asarray(dendrite_object.i_di__subarray[_ind__phi_r])

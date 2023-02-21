@@ -150,7 +150,7 @@ class NeuralZoo():
 
         entries = self.__dict__
         if "name" not in entries:
-            entries['name'] = f"rand_neuron_{np.round(np.random.rand(),5)}"
+            entries['name'] = f"rand_neuron_{int(np.random.rand()*100000)}"
         custom_neuron = neuron(**entries)
         self.dendrite_list = [custom_neuron.dend__nr_ni,custom_neuron.dend__ref]
 

@@ -32,7 +32,7 @@ input = SuperInput(channels=2, type='defined', defined_spikes=def_spikes, durati
 # raster_plot(input.spike_arrays)
 
 
-trace_factor=1
+trace_factor=.25
 threshold=0.5
 trace_syn_factor=1
 
@@ -56,7 +56,7 @@ for lay in nA.dendrites[1:]:
             for ei in exin:
                 trace_dend = dendrite(name=f'n1_d{i}_{ei}')
                 trace_dend.add_input(d,connection_strength=cs)#2*np.random.rand())
-                syn = common_synapse(f'{d.name}_tracesyn_{trace_dend.name}_{np.random.rand()}')
+                syn = common_synapse(f'{d.name}_tracesyn_{trace_dend.name}_{int(np.random.rand()*100000)}')
                 trace_dend.add_input(syn,connection_strength=trace_syn_factor)
                 nA.trace_dendrites.append(trace_dend)
                 nA.dendrite_list.append(trace_dend)
@@ -81,7 +81,7 @@ for lay in nB.dendrites[1:]:
             for ei in exin:
                 trace_dend = dendrite(name=f'n2_d{i}_{ei}')
                 trace_dend.add_input(d,connection_strength=cs)#2*np.random.rand())
-                syn = common_synapse(f'{d.name}_tracesyn_{trace_dend.name}_{np.random.rand()}')
+                syn = common_synapse(f'{d.name}_tracesyn_{trace_dend.name}_{int(np.random.rand()*100000)}')
                 trace_dend.add_input(syn,connection_strength=trace_syn_factor)
                 nB.trace_dendrites.append(trace_dend)
                 nB.dendrite_list.append(trace_dend)
@@ -102,7 +102,7 @@ else:
     HW = None
 
 
-net = network(sim=True,dt=.1,tf=1500,nodes=nodes,null_synapses=True,hardware=HW)
+net = network(sim=True,dt=.1,tf=1500,nodes=nodes,null_synapses=True,new_way=True,hardware=HW)
 
 # # print(nA.trace_dendrites[0].__dict__.keys(),"\n\n")
 
@@ -110,33 +110,41 @@ net = network(sim=True,dt=.1,tf=1500,nodes=nodes,null_synapses=True,hardware=HW)
 
 
 subtitles= ["Neuron 1","Neuron 2"]
+activity_plot(nodes,net,title=title,subtitles=subtitles,input=input, size=(16,6),phir=True)
+
 
 fig, axs = plt.subplots(2, 1,figsize=(12,6))
+fig.suptitle("Change in Biases Associated with Traces over Time",fontsize=18)
 for k,v in HW.trace_biases.items():
     if "n1" in k:
         axs[0].plot(v,label=k)
     else:
         axs[1].plot(v,label=k)
-    axs[0].set_title("Neuron 1")
+axs[0].set_title("Neuron 1")
+axs[1].set_title("Neuron 2")
 axs[0].legend()
-plt.show()
+plt.show(block=False)
 
-activity_plot(nodes,net,title=title,subtitles=subtitles,input=input, size=(16,6),phir=True)
+
+
 
 fig, axs = plt.subplots(2, 1,figsize=(12,6))
 for i,trace in enumerate(nA.dendrite_list):
     if "plus" not in trace.name and "minus" not in trace.name:
-        axs[0].plot(net.t,trace.phi_r,'--',label="phi "+trace.name)
-        axs[0].plot(net.t,trace.bias_dynamics, label = trace.name)
+        if "ref" not in trace.name and "nr_ni" not in trace.name:
+            # axs[0].plot(net.t,trace.phi_r,'--',label="phi "+trace.name)
+            axs[0].plot(net.t,trace.bias_dynamics, label = trace.name)
 axs[0].set_title("Neuron 1")
 for i,trace in enumerate(nB.dendrite_list):
     if "plus" not in trace.name and "minus" not in trace.name:
-        axs[1].plot(net.t,trace.phi_r,'--',label="phi "+trace.name)
-        axs[1].plot(net.t,trace.bias_dynamics, label = trace.name)
+        if "ref" not in trace.name and "nr_ni" not in trace.name:
+            # axs[1].plot(net.t,trace.phi_r,'--',label="phi "+trace.name)
+            axs[1].plot(net.t,trace.bias_dynamics, label = trace.name)
 axs[0].set_title("Neuron 1")
 axs[1].set_title("Neuron 2")
+fig.suptitle("Change in Biases of Forward Dendrites",fontsize=18)
 plt.legend()
-plt.show()
+plt.show(block=False)
 
 fig, axs = plt.subplots(2, 1,figsize=(12,6))
 for i,trace in enumerate(nA.trace_dendrites):
@@ -148,6 +156,7 @@ for i,trace in enumerate(nB.trace_dendrites):
     # axs[1].plot(net.t,trace.phi_r,'--',label="phi "+trace.name)
     axs[1].plot(net.t,trace.s, label = trace.name)
 axs[1].set_title("Neuron 2")
+fig.suptitle("Trace Dendrite Signals",fontsize=18)
 plt.legend()
 plt.show()
 
@@ -164,4 +173,6 @@ Backend notes:
     - refers to neurons by name and compares to inform update input
  - if plasiticity, check condition of plastic modules and change r_fq accordingly
     - pass extra info into dendrite updater?
+
+ - Consequent of inactive trace dendrites on feed-forward dendrites?
 '''
