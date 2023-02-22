@@ -894,7 +894,7 @@ class HardwareInTheLoop:
         self.interval = 500
         self.phase = 0
         self.check_time = self.interval*(self.phase+1)
-        self.errors = [[] for i in range(len(self.expect[0]))]
+        self.errors = [[] for i in range(len(self.expect))]
         self.error_factor = 10
         self.traces=None
         self.__dict__.update(params)
@@ -943,9 +943,9 @@ class HardwareInTheLoop:
                                 print("plus error: ",error[i])
                                 freq = np.max([300 - np.abs(error[i])*freq_factor,50])
                                 print("plus frequency: ",freq)
-                                syn.input_signal.spike_times = np.arange(self.check_time,
+                                syn.input_signal.spike_times += list(np.arange(self.check_time,
                                                                          self.check_time+self.interval,
-                                                                         freq)
+                                                                         freq))
                                 syn.spike_times_converted = np.asarray(syn.input_signal.spike_times)*self.conversion
 
                         elif error[i] > 0:
@@ -953,9 +953,9 @@ class HardwareInTheLoop:
                                 print("minus error: ",error[i])
                                 freq = np.max([300 - np.abs(error[i])*freq_factor,50])
                                 print("minus frequency: ",freq)
-                                syn.input_signal.spike_times = np.arange(self.check_time,
+                                syn.input_signal.spike_times += list(np.arange(self.check_time,
                                                                          self.check_time+self.interval,
-                                                                         freq)
+                                                                         freq))
                                 syn.spike_times_converted = np.asarray(syn.input_signal.spike_times)*self.conversion
 
                         print(syn.name,syn.input_signal.spike_times)

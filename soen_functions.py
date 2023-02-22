@@ -522,6 +522,7 @@ def dendrite_updater(dendrite_object,time_index,present_time,d_tau,HW=None):
     new_bias=dendrite_object.bias_current
     # new_bias=None
     if HW:
+        baseline = 1.2
         # if HW.expect[HW.phase][0] != None and HW.expect[HW.phase][1] != None:
         if len(HW.traces) > 0:
             for trace in HW.traces:
@@ -530,13 +531,13 @@ def dendrite_updater(dendrite_object,time_index,present_time,d_tau,HW=None):
 
                     if "minus" in trace.name:
                         if trace.s[time_index] > 0:
-                            new_bias = (1-trace.s[time_index]) * (2.0523958588352214-.99) + 1.2
+                            new_bias = (1-trace.s[time_index]) * (2.0523958588352214-.99) + baseline
                         # if time_index == 2500 or time_index == 7500: 
                         #     print("minus",trace.name,dendrite_object.name,new_bias)
 
                     elif "plus" in trace.name:
                         if trace.s[time_index] > 0:
-                            new_bias = trace.s[time_index] * (2.0523958588352214-.99) + 1.2
+                            new_bias = trace.s[time_index] * (2.0523958588352214-.99) + baseline
                         # if time_index == 2500 or time_index == 7500: 
                         #     print("plus",trace.name,dendrite_object.name,new_bias)
 
