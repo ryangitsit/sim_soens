@@ -515,7 +515,7 @@ def dendrite_updater(dendrite_object,time_index,present_time,d_tau,HW=None):
             if np.abs(dendrite_object.phi_r[time_index+1]) > 1.5:
                 dendrite_object.doubleroll+=1
     #         print('phi_r = {:5.3f}? Calm the fuck down, bro.'.format(dendrite_object.phi_r[time_index+1]))
-    #     print('\n')
+    #     print('\n')``
     # print("*")
     # find relevant entry in r_fq__array
 

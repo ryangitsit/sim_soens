@@ -14,27 +14,52 @@ from soen_component_library import common_synapse
 """
 ADD NEURON OUTOUT TO TRACE DENDRITES
 """
-duration = 2000
 
-times_1 = np.concatenate([np.arange(0,500,75),
-                          np.arange(500,1000,75),
-                          np.arange(1000,duration,75)])
 
-times_2 = np.concatenate([np.arange(0,500,75),
-                          np.arange(500,1000,75),   
-                          np.arange(1000,duration,75)])
+# times_1 = np.concatenate([np.arange(0,500,75),
+#                           np.arange(500,1000,75),
+#                           np.arange(1000,duration,75)])
+
+# times_2 = np.concatenate([np.arange(0,500,60),
+#                           np.arange(500,1000,75),
+#                           np.arange(1000,,75),
+#                           np.arange(500,1000,75),
+#                           np.arange(500,1000,75),   
+#                           np.arange(1000,duration,75)])
+
+rates_1 = [51,51,95,95,50,95]
+rates_2 = [60,60,120,120,60,120]
+
+interval = 1000
+duration = interval*(len(rates_1))
+
+times_1 = []
+times_2 = []
+
+for i in range(len(rates_1)):
+    times_1.append(np.arange(i*interval,i*interval+interval,rates_1[i]))
+    times_2.append(np.arange(i*interval,i*interval+interval,rates_2[i]))
+times_1 = np.concatenate(times_1)
+times_2 = np.concatenate(times_2)
 
 indices = np.concatenate([np.zeros(len(times_1)).astype(int),np.ones(len(times_2)).astype(int)])
 times = np.concatenate([times_1,times_2])
 def_spikes = [indices,times]
 input = SuperInput(channels=2, type='defined', defined_spikes=def_spikes, duration=duration)
 
-# raster_plot(input.spike_arrays)
+raster_plot(input.spike_arrays)
 
 
-trace_factor=.25
+# trace_factor=.25
+# threshold=0.5
+# trace_syn_factor=1
+# tau_di=10000
+
+trace_factor=.2
 threshold=0.5
 trace_syn_factor=1
+tau_di=5000
+freq_factor=10
 
 WA = [[[.6,.5]]]
 
@@ -54,7 +79,7 @@ for lay in nA.dendrites[1:]:
             cs = WA[0][0][i]*trace_factor
             # print(cs)
             for ei in exin:
-                trace_dend = dendrite(name=f'n1_d{i}_{ei}',tau_di=10000)
+                trace_dend = dendrite(name=f'n1_d{i}_{ei}',tau_di=tau_di)
                 trace_dend.add_input(d,connection_strength=cs)#2*np.random.rand())
                 syn = common_synapse(f'{d.name}_tracesyn_{trace_dend.name}_{int(np.random.rand()*100000)}')
                 trace_dend.add_input(syn,connection_strength=trace_syn_factor)
@@ -79,7 +104,7 @@ for lay in nB.dendrites[1:]:
             cs = WB[0][0][i]*trace_factor
             # print(cs)
             for ei in exin:
-                trace_dend = dendrite(name=f'n2_d{i}_{ei}',tau_di=10000)
+                trace_dend = dendrite(name=f'n2_d{i}_{ei}',tau_di=tau_di)
                 trace_dend.add_input(d,connection_strength=cs)#2*np.random.rand())
                 syn = common_synapse(f'{d.name}_tracesyn_{trace_dend.name}_{int(np.random.rand()*100000)}')
                 trace_dend.add_input(syn,connection_strength=trace_syn_factor)
@@ -96,7 +121,7 @@ plasticity=True
 
 if plasticity==True:
     title="Error Module Engaging Plasticity at t=500ns (Neuron 2 Correct Output)"
-    HW = HardwareInTheLoop(freq_factor=50)
+    HW = HardwareInTheLoop(freq_factor=freq_factor,interval=interval)
 else:
     title="No Plasiticity (Neuron 2 Correct Output)"
     HW = None
@@ -108,6 +133,18 @@ net = network(sim=True,dt=.1,tf=duration,nodes=nodes,null_synapses=True,new_way=
 
 # nA.plot_neuron_activity(net,phir=True,input=input)
 
+
+# Make a function
+print("\nNEURON 1")
+for dend in nA.dendrite_list:
+    print(dend.name, " - Rollover: ",dend.rollover)
+    print(dend.name, " - Valleyed: ",dend.valleyedout)
+    print(dend.name, " - Double: ", dend.doubleroll)
+print("\nNEURON 2")
+for dend in nB.dendrite_list:
+    print(dend.name, " - Rollover: ",dend.rollover)
+    print(dend.name, " - Valleyed: ",dend.valleyedout)
+    print(dend.name, " - Double: ", dend.doubleroll)
 
 subtitles= ["Neuron 1","Neuron 2"]
 activity_plot(nodes,net,title=title,subtitles=subtitles,input=input, size=(16,6),phir=True)

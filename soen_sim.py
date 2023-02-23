@@ -888,9 +888,7 @@ class network():
 
 class HardwareInTheLoop:
     def __init__(self, **params):
-        # self.check_time = [500,1000,1500]
-        self.expect = [[0,50],[None,None],[0,50],[5,40],[None,None]]
-        # self.expect = [[40,5],[40,5],[5,40]]
+        self.expect = [[0,50],[None,None],[50,0],[None,None],[None,None],[None,None],[None,None]]
         self.interval = 500
         self.phase = 0
         self.check_time = self.interval*(self.phase+1)
@@ -921,6 +919,7 @@ class HardwareInTheLoop:
         # for i,ex in enumerate(self.expect[self.phase]):
         #     if ex==None:
                 # self.expect[self.phase][i] = counts[i]
+        print("phase:",self.phase)
         if self.expect[self.phase][0] == None or self.expect[self.phase][0] == None:
             self.errors[self.phase] = np.subtract(counts,counts)
         else:
