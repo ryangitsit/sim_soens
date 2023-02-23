@@ -891,11 +891,11 @@ class HardwareInTheLoop:
         self.expect = [[0,50],[None,None],[50,0],[None,None],[None,None],[None,None],[None,None]]
         self.interval = 500
         self.phase = 0
-        self.check_time = self.interval*(self.phase+1)
-        self.errors = [[] for i in range(len(self.expect))]
         self.error_factor = 10
         self.traces=None
         self.__dict__.update(params)
+        self.check_time = self.interval*(self.phase+1)
+        self.errors = [[] for i in range(len(self.expect))]
 
     def forward_error(self,neurons):
         '''
@@ -931,31 +931,31 @@ class HardwareInTheLoop:
         error = self.errors[self.phase]
         print("self ERROR: ", error,"\n")
         for i in range(len(error)):
-            for dend in nodes[i].dendrite_list:
+            for dend in nodes[i].trace_dendrites:
                 for name,syn in dend.synaptic_inputs.items():
-                    # print(syn.name)
-                    if 'tracesyn' in syn.name:
-                        self.traces.append(dend)
+                    # # print(syn.name)
+                    # if 'tracesyn' in syn.name:
+                    self.traces.append(dend)
 
-                        if error[i] < 0:
-                            if 'plus' in syn.name:
-                                print("plus error: ",error[i])
-                                freq = np.max([300 - np.abs(error[i])*freq_factor,50])
-                                print("plus frequency: ",freq)
-                                syn.input_signal.spike_times += list(np.arange(self.check_time,
-                                                                         self.check_time+self.interval,
-                                                                         freq))
-                                syn.spike_times_converted = np.asarray(syn.input_signal.spike_times)*self.conversion
+                    if error[i] < 0:
+                        if 'plus' in syn.name:
+                            print("plus error: ",error[i])
+                            freq = np.max([300 - np.abs(error[i])*freq_factor,50])
+                            print("plus frequency: ",freq)
+                            syn.input_signal.spike_times += list(np.arange(self.check_time,
+                                                                        self.check_time+self.interval,
+                                                                        freq))
+                            syn.spike_times_converted = np.asarray(syn.input_signal.spike_times)*self.conversion
 
-                        elif error[i] > 0:
-                            if 'minus' in syn.name:
-                                print("minus error: ",error[i])
-                                freq = np.max([300 - np.abs(error[i])*freq_factor,50])
-                                print("minus frequency: ",freq)
-                                syn.input_signal.spike_times += list(np.arange(self.check_time,
-                                                                         self.check_time+self.interval,
-                                                                         freq))
-                                syn.spike_times_converted = np.asarray(syn.input_signal.spike_times)*self.conversion
+                    elif error[i] > 0:
+                        if 'minus' in syn.name:
+                            print("minus error: ",error[i])
+                            freq = np.max([300 - np.abs(error[i])*freq_factor,50])
+                            print("minus frequency: ",freq)
+                            syn.input_signal.spike_times += list(np.arange(self.check_time,
+                                                                        self.check_time+self.interval,
+                                                                        freq))
+                            syn.spike_times_converted = np.asarray(syn.input_signal.spike_times)*self.conversion
 
                         print(syn.name,syn.input_signal.spike_times)
                         

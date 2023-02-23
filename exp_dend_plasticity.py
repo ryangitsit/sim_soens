@@ -27,18 +27,42 @@ ADD NEURON OUTOUT TO TRACE DENDRITES
 #                           np.arange(500,1000,75),   
 #                           np.arange(1000,duration,75)])
 
-rates_1 = [51,51,95,95,50,95]
-rates_2 = [60,60,120,120,60,120]
+rates_1 = [51,51,51,95,95,95,50,50,50]
+rates_2 = [60,60,60,120,120,120,60,60,60]
+correct = [2,2,1,1,2,1,1]
 
-interval = 1000
-duration = interval*(len(rates_1))
+expect = [
+    [0,50],
+    [None,None],
+    [None,None],
+    [50,0],
+    [None,None],
+    [None,None],
+    [None,None],
+    [None,None]]
+
+r1 = rates_1
+r2 = rates_2
+
+# r1 = []
+# r2 = []
+# expect = []
+# for i in range(10):
+#     r1 += rates_1
+#     r2 += rates_2
+#     expect += expect_
+
+interval = 500
+duration = interval*(len(r1))
+
+
 
 times_1 = []
 times_2 = []
 
-for i in range(len(rates_1)):
-    times_1.append(np.arange(i*interval,i*interval+interval,rates_1[i]))
-    times_2.append(np.arange(i*interval,i*interval+interval,rates_2[i]))
+for i in range(len(r1)):
+    times_1.append(np.arange(i*interval,i*interval+interval,r1[i]))
+    times_2.append(np.arange(i*interval,i*interval+interval,r2[i]))
 times_1 = np.concatenate(times_1)
 times_2 = np.concatenate(times_2)
 
@@ -60,6 +84,8 @@ threshold=0.5
 trace_syn_factor=1
 tau_di=5000
 freq_factor=10
+baseline = 1.2
+soma_factor = .1
 
 WA = [[[.6,.5]]]
 
@@ -83,6 +109,7 @@ for lay in nA.dendrites[1:]:
                 trace_dend.add_input(d,connection_strength=cs)#2*np.random.rand())
                 syn = common_synapse(f'{d.name}_tracesyn_{trace_dend.name}_{int(np.random.rand()*100000)}')
                 trace_dend.add_input(syn,connection_strength=trace_syn_factor)
+                trace_dend.add_input(nA.neuron.dend__nr_ni,connection_strength=soma_factor) ## 
                 nA.trace_dendrites.append(trace_dend)
                 nA.dendrite_list.append(trace_dend)
                 nA.synapse_list.append(syn)
@@ -108,6 +135,7 @@ for lay in nB.dendrites[1:]:
                 trace_dend.add_input(d,connection_strength=cs)#2*np.random.rand())
                 syn = common_synapse(f'{d.name}_tracesyn_{trace_dend.name}_{int(np.random.rand()*100000)}')
                 trace_dend.add_input(syn,connection_strength=trace_syn_factor)
+                trace_dend.add_input(nB.neuron.dend__nr_ni,connection_strength=soma_factor) ##
                 nB.trace_dendrites.append(trace_dend)
                 nB.dendrite_list.append(trace_dend)
                 nB.synapse_list.append(syn)
@@ -121,7 +149,7 @@ plasticity=True
 
 if plasticity==True:
     title="Error Module Engaging Plasticity at t=500ns (Neuron 2 Correct Output)"
-    HW = HardwareInTheLoop(freq_factor=freq_factor,interval=interval)
+    HW = HardwareInTheLoop(freq_factor=freq_factor,interval=interval,expect=expect,baseline=baseline)
 else:
     title="No Plasiticity (Neuron 2 Correct Output)"
     HW = None
