@@ -13,6 +13,7 @@ from soen_utilities import dend_load_rate_array, dend_load_arrays_thresholds_sat
 
 ib__list__ri, phi_r__array__ri, i_di__array__ri, r_fq__array__ri, phi_th_plus__vec__ri, phi_th_minus__vec__ri, s_max_plus__vec__ri, s_max_minus__vec__ri, s_max_plus__array__ri, s_max_minus__array__ri = dend_load_arrays_thresholds_saturations('default_ri')
 ib__list__rtti, phi_r__array__rtti, i_di__array__rtti, r_fq__array__rtti, phi_th_plus__vec__rtti, phi_th_minus__vec__rtti, s_max_plus__vec__rtti, s_max_minus__vec__rtti, s_max_plus__array__rtti, s_max_minus__array__rtti = dend_load_arrays_thresholds_saturations('default_rtti')
+# ib__list__rtti, phi_r__array__rtti, i_di__array__rtti, r_fq__array__rtti, phi_th_plus__vec__rtti, phi_th_minus__vec__rtti, s_max_plus__vec__rtti, s_max_minus__vec__rtti, s_max_plus__array__rtti, s_max_minus__array__rtti = dend_load_arrays_thresholds_saturations('default_pri')
 ib__vec__ri = np.asarray(ib__list__ri[:])
 ib__vec__rtti = np.asarray(ib__list__rtti[:])
 
@@ -20,7 +21,7 @@ ib__vec__rtti = np.asarray(ib__list__rtti[:])
 
 def run_soen_sim(obj, **kwargs):
     
-    # set up time vec
+    # set up time vecx
     if 'dt' in kwargs:
         dt = kwargs['dt']
     else:
@@ -177,6 +178,11 @@ def dendrite_init_and_drive_construct(dendrite_object,tau_vec,t_tau_conversion,d
     elif dendrite_object.loops_present == 'rtti':
         ib_list = ib__list__rtti
         r_fq_array = r_fq__array__rtti
+    elif dendrite_object.loops_present == 'pri':
+        ib_list = ib__list__rtti
+        r_fq_array = r_fq__array__rtti
+
+
     _ib_ind = index_finder(ib_list,dendrite_object.ib)
     _flat_rate = [item for sublist in r_fq_array[_ib_ind] for item in sublist]
     _r_max = np.max(_flat_rate)
@@ -214,10 +220,16 @@ def rate_array_attachment(dendrite_object):
     
     # attach data to this dendrite
 
-    bias_current = 2.2 #***
-    _ind__ib = -1 #( np.abs( ib__vec[:] - bias_current ) ).argmin() #***
+    # bias_current = 2.2 #***
+    # _ind__ib = -1 #( np.abs( ib__vec[:] - bias_current ) ).argmin() #***
     # print(ib__vec[-1])
     # _ind__ib = ( np.abs( ib__vec[:] - dendrite_object.bias_current ) ).argmin()
+
+    if dendrite_object.loops_present == 'pri':
+        _ind__ib = ( np.abs( ib__vec[:] - dendrite_object.phi_p ) ).argmin()
+    else:
+        _ind__ib = -1 #( np.abs( ib__vec[:] - bias_current ) ).argmin() #***
+        # _ind__ib = ( np.abs( ib__vec[:] - dendrite_object.bias_current ) ).argmin()
     dendrite_object.phi_r__vec = np.asarray(phi_r__array[_ind__ib])
     dendrite_object.i_di__subarray = np.asarray(i_di__array[_ind__ib],dtype=object)
     dendrite_object.r_fq__subarray = np.asarray(r_fq__array[_ind__ib],dtype=object) 
@@ -350,7 +362,7 @@ def net_step(network_object,tau_vec,d_tau):
 
     # if "hardware" in network_object.__dict__.keys():
     # if hasattr('network_object','hardware'):
-    if network_object.hardware:
+    if hasattr('network_object','hardware'):
         print("Hardware in the loop.")
         HW = network_object.hardware
         HW.traces = []
@@ -358,6 +370,7 @@ def net_step(network_object,tau_vec,d_tau):
         HW.ib__vec = np.asarray(HW.ib__list)
         HW.conversion = network_object.time_params['t_tau_conversion']
     else:
+        network_object.hardware=None
         HW=None
     # print(len(tau_vec))
     for ii in range(len(tau_vec)-1):
@@ -379,8 +392,9 @@ def net_step(network_object,tau_vec,d_tau):
 
             # update all input synapses and dendrites       
             for dend in node.dendrite_list:
-                if dend not in node.trace_dendrites:
-                    dendrite_updater(dend,ii,tau_vec[ii+1],d_tau,HW)
+                if hasattr('node',"trace_dendrites"):
+                    if dend not in node.trace_dendrites:
+                        dendrite_updater(dend,ii,tau_vec[ii+1],d_tau,HW)
                 else:
                     dendrite_updater(dend,ii,tau_vec[ii+1],d_tau,HW)
 
@@ -524,8 +538,9 @@ def dendrite_updater(dendrite_object,time_index,present_time,d_tau,HW=None):
     # print("*")
     # find relevant entry in r_fq__array
 
-    new_bias=dendrite_object.bias_current
+    
     # new_bias=None
+    new_bias=dendrite_object.bias_current
     if HW:
         # if HW.expect[HW.phase][0] != None and HW.expect[HW.phase][1] != None:
         # if len(HW.traces) > 0:
@@ -557,8 +572,12 @@ def dendrite_updater(dendrite_object,time_index,present_time,d_tau,HW=None):
     _ind__phi_r = ( np.abs( dendrite_object.phi_r__vec[:] - dendrite_object.phi_r[time_index+1] ) ).argmin()
     i_di__vec = np.asarray(dendrite_object.i_di__subarray[_ind__phi_r])
 
-    if new_bias:
+    if dendrite_object.pri == True:
+        _ind__s = ( np.abs( i_di__vec[:] - (2.7 - dendrite_object.bias_current + dendrite_object.s[time_index] ) )).argmin()
+
+    elif new_bias:
         _ind__s = ( np.abs( i_di__vec[:] - (2.0523958588352214-new_bias+dendrite_object.s[time_index]) ) ).argmin() #*** (2.2-new_bias+dendrite_object.s[time_index])
+
     else:
         _ind__s = ( np.abs( i_di__vec[:] - dendrite_object.s[time_index] ) ).argmin()
 
@@ -738,6 +757,9 @@ def recursive_dendrite_initialization_and_drive_construction(dendrite_object,tau
     elif dendrite_object.loops_present == 'rtti':
         ib_list = ib__list__rtti
         r_fq_array = r_fq__array__rtti
+    elif dendrite_object.loops_present == 'pri':
+        ib_list = ib__list__pri
+        r_fq_array = r_fq__array__pri
     _ib_ind = index_finder(ib_list,dendrite_object.ib)
     _flat_rate = [item for sublist in r_fq_array[_ib_ind] for item in sublist]
     _r_max = np.max(_flat_rate)
@@ -1316,3 +1338,5 @@ def phi_thresholds(neuron_object):
 
 
 
+
+# %%

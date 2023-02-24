@@ -205,6 +205,7 @@ class NeuralZoo():
 
                         if hasattr(self, 'types'):
                             entries['loops_present'] = self.types[i][j][k]
+                            print("HERE",self.types[i][j][k])
                         else:
                             entries['loops_present'] = 'ri'
                         entries = self.__dict__

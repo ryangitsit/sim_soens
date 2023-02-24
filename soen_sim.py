@@ -145,20 +145,26 @@ class dendrite():
         self.unique_label = 'd{}'.format(self.uid)
         dendrite._next_uid += 1
         self.name = 'unnamed_dendrite__{}'.format(self.unique_label)
+        self.pri=False
         if 'loops_present' in params:
             self.loops_present = params['loops_present']
         else:
             self.loops_present = 'ri'
         if self.loops_present == 'ri':
             self.circuit_betas = [2*np.pi* 1/4, 2*np.pi* 1/4, 2*np.pi*1e2]         
-        if self.loops_present == 'rtti':
+        elif self.loops_present == 'rtti':
             self.circuit_betas = [2*np.pi* 1/4, 2*np.pi* 1/4, 2*np.pi*1e2]
+        elif self.loops_present == 'pri':
+            self.circuit_betas = [2*np.pi* 1/4, 2*np.pi* 1/4, 2*np.pi* 1/4, 2*np.pi*1e2]
         self.Ic =  100
         self.beta_c =  0.3
         if self.loops_present == 'ri':
             self.ib = 1.802395858835221
         elif self.loops_present == 'rtti':
             self.ib = 2.0 
+        elif self.loops_present == 'pri':
+            self.ib = 2.1
+            self.phi_p = .2
         self.tau_di= 250
         self.normalize_input_connection_strengths = False
         self.total_excitatory_input_connection_strength = 1
@@ -175,6 +181,26 @@ class dendrite():
         self.__dict__.update(params)
         # print(params['ib'])
     
+        ########
+        if self.loops_present == 'pri':
+            if type(self.circuit_betas) == list and len(self.circuit_betas) == 4:
+                self.circuit_betas = self.circuit_betas
+            else:
+                raise ValueError('''
+                    [soen_sim] circuit_betas for a pri dendrite is a list of four 
+                    real numbers greater than zero with dimensionless units. The 
+                    first element represents the self inductance of the left branch 
+                    of the PR washer. The second element represents the middle 
+                    branch of the PR washer. The third element represents the right 
+                    branch of the PR washer. The fourth element represents the total 
+                    inductance of the I loop, including the integrating kinetic 
+                    inductor and the output inductance.
+                ''')
+
+
+        ########
+
+
         # print(self.type,self.dentype)
         # self.loops_present = self.type
         if hasattr(self, 'dentype'):
@@ -217,12 +243,15 @@ class dendrite():
             raise ValueError('''
             [soen_sim] loops_present must be:
                 \'ri\', \'pri\', \'rtti\', \'prtti\'. ''')
-
+        print(self.name,"---------",self.loops_present)
         if type(self.circuit_betas) == list and (len(self.circuit_betas) == 3 
-                                            or len(self.circuit_betas) == 5):
+                                            or len(self.circuit_betas) == 5
+                                            or len(self.circuit_betas) == 4):
             if self.loops_present == 'ri':
                 self.circuit_betas = self.circuit_betas
             elif self.loops_present == 'rtti':
+                self.circuit_betas = self.circuit_betas
+            elif self.loops_present == 'pri':
                 self.circuit_betas = self.circuit_betas
         else:
             raise ValueError('''
@@ -471,7 +500,7 @@ class neuron():
 
         # UPDATE TO CUSTOM PARAMS
         self.__dict__.update(params)
-        
+        print(self.loops_present)
         self.integrated_current_threshold = self.s_th
         params = self.__dict__
 
@@ -802,7 +831,7 @@ class network():
         # end name 
         
         # JJ params
-        dummy_dendrite = dendrite() # make dummy dendrite to obtain default Ic, beta_c
+        dummy_dendrite = dendrite(name='dummy') # make dummy dendrite to obtain default Ic, beta_c
         jj_params = get_jj_params(dummy_dendrite.Ic*1e-6,dummy_dendrite.beta_c)
         self.jj_params = jj_params # add jj_params to network just as stupid hack to construct t_tau_conversion (this should be done somewhere else globally)
         
@@ -933,8 +962,6 @@ class HardwareInTheLoop:
         for i in range(len(error)):
             for dend in nodes[i].trace_dendrites:
                 for name,syn in dend.synaptic_inputs.items():
-                    # # print(syn.name)
-                    # if 'tracesyn' in syn.name:
                     self.traces.append(dend)
 
                     if error[i] < 0:

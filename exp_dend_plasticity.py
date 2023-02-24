@@ -89,7 +89,7 @@ soma_factor = .1
 
 WA = [[[.6,.5]]]
 
-nA = NeuralZoo(type='custom',weights=WA,s_th=threshold)
+nA = NeuralZoo(type='custom',weights=WA,s_th=threshold)#,ib=2.0523958588352214)
 # print("NAME: ", nA.name)
 nA.synaptic_layer()
 # nA.uniform_input(input)
@@ -109,7 +109,7 @@ for lay in nA.dendrites[1:]:
                 trace_dend.add_input(d,connection_strength=cs)#2*np.random.rand())
                 syn = common_synapse(f'{d.name}_tracesyn_{trace_dend.name}_{int(np.random.rand()*100000)}')
                 trace_dend.add_input(syn,connection_strength=trace_syn_factor)
-                trace_dend.add_input(nA.neuron.dend__nr_ni,connection_strength=soma_factor) ## 
+                # trace_dend.add_input(nA.neuron.dend__nr_ni,connection_strength=soma_factor) ## 
                 nA.trace_dendrites.append(trace_dend)
                 nA.dendrite_list.append(trace_dend)
                 nA.synapse_list.append(syn)
@@ -117,7 +117,7 @@ for lay in nA.dendrites[1:]:
 
 WB = [[[.4,.5]]]
 
-nB = NeuralZoo(type='custom',weights=WB,s_th=threshold)
+nB = NeuralZoo(type='custom',weights=WB,s_th=threshold)#,ib=2.0523958588352214)
 nB.synaptic_layer()
 # nB.uniform_input(input)
 nB.synapse_list[0].add_input(input.signals[0])
@@ -135,7 +135,7 @@ for lay in nB.dendrites[1:]:
                 trace_dend.add_input(d,connection_strength=cs)#2*np.random.rand())
                 syn = common_synapse(f'{d.name}_tracesyn_{trace_dend.name}_{int(np.random.rand()*100000)}')
                 trace_dend.add_input(syn,connection_strength=trace_syn_factor)
-                trace_dend.add_input(nB.neuron.dend__nr_ni,connection_strength=soma_factor) ##
+                # trace_dend.add_input(nB.neuron.dend__nr_ni,connection_strength=soma_factor) ##
                 nB.trace_dendrites.append(trace_dend)
                 nB.dendrite_list.append(trace_dend)
                 nB.synapse_list.append(syn)
