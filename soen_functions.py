@@ -573,13 +573,17 @@ def dendrite_updater(dendrite_object,time_index,present_time,d_tau,HW=None):
     i_di__vec = np.asarray(dendrite_object.i_di__subarray[_ind__phi_r])
 
     if dendrite_object.pri == True:
+        if time_index == 100: print("PRI Bias Regime")
         _ind__s = ( np.abs( i_di__vec[:] - (2.7 - dendrite_object.bias_current + dendrite_object.s[time_index] ) )).argmin()
 
-    elif new_bias:
+    elif new_bias and HW:
+        if time_index == 100: print("Dynamic Bias Regime")
         _ind__s = ( np.abs( i_di__vec[:] - (2.0523958588352214-new_bias+dendrite_object.s[time_index]) ) ).argmin() #*** (2.2-new_bias+dendrite_object.s[time_index])
-
+        # _ind__s = ( np.abs( i_di__vec[:] - (2.7 - dendrite_object.bias_current + dendrite_object.s[time_index] ) )).argmin()
     else:
-        _ind__s = ( np.abs( i_di__vec[:] - dendrite_object.s[time_index] ) ).argmin()
+        if time_index == 100: print("Default Bias Regime")
+        _ind__s = ( np.abs( i_di__vec[:] - (2.0523958588352214-new_bias+dendrite_object.s[time_index]) ) ).argmin()
+        # _ind__s = ( np.abs( i_di__vec[:] - dendrite_object.s[time_index] ) ).argmin()
 
     r_fq = dendrite_object.r_fq__subarray[_ind__phi_r][_ind__s]
         

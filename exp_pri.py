@@ -20,31 +20,63 @@ Notes:
  - self.name = 'unnamed_dendrite__{}'.format(self.unique_label) -- mystery dend?
 '''
 
-def integration():
-    times = np.arange(0,300,100)
+def dend_pri():
+    # times = np.arange(0,1000,100)
+    times = np.array([200,400,600])
+    indices = np.zeros(len(times)).astype(int)
+    def_spikes = [indices,times]
+    input = SuperInput(channels=1, type='defined', defined_spikes=def_spikes)
+    # input = SuperInput(channels=1, type='constant',phi_app=0.3)
+
+    weights = [[[0.3]]]
+    loops_present = [[['pri']]]
+
+    syn_struct = [[[[0]],[[.55]]]] 
+
+    plt.figure(figsize=(6.4*1.2,4.8*1.2))
+    PHIP = [-0.13157894736842107,0.02631578947368418,0.18421052631578938,0.3421052631578947]
+    for phip in PHIP:
+        mono_dend = NeuralZoo(type="custom",weights=weights,synaptic_structure=syn_struct,s_th=1,types=loops_present,
+                                            beta_di=2*np.pi*1e4,tau_di=250,ib_di=2.4,pri=True, offset_flux=0) 
+        mono_dend.dendrites[1][0][0].phi_p = phip
+        
+        mono_dend.synapses[0][1][0][0].add_input(input.signals[0])
+        net = network(sim=True,dt=.1,tf=1400,nodes=[mono_dend],new_way=True)
+        # mono_dend.plot_neuron_activity(net,phir=True,weighting=False,input=input)
+        Ic = mono_dend.dendrites[1][0][0].Ic
+        plt.plot(net.t,mono_dend.dendrites[1][0][0].s*Ic,label=f'$\phi_p=${phip}')
+        plt.legend()
+    plt.show()
+
+# dend_pri()
+
+
+
+def offset():
+    # times = np.arange(0,1000,100)
+    times = np.array([200,400,600])
     indices = np.zeros(len(times)).astype(int)
     def_spikes = [indices,times]
     input = SuperInput(channels=1, type='defined', defined_spikes=def_spikes)
 
-    weights = [[[0.5]]]
-    loops_present = [[['pri']]]
-
-    # no synapse on soma, synapse on first (only) dend
+    weights = [[[0.3]]]
     syn_struct = [[[[0]],[[1]]]] 
 
-    mono_dend = NeuralZoo(type="custom",weights=weights,synaptic_structure=syn_struct,s_th=1,types=loops_present) 
-    print(mono_dend.dendrite_list)
-
-    # adding signal only to dendrite at the 1rst layer (soma at 0th layer)
-    mono_dend.synapses[0][1][0][0].add_input(input.signals[0])
-
-    net = network(sim=True,dt=.1,tf=150,nodes=[mono_dend],new_way=True)
-    print(mono_dend.dendrite_list)
-    title = "Monosynaptic Neuron with Intermediate Dendrite"
-
-    # weighting is turned off here, because for only 1 dendrite, phi_r = dend.signal*weighting
-    mono_dend.plot_neuron_activity(net,phir=True,title=title,weighting=False)
-integration()
+    plt.figure(figsize=(6.4*1.2,4.8*1.2))
+    PHIP = np.arange(-0.15,.16,.05)
+    # PHIP = [1]
+    for phip in PHIP:
+        mono_dend = NeuralZoo(type="custom",weights=weights,synaptic_structure=syn_struct,s_th=1,
+                                            beta_di=2*np.pi*1e4,tau_di=250, offset_flux=phip) 
+        mono_dend.synapses[0][1][0][0].add_input(input.signals[0])
+        net = network(sim=True,dt=.1,tf=1400,nodes=[mono_dend],new_way=True)
+        # mono_dend.plot_neuron_activity(net,phir=True,weighting=False,input=input)
+        Ic = mono_dend.dendrites[1][0][0].Ic
+        plt.plot(net.t,mono_dend.dendrites[1][0][0].s,label=f'$\phi$ offset = {np.round(phip,2)}')
+        plt.legend()
+    plt.show()
+    # mono_dend.plot_neuron_activity(net,title="Monosynaptic Point Neuron",input=input,phir=True)
+offset()
 
 
 

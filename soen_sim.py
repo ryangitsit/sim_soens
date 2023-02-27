@@ -219,9 +219,15 @@ class dendrite():
                 self.name = '{}__{}'.format(self.name,'nr_ni')
                 # print("SOMATIC DENDRITE")
         else:
-            self.ib = self.ib
+            if "ib_di" in self.__dict__.keys():
+                self.ib = self.ib_di
+            else:
+                self.ib = self.ib
             if "dend_name" in self.__dict__.keys():
                 self.name = self.dend_name
+            if "beta_di" in self.__dict__.keys():
+                print("custom beta")
+                self.circuit_betas[-1] = self.beta_di
             # print("REGULAR DENDRITE")
         # print(self.ib)
         if 'integrated_current_threshold' in params:
