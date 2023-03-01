@@ -249,7 +249,7 @@ class dendrite():
             raise ValueError('''
             [soen_sim] loops_present must be:
                 \'ri\', \'pri\', \'rtti\', \'prtti\'. ''')
-        print(self.name,"---------",self.loops_present)
+        # print(self.name,"---------",self.loops_present)
         if type(self.circuit_betas) == list and (len(self.circuit_betas) == 3 
                                             or len(self.circuit_betas) == 5
                                             or len(self.circuit_betas) == 4):
@@ -506,7 +506,7 @@ class neuron():
 
         # UPDATE TO CUSTOM PARAMS
         self.__dict__.update(params)
-        print(self.loops_present)
+        # print(self.loops_present)
         self.integrated_current_threshold = self.s_th
         params = self.__dict__
 
@@ -929,8 +929,10 @@ class HardwareInTheLoop:
         self.error_factor = 10
         self.traces=None
         self.__dict__.update(params)
+        
         self.check_time = self.interval*(self.phase+1)
         self.errors = [[] for i in range(len(self.expect))]
+
 
     def forward_error(self,neurons):
         '''
@@ -955,16 +957,19 @@ class HardwareInTheLoop:
         #     if ex==None:
                 # self.expect[self.phase][i] = counts[i]
         print("phase:",self.phase)
-        if self.expect[self.phase][0] == None or self.expect[self.phase][0] == None:
-            self.errors[self.phase] = np.subtract(counts,counts)
-        else:
-            self.errors[self.phase] = np.subtract(counts,self.expect[self.phase])
-        print(counts,self.expect[self.phase])
+        if self.expect[self.phase][0] == None:
+            self.expect[self.phase][0] = counts[0]
+        if self.expect[self.phase][1] == None:
+            self.expect[self.phase][1] = counts[1]
+            
+
+        self.errors[self.phase] = np.subtract(counts,self.expect[self.phase])
+        # print(counts,self.expect[self.phase])
 
     def backward_error(self,nodes):
         freq_factor = self.freq_factor
         error = self.errors[self.phase]
-        print("self ERROR: ", error,"\n")
+        # print("self ERROR: ", error,"\n")
         for i in range(len(error)):
             for dend in nodes[i].trace_dendrites:
                 for name,syn in dend.synaptic_inputs.items():
@@ -972,9 +977,9 @@ class HardwareInTheLoop:
 
                     if error[i] < 0:
                         if 'plus' in syn.name:
-                            print("plus error: ",error[i])
+                            # print("plus error: ",error[i])
                             freq = np.max([300 - np.abs(error[i])*freq_factor,50])
-                            print("plus frequency: ",freq)
+                            # print("plus frequency: ",freq)
                             syn.input_signal.spike_times += list(np.arange(self.check_time,
                                                                         self.check_time+self.interval,
                                                                         freq))
@@ -982,17 +987,17 @@ class HardwareInTheLoop:
 
                     elif error[i] > 0:
                         if 'minus' in syn.name:
-                            print("minus error: ",error[i])
+                            # print("minus error: ",error[i])
                             freq = np.max([300 - np.abs(error[i])*freq_factor,50])
-                            print("minus frequency: ",freq)
+                            # print("minus frequency: ",freq)
                             syn.input_signal.spike_times += list(np.arange(self.check_time,
                                                                         self.check_time+self.interval,
                                                                         freq))
                             syn.spike_times_converted = np.asarray(syn.input_signal.spike_times)*self.conversion
 
-                        print(syn.name,syn.input_signal.spike_times)
+                    # print(syn.name,syn.input_signal.spike_times)
                         
-            print("\n")
+            # print("\n")
         self.phase+=1
         self.check_time = self.interval*(self.phase+1)
         self.trace_biases = {}

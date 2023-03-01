@@ -79,6 +79,9 @@ class NeuralZoo():
         if self.type == 'proximal_basal':
                 self.proximal_basal()
 
+        if self.type == 'plastic_neuron':
+                self.plastic_neuron()
+
     def single(self):
 
         self.synapse = common_synapse(1)
@@ -205,13 +208,12 @@ class NeuralZoo():
 
                         if hasattr(self, 'types'):
                             entries['loops_present'] = self.types[i][j][k]
-                            print("HERE",self.types[i][j][k])
+                            # print("HERE",self.types[i][j][k])
                         else:
                             entries['loops_present'] = 'ri'
                         entries = self.__dict__
                         entries['dend_name'] = f"{self.neuron.name}_lay{i}_branch{j}_den{k}"
                         entries['type'] = type
-                        print("ENTRIES:", entries)
                         dend = dendrite(**entries)
                         sub.append(dend)
                         self.dendrite_list.append(dend)
@@ -356,16 +358,49 @@ class NeuralZoo():
                             
     def multi_channel_input(self,input,connectivity=None):
         '''
-        Add the same input channel to specific synapses
-         - Simple defined list of indice tuples
+        Add specific input channels to specific synapses
         '''
         for connect in connectivity:
             # print(connect[0],connect[1])
             # if len(input.signals[connect[1]].spike_times) > 0:
             self.synapse_list[connect[0]].add_input(input.signals[connect[1]])  
 
-        
 
+    def plastic_neuron(self):
+        '''
+        Plasticity equipped neuron
+        '''
+        # print(self.weights)
+        self.custom()
+        self.synaptic_layer()
+        input_obj = self.input_obj
+
+        if len(input_obj.signals) == 2:
+            # print("Multi-signal")
+            self.synapse_list[0].add_input(input_obj.signals[0])
+            self.synapse_list[1].add_input(input_obj.signals[1])
+        else:
+            self.synapse_list[0].add_input(input_obj.signals[0])
+            self.synapse_list[1].add_input(input_obj.signals[0])
+
+        exin = ["plus","minus"]
+        self.trace_dendrites = []
+        for lay in self.dendrites[1:]:
+            for group in lay:
+                for i,d in enumerate(group):
+                    cs = self.weights[0][0][i]*self.trace_factor
+                    # print(cs)
+                    for ei in exin:
+                        trace_dend = dendrite(name=f'n{self.n_count}_d{i}_{ei}',tau_di=self.trace_tau)
+                        trace_dend.add_input(d,connection_strength=cs)#2*np.random.rand())
+                        syn = common_synapse(f'{d.name}_tracesyn_{trace_dend.name}_{int(np.random.rand()*100000)}')
+                        trace_dend.add_input(syn,connection_strength=self.trace_syn_factor)
+                        # trace_dend.add_input(self.neuron.dend__nr_ni,connection_strength=soma_factor) ## 
+                        self.trace_dendrites.append(trace_dend)
+                        self.dendrite_list.append(trace_dend)
+                        self.synapse_list.append(syn)
+        # self.neuron = p_neuron
+        return self
 
     def mono_point(self):
         '''

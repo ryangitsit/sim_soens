@@ -77,7 +77,7 @@ def run_soen_sim(obj, **kwargs):
             for neuron_key in obj.neurons:
                 recursive_dendrite_data_attachment(obj.neurons[neuron_key].dend__nr_ni,obj)
         else:
-            # print("new way")
+            print("new way")
             # for name,neuron in obj.neurons.items():
             for neuron in obj.nodes:
                 # print("Initializing neuron: ", neuron.name)
@@ -98,7 +98,6 @@ def run_soen_sim(obj, **kwargs):
                 dendrite_data_attachment(dend,obj)
             # print(obj.neurons)
             # print("Here!")
-            
             
     return obj
 
@@ -226,8 +225,10 @@ def rate_array_attachment(dendrite_object):
     # _ind__ib = ( np.abs( ib__vec[:] - dendrite_object.bias_current ) ).argmin()
 
     if dendrite_object.loops_present == 'pri':
+        # print("slide pri")
         _ind__ib = ( np.abs( ib__vec[:] - dendrite_object.phi_p ) ).argmin()
     else:
+        # print("slide bias")
         _ind__ib = -1 #( np.abs( ib__vec[:] - bias_current ) ).argmin() #***
         # _ind__ib = ( np.abs( ib__vec[:] - dendrite_object.bias_current ) ).argmin()
     dendrite_object.phi_r__vec = np.asarray(phi_r__array[_ind__ib])
@@ -360,9 +361,9 @@ def net_step(network_object,tau_vec,d_tau):
     # step through time
     _t0 = time.time_ns()
 
-    # if "hardware" in network_object.__dict__.keys():
+    if "hardware" in network_object.__dict__.keys():
     # if hasattr('network_object','hardware'):
-    if hasattr('network_object','hardware'):
+    # if hasattr('network_object','hardware'):
         print("Hardware in the loop.")
         HW = network_object.hardware
         HW.traces = []
@@ -370,6 +371,7 @@ def net_step(network_object,tau_vec,d_tau):
         HW.ib__vec = np.asarray(HW.ib__list)
         HW.conversion = network_object.time_params['t_tau_conversion']
     else:
+        print("No hardware in the loop.")
         network_object.hardware=None
         HW=None
     # print(len(tau_vec))
@@ -392,11 +394,14 @@ def net_step(network_object,tau_vec,d_tau):
 
             # update all input synapses and dendrites       
             for dend in node.dendrite_list:
-                if hasattr('node',"trace_dendrites"):
-                    if dend not in node.trace_dendrites:
-                        dendrite_updater(dend,ii,tau_vec[ii+1],d_tau,HW)
-                else:
-                    dendrite_updater(dend,ii,tau_vec[ii+1],d_tau,HW)
+                dendrite_updater(dend,ii,tau_vec[ii+1],d_tau,HW)
+                # if hasattr('node',"trace_dendrites"):
+                #     if ii == 10000: print("yes",node.name)
+                #     if dend not in node.trace_dendrites:
+                #         dendrite_updater(dend,ii,tau_vec[ii+1],d_tau,HW)
+                # else:
+                #     if ii == 10000: print("no",node.name)
+                #     dendrite_updater(dend,ii,tau_vec[ii+1],d_tau,HW)
 
             # update all output synapses
             output_synapse_updater(neuron,ii,tau_vec[ii+1])
@@ -573,15 +578,18 @@ def dendrite_updater(dendrite_object,time_index,present_time,d_tau,HW=None):
     i_di__vec = np.asarray(dendrite_object.i_di__subarray[_ind__phi_r])
 
     if dendrite_object.pri == True:
-        if time_index == 100: print("PRI Bias Regime")
+        # if time_index == 100: print("PRI Bias Regime")
         _ind__s = ( np.abs( i_di__vec[:] - (2.7 - dendrite_object.bias_current + dendrite_object.s[time_index] ) )).argmin()
 
-    elif new_bias and HW:
-        if time_index == 100: print("Dynamic Bias Regime")
+    elif HW:
+        # if time_index == 100: print("Dynamic Bias Regime")
         _ind__s = ( np.abs( i_di__vec[:] - (2.0523958588352214-new_bias+dendrite_object.s[time_index]) ) ).argmin() #*** (2.2-new_bias+dendrite_object.s[time_index])
         # _ind__s = ( np.abs( i_di__vec[:] - (2.7 - dendrite_object.bias_current + dendrite_object.s[time_index] ) )).argmin()
+
+    # elif flux_offset...
+
     else:
-        if time_index == 100: print("Default Bias Regime")
+        # if time_index == 100: print("Default Bias Regime")
         _ind__s = ( np.abs( i_di__vec[:] - (2.0523958588352214-new_bias+dendrite_object.s[time_index]) ) ).argmin()
         # _ind__s = ( np.abs( i_di__vec[:] - dendrite_object.s[time_index] ) ).argmin()
 
