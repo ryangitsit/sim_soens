@@ -143,6 +143,7 @@ class dendrite():
         # DEFAULT SETTINGS
         self.uid = dendrite._next_uid
         self.unique_label = 'd{}'.format(self.uid)
+        self.ib_ramp = False
         dendrite._next_uid += 1
         self.name = 'unnamed_dendrite__{}'.format(self.unique_label)
         self.pri=False

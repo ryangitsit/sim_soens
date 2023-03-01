@@ -152,6 +152,14 @@ def save_dict(dict,path,name):
     f.write(json)
     f.close()
 
+def save_fig(plt,path,name):
+    import os
+    try:
+        os.makedirs(path)    
+    except FileExistsError:
+        pass
+    plt.savefig(f"{path}/{name}")
+
 def spks_to_binmatrix(N,T,spikes):
     binned = np.zeros((N,T))
     for i in range(len(spikes[0])):

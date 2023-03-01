@@ -695,11 +695,11 @@ class NeuralZoo():
         # print(self.synapses[0][0][0].__dict__)
         # print(net.spikes[0])
         plt.plot(net.t,signal,  color='#1f77b4',linewidth=4)
-        plt.xlabel("Simulation Time (ns)")
-        plt.ylabel("Signal (Ic)")
+        plt.xlabel("Simulation Time (ns)",fontsize=18)
+        plt.ylabel("Signal (Ic)",fontsize=18)
         plt.subplots_adjust(bottom=.25)
         if title:
-            plt.title(title)
+            plt.title(title,fontsize=22)
         if legend_out==True:
             plt.legend(loc='center left', bbox_to_anchor=(1, 0.5))
             plt.subplots_adjust(right=.8)

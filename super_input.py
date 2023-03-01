@@ -20,21 +20,21 @@ class SuperInput():
             self.spike_arrays = [mnist_indices,mnist_spikes]
             self.spike_rows = self.array_to_rows(self.spike_arrays)
 
-        if self.type == "random":
+        elif self.type == "random":
             print("Generating random input...")
             self.spike_arrays = [np.random.randint(self.channels,size=self.total_spikes),np.random.rand(self.total_spikes)*self.duration]
             self.spike_rows = self.array_to_rows(self.spike_arrays)
 
-        if self.type == "defined":
+        elif self.type == "defined":
             # print("Generating pre-defined input...")
             self.spike_arrays = self.defined_spikes
             self.spike_rows = self.array_to_rows(self.spike_arrays)
 
-        if self.type == "saccade_MNIST":
+        elif self.type == "saccade_MNIST":
             self.spike_arrays = self.saccade_MNIST()
             self.spike_rows = self.array_to_rows(self.spike_arrays)
 
-        if self.type == "constant":
+        elif self.type == "constant":
             self.constant()
 
         else:

@@ -77,7 +77,7 @@ def run_soen_sim(obj, **kwargs):
             for neuron_key in obj.neurons:
                 recursive_dendrite_data_attachment(obj.neurons[neuron_key].dend__nr_ni,obj)
         else:
-            print("new way")
+            # print("new way")
             # for name,neuron in obj.neurons.items():
             for neuron in obj.nodes:
                 # print("Initializing neuron: ", neuron.name)
@@ -371,7 +371,7 @@ def net_step(network_object,tau_vec,d_tau):
         HW.ib__vec = np.asarray(HW.ib__list)
         HW.conversion = network_object.time_params['t_tau_conversion']
     else:
-        print("No hardware in the loop.")
+        # print("No hardware in the loop.")
         network_object.hardware=None
         HW=None
     # print(len(tau_vec))
@@ -546,6 +546,15 @@ def dendrite_updater(dendrite_object,time_index,present_time,d_tau,HW=None):
     
     # new_bias=None
     new_bias=dendrite_object.bias_current
+    # print(dendrite_object.ib_ramp)
+    # if time_index == 250: print(dendrite_object.ib_ramp)
+    if 'ib_ramp' in list(dendrite_object.__dict__.keys()):
+        if dendrite_object.ib_ramp == True:
+            # print("Bias Current Ramp!")
+            # new_bias= 2.0523958588352214 - (2.0523958588352214-1.4)*time_index/dendrite_object.time_steps
+            new_bias= 1.4 + (2.0523958588352214-1.4)*time_index/dendrite_object.time_steps
+    # else:
+    #     new_bias=dendrite_object.bias_current
     if HW:
         # if HW.expect[HW.phase][0] != None and HW.expect[HW.phase][1] != None:
         # if len(HW.traces) > 0:
@@ -573,7 +582,7 @@ def dendrite_updater(dendrite_object,time_index,present_time,d_tau,HW=None):
                 dendrite_object.bias_current = new_bias
                 HW.trace_biases[trace.name].append(new_bias)
 
-    dendrite_object.bias_dynamics.append(dendrite_object.bias_current)
+    dendrite_object.bias_dynamics.append(new_bias)
     _ind__phi_r = ( np.abs( dendrite_object.phi_r__vec[:] - dendrite_object.phi_r[time_index+1] ) ).argmin()
     i_di__vec = np.asarray(dendrite_object.i_di__subarray[_ind__phi_r])
 

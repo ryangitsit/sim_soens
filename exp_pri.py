@@ -93,7 +93,7 @@ def offset():
     plt.title("Plasticity via Flux Offset")
     plt.show()
     # mono_dend.plot_neuron_activity(net,title="Monosynaptic Point Neuron",input=input,phir=True)
-offset()
+# offset()
 
 def biasing():
 
@@ -126,6 +126,36 @@ def biasing():
 
 biasing()
 
+# def biasing():
+
+#     # times = np.array([200,400,600])
+#     times = np.arange(0,1000,51)
+#     indices = np.zeros(len(times)).astype(int)
+#     def_spikes = [indices,times]
+#     input = SuperInput(channels=1, type='defined', defined_spikes=def_spikes)
+#     syn_struct = [[[[1]]]]
+#     # plt.figure(figsize=(12,4))
+#     plt.figure(figsize=(8,6))
+#     BIAS = np.arange(1.4,2,.09)
+#     for i in BIAS:
+#         mono_point = NeuralZoo(type="custom",synaptic_structure=syn_struct,s_th=100,
+#                                beta_ni=2*np.pi*1e4,tau_ni=250,ib_n=i)
+#         mono_point.synapses[0][0][0][0].add_input(input.signals[0])
+#         net = network(sim=True,dt=.1,tf=1400,nodes=[mono_point])
+#         # signals.append(mono_point.s)
+#         Ic = mono_point.dendrites[0][0][0].Ic
+#         plt.plot(net.t,mono_point.neuron.dend__nr_ni.s*Ic,label=f"bias current = {np.round(i,2)}")
+#     # print(mono_point.neuron.__dict__.keys()
+#     # plt.legend(loc='center left', bbox_to_anchor=(1, 0.5))
+#     # plt.subplots_adjust(right=.8)
+#     # plt.subplots_adjust(bottom=.15)
+#     plt.legend()
+#     plt.xlabel("Simulation Time (ns)")
+#     plt.ylabel("Signal (Ic)")
+#     plt.title("Plasticity via Bias Change")
+#     plt.show()
+
+# biasing()
 
 
 
