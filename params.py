@@ -11,6 +11,60 @@ ib__list__rtti, phi_r__array__rtti, i_di__array__rtti, r_fq__array__rtti, phi_th
 # print(ib__list__ri)
 # print(ib__list__rtti)
 
+
+pred_params = {
+
+    'weights': [
+        [[.3,.7,0]],
+        [[0,0.5],[0.5,0.5],[0.5,0.5]],
+        [[0.35,-0.65],[0.35,-0.65],[0.35,-0.65],[0.35,-0.65],[0.35,-0.65],[0.35,-0.65]]
+    ],
+
+    'betas': [
+        [[2,2,2]],
+        [[2,2],[2,2],[2,2]],
+        [[2,2],[2,2],[2,2],[2,2],[2,2],[2,2]]
+    ],
+
+    'taus': [
+        [[50,50,50]],
+        [[250,250],[250,250],[250,250]],
+        [[250,250],[250,250],[250,250],[250,250],[250,250],[250,250]]
+    ],
+
+    'biases': [
+        [[3,3,3]],
+        [[5,5],[5,5],[5,5]],
+        [[-4,3],[-4,3],[-4,3],[-4,3],[-4,3],[-4,3]]
+    ],
+    'types': [
+        [['rtti','rtti','rtti']],
+        [['ri','ri'],['ri','ri'],['ri','ri']],
+        [['rtti','ri'],['rtti','ri'],['rtti','ri'],['rtti','ri'],['rtti','ri'],['rtti','ri']]
+    ],
+    'syns': [['2','5'],['4','6'],['5','8'],['4','6'],['1','3'],['7','9'],
+             ['4','6'],['2','5'],['7','9'],['1','3'],['4','6'],['5','8']],
+    'syn_w': [[.6,.6],[.5,.5],[.6,.6],[.5,.5],[.6,.6],[.5,.5],
+              [.6,.6],[.5,.5],[.6,.6],[.5,.5],[.6,.6],[.5,.5]],
+
+    # "ib_ne": ib__list__ri[4],
+    "tau_di": 250,
+    "ib_n": ib__list__ri[4], 
+    "beta_ni": 2*np.pi*1e2,
+    "tau_ni": 50,
+    "w_sd": 1,
+    # "w_sid": 1, 
+    # "w_dd": 0.5,
+    # "w_dn": 1, 
+    "ib_ref": ib__list__ri[8], 
+    "beta_ref": 2*np.pi*1e2,
+    "tau_ref": 50,
+    'ib_list_ri':ib__list__ri[:],
+    'ib_list_rtti':ib__list__rtti[:],
+
+}
+
+
 default_neuron_params = {
     # dendrites
     "beta_di": 2*np.pi*1e2,
@@ -38,6 +92,8 @@ default_neuron_params = {
 
     'ib_list_ri':ib__list__ri[:]
 }
+default_neuron_params["s_max_n"]=s_max_plus__vec__ri[index_finder(default_neuron_params['ib_n'],ib__list__ri[:])]
+
 
 weights_3 = weights = [
                 [[.3,.3,.3]],
@@ -80,9 +136,7 @@ nine_pixel_params = {
              ['4','6'],['2','5'],['7','9'],['1','3'],['4','6'],['5','8']],
     'syn_w': [[.6,.6],[.5,.5],[.6,.6],[.5,.5],[.6,.6],[.5,.5],
               [.6,.6],[.5,.5],[.6,.6],[.5,.5],[.6,.6],[.5,.5]],
-
-
-              
+       
     # "ib_ne": ib__list__ri[4],
     "tau_di": 250,
     "ib_n": ib__list__ri[4], 
@@ -119,12 +173,6 @@ s_max = s_max_plus__vec__rtti[index_finder(bias_stage_3__logic_level_restoration
 phi_target = 0.4
 connection_strength__soma = phi_target/s_max
 nine_pixel_params['w_dn'] = connection_strength__soma
-
-
-
-
-
-default_neuron_params["s_max_n"]=s_max_plus__vec__ri[index_finder(default_neuron_params['ib_n'],ib__list__ri[:])]
 
 
 net_args = {

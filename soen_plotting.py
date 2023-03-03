@@ -1782,6 +1782,119 @@ def raster_plot(spikes,duration=None,title=None,input=[],notebook=False):
 # spikes = np.array([[2,1,0],[12,24,56]])
 # inputs = np.array([[1,2,3],[15,18,76]])
 # raster_plot(spikes,duration=100,title="Test Spikes",input=inputs)
+
+
+def activity_plot(neurons,net,phir=False,dend=True,title=None,
+                        input=None,weighting=True,docstring=False,lay=100000,
+                        spikes=True, path=None,SPD=False,ref=False,legend_out=False,
+                        size=(12,4), y_range=None,subtitles=None):
+    '''
+    Plots signal activity for a given network or neuron
+        - phir      -> plot phi_r of soma and phi_r thresholds
+        - dend      -> plot dendritic signals
+        - input     -> mark moments of input events with red spikes
+        - weighting -> weight dendritic signals by their connection strength
+    '''
+    if docstring == True:
+        print(n.plot_neuron_activity.__doc__)
+        return
+    fig, axs = plt.subplots(len(neurons), 1,figsize=(size))
+    for ii,n in enumerate(neurons):
+        if ii != len(neurons)-1:
+            axs[ii].get_xaxis().set_visible(False)
+        # axs[ii].get_yaxis().set_visible(False)
+        signal = n.dendrites[0][0][0].s
+        refractory = n.neuron.dend__ref.s
+        phi_r = n.dendrites[0][0][0].phi_r
+
+        # import matplotlib.pyplot as plt
+        # axs[ii].figure(figsize=size)
+        # spd_indices = np.array(n.synapses).shape
+        # spd = n.synapses[spd_indices[0]-1][spd_indices[1]-1][spd_indices[2]-1].phi_spd
+        # axs[ii].plot(net.t,spd, label='phi_spd')
+        axs[ii].plot(net.t,signal,  label='soma signal', linewidth=4)
+        # if y_range:
+        #     axs[0].set_ylim([-.01,.18])
+        #     axs[1].set_ylim([-.01,.22])
+        #     axs[2].set_ylim(-.22,.1)
+        if phir==True:
+            from soen_functions import phi_thresholds
+            phi_ths = phi_thresholds(n.neuron)
+            axs[ii].axhline(y = phi_ths[1], color = 'purple', linestyle = '--',linewidth=.5,label=r"$\phi_{th}$")
+            if any(ele < 0 for ele in phi_r):
+                # print("True")
+                axs[ii].axhline(y = phi_ths[0], color = 'purple', linestyle = '--',linewidth=.5)
+            axs[ii].plot(net.t,phi_r,  label=r'$\phi_r$ (soma)')
+        if dend:
+            for i,layer in enumerate(n.dendrites):
+                if i < lay +1 :
+                    for j,branch in enumerate(layer):
+                        for k,dendrite in enumerate(branch):
+                            if i == 0 and j == 0 and k ==0:
+                                pass
+                            else:
+                                # print(dendrite.__dict__.keys())
+                                # print(dendrite.external_connection_strengths)
+                                if weighting == True:
+                                    weight = dendrite.weights[i-1][j][k]
+                                    dend_s = dendrite.s*weight
+                                else:
+                                    dend_s = dendrite.s
+                                axs[ii].plot(net.t,dend_s,'--', label='w * '+dendrite.name)
+                            if SPD==True:
+                                # print("Plotting SPD")
+                                for spd in dendrite.synaptic_inputs:
+                                    axs[ii].plot(net.t,dendrite.synaptic_inputs[spd].phi_spd,label="SPD")
+                            # if i==1 and j==0 and k==0:
+                        #     print(dendrite.__dict__.keys())
+                        #     print(dendrite.weights[i-1][j][k])
+                        # print(print(n.weights[ii][j][k]))
+                        # linewidth=dendrite.external_connection_strengths[0],
+
+        axs[ii].plot(net.t,signal, color='#1f77b4',linewidth=4)
+        if input:
+            axs[ii].plot(input.spike_arrays[1],np.zeros(len(input.spike_arrays[1])),'xr', markersize=5, label='input event')
+        if ref==True:
+            axs[ii].plot(net.t,refractory, ':',color = 'r', label='refractory signal')
+        ## add input/output spikes
+        if spikes==True:
+            from super_functions import array_to_rows
+            rows = array_to_rows(net.spikes,2)
+            # axs[ii].plot(rows[ii],np.zeros(len(rows[ii])),'xk', markersize=8, label='neuron fires')
+            axs[ii].plot(rows[ii],net.spike_signals[ii],'xk', markersize=8, label='neuron fires')
+            axs[ii].axhline(y = n.neuron.s_th, color = 'purple', linestyle = '--',label='Firing Threshold')
+        if SPD==True:
+            # axs[ii].plot(net.t,)
+            pass
+        if ii != len(neurons)-1:
+            axs[ii].set_xticks([])
+    label_size = np.min([10+2*len(neurons),16])
+    plt.xlabel("Simulation Time (ns)",fontsize=label_size)
+    axs[int(np.floor(len(neurons)/2))].set_ylabel("Signal (Ic)",fontsize=label_size)#, labelpad=20)
+    axs[int(np.floor(len(neurons)/2))].yaxis.set_label_coords(-.05,1)
+    # fig.set_ylabel("ylabel")
+    # plt.subplots_adjust(bottom=.25)
+    if title:
+        title_size=np.min([10+2*len(neurons)+2,18])
+        if subtitles:
+            fig.suptitle(title,fontsize=title_size) #, x=.5, y=len(neurons),fontsize=np.min([10+2*len(neurons)+2,18]))
+        else:
+            axs[0].set_title(title,fontsize=title_size)
+    if subtitles:
+        for i,sub in enumerate(subtitles):
+            axs[i].set_title(sub)
+    if legend_out==True:
+        plt.legend(loc='center left', bbox_to_anchor=(1, 1.2))
+        plt.subplots_adjust(right=.8)
+        plt.subplots_adjust(bottom=.15)
+    else:
+        plt.legend()
+    if path:
+        plt.savefig(path)
+    plt.show()
+
+
+
 # =============================================================================
 # End plots added by Ryan
 # =============================================================================

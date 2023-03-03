@@ -1,11 +1,11 @@
-#%%
 import numpy as np
 
 from soen_utilities import index_finder, dend_load_arrays_thresholds_saturations
 from soen_sim import input_signal, network
 from soen_component_library import common_dendrite, common_synapse, common_neuron
-
+from super_library import NeuralZoo
 """
+### THIS FILE TO BE REWRITTEN ###
 ToDo:
  - Find way to generate structure only once, for any input
  - Find cleaner way of dealing with parameter adjustments
@@ -25,7 +25,203 @@ network = Network(input,neuron_population,monitor)
 network.run(simulation_time*ns)
 """
 
-#%%
+class BaseNet:
+    pass
+
+class FractalNet():
+    '''
+    
+    '''
+    def __init__(self,**params):
+        # default params
+        self.N = 4
+        self.duration = 100
+        self.run=False
+
+        # custom input params
+        self.__dict__.update(params)
+
+        # make and potentially run neurons and network
+        self.make_neurons(**params)
+        self.make_net()
+        if self.run == True:
+            self.run_network()
+
+    def make_neurons(self,**params):
+        '''
+        Make required number of neurons with default parameters
+         - Store in a list `neurons`
+        '''
+        self.neurons = []
+        W = [
+            [[.5,.5,.5]],
+            [[.5,.5,.5],[.5,.5,.5],[.5,.5,.5]]
+            ]
+        
+        for i in range(self.N):
+            neuron = NeuralZoo(type='custom',weights=W,**params)
+            neuron.synaptic_layer()
+            self.neurons.append(neuron)
+        # print(neurons[0].synapses)
+        # for k,v in neurons[0].__dict__.items():
+        #     print(k,": ",v,"\n")
+        # neurons[0].plot_custom_structure()
+        # print(neurons[0].neuron.dend__nr_ni.dendritic_inputs['n0_lay0_branch0_den1'].dendritic_inputs['n0_lay1_branch1_den0'].synaptic_inputs['3'].name)
+
+    def make_net(self):
+        self.layer_n = 3
+        branches = 3
+        for i in range(1,self.layer_n+1):
+            # print(self.neurons[i].synapse_list)
+            for j in range(branches):
+                self.neurons[i].neuron.add_output(self.neurons[0].synapse_list[(j*3)+(i-1)])
+                # print(self.neurons[0].neuron.name, i, (j*3)+(i-1), self.neurons[0].synapse_list[(j*3)+(i-1)].name)
+        # print(self.neurons[0].neuron.dend__nr_ni.dendritic_inputs['n0_lay0_branch0_den1'].dendritic_inputs['n0_lay1_branch1_den0'].synaptic_inputs['3'].__dict__)
+        # print(self.neurons[1].neuron.__dict__)
+        # for i in range(self.N):
+        #     print(i," - ", self.neurons[i].synapse_list[0].__dict__)
+        # for i in range(9):
+        #     print(self.neurons[0].synapse_list[i].input_signal.name)
+        # print("\n\n")    
+
+    def connect_input(self,inputs):
+        count=0
+        for i in range(1,self.layer_n+1):
+            for j in range(9):
+                input = input_signal(name = 'input_synaptic_drive'+str(i)+str(j), 
+                                    input_temporal_form = 'arbitrary_spike_train', 
+                                    spike_times = inputs.spike_rows[count])
+                # print(input.spike_times)
+                self.neurons[i].synapse_list[j].add_input(input)
+                # print(self.neurons[i].synapse_list[j].input_signal.__dict__)
+                count+=1 
+        # for i in range(self.N):
+        #     print(i," - ", self.neurons[i].synapse_list[0].__dict__)
+        #     if i !=0:
+        #         print(self.neurons[i].synapse_list[4].input_signal.name)
+
+    def run_network(self):
+        self.net = network(dt=0.1,tf=5000,nodes=self.neurons)
+        # for n in range(self.N):
+        #     self.net.add_neuron(self.neurons[n])
+        print("running network")
+        self.net.simulate()
+
+
+
+class PointReservoir:
+    '''
+    
+    '''
+    def __init__(self,**params):
+        # default params
+        self.N = 72
+        self.duration = 1000
+        self.run=False
+        self.dt = 0.1
+        self.tf = 360*9
+
+        # custom input params
+        self.__dict__.update(params)
+
+        # make and potentially run neurons and network
+        self.make_neurons(**params)
+        self.make_net()
+
+    def make_neurons(self,**params):
+        '''
+        Start with ideal situation
+            - Input in
+            - Internal connectivity
+        '''
+        self.neurons = []
+        syn_struct = [
+            [[[1]]],
+            [[[1]]],
+            [[[1]]],
+            [[[1]]],
+            [[[1]]],
+            [[[1]]],
+            [[[1]]],
+            [[[1]]],
+            [[[1]]],
+            [[[1]]],
+        ]
+        
+        for i in range(self.N):
+            neuron = NeuralZoo(type='custom',synaptic_structure=syn_struct,seed=self.run*1000+i,**params)
+            # neuron.synaptic_layer()
+            self.neurons.append(neuron)
+
+    def make_net(self):
+        np.random.seed(self.run)
+        connections = 0
+        for i in range(self.N):
+            for j in range(self.N):
+                if i != j:
+                    num = np.random.randint(100)
+                    # print(num)
+                    if num < 10:
+                        # print(len(self.neurons[j].synapse_list))
+                        for syn in self.neurons[j].synapse_list:
+                            if "synaptic_input" not in syn.__dict__:
+                                self.neurons[i].neuron.add_output(syn)
+                                # syn.connection_strength = np.random.rand()
+                                connections+=1
+                                break
+        # print("Reservoir connections: ", connections)
+
+    def connect_input(self,input):
+        connections = 0
+        syn_finder = 0
+        for repeat in range(10):
+            for i,row in enumerate(input.spike_rows):
+                # print((len(input.spike_rows)*repeat+i)%72)
+                for syn in self.neurons[(len(input.spike_rows)*repeat+i)%72].synapse_list:
+                    if "synaptic_input" not in syn.__dict__:
+                        array = np.sort(row)
+                        array = np.append(array,np.max(array)+.001)
+                        syn.add_input(input_signal(name = 'input_synaptic_drive', 
+                                            input_temporal_form = 'arbitrary_spike_train', 
+                                            spike_times = array) )
+                        # print(syn.__dict__.synaptic_input)
+                        connections += 1 
+                        break
+        # print("Input connections: ", connections)
+
+
+        # connections = 0
+        # syn_finder = 0
+        # while syn_finder == 0:
+        #     for row in input.spike_rows:
+        #         syn_found = 0
+        #         for n in self.neurons:
+        #             for syn in n.synapse_list:
+        #                 if "synaptic_input" not in syn.__dict__:
+        #                     array = np.sort(row)
+        #                     array = np.append(array,np.max(array)+.001)
+        #                     syn.add_input(input_signal(name = 'input_synaptic_drive', 
+        #                                         input_temporal_form = 'arbitrary_spike_train', 
+        #                                         spike_times = array) )
+        #                     # print(syn.__dict__.synaptic_input)
+        #                     connections += 1 
+        #                     syn_found += 1
+        #                     print(syn_found,connections)
+        #                     break
+        #             if syn_found > 0:
+        #                 break
+        #         if syn_found == 0:
+        #             syn_finder += 1
+        #         # syn_found = 0
+        # print("Input connections: ", connections)
+        # self.neurons[i].synapse_list[j].add_input(input)
+
+
+    def run_network(self,prune_synapses=True):
+        self.net = network(dt=self.dt,tf=self.tf,nodes=self.neurons)
+        print("running network")
+        self.net.simulate(prune_synapses)
+
 
 class SuperNet:
     '''
@@ -36,7 +232,7 @@ class SuperNet:
         self.N = 10
         self.duration = 100
         self.name = 'Super_Net'
-        self.connecivity = 'random'
+        self.connectivity = 'random'
         self.in_connect = 'ordered'
         self.dend_type = 'default_ri'
         self.recurrence = None
@@ -239,6 +435,4 @@ class SuperNet:
                 f.write('\n')
 
 
-
-print("Complete!")
     

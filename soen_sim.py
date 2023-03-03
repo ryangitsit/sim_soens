@@ -165,6 +165,9 @@ class dendrite():
         self.total_inhibitory_input_connection_strength = -0.5
         self.offset_flux = 0
         self.self_feedback_coupling_strength = 0
+        self.rollover = 0
+        self.valleyedout = 0
+        self.doubleroll = 0
 
 
         # UPDATE TO CUSTOM PARAMS
@@ -835,9 +838,12 @@ class network():
             spikes[0].append(np.ones(len(spike_t))*count)
             spikes[1].append((spike_t))
             spike_signal = []
-            spike_times = spike_t/neuron.time_params['t_tau_conversion']
+            spike_times = spike_t #/neuron.time_params['t_tau_conversion']
             for spike in spike_times:
-                spike_signal.append(s[int(spike/self.dt)])
+                spot = int(spike/self.dt)
+                # spread = int(5/self.dt)
+                # spike_signal.append(np.max(s[np.max([0,spot-spread]):spot+spread]))
+                spike_signal.append(s[spot])
             spike_signals.append(spike_signal)
             count+=1
         spikes[0] = np.concatenate(spikes[0])
@@ -850,11 +856,22 @@ class network():
         # print(spike_signal)
         # print(spike_signals)
 
-    def simulate(self):
+    def simulate(self,prune_synapses=False):
         # print(self.nodes)
         # net = network(name = 'network_under_test')
         for n in self.nodes:
             self.add_neuron(n.neuron)
+        if prune_synapses == True:
+            count=0
+            for n in self.nodes:
+                for syn in n.synapse_list:
+                    if "synaptic_input" not in syn.__dict__:
+                        syn.add_input(input_signal(name = 'input_synaptic_drive', 
+                                            input_temporal_form = 'arbitrary_spike_train', 
+                                            spike_times = []) )
+                        count+=1
+            # print(f"{count} synapses recieving no input.")
+                
         self.run_sim(dt=self.dt, tf=self.tf)
         self.get_recordings()
 
