@@ -20,33 +20,37 @@ class SuperInput():
             self.spike_arrays = [mnist_indices,mnist_spikes]
             self.spike_rows = self.array_to_rows(self.spike_arrays)
 
-        if self.type == "random":
+        elif self.type == "random":
             print("Generating random input...")
             self.spike_arrays = [np.random.randint(self.channels,size=self.total_spikes),np.random.rand(self.total_spikes)*self.duration]
             self.spike_rows = self.array_to_rows(self.spike_arrays)
 
-        if self.type == "defined":
+        elif self.type == "defined":
             # print("Generating pre-defined input...")
             self.spike_arrays = self.defined_spikes
             self.spike_rows = self.array_to_rows(self.spike_arrays)
 
-        if self.type == "saccade_MNIST":
+        elif self.type == "saccade_MNIST":
             self.spike_arrays = self.saccade_MNIST()
             self.spike_rows = self.array_to_rows(self.spike_arrays)
+
+        elif self.type == "constant":
+            self.constant()
 
         else:
             print("Please provide valid input type")
             pass
         
-        self.signals = []
-        for i in range(self.channels):
-            array = np.sort(self.spike_rows[i])
-            if array.any():
-                array = np.append(array,np.max(array)+.001)
-            self.signals.append(input_signal(name = 'input_synaptic_drive', 
-                                input_temporal_form = 'arbitrary_spike_train', 
-                                spike_times = array) )
-            # print(self.spike_rows[i])
+        if self.type != 'constant':
+            self.signals = []
+            for i in range(self.channels):
+                array = np.sort(self.spike_rows[i])
+                if array.any():
+                    array = np.append(array,np.max(array)+.001)
+                self.signals.append(input_signal(name = 'input_synaptic_drive', 
+                                    input_temporal_form = 'arbitrary_spike_train', 
+                                    spike_times = array) )
+                # print(self.spike_rows[i])
 
 
     def gen_rand_input(self,spiking_indices,max_amounts):
@@ -61,6 +65,12 @@ class SuperInput():
         print("Spiking at neurons: ", spikers)
         return input
 
+
+    def constant(self):
+        input = input_signal(name = 'constant_input', 
+                             input_temporal_form = 'constant', 
+                             applied_flux = self.phi_app)
+        return input 
 
     def gen_ordered_input(self):
         pass

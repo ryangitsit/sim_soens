@@ -79,6 +79,9 @@ class NeuralZoo():
         if self.type == 'proximal_basal':
                 self.proximal_basal()
 
+        if self.type == 'plastic_neuron':
+                self.plastic_neuron()
+
     def single(self):
 
         self.synapse = common_synapse(1)
@@ -149,7 +152,10 @@ class NeuralZoo():
         #     self.s_th = self.s_th_factor_n*self.s_max_n
 
         entries = self.__dict__
+        if "name" not in entries:
+            entries['name'] = f"rand_neuron_{int(np.random.rand()*100000)}"
         custom_neuron = neuron(**entries)
+        self.dendrite_list = [custom_neuron.dend__nr_ni,custom_neuron.dend__ref]
 
         # custom_neuron.name = 'custom_neuron'
         custom_neuron.normalize_input_connection_strengths=1
@@ -202,12 +208,15 @@ class NeuralZoo():
 
                         if hasattr(self, 'types'):
                             entries['loops_present'] = self.types[i][j][k]
+                            # print("HERE",self.types[i][j][k])
                         else:
                             entries['loops_present'] = 'ri'
                         entries = self.__dict__
-                        entries['name'] = f"{self.neuron.name[-2:]}_lay{i}_branch{j}_den{k}"
+                        entries['dend_name'] = f"{self.neuron.name}_lay{i}_branch{j}_den{k}"
                         entries['type'] = type
-                        sub.append(dendrite(**entries))
+                        dend = dendrite(**entries)
+                        sub.append(dend)
+                        self.dendrite_list.append(dend)
                         den_count+=1
                         c+=1
                     dendrites[i].append(sub)
@@ -349,16 +358,49 @@ class NeuralZoo():
                             
     def multi_channel_input(self,input,connectivity=None):
         '''
-        Add the same input channel to specific synapses
-         - Simple defined list of indice tuples
+        Add specific input channels to specific synapses
         '''
         for connect in connectivity:
             # print(connect[0],connect[1])
             # if len(input.signals[connect[1]].spike_times) > 0:
             self.synapse_list[connect[0]].add_input(input.signals[connect[1]])  
 
-        
 
+    def plastic_neuron(self):
+        '''
+        Plasticity equipped neuron
+        '''
+        # print(self.weights)
+        self.custom()
+        self.synaptic_layer()
+        input_obj = self.input_obj
+
+        if len(input_obj.signals) == 2:
+            # print("Multi-signal")
+            self.synapse_list[0].add_input(input_obj.signals[0])
+            self.synapse_list[1].add_input(input_obj.signals[1])
+        else:
+            self.synapse_list[0].add_input(input_obj.signals[0])
+            self.synapse_list[1].add_input(input_obj.signals[0])
+
+        exin = ["plus","minus"]
+        self.trace_dendrites = []
+        for lay in self.dendrites[1:]:
+            for group in lay:
+                for i,d in enumerate(group):
+                    cs = self.weights[0][0][i]*self.trace_factor
+                    # print(cs)
+                    for ei in exin:
+                        trace_dend = dendrite(name=f'n{self.n_count}_d{i}_{ei}',tau_di=self.trace_tau)
+                        trace_dend.add_input(d,connection_strength=cs)#2*np.random.rand())
+                        syn = common_synapse(f'{d.name}_tracesyn_{trace_dend.name}_{int(np.random.rand()*100000)}')
+                        trace_dend.add_input(syn,connection_strength=self.trace_syn_factor)
+                        # trace_dend.add_input(self.neuron.dend__nr_ni,connection_strength=soma_factor) ## 
+                        self.trace_dendrites.append(trace_dend)
+                        self.dendrite_list.append(trace_dend)
+                        self.synapse_list.append(syn)
+        # self.neuron = p_neuron
+        return self
 
     def mono_point(self):
         '''
@@ -577,7 +619,40 @@ class NeuralZoo():
         return neuron
 
 
+    def parameter_print(self):
+        print("\nSOMA:")
+        print(f" ib = {self.neuron.ib}")
+        print(f" ib_n = {self.neuron.ib_n}")
+        print(f" tau_ni = {self.neuron.tau_ni}")
+        print(f" beta_ni = {self.neuron.beta_ni}")
+        # print(f" tau = {self.neuron.tau}")
+        print(f" loops_present = {self.neuron.loops_present}")
+        print(f" s_th = {self.neuron.s_th}")
+        print("\n")
+        print(f" ib_di = {self.neuron.ib_di}")
+        print(f" tau_di = {self.neuron.tau_di}")
+        print(f" beta_di = {self.neuron.beta_di}")
 
+        print("\nREFRACTION:")
+        print(f" ib_ref = {self.neuron.ib_ref}")
+        print(f" tau_ref = {self.neuron.tau_ref}")
+        print(f" beta_ref = {self.neuron.beta_ref}")
+
+        print("\nDENDRITES:")
+        for dend in self.dendrite_list:
+            name = "arbor"
+            if "ref" in dend.name:
+                name = 'refractory'
+            elif "nr_ni" in dend.name:
+                name = "soma"
+            print(f" {name}", dend.name)
+            print(f"   ib_di = {dend.ib}")
+            print(f"   tau_di = {dend.tau_di}")
+            print(f"   beta_di = {dend.beta}")
+            print(f"   loops_present = {dend.loops_present}")
+        print("\n\n")
+
+        print("\nCONNECTIVITY:")
 
 
     def plot_neuron_activity(self,net,phir=False,dend=True,title=None,
@@ -653,11 +728,11 @@ class NeuralZoo():
         # print(self.synapses[0][0][0].__dict__)
         # print(net.spikes[0])
         plt.plot(net.t,signal,  color='#1f77b4',linewidth=4)
-        plt.xlabel("Simulation Time (ns)")
-        plt.ylabel("Signal (Ic)")
+        plt.xlabel("Simulation Time (ns)",fontsize=18)
+        plt.ylabel("Signal (Ic)",fontsize=18)
         plt.subplots_adjust(bottom=.25)
         if title:
-            plt.title(title)
+            plt.title(title,fontsize=22)
         if legend_out==True:
             plt.legend(loc='center left', bbox_to_anchor=(1, 0.5))
             plt.subplots_adjust(right=.8)

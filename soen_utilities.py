@@ -25,7 +25,7 @@ def physical_constants():
          hBar = 6.62606957e-34/(2*np.pi),
          hbar__eV_fs = 10.616133416243974/(2*np.pi),
          hBar__eV_fs = 10.616133416243974/(2*np.pi),
-         c = 299792458,#speed of light in meters per second
+         c = 299792458,#speed of light in meters per 
          c__um_ns = 299792.458,#speed of light in meters per second
          epsilon0 = 8.854187817e-12,#permittivity of free space in farads per meter
          mu0 = 4*np.pi*1e-7,#permeability of free space in volt seconds per amp meter
@@ -265,10 +265,14 @@ def dend_load_rate_array(load_string):
         _load_string = 'ra_dend_ri__beta_c_0.3000__beta_1_01.5708__beta_2_01.5708__beta_di_6.28319e+03__tau_di_long__ib_i_1.3524__ib_f_2.0524__d_ib_0.050__d_phi_r_0.0025__working_master'
     elif load_string == 'default_rtti':
         _load_string = 'ra_dend_rtti__beta_c_0.300__b1_1.571_b2_1.571_b3_3.142_b4_3.142_b_di_6.28319e+03_tau_di_long_ib1_i_1.500_ib1_f_2.650_ib2_0.350_ib3_0.700_d_phi_r_0.010__working_master' # 'ra_dend_rtti__beta_c_0.3000__beta_1_01.5708__beta_2_01.5708__beta_3_03.1416__beta_4_03.1416_beta_di_6.28319e+03__tau_di_long__ib_i_1.5000__ib_f_2.6500__d_phi_r_0.0100__working_master'
+    elif load_string == 'default_pri':
+        _load_string = 'ra_dend_pri__beta_c_0.3000__beta_1_01.5708__beta_2_01.5708__beta_di_6.28319e+03__tau_di_long__ib_i_-0.5000__ib_f_0.5000__d_phi_r_0.0200__2023-02-23_04-39-12'  
     else:
         _load_string = load_string
+
+    
     with open('{}{}{}.soen'.format(_path,'/soen_sim_data/',_load_string), 'rb') as data_file:    
-        data_array_imported = pickle.load(data_file)   
+        data_array_imported = pickle.load(data_file) # generated from soen_sim/dendrite/_functions__dend.py
     
     if 'params' in data_array_imported:
         params_output = data_array_imported['params']

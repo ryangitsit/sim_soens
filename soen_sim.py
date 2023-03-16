@@ -143,22 +143,30 @@ class dendrite():
         # DEFAULT SETTINGS
         self.uid = dendrite._next_uid
         self.unique_label = 'd{}'.format(self.uid)
+        self.ib_ramp = False
         dendrite._next_uid += 1
         self.name = 'unnamed_dendrite__{}'.format(self.unique_label)
+        self.pri=False
         if 'loops_present' in params:
             self.loops_present = params['loops_present']
         else:
             self.loops_present = 'ri'
         if self.loops_present == 'ri':
             self.circuit_betas = [2*np.pi* 1/4, 2*np.pi* 1/4, 2*np.pi*1e2]         
-        if self.loops_present == 'rtti':
+        elif self.loops_present == 'rtti':
             self.circuit_betas = [2*np.pi* 1/4, 2*np.pi* 1/4, 2*np.pi*1e2]
+        elif self.loops_present == 'pri':
+            self.circuit_betas = [2*np.pi* 1/4, 2*np.pi* 1/4, 2*np.pi* 1/4, 2*np.pi*1e2]
         self.Ic =  100
         self.beta_c =  0.3
         if self.loops_present == 'ri':
-            self.ib = 1.7        
+            self.ib = 1.802395858835221
+            self.ib_di = 1.802395858835221
         elif self.loops_present == 'rtti':
             self.ib = 2.0 
+        elif self.loops_present == 'pri':
+            self.ib = 2.1
+            self.phi_p = .2
         self.tau_di= 250
         self.normalize_input_connection_strengths = False
         self.total_excitatory_input_connection_strength = 1
@@ -168,10 +176,33 @@ class dendrite():
         self.rollover = 0
         self.valleyedout = 0
         self.doubleroll = 0
+        
 
 
         # UPDATE TO CUSTOM PARAMS
         self.__dict__.update(params)
+        # print(params['ib'])
+    
+        ########
+        if self.loops_present == 'pri':
+            if type(self.circuit_betas) == list and len(self.circuit_betas) == 4:
+                self.circuit_betas = self.circuit_betas
+            else:
+                raise ValueError('''
+                    [soen_sim] circuit_betas for a pri dendrite is a list of four 
+                    real numbers greater than zero with dimensionless units. The 
+                    first element represents the self inductance of the left branch 
+                    of the PR washer. The second element represents the middle 
+                    branch of the PR washer. The third element represents the right 
+                    branch of the PR washer. The fourth element represents the total 
+                    inductance of the I loop, including the integrating kinetic 
+                    inductor and the output inductance.
+                ''')
+
+
+        ########
+
+
         # print(self.type,self.dentype)
         # self.loops_present = self.type
         if hasattr(self, 'dentype'):
@@ -190,15 +221,23 @@ class dendrite():
                 self.name = '{}__{}'.format(self.name,'nr_ni')
                 # print("SOMATIC DENDRITE")
         else:
-            self.ib = self.ib
+            if "ib_di" in self.__dict__.keys():
+                self.ib = self.ib_di
+            else:
+                self.ib = self.ib
+            if "dend_name" in self.__dict__.keys():
+                self.name = self.dend_name
+            if "beta_di" in self.__dict__.keys():
+                print("custom beta")
+                self.circuit_betas[-1] = self.beta_di
             # print("REGULAR DENDRITE")
-
+        # print(self.ib)
         if 'integrated_current_threshold' in params:
             self.s_th = params['integrated_current_threshold']
         
         params = self.__dict__
         self.bias_current = self.ib
-
+        self.bias_dynamics = [self.ib]
         # for k,v in params.items():
         #     print(k," -> ",v)
         # print(" ************************************************************* ")
@@ -212,12 +251,15 @@ class dendrite():
             raise ValueError('''
             [soen_sim] loops_present must be:
                 \'ri\', \'pri\', \'rtti\', \'prtti\'. ''')
-
+        # print(self.name,"---------",self.loops_present)
         if type(self.circuit_betas) == list and (len(self.circuit_betas) == 3 
-                                            or len(self.circuit_betas) == 5):
+                                            or len(self.circuit_betas) == 5
+                                            or len(self.circuit_betas) == 4):
             if self.loops_present == 'ri':
                 self.circuit_betas = self.circuit_betas
             elif self.loops_present == 'rtti':
+                self.circuit_betas = self.circuit_betas
+            elif self.loops_present == 'pri':
                 self.circuit_betas = self.circuit_betas
         else:
             raise ValueError('''
@@ -409,11 +451,13 @@ class neuron():
         self.Ic =  100
         self.beta_c =  0.3
         if self.loops_present == 'ri':
-            self.ib = 1.7 # dimensionless bias current   
+            self.ib = 1.802395858835221 #1.7 # dimensionless bias current   
             self.ib_n = 1.802395858835221
+            self.ib_di = 1.802395858835221
         elif self.loops_present == 'rtti':
             self.ib = 2.0 # dimensionless bias current
             self.ib_n = 2.19
+            self.ib_di= 2.19
         self.integration_loop_time_constant = 250
         self.absolute_refractory_period = 10
         self.normalize_input_connection_strengths = False
@@ -426,7 +470,7 @@ class neuron():
 
         self.tau_ni = 50
         self.beta_di = 2*np.pi*1e2
-        self.tau_di = 500
+        self.tau_di = 250
         self.s_th = 0.5
         self.integrated_current_threshold = self.s_th
 
@@ -437,10 +481,15 @@ class neuron():
             self.loops_present__refraction = 'ri'
         self.beta_ref = 2*np.pi*1e2
         if self.loops_present__refraction == 'ri':
-            self.circuit_betas__refraction = [2*np.pi* 1/4, 2*np.pi* 1/4, self.beta_ref]         
+            self.circuit_betas__refraction = [2*np.pi* 1/4, 
+                                              2*np.pi* 1/4, 
+                                              self.beta_ref]         
         if self.loops_present__refraction  == 'rtti':
-            self.circuit_betas__refraction = [2*np.pi* 1/4, 2*np.pi* 1/4, 2*np.pi*0.5, 
-                                  2*np.pi*0.5, self.beta_ref]
+            self.circuit_betas__refraction = [2*np.pi* 1/4, 
+                                              2*np.pi* 1/4, 
+                                              2*np.pi*0.5, 
+                                              2*np.pi*0.5, 
+                                              self.beta_ref]
         self.Ic__refraction =  100
         self.beta_c__refraction =  0.3
         if self.loops_present__refraction == 'ri':
@@ -466,13 +515,13 @@ class neuron():
 
         # UPDATE TO CUSTOM PARAMS
         self.__dict__.update(params)
-        
+        # print(self.loops_present)
         self.integrated_current_threshold = self.s_th
         params = self.__dict__
 
         # for k,v in params.items():
         #     print(k," -> ",v)
-        # print(" ============================================================= ")
+        # print(" =========================================================== ")
 
         # futher adjustments to parameters
 
@@ -783,6 +832,9 @@ class network():
         self.uid = network._next_uid
         network._next_uid += 1
         self.unique_label = 'net{}'.format(self.uid)
+        self.new_way=False
+        self.null_synapses=False
+        self.nodes=[]
 
         self.__dict__.update(kwargs)
 
@@ -794,7 +846,7 @@ class network():
         # end name 
         
         # JJ params
-        dummy_dendrite = dendrite() # make dummy dendrite to obtain default Ic, beta_c
+        dummy_dendrite = dendrite(name='dummy') # make dummy dendrite to obtain default Ic, beta_c
         jj_params = get_jj_params(dummy_dendrite.Ic*1e-6,dummy_dendrite.beta_c)
         self.jj_params = jj_params # add jj_params to network just as stupid hack to construct t_tau_conversion (this should be done somewhere else globally)
         
@@ -806,7 +858,9 @@ class network():
  
     def add_neuron(self, neuron_object):
         self.neurons[neuron_object.name] = neuron_object
-        return
+        # if self.neurons[neuron_object.name] not in self.nodes:
+        #     self.nodes.append(self.neurons[neuron_object.name])
+        # return
     
     def run_sim(self, **kwargs):
         self.dt = kwargs['dt']
@@ -856,12 +910,12 @@ class network():
         # print(spike_signal)
         # print(spike_signals)
 
-    def simulate(self,prune_synapses=False):
+    def simulate(self):
         # print(self.nodes)
         # net = network(name = 'network_under_test')
         for n in self.nodes:
             self.add_neuron(n.neuron)
-        if prune_synapses == True:
+        if self.null_synapses == True:
             count=0
             for n in self.nodes:
                 for syn in n.synapse_list:
@@ -875,3 +929,87 @@ class network():
         self.run_sim(dt=self.dt, tf=self.tf)
         self.get_recordings()
 
+
+class HardwareInTheLoop:
+    def __init__(self, **params):
+        self.expect = [[0,50],[None,None],[50,0],[None,None],[None,None],[None,None],[None,None]]
+        self.interval = 500
+        self.phase = 0
+        self.error_factor = 10
+        self.traces=None
+        self.__dict__.update(params)
+        
+        self.check_time = self.interval*(self.phase+1)
+        self.errors = [[] for i in range(len(self.expect))]
+
+
+    def forward_error(self,neurons):
+        '''
+        Returns difference between actual and expected spikes for each neuron
+            - Only counts spikes for a given interval phase
+            - **rewrite this more optimally (probably with list comprehension)
+        '''
+        counts = [0 for i in range(len(neurons))]
+        for i,n in enumerate(neurons):
+            # print(type(n.neuron))
+            if "spike_times" in n.neuron.__dict__:
+                for spk in n.neuron.spike_times:
+                    spk = spk/self.conversion
+                    if (spk > self.check_time - self.interval 
+                        and spk < self.check_time):
+                        counts[i]+=1
+            else:
+                counts[i]=0
+
+        # If no expectation, error will equal zero
+        # for i,ex in enumerate(self.expect[self.phase]):
+        #     if ex==None:
+                # self.expect[self.phase][i] = counts[i]
+        print("phase:",self.phase)
+        if self.expect[self.phase][0] == None:
+            self.expect[self.phase][0] = counts[0]
+        if self.expect[self.phase][1] == None:
+            self.expect[self.phase][1] = counts[1]
+            
+
+        self.errors[self.phase] = np.subtract(counts,self.expect[self.phase])
+        # print(counts,self.expect[self.phase])
+
+    def backward_error(self,nodes):
+        freq_factor = self.freq_factor
+        error = self.errors[self.phase]
+        # print("self ERROR: ", error,"\n")
+        for i in range(len(error)):
+            for dend in nodes[i].trace_dendrites:
+                for name,syn in dend.synaptic_inputs.items():
+                    self.traces.append(dend)
+
+                    if error[i] < 0:
+                        if 'plus' in syn.name:
+                            # print("plus error: ",error[i])
+                            freq = np.max([300 - np.abs(error[i])*freq_factor,50])
+                            # print("plus frequency: ",freq)
+                            syn.input_signal.spike_times += list(np.arange(self.check_time,
+                                                                        self.check_time+self.interval,
+                                                                        freq))
+                            syn.spike_times_converted = np.asarray(syn.input_signal.spike_times)*self.conversion
+
+                    elif error[i] > 0:
+                        if 'minus' in syn.name:
+                            # print("minus error: ",error[i])
+                            freq = np.max([300 - np.abs(error[i])*freq_factor,50])
+                            # print("minus frequency: ",freq)
+                            syn.input_signal.spike_times += list(np.arange(self.check_time,
+                                                                        self.check_time+self.interval,
+                                                                        freq))
+                            syn.spike_times_converted = np.asarray(syn.input_signal.spike_times)*self.conversion
+
+                    # print(syn.name,syn.input_signal.spike_times)
+                        
+            # print("\n")
+        self.phase+=1
+        self.check_time = self.interval*(self.phase+1)
+        self.trace_biases = {}
+        for trace in self.traces:
+            self.trace_biases[trace.name] = []
+            # return net

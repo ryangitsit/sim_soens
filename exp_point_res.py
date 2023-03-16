@@ -3,6 +3,7 @@ from super_net import PointReservoir
 from super_functions import picklin, spks_to_txt
 from super_argparse import setup_argument_parser
 from soen_plotting import raster_plot
+import time
 
 
 def main():
@@ -25,13 +26,15 @@ def main():
     name = f'res_{int(params["beta"])}_{params["tau"]}_{params["tau_ref"]}_run_{args.run}'
     print(f"Run: {args.run} -- {name}")
     # print(params)
-
+    s = time.perf_counter()
     res = PointReservoir(**params)
     res.connect_input(input)
     res.run_network()
+    f = time.perf_counter()
+    print(f"time to run = {f-s}")
     # picklit(res,path,name)
-    spks_to_txt(res.net.spikes,res.N,8,path,name)
-    # raster_plot(res.net.spikes)
+    # spks_to_txt(res.net.spikes,res.N,8,path,name)
+    raster_plot(res.net.spikes)
 
 if __name__=='__main__':
     main()
