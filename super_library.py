@@ -619,7 +619,40 @@ class NeuralZoo():
         return neuron
 
 
+    def parameter_print(self):
+        print("\nSOMA:")
+        print(f" ib = {self.neuron.ib}")
+        print(f" ib_n = {self.neuron.ib_n}")
+        print(f" tau_ni = {self.neuron.tau_ni}")
+        print(f" beta_ni = {self.neuron.beta_ni}")
+        # print(f" tau = {self.neuron.tau}")
+        print(f" loops_present = {self.neuron.loops_present}")
+        print(f" s_th = {self.neuron.s_th}")
+        print("\n")
+        print(f" ib_di = {self.neuron.ib_di}")
+        print(f" tau_di = {self.neuron.tau_di}")
+        print(f" beta_di = {self.neuron.beta_di}")
 
+        print("\nREFRACTION:")
+        print(f" ib_ref = {self.neuron.ib_ref}")
+        print(f" tau_ref = {self.neuron.tau_ref}")
+        print(f" beta_ref = {self.neuron.beta_ref}")
+
+        print("\nDENDRITES:")
+        for dend in self.dendrite_list:
+            name = "arbor"
+            if "ref" in dend.name:
+                name = 'refractory'
+            elif "nr_ni" in dend.name:
+                name = "soma"
+            print(f" {name}", dend.name)
+            print(f"   ib_di = {dend.ib}")
+            print(f"   tau_di = {dend.tau_di}")
+            print(f"   beta_di = {dend.beta}")
+            print(f"   loops_present = {dend.loops_present}")
+        print("\n\n")
+
+        print("\nCONNECTIVITY:")
 
 
     def plot_neuron_activity(self,net,phir=False,dend=True,title=None,

@@ -161,6 +161,7 @@ class dendrite():
         self.beta_c =  0.3
         if self.loops_present == 'ri':
             self.ib = 1.802395858835221
+            self.ib_di = 1.802395858835221
         elif self.loops_present == 'rtti':
             self.ib = 2.0 
         elif self.loops_present == 'pri':
@@ -452,9 +453,11 @@ class neuron():
         if self.loops_present == 'ri':
             self.ib = 1.802395858835221 #1.7 # dimensionless bias current   
             self.ib_n = 1.802395858835221
+            self.ib_di = 1.802395858835221
         elif self.loops_present == 'rtti':
             self.ib = 2.0 # dimensionless bias current
             self.ib_n = 2.19
+            self.ib_di= 2.19
         self.integration_loop_time_constant = 250
         self.absolute_refractory_period = 10
         self.normalize_input_connection_strengths = False
@@ -467,7 +470,7 @@ class neuron():
 
         self.tau_ni = 50
         self.beta_di = 2*np.pi*1e2
-        self.tau_di = 500
+        self.tau_di = 250
         self.s_th = 0.5
         self.integrated_current_threshold = self.s_th
 
@@ -478,10 +481,15 @@ class neuron():
             self.loops_present__refraction = 'ri'
         self.beta_ref = 2*np.pi*1e2
         if self.loops_present__refraction == 'ri':
-            self.circuit_betas__refraction = [2*np.pi* 1/4, 2*np.pi* 1/4, self.beta_ref]         
+            self.circuit_betas__refraction = [2*np.pi* 1/4, 
+                                              2*np.pi* 1/4, 
+                                              self.beta_ref]         
         if self.loops_present__refraction  == 'rtti':
-            self.circuit_betas__refraction = [2*np.pi* 1/4, 2*np.pi* 1/4, 2*np.pi*0.5, 
-                                  2*np.pi*0.5, self.beta_ref]
+            self.circuit_betas__refraction = [2*np.pi* 1/4, 
+                                              2*np.pi* 1/4, 
+                                              2*np.pi*0.5, 
+                                              2*np.pi*0.5, 
+                                              self.beta_ref]
         self.Ic__refraction =  100
         self.beta_c__refraction =  0.3
         if self.loops_present__refraction == 'ri':
@@ -513,7 +521,7 @@ class neuron():
 
         # for k,v in params.items():
         #     print(k," -> ",v)
-        # print(" ============================================================= ")
+        # print(" =========================================================== ")
 
         # futher adjustments to parameters
 

@@ -291,10 +291,12 @@ def main():
     # generate neurons 
     # any neuron/dendritic parameter can be passed in as keyword argument
     n1 = NeuralZoo(type='custom',synaptic_structure=syn_struct,weights=W,
-                s_th=.5,tau_ni=tau_ni,tau_di=tau_di,beta_ni=beta_ni)
+                s_th=.5,tau_ni=tau_ni,tau_di=tau_di,beta_ni=beta_ni,
+                ib_di=1.7,ib_ni=1.802395858835221)
 
     n2 = NeuralZoo(type='custom',synaptic_structure=syn_struct,weights=W,
-                s_th=.5,tau_ni=tau_ni,tau_di=tau_di,beta_ni=beta_ni)
+                s_th=.5,tau_ni=tau_ni,tau_di=tau_di,beta_ni=beta_ni,ib_di=1.7,
+                ib_ni=1.802395858835221)
 
     net, n1, n2 = run_prox_basal_experiment(set,n1,n2,case,input_basal,input_proximal,input_empty)
     neurons = [n1,n2]
@@ -303,10 +305,12 @@ def main():
     input_basal_ = input_empty
 
     n1_ = NeuralZoo(type='custom',synaptic_structure=syn_struct,weights=W,
-                s_th=.5,tau_ni=tau_ni,tau_di=tau_di,beta_ni=beta_ni)
+                s_th=.5,tau_ni=tau_ni,tau_di=tau_di,beta_ni=beta_ni,ib_di=1.7,
+                ib_ni=1.802395858835221)
 
     n2_ = NeuralZoo(type='custom',synaptic_structure=syn_struct,weights=W,
-                s_th=.5,tau_ni=tau_ni,tau_di=tau_di,beta_ni=beta_ni)
+                s_th=.5,tau_ni=tau_ni,tau_di=tau_di,beta_ni=beta_ni,ib_di=1.7,
+                ib_ni=1.802395858835221)
 
     net_, n1_, n2_ = run_prox_basal_experiment(set,n1_,n2_,case,input_basal_,input_proximal,input_empty)
 

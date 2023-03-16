@@ -45,7 +45,7 @@ def run_soen_sim(obj, **kwargs):
         obj.time_params.update({'tau_vec': tau_vec, 'd_tau': d_tau})
         
         if obj.new_way==False:
-            # print("old way")
+            print("old way")
             # initialize all neurons
             for neuron_key in obj.neurons:
                 
@@ -77,7 +77,7 @@ def run_soen_sim(obj, **kwargs):
             for neuron_key in obj.neurons:
                 recursive_dendrite_data_attachment(obj.neurons[neuron_key].dend__nr_ni,obj)
         else:
-            # print("new way")
+            print("new way")
             # for name,neuron in obj.neurons.items():
             for neuron in obj.nodes:
                 # print("Initializing neuron: ", neuron.name)
