@@ -5,7 +5,7 @@ from super_library import NeuralZoo
 from params import default_neuron_params
 from super_input import SuperInput
 from soen_sim import input_signal, synapse, neuron, network
-from soen_plotting import raster_plot
+from soen_plotting import raster_plot, arbor_activity
 from params import nine_pixel_params
 
 
@@ -47,7 +47,8 @@ def main():
 
         net.run_sim(dt = .1, tf = 100)
         net.get_recordings()
-        nine_neuron.arbor_activity_plot()
+        # nine_neuron.arbor_activity_plot()
+        arbor_activity(nine_neuron,net,phir=True)
 
         print("Number of spikes: ", len(net.spikes[0]))
         # import matplotlib.pyplot as plt

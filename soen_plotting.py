@@ -1802,7 +1802,7 @@ def activity_plot(neurons,net,phir=False,dend=True,title=None,
 
     if len(neurons) > 1:
         fig, axs = plt.subplots(len(neurons), 1,figsize=(size))
-        for ii,n in enumerate(neurons):
+        for ii,n in enumerate(neurons): 
             if ii != len(neurons)-1:
                 axs[ii].get_xaxis().set_visible(False)
 
@@ -1950,51 +1950,177 @@ def activity_plot(neurons,net,phir=False,dend=True,title=None,
     plt.show()
 
 
-def arbor_activity(node,net):
+def arbor_activity(node,net,phir=False,size=(12,6)):
+    plt.style.use('seaborn-v0_8-muted')
+
     t = net.t
     print(node.dendrites)
-    plt.figure(figsize=(16,10))
+    plt.figure(figsize=size)
     signals = []
-    layers = []
+    layer_sizes = []
     for i,layer in enumerate(node.dendrites):
-        count=0
+        count = 0
         for j,group in enumerate(layer):
             for k,dend in enumerate(group):
                 signals.append(dend.s)
+                # print(dend.name)
                 count+=1
-        layers.append(count)
-    print(layers)
+        layer_sizes.append(count)
     max_s = np.max(signals)
-    max_l = np.max(layers)
+    min_s = np.min(signals)
 
     layers = []
+    x_ticks = []
+    x_labels = []
+    ys = []
     for i,layer in enumerate(node.dendrites[::-1]):
         count=0
         groups = []
         for j,group in enumerate(layer):
             g = []
             for k,dend in enumerate(group):
-                print(dend.name,i,j,k,count)
-                signal=node.neuron.dend__nr_ni.s
-                # print(len(node.dendrites)-i)
+                signal=dend.s
                 x=t+net.tf*i*1.1
-
                 if i == 0:
-                    y= signal + (count*max_s)+max_s*j
+                    y_offset = (count*max_s)*1.2+max_s*j*1.5
+                    y = signal + y_offset
+                    y2 = dend.phi_r + y_offset
+                    ys.append(np.max(y))
                 else:
-                    
-                    y= signal + layers[i-1][count]-max_s*.5
-
+                    y_offset = layers[i-1][count]-max_s*.5
+                    y = signal + y_offset
+                    y2 = dend.phi_r + y_offset
                 g.append(y)
-                plt.plot(x,y,label=dend.name)
+                plot = plt.plot(x,y,label=dend.name[18:],linewidth=3)
+                color = plot[0].get_color()
+                if phir==True:
+                    plt.plot(x,y2,'--',color=color)
                 count+=1
             groups.append(np.mean(g))
-        layers.append(groups)
-    print(layers)
-    plt.title("Dendritic Arbor Activity")
-    plt.legend()
+        x_ticks.append(net.tf*i*1.1+.5*net.tf)
+        x_labels.append(f"layer {len(node.dendrites)-(i+1)}")
+        layers.append(groups)        
+    x_labels[-1] += " (soma)"
+    plt.xlim(-.3*net.tf,net.tf*((len(node.dendrites)-1)*1.1+1.3))
+    plt.xticks(x_ticks,x_labels,fontsize=18)
+
+    plt.yticks([])
+    plt.ylim(-1*max_s,np.max(ys)+1*max_s)#max_s*(np.max(layer_sizes)+len(node.dendrites[-1])-.5))
+    plt.ylabel(f"Signal Range = [{np.round(min_s,2)},{np.round(max_s,2)}]",
+               fontsize=18)
+
+    plt.title("Dendritic Arbor Activity",fontsize=20)
+    # plt.legend()
     plt.show()
     
+
+
+def structure(node):
+    '''
+    Plots arbitrary neuron structure
+        - Weighting represented in line widths
+        - Dashed lines inhibitory
+        - Star is cell body
+        - Dots are dendrites
+    '''
+    import matplotlib.colors as mcolors
+    colors = mcolors.TABLEAU_COLORS
+    c_names = list(colors) + list(colors) + list(colors)
+    # print(c_names[0])
+    # print(colors[c_names[0]])
+    arbor = node.dendrites
+    arbor[0] = arbor[0][0]
+    strengths = node.weights
+    strengths[0] = strengths[0][0]
+    print(arbor,strengths)
+    # colors = ['r','b','g',]
+    # c_names = [1,2,3]
+    Ns = []
+    for i,a in enumerate(arbor):
+        count = 0
+        lsts = sum(type(el)== type([]) for el in a)
+        if lsts > 0:
+            for j in range(lsts):
+                count+=len(arbor[i][j])
+        else: count = len(a)
+        Ns.append(count)
+    Ns.insert(0,1)
+    Ns.reverse()
+    arbor[0] = [arbor[0]]
+    strengths[0] = [strengths[0]]
+    # for a in arbor:
+    #     print(a,"\n")
+    layers=len(arbor)
+    Ns_ = Ns[::-1]
+    # Ns_.reverse()
+    m=max(Ns)
+    # print(Ns_)
+    # arbor.reverse()
+    c_dexes=[[] for _ in range(len(Ns))]
+    for i,l in enumerate(arbor):
+        count= 0
+        row_sum = 0
+        for j,b in enumerate(l):
+            for k,d in enumerate(b):
+                if i == 0:
+                    c_dexes[i].append(k)
+                    if strengths[i][j][k] >= 0:
+                        plt.plot([layers-i-.5, layers-i+.5], 
+                                    [(m/2)+(len(b)/2)-(k+1),(m/2)-.5], 
+                                    '-',color=colors[c_names[k]], 
+                                    linewidth=strengths[i][j][k]*5)
+                    else:
+                        plt.plot([layers-i-.5, layers-i+.5], 
+                                    [(m/2)+(len(b)/2)-(k+1),(m/2)-.5], 
+                                    '--',color=colors[c_names[k]], 
+                                    linewidth=strengths[i][j][k]*5*(-1))
+                else:
+                    c_dexes[i].append(c_dexes[i-1][j])
+                    c_index = c_dexes[i-1][j]
+                    y1=(m/2)+Ns_[i+1]/2 - 1 - (j+k) - row_sum #-((Ns_[i]/2)%2)/2
+                    y2=(m/2)+Ns_[i]/2 - j - 1 
+                    # print(i,j,k,row_sum)
+                    if strengths[i][j][k] >= 0:
+                        plt.plot([layers-i-.5, layers-i+.5], [y1,y2], '-', 
+                                    color=colors[c_names[c_index]], 
+                                    linewidth=strengths[i][j][k]*5)
+                    else:
+                        plt.plot([layers-i-.5, layers-i+.5], [y1,y2], '--', 
+                                    color=colors[c_names[c_index]], 
+                                    linewidth=strengths[i][j][k]*5*(-1))
+                count+=1
+            row_sum += len(arbor[i][j])-1 
+
+    x_ticks=[]
+    x_labels=[]
+    # print(Ns)
+    for i,n in enumerate(Ns):
+        if (np.max(Ns)) < 10:
+            size = 15
+        else:
+            size = 100/(np.max(Ns))
+        x_labels.append(f"L{len(Ns)-(i+1)}")
+        x_ticks.append(i+.5)
+        if n == np.max(Ns):
+            plt.plot(np.ones(n)*i+.5,np.arange(n),'ok',ms=size)
+        elif n != 1:
+            factor = 1 # make proportional
+            plt.plot(np.ones(n)*i+.5,np.arange(n)*factor+(.5*np.max(Ns)-.5*n), 
+                        'ok', ms=size)
+        else:
+            plt.plot(np.ones(n)*i+.5, np.arange(n)+(.5*np.max(Ns)-.5*n), '*k', ms=30)
+            plt.plot(np.ones(n)*i+.5, np.arange(n)+(.5*np.max(Ns)-.5*n), '*y', ms=20)
+
+    x_labels[-1]="soma"
+    plt.yticks([],[])
+    plt.xticks(x_ticks,x_labels)
+    plt.xlim(0,len(Ns))
+    plt.ylim(-1, max(Ns))
+    plt.xlabel("Layers",fontsize=16)
+    plt.ylabel("Dendrites",fontsize=16)
+    plt.title('Dendritic Arbor',fontsize=20)
+    plt.show()
+
 # =============================================================================
 # End plots added by Ryan
 # =============================================================================

@@ -864,6 +864,7 @@ class network():
     
     def run_sim(self, **kwargs):
         self.dt = kwargs['dt']
+        self.tf = kwargs['tf']
         self = run_soen_sim(self, **kwargs)
         return self
     

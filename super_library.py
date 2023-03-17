@@ -212,7 +212,7 @@ class NeuralZoo():
                         else:
                             entries['loops_present'] = 'ri'
                         entries = self.__dict__
-                        entries['dend_name'] = f"{self.neuron.name}_lay{i}_branch{j}_den{k}"
+                        entries['dend_name'] = f"{self.neuron.name}_lay{i+1}_branch{j}_den{k}"
                         entries['type'] = type
                         dend = dendrite(**entries)
                         sub.append(dend)
@@ -1023,7 +1023,7 @@ class NeuralZoo():
         # print(c_names[0])
         # print(colors[c_names[0]])
         arbor,strengths = self.get_structure()
-
+        print(arbor,strengths)
         # colors = ['r','b','g',]
         # c_names = [1,2,3]
         Ns = []
