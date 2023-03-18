@@ -1784,7 +1784,9 @@ def activity_plot(neurons,net,phir=False,dend=True,title=None,
                         spikes=True, path=None,SPD=False,ref=False,legend_out=False,
                         size=(12,4), y_range=None,subtitles=None):
     '''
-    Plots signal activity for a given network or neuron
+    Plots signal activity for a given neuron or network of neurons
+        - neurons    -> list of all neurons to be plotted
+        - net        -> network within which neurons were simulated
         - phir       -> plot phi_r of soma and phi_r thresholds
         - dend       -> plot dendritic signals
         - input      -> mark moments of input events with red spikes
@@ -1951,6 +1953,9 @@ def activity_plot(neurons,net,phir=False,dend=True,title=None,
 
 
 def arbor_activity(node,net,phir=False,size=(12,6)):
+    '''
+    Plots signal and optional flux over dendritic structure
+    '''
     plt.style.use('seaborn-v0_8-muted')
 
     t = net.t
@@ -2026,15 +2031,10 @@ def structure(node):
     import matplotlib.colors as mcolors
     colors = mcolors.TABLEAU_COLORS
     c_names = list(colors) + list(colors) + list(colors)
-    # print(c_names[0])
-    # print(colors[c_names[0]])
+
     arbor = node.dendrites
-    arbor[0] = arbor[0][0]
     strengths = node.weights
-    strengths[0] = strengths[0][0]
-    print(arbor,strengths)
-    # colors = ['r','b','g',]
-    # c_names = [1,2,3]
+
     Ns = []
     for i,a in enumerate(arbor):
         count = 0
@@ -2044,82 +2044,70 @@ def structure(node):
                 count+=len(arbor[i][j])
         else: count = len(a)
         Ns.append(count)
-    Ns.insert(0,1)
-    Ns.reverse()
-    arbor[0] = [arbor[0]]
-    strengths[0] = [strengths[0]]
-    # for a in arbor:
-    #     print(a,"\n")
-    layers=len(arbor)
-    Ns_ = Ns[::-1]
-    # Ns_.reverse()
     m=max(Ns)
-    # print(Ns_)
-    # arbor.reverse()
-    c_dexes=[[] for _ in range(len(Ns))]
-    for i,l in enumerate(arbor):
-        count= 0
-        row_sum = 0
-        for j,b in enumerate(l):
-            for k,d in enumerate(b):
-                if i == 0:
-                    c_dexes[i].append(k)
-                    if strengths[i][j][k] >= 0:
-                        plt.plot([layers-i-.5, layers-i+.5], 
-                                    [(m/2)+(len(b)/2)-(k+1),(m/2)-.5], 
-                                    '-',color=colors[c_names[k]], 
-                                    linewidth=strengths[i][j][k]*5)
-                    else:
-                        plt.plot([layers-i-.5, layers-i+.5], 
-                                    [(m/2)+(len(b)/2)-(k+1),(m/2)-.5], 
-                                    '--',color=colors[c_names[k]], 
-                                    linewidth=strengths[i][j][k]*5*(-1))
+    
+    Y = [[] for i in range(len(arbor))]
+    G = []
+
+    Ydot = []
+    Xdot = []
+    dots = []
+    x_ticks = []
+    x_labels = []
+    
+    
+    for i,layer in enumerate(node.dendrites[::-1]):
+        count=0
+        groups = []
+        for j,group in enumerate(layer):
+            g = []
+            for k,dend in enumerate(group):
+                x = 1 + i
+                if i==0:
+                    y = 1+count
+                    Y[i].append(y)
+                elif i==len(arbor)-1:
+                    y = np.mean(G[i-1])
+                    Y[i].append(y)
                 else:
-                    c_dexes[i].append(c_dexes[i-1][j])
-                    c_index = c_dexes[i-1][j]
-                    y1=(m/2)+Ns_[i+1]/2 - 1 - (j+k) - row_sum #-((Ns_[i]/2)%2)/2
-                    y2=(m/2)+Ns_[i]/2 - j - 1 
-                    # print(i,j,k,row_sum)
-                    if strengths[i][j][k] >= 0:
-                        plt.plot([layers-i-.5, layers-i+.5], [y1,y2], '-', 
-                                    color=colors[c_names[c_index]], 
-                                    linewidth=strengths[i][j][k]*5)
-                    else:
-                        plt.plot([layers-i-.5, layers-i+.5], [y1,y2], '--', 
-                                    color=colors[c_names[c_index]], 
-                                    linewidth=strengths[i][j][k]*5*(-1))
+                    y = G[i-1][count]
+                    Y[i].append(y)
+
+                Xdot.append(x)
+                Ydot.append(y)
+                dot = [x,y,i,j,k,count]
+                dots.append(dot)
+                print(dot)
+                g.append(y)
                 count+=1
-            row_sum += len(arbor[i][j])-1 
+                x_ticks.append(x)
+                x_labels.append(f"layer {len(node.dendrites)-(i+1)}")
+            groups.append(np.mean(g))
+        G.append(groups)
+    plt.figure(figsize=(10,6))
 
-    x_ticks=[]
-    x_labels=[]
-    # print(Ns)
-    for i,n in enumerate(Ns):
-        if (np.max(Ns)) < 10:
-            size = 15
-        else:
-            size = 100/(np.max(Ns))
-        x_labels.append(f"L{len(Ns)-(i+1)}")
-        x_ticks.append(i+.5)
-        if n == np.max(Ns):
-            plt.plot(np.ones(n)*i+.5,np.arange(n),'ok',ms=size)
-        elif n != 1:
-            factor = 1 # make proportional
-            plt.plot(np.ones(n)*i+.5,np.arange(n)*factor+(.5*np.max(Ns)-.5*n), 
-                        'ok', ms=size)
-        else:
-            plt.plot(np.ones(n)*i+.5, np.arange(n)+(.5*np.max(Ns)-.5*n), '*k', ms=30)
-            plt.plot(np.ones(n)*i+.5, np.arange(n)+(.5*np.max(Ns)-.5*n), '*y', ms=20)
 
-    x_labels[-1]="soma"
-    plt.yticks([],[])
-    plt.xticks(x_ticks,x_labels)
-    plt.xlim(0,len(Ns))
-    plt.ylim(-1, max(Ns))
-    plt.xlabel("Layers",fontsize=16)
-    plt.ylabel("Dendrites",fontsize=16)
-    plt.title('Dendritic Arbor',fontsize=20)
+    for i,dot1 in enumerate(dots):
+        for ii,dot2 in enumerate(dots):
+            if dot1[3] == dot2[5] and dot1[2] == dot2[2]-1:
+                to_dot = dot2
+        x1 = dot1[0]
+        x2 = to_dot[0]
+        y1 = dot1[1]
+        y2 = to_dot[1]
+        plt.plot([x1,x2],[y1,y2],color='red')
+
+    plt.plot(Xdot,Ydot,'ok',ms=10)
+    x_labels[-1] += " (soma)"
+    plt.xticks(x_ticks,x_labels,fontsize=12)
+    plt.xlim(1-.1*len(arbor),len(arbor)*1.1)
+    plt.ylim(1-.1*m,m*1.1)
+    plt.yticks([])
+    plt.ylabel("Dendrites",fontsize=18)
+    plt.xlabel("Layers",fontsize=18)
+    plt.title("Dendritc Arbor",fontsize=20)
     plt.show()
+
 
 # =============================================================================
 # End plots added by Ryan
