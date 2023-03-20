@@ -10,7 +10,7 @@ def main():
 
     input = picklin("results","saccade_mnist_10")
     args = setup_argument_parser()
-
+    args.seed=args.run
     params= {
         "N":72,
         "s_th":0.5,
@@ -19,7 +19,7 @@ def main():
         "tau_ref":50,
         "tf":3600
         }
-        
+    
     params.update(args.__dict__)
     params["beta"] = 2*np.pi*10**(params["beta"])
     path = f'reservoirs_3/'

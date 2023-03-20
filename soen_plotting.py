@@ -1959,7 +1959,7 @@ def arbor_activity(node,net,phir=False,size=(12,6)):
     plt.style.use('seaborn-v0_8-muted')
 
     t = net.t
-    print(node.dendrites)
+    # print(node.dendrites)
     plt.figure(figsize=size)
     signals = []
     layer_sizes = []
@@ -2073,10 +2073,10 @@ def structure(node):
             for k,dend in enumerate(group):
                 x = 1 + i*x_factor
                 if i==0:
-                    y = 1+count*y_factor
+                    y = np.round(1+count*y_factor,2)
                     Y[i].append(y)
                 elif i==len(arbor)-1:
-                    y = np.mean(G[i-1])
+                    y = np.round(np.mean(G[i-1]),2)
                     Y[i].append(y)
                 else:
                     y = G[i-1][count]
@@ -2093,7 +2093,7 @@ def structure(node):
                     else:
                         y_space = [y]
                     for s,syn in enumerate(dend.synaptic_inputs):
-                        X_synapses.append(x*.9)
+                        X_synapses.append(x-.1)
                         Y_synapses.append(y_space[s])
                 
                 if hasattr(dend, 'branch'):
@@ -2108,7 +2108,6 @@ def structure(node):
 
                 dot = [x,y,i,j,k,count,branch,output]
                 dots.append(dot)
-                print(dot)
                 g.append(y)
                 count+=1
                 x_ticks.append(x)
@@ -2119,6 +2118,7 @@ def structure(node):
 
 
     for i,dot1 in enumerate(dots):
+        
         for ii,dot2 in enumerate(dots):
             if dot1[3] == dot2[5] and dot1[2] == dot2[2]-1:
                 to_dot = dot2
@@ -2131,11 +2131,12 @@ def structure(node):
             color = color_map.colors[dot1[6]]
         else:
             color = 'k'
-        if dot1[7] != None:
-            width = int(dot1[7]*4)
+        if dot1[7] != None and dot1[7] != 0:
+            width = np.max([int(dot1[7]*5),1])
         else:
             width = .01
-        print(to_dot[2],dot1,to_dot) 
+        # print(i,dot1,'-->',to_dot)
+
         if to_dot[2]==len(arbor)-1 and to_dot!=dot1:
             # print("to soma")
             plt.plot([x1,x2],[y1,y2],color=color,linewidth=width,label=f'branch {dot1[6]}')

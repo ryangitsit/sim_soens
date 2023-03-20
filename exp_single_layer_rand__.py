@@ -16,7 +16,7 @@ def main():
     args = setup_argument_parser()
     run = args.run
     runs = args.runs
-
+    args.seed=args.run
     tile_time = 10
     classes = [0,1,2]
     window = tile_time*36*3

@@ -23,7 +23,7 @@ def main():
     tau_ref = args.tau_ref
     inhibit = -(1/args.inhibit)
     path = f'results/single_inhibit/{args.dir}/'
-
+    args.seed=args.run
     tile_time = 10
     classes = [0,1,2]
     window = tile_time*36*3
