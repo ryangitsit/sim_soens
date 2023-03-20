@@ -2028,9 +2028,15 @@ def structure(node):
         - Star is cell body
         - Dots are dendrites
     '''
-    import matplotlib.colors as mcolors
-    colors = mcolors.TABLEAU_COLORS
-    c_names = list(colors) + list(colors) + list(colors)
+    # import matplotlib.colors as mcolors
+    # colors = mcolors.viridis
+    # c_names = list(colors) + list(colors) + list(colors)
+
+    from matplotlib import cm
+    from matplotlib.colors import ListedColormap,LinearSegmentedColormap
+    # color_map = cm.get_cmap('viridis', 3)
+    color_map = cm.get_cmap('tab10', 8)
+    
 
     arbor = node.dendrites
     strengths = node.weights
@@ -2051,20 +2057,23 @@ def structure(node):
 
     Ydot = []
     Xdot = []
+    X_synapses = []
+    Y_synapses = []
     dots = []
     x_ticks = []
     x_labels = []
-    
-    
+    x_factor = 1
+    y_factor = 5
+    # colors = ['r','b','g']
     for i,layer in enumerate(node.dendrites[::-1]):
         count=0
         groups = []
         for j,group in enumerate(layer):
             g = []
             for k,dend in enumerate(group):
-                x = 1 + i
+                x = 1 + i*x_factor
                 if i==0:
-                    y = 1+count
+                    y = 1+count*y_factor
                     Y[i].append(y)
                 elif i==len(arbor)-1:
                     y = np.mean(G[i-1])
@@ -2075,7 +2084,29 @@ def structure(node):
 
                 Xdot.append(x)
                 Ydot.append(y)
-                dot = [x,y,i,j,k,count]
+                
+                syns = len(list(dend.synaptic_inputs))
+                
+                if syns>0:
+                    if syns>1:
+                        y_space = np.arange(y-.5,y+.501,1/(syns-1))
+                    else:
+                        y_space = [y]
+                    for s,syn in enumerate(dend.synaptic_inputs):
+                        X_synapses.append(x*.9)
+                        Y_synapses.append(y_space[s])
+                
+                if hasattr(dend, 'branch'):
+                    branch = dend.branch
+                else:
+                    branch = None
+
+                if hasattr(dend,'output_connection_strength'):
+                    output = dend.output_connection_strength
+                else:
+                    output=None
+
+                dot = [x,y,i,j,k,count,branch,output]
                 dots.append(dot)
                 print(dot)
                 g.append(y)
@@ -2095,13 +2126,35 @@ def structure(node):
         x2 = to_dot[0]
         y1 = dot1[1]
         y2 = to_dot[1]
-        plt.plot([x1,x2],[y1,y2],color='red')
 
-    plt.plot(Xdot,Ydot,'ok',ms=10)
+        if dot1[6] != None:
+            color = color_map.colors[dot1[6]]
+        else:
+            color = 'k'
+        if dot1[7] != None:
+            width = int(dot1[7]*4)
+        else:
+            width = .01
+        print(to_dot[2],dot1,to_dot) 
+        if to_dot[2]==len(arbor)-1 and to_dot!=dot1:
+            # print("to soma")
+            plt.plot([x1,x2],[y1,y2],color=color,linewidth=width,label=f'branch {dot1[6]}')
+        else:
+            plt.plot([x1,x2],[y1,y2],color=color,linewidth=width)
+    
+    
+    plt.plot(Xdot[-1],Ydot[-1],'*k',ms=30)
+    plt.plot(Xdot[-1],Ydot[-1],'*y',ms=20,label='Soma')
+    plt.plot(Xdot[0],Ydot[0],'ok',ms=15,label='Dendrites')
+    plt.plot(Xdot[1:-1],Ydot[1:-1],'ok',ms=15)
+    plt.plot(X_synapses[0],Y_synapses[0],'>r',ms=8,label='Synapses')
+    plt.plot(X_synapses[1:],Y_synapses[1:],'>r',ms=8)
+
+    plt.legend(borderpad=1)
     x_labels[-1] += " (soma)"
     plt.xticks(x_ticks,x_labels,fontsize=12)
     plt.xlim(1-.1*len(arbor),len(arbor)*1.1)
-    plt.ylim(1-.1*m,m*1.1)
+    plt.ylim(1-y_factor,1+m*y_factor)
     plt.yticks([])
     plt.ylabel("Dendrites",fontsize=18)
     plt.xlabel("Layers",fontsize=18)
@@ -2113,3 +2166,5 @@ def structure(node):
 # End plots added by Ryan
 # =============================================================================
 
+
+# %%

@@ -219,6 +219,8 @@ class NeuralZoo():
                         self.dendrite_list.append(dend)
                         den_count+=1
                         c+=1
+                        if i==0:
+                            dend.branch=k
                     dendrites[i].append(sub)
         
             # iterate over dendrites and connect them as defined by structure
@@ -233,8 +235,11 @@ class NeuralZoo():
                             #     connection_strength=self.w_dn)
                         else:
                             # print(i,j,k, " --> ", i-1,0,j)
-                            np.concatenate(dendrites[i-1])[j].add_input(d, 
+                            receiving_dend = np.concatenate(dendrites[i-1])[j]
+                            receiving_dend.add_input(d, 
                                 connection_strength=self.weights[i][j][k])
+                            d.branch = receiving_dend.branch
+                        d.output_connection_strength = self.weights[i][j][k]
 
         dendrites.insert(0,[[custom_neuron.dend__nr_ni]])
         # print('dendrites:', dendrites)

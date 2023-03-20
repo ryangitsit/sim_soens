@@ -228,7 +228,7 @@ class dendrite():
             if "dend_name" in self.__dict__.keys():
                 self.name = self.dend_name
             if "beta_di" in self.__dict__.keys():
-                print("custom beta")
+                # print("custom beta")
                 self.circuit_betas[-1] = self.beta_di
             # print("REGULAR DENDRITE")
         # print(self.ib)
