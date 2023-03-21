@@ -1,7 +1,7 @@
 import numpy as np
 
-from soen_component_library import common_synapse
-from soen_sim import neuron, dendrite
+# from soen_component_library import common_synapse
+from soen_sim import neuron, dendrite, synapse
 
 
 class SuperNode():
@@ -138,7 +138,7 @@ class SuperNode():
             self.synapses = [[] for _ in range(len(self.syns))]
             for i,group in enumerate(self.syns):
                 for j,s in enumerate(group):
-                    self.synapses[i].append(common_synapse(s))
+                    self.synapses[i].append(synapse(name=s))
             count=0
             for j, subgroup in enumerate(dendrites[len(dendrites)-1]):
                 for k,d in enumerate(subgroup):
@@ -163,7 +163,7 @@ class SuperNode():
             for ii,S in enumerate(self.synaptic_structure):
 
                 # make a synapse
-                syn = common_synapse(f'{self.neuron.name[-2:]}_syn{ii}')
+                syn = synapse(name=f'{self.neuron.name[-2:]}_syn{ii}')
 
                 # append to easy-access list
                 self.synapse_list.append(syn)
@@ -222,7 +222,7 @@ class SuperNode():
             w_sd = 1
         for g in self.dendrites[len(self.dendrites)-1]:
             for d in g:
-                syn = common_synapse(f'{self.neuron.name}_syn{count}')
+                syn = synapse(name = f'{self.neuron.name}_syn{count}')
                 self.synapse_list.append(syn)
                 count+=1
                 d.add_input(syn,connection_strength=w_sd)
@@ -317,9 +317,9 @@ class SuperNode():
                             ''')
                             return
                         
-    def plot_arbor_activity(self,net):
+    def plot_arbor_activity(self,net,**kwargs):
         from soen_plotting import arbor_activity
-        arbor_activity(self,net)
+        arbor_activity(self,net,**kwargs)
 
     def plot_structure(self):
         from soen_plotting import structure

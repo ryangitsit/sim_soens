@@ -41,16 +41,16 @@ class SuperInput():
             print("Please provide valid input type")
             pass
         
-        if self.type != 'constant':
-            self.signals = []
-            for i in range(self.channels):
-                array = np.sort(self.spike_rows[i])
-                if array.any():
-                    array = np.append(array,np.max(array)+.001)
-                self.signals.append(input_signal(name = 'input_synaptic_drive', 
-                                    input_temporal_form = 'arbitrary_spike_train', 
-                                    spike_times = array) )
-                # print(self.spike_rows[i])
+
+        self.signals = []
+        for i in range(self.channels):
+            array = np.sort(self.spike_rows[i])
+            if array.any():
+                array = np.append(array,np.max(array)+.001)
+            self.signals.append(input_signal(name = 'input_synaptic_drive', 
+                                input_temporal_form = 'arbitrary_spike_train', 
+                                spike_times = array) )
+            # print(self.spike_rows[i])
 
 
     def gen_rand_input(self,spiking_indices,max_amounts):

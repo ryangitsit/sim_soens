@@ -9,129 +9,72 @@ p = physical_constants()
 from soen_functions import run_soen_sim
 from soen_plotting import plot_dendrite, plot_synapse, plot_neuron, plot_neuron_simple, plot_network
 
+
 class input_signal():
     
     _next_uid = 0
     input_signals = dict()
     
-    def __init__(self, **kwargs):
+    def __init__(self, **params):
         
         #make new input signal
         self.uid = input_signal._next_uid
         input_signal._next_uid += 1
         self.unique_label = 'in{}'.format(self.uid)
+        self.name = 'unnamed_input_signal__{}'.format(self.unique_label)
+        self.input_temporal_form = 'single_spike'
+        self.source_type = 'qd'
+        self.num_photons_per_spike = 1 
+
+
+        # UPDATE TO CUSTOM PARAMS
+        self.__dict__.update(params)
         
-        # name the input signal
-        if 'name' in kwargs:
-            self.name = kwargs['name']
-        else:
-            self.name = 'unnamed_input_signal__{}'.format(self.unique_label)
-        # end name 
-        
-        if 'input_temporal_form' in kwargs: 
-            if (kwargs['input_temporal_form'] == 'constant' or
-                kwargs['input_temporal_form'] == 'constant_rate' or 
-                kwargs['input_temporal_form'] == 'arbitrary_spike_train' or
-                kwargs['input_temporal_form'] == 'arbitrary_spike_train_with_jitter' or
-                kwargs['input_temporal_form'] == 'analog_dendritic_drive'):
-                _temporal_form = kwargs['input_temporal_form']
-            else:
-                raise ValueError('[soen_sim] Tried to assign an invalid input signal temporal form to input %s (unique_label = %s)\nThe allowed values of input_temporal_form are ''single_spike'', ''constant_rate'', ''arbitrary_spike_train'', and ''analog_dendritic_drive''' % (self.name, self.unique_label))
-        else:
-            _temporal_form = 'single_spike'
-        self.input_temporal_form =  _temporal_form #'single_spike' by default
+        print(self.input_temporal_form,self.input_temporal_form ,self.input_temporal_form )
+        if self.input_temporal_form  not in ['constant',
+                                             'constant_rate', 
+                                             'arbitrary_spike_train', 
+                                             'analog_dendritic_drive']:
+            raise ValueError(f'''
+            [soen_sim] Tried to assign an invalid input signal temporal form 
+            to input {self.name} (unique_label = {self.unique_label})\n
+            The allowed values of input_temporal_form are:
+            ''single_spike'', ''constant_rate'', ''arbitrary_spike_train'', 
+            and ''analog_dendritic_drive
+            ''')
+
         
         if self.input_temporal_form == 'constant':
-            if 'applied_flux' in kwargs:
-                self.applied_flux = kwargs['applied_flux']
-            else:
-                raise ValueError('[soen_sim] If the input temporal form is constant, applied_flux is required as a keyword argument.')
+            if not hasattr(self,'applied_flux'):
+                raise ValueError('''
+                [soen_sim] If the input temporal form is constant, applied_flux 
+                is required as a keyword argument.''')
         
-        if self.input_temporal_form == 'arbitrary_spike_train' or self.input_temporal_form == 'arbitrary_spike_train_with_jitter':
-            if 'spike_times' in kwargs:
-                self.spike_times = kwargs['spike_times'] # spike times entered as a list of length >= 1 with entries having units of ns
-            else:
-                raise ValueError('[soen_sim] arbitrary spike train requires spike_times as input')
-                
-        # =============================================================================
-        #         arbitrary spike train with jitter
-        # =============================================================================
-        if self.input_temporal_form == 'arbitrary_spike_train_with_jitter': 
-            
-            if 'source_type' in kwargs:
-                self.source_type = kwargs['source_type']
-            else:
-                self.source_type = 'qd'
-                
-            if 'num_photons_per_spike' in kwargs:
-                self.num_photons_per_spike = kwargs['num_photons_per_spike'] # this many photons generated per spike time
-            else:
-                self.num_photons_per_spike = 1                
-    
-            for _str in sys.path:
-                if _str[-8:] == 'soen_sim':
-                    _path = _str.replace('\\','/')
-                    break
-            
-            if self.source_type == 'qd':
-                load_string = 'source_qd_Nph_1.0e+04'
-            elif self.source_type == 'ec':
-                load_string = 'source_ec_Nph_1.0e+04'
-                
-            with open('{}{}{}.soen'.format(_path,'/soen_sim_data/',load_string), 'rb') as data_file:         
-                data_dict_imported = pickle.load(data_file) 
-                
-            time_vec__el = data_dict_imported['time_vec']#*t_tau_conversion
-            el_vec = data_dict_imported['dNphdt']
-            t_on_tron = data_dict_imported['t_on_tron']*1e9
-            tau_rad = data_dict_imported['tau_rad']
-            t_off = np.min([ t_on_tron+5*tau_rad , time_vec__el[-1] ]) 
-            
-            _ind_on = ( np.abs(t_on_tron-time_vec__el) ).argmin()
-            _ind_off = ( np.abs(t_off-time_vec__el) ).argmin()
-            
-            t_vec__el = time_vec__el[_ind_on:_ind_off] - time_vec__el[_ind_on]
-            # print('t_vec__el[0] = {:5.3f}ns, t_vec__el[-1] = {:5.3f}ns'.format(t_vec__el[0],t_vec__el[-1]))
-            dt_vec = np.diff(t_vec__el)
-            el_vec = el_vec[_ind_on:_ind_off]
+        if self.input_temporal_form in ['arbitrary_spike_train']:
+            if not hasattr(self,'spike_times'):
+                raise ValueError(
+            '''
+            [soen_sim] arbitrary spike train requires spike_times as input
+            ''')
         
-            # form probability distribution
-            el_cumulative_vec = np.cumsum(el_vec[:-1]*dt_vec[:])
-            el_cumulative_vec = el_cumulative_vec/np.max(el_cumulative_vec)    
-            
-            # draw samples
-            num_samples = self.num_photons_per_spike
-            rng = default_rng()
-            
-            photon_delay_time_vec = np.zeros([len(self.spike_times),num_samples])
-            for pp in range(len(self.spike_times)):
-                for qq in range(num_samples):
-                    random_numbers = rng.random(size = num_samples)
-                    photon_delay_time_vec[pp,qq] = t_vec__el[ ( np.abs( el_cumulative_vec[:] - random_numbers[qq] ) ).argmin() ]
-                
-            # adjust spike times
-            self.spike_times__in = self.spike_times
-            for ii in range(len(self.spike_times)):
-                self.spike_times = self.spike_times + np.min( photon_delay_time_vec[ii,:] )                
-        # =============================================================================
-        #         end arbitrary spike train with jitter
-        # =============================================================================
-            
-        if self.input_temporal_form == 'constant_rate': # in this case, spike_times has the form [t_first_spike,rate] with rate in MHz
-            if 't_first_spike' in kwargs:
-                self.t_first_spike = kwargs['t_first_spike']
-            else:
-                self.t_first_spike = 50 # default time of first spike is 50ns
-            if 'rate' in kwargs:
-                self.rate = kwargs['rate']
-            else:
-                self.rate = 1 # default rate is 1MHz
-                
+
+        if self.input_temporal_form == 'constant_rate':
+            if not hasattr(self,'t_first_spike'):
+                self.t_first_spike = 50
+            if not hasattr(self,'t_first_spike'):
+                self.rate= 1
+
         if self.input_temporal_form == 'analog_dendritic_drive':
-            if 'piecewise_linear' in kwargs:
-                self.piecewise_linear = kwargs['piecewise_linear']    
+            print('analog_dendritic_drive')
+            if not hasattr(self,'piecewise_linear'):
+                raise ValueError(
+                '''
+                [soen_sim] must provide piecewise_linear for analog_dendritic_drive
+                ''')
+
+        input_signal.input_signals[self.name] = self             
+
             
-        input_signal.input_signals[self.name] = self
 
 class dendrite():
     
@@ -285,7 +228,7 @@ class dendrite():
                 self.s_list.append(tau_s[1])
             self.tau_list.append(self.tau_list[-1]) # add one more entry with very large s
             self.s_list.append(1e6) # add one more entry with very large s
-            self.tau_di = self.tau_list[0] # this is just here to give it an initial value. in time stepper it's broken down by s 
+            self.tau_di = self.tau_list[0]  
 
         tau_di = self.tau_di * 1e-9
         beta_di = self.circuit_betas[-1]
@@ -346,61 +289,40 @@ class dendrite():
         return
     
 
-class synapse():    
+
+class synapse():  
+    '''
+    Synapse object can be attached to any dendritic receiving loop 
+        - Steep rise (tau_rise) followed by slower decay (tau_fall)
+        - phi_peak defines amplitude of rise\
+        - reset time defines the period that no new photons can be received
+    '''
 
     _next_uid = 0
     synapses = dict()
     
-    def __init__(self, **kwargs):
+    def __init__(self, **params):
 
         # make new synapse
         # self._instances.add(weakref.ref(self))
         self.uid = synapse._next_uid
         synapse._next_uid += 1
         self.unique_label = 's{}'.format(self.uid)
+        self.name = 'unnamed_synapse__{}'.format(self.unique_label)
 
-        # name the synapse
-        if 'name' in kwargs:
-            self.name = kwargs['name']
-        else:
-            self.name = 'unnamed_synapse__{}'.format(self.unique_label)
-        # end name  
-        
         # synaptic receiver specification
-        if 'tau_rise' in kwargs:
-            self.tau_rise = kwargs['tau_rise'] # units of ns
-        else:
-            self.tau_rise = 0.02 # 20ps is default rise time (L_tot/r_ph = 100nH/5kOhm)
-        # print('tau_rise = {}'.format(self.tau_rise))
+        self.tau_rise = 0.02 # 20ps is default rise time (L_tot/r_ph = 100nH/5kOhm)
+        self.tau_fall = 50 # 50ns is default fall time for SPD recovery
+        self.hotspot_duration = 2 #3 # two time constants is default
+        self.spd_duration = 8
+        self.phi_peak = 0.5 # default peak flux is Phi0/2
+        self.spd_reset_time = self.tau_fall
         
-        if 'tau_fall' in kwargs:
-            self.tau_fall = kwargs['tau_fall'] # units of ns
-        else:
-            self.tau_fall = 50 # 50ns is default fall time for SPD recovery
-        # print('tau_fall = {}'.format(self.tau_fall))
-            
-        if 'hotspot_duration' in kwargs: # specified in units of number of tau_rise time constants
-            self.hotspot_duration = kwargs['hotspot_duration'] * self.tau_rise # units of ns
-        else:
-            self.hotspot_duration =  2 * self.tau_rise # two time constants is default
-        # print('hotspot_duration = {}'.format(self.hotspot_duration))
-            
-        if 'spd_duration' in kwargs: # how long to observe spd after input spike, specified in units of number of tau_fall time constants
-            self.spd_duration = kwargs['spd_duration'] * self.tau_fall # units of ns
-        else:
-            self.spd_duration = 8 * self.tau_fall # eight time constants is default
-        
-        if 'phi_peak' in kwargs:
-            self.phi_peak = kwargs['phi_peak'] # units of Phi0
-        else:
-            self.phi_peak = 0.5 # default peak flux is Phi0/2
-            
-        if 'spd_reset_time' in kwargs: # this duration must elapse before the spd can detect another photon
-            self.spd_reset_time = kwargs['spd_reset_time']            
-        else:
-            self.spd_reset_time = self.tau_fall
-        # end synaptic receiver spd circuit specification
-        
+        self.__dict__.update(params)
+
+        self.hotspot_duration *=  self.tau_rise
+        self.spd_duration *= self.tau_fall
+     
         synapse.synapses[self.name] = self
         
         return
@@ -423,7 +345,7 @@ class synapse():
     def __del__(self):
         # print('synapse deleted')
         return
-                
+    
     
 class neuron():    
 
@@ -741,15 +663,15 @@ class neuron():
         self.dend__nr_ni.add_input(self.dend__ref, connection_strength = self.refractory_dendrite_connection_strength)
 
 
-        # =============================================================================
+        # ======================================================================
         #         end refractory dendrite
-        # =============================================================================
+        # ======================================================================
         
 
 
-        # =============================================================================
+        # ======================================================================
         #         synapse to refractory dendrite
-        # =============================================================================
+        # ======================================================================
             
         # create synapse for neuronal refraction
         synapse__ref = synapse(
@@ -766,17 +688,11 @@ class neuron():
         # add synaptic output as input to refractory dendrite
         self.dend__ref.add_input(synapse__ref, connection_strength = 1)
         
-        # =============================================================================
+        # ======================================================================
         #         end synapse to refractory dendrite
-        # =============================================================================
+        # ======================================================================
         
-        # =============================================================================
-        #         transmitter
-        # =============================================================================
-            
-        # =============================================================================
-        #         end transmitter
-        # =============================================================================
+
         
         # prepare for spikes        
         self.spike_times = []
@@ -848,7 +764,7 @@ class network():
         # JJ params
         dummy_dendrite = dendrite(name='dummy') # make dummy dendrite to obtain default Ic, beta_c
         jj_params = get_jj_params(dummy_dendrite.Ic*1e-6,dummy_dendrite.beta_c)
-        self.jj_params = jj_params # add jj_params to network just as stupid hack to construct t_tau_conversion (this should be done somewhere else globally)
+        self.jj_params = jj_params # (this should be done somewhere else globally)
         
         # prepare network to have neurons
         self.neurons = dict()
@@ -1014,3 +930,129 @@ class HardwareInTheLoop:
         for trace in self.traces:
             self.trace_biases[trace.name] = []
             # return net
+
+
+
+
+
+class _input_signal():
+    
+    _next_uid = 0
+    input_signals = dict()
+    
+    def __init__(self, **kwargs):
+        
+        #make new input signal
+        self.uid = input_signal._next_uid
+        input_signal._next_uid += 1
+        self.unique_label = 'in{}'.format(self.uid)
+        
+        # name the input signal
+        if 'name' in kwargs:
+            self.name = kwargs['name']
+        else:
+            self.name = 'unnamed_input_signal__{}'.format(self.unique_label)
+        # end name 
+        
+        if 'input_temporal_form' in kwargs: 
+            if (kwargs['input_temporal_form'] == 'constant' or
+                kwargs['input_temporal_form'] == 'constant_rate' or 
+                kwargs['input_temporal_form'] == 'arbitrary_spike_train' or
+                kwargs['input_temporal_form'] == 'arbitrary_spike_train_with_jitter' or
+                kwargs['input_temporal_form'] == 'analog_dendritic_drive'):
+                _temporal_form = kwargs['input_temporal_form']
+            else:
+                raise ValueError('[soen_sim] Tried to assign an invalid input signal temporal form to input %s (unique_label = %s)\nThe allowed values of input_temporal_form are ''single_spike'', ''constant_rate'', ''arbitrary_spike_train'', and ''analog_dendritic_drive''' % (self.name, self.unique_label))
+        else:
+            _temporal_form = 'single_spike'
+        self.input_temporal_form =  _temporal_form #'single_spike' by default
+        
+        if self.input_temporal_form == 'constant':
+            if 'applied_flux' in kwargs:
+                self.applied_flux = kwargs['applied_flux']
+            else:
+                raise ValueError('[soen_sim] If the input temporal form is constant, applied_flux is required as a keyword argument.')
+        
+        if self.input_temporal_form == 'arbitrary_spike_train' or self.input_temporal_form == 'arbitrary_spike_train_with_jitter':
+            if 'spike_times' in kwargs:
+                self.spike_times = kwargs['spike_times'] # spike times entered as a list of length >= 1 with entries having units of ns
+            else:
+                raise ValueError('[soen_sim] arbitrary spike train requires spike_times as input')
+                
+        # =============================================================================
+        #         arbitrary spike train with jitter
+        # =============================================================================
+        if self.input_temporal_form == 'arbitrary_spike_train_with_jitter': 
+            
+            if 'source_type' in kwargs:
+                self.source_type = kwargs['source_type']
+            else:
+                self.source_type = 'qd'
+                
+            if 'num_photons_per_spike' in kwargs:
+                self.num_photons_per_spike = kwargs['num_photons_per_spike'] # this many photons generated per spike time
+            else:
+                self.num_photons_per_spike = 1                
+    
+            from soen_utilities import pathfinder
+            _path=pathfinder()
+            
+            if self.source_type == 'qd':
+                load_string = 'source_qd_Nph_1.0e+04'
+            elif self.source_type == 'ec':
+                load_string = 'source_ec_Nph_1.0e+04'
+                
+            with open('{}{}{}.soen'.format(_path,'/soen_sim_data/',load_string), 'rb') as data_file:         
+                data_dict_imported = pickle.load(data_file) 
+                
+            time_vec__el = data_dict_imported['time_vec']#*t_tau_conversion
+            el_vec = data_dict_imported['dNphdt']
+            t_on_tron = data_dict_imported['t_on_tron']*1e9
+            tau_rad = data_dict_imported['tau_rad']
+            t_off = np.min([ t_on_tron+5*tau_rad , time_vec__el[-1] ]) 
+            
+            _ind_on = ( np.abs(t_on_tron-time_vec__el) ).argmin()
+            _ind_off = ( np.abs(t_off-time_vec__el) ).argmin()
+            
+            t_vec__el = time_vec__el[_ind_on:_ind_off] - time_vec__el[_ind_on]
+            # print('t_vec__el[0] = {:5.3f}ns, t_vec__el[-1] = {:5.3f}ns'.format(t_vec__el[0],t_vec__el[-1]))
+            dt_vec = np.diff(t_vec__el)
+            el_vec = el_vec[_ind_on:_ind_off]
+        
+            # form probability distribution
+            el_cumulative_vec = np.cumsum(el_vec[:-1]*dt_vec[:])
+            el_cumulative_vec = el_cumulative_vec/np.max(el_cumulative_vec)    
+            
+            # draw samples
+            num_samples = self.num_photons_per_spike
+            rng = default_rng()
+            
+            photon_delay_time_vec = np.zeros([len(self.spike_times),num_samples])
+            for pp in range(len(self.spike_times)):
+                for qq in range(num_samples):
+                    random_numbers = rng.random(size = num_samples)
+                    photon_delay_time_vec[pp,qq] = t_vec__el[ ( np.abs( el_cumulative_vec[:] - random_numbers[qq] ) ).argmin() ]
+                
+            # adjust spike times
+            self.spike_times__in = self.spike_times
+            for ii in range(len(self.spike_times)):
+                self.spike_times = self.spike_times + np.min( photon_delay_time_vec[ii,:] )                
+        # =============================================================================
+        #         end arbitrary spike train with jitter
+        # =============================================================================
+            
+        if self.input_temporal_form == 'constant_rate': # in this case, spike_times has the form [t_first_spike,rate] with rate in MHz
+            if 't_first_spike' in kwargs:
+                self.t_first_spike = kwargs['t_first_spike']
+            else:
+                self.t_first_spike = 50 # default time of first spike is 50ns
+            if 'rate' in kwargs:
+                self.rate = kwargs['rate']
+            else:
+                self.rate = 1 # default rate is 1MHz
+                
+        if self.input_temporal_form == 'analog_dendritic_drive':
+            if 'piecewise_linear' in kwargs:
+                self.piecewise_linear = kwargs['piecewise_linear']    
+            
+        input_signal.input_signals[self.name] = self
