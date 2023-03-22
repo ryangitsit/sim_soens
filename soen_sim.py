@@ -1,14 +1,23 @@
 import numpy as np
-import pickle
-import sys
+
 from numpy.random import default_rng
 
-from soen_utilities import get_jj_params, dend_load_arrays_thresholds_saturations, physical_constants, index_finder
+from soen_utilities import (
+    get_jj_params, 
+    dend_load_arrays_thresholds_saturations, 
+    physical_constants, 
+    index_finder
+)
 p = physical_constants()
 
 from soen_functions import run_soen_sim
-from soen_plotting import plot_dendrite, plot_synapse, plot_neuron, plot_neuron_simple, plot_network
-
+from soen_plotting import (
+    plot_dendrite, 
+    plot_synapse, 
+    plot_neuron, 
+    plot_neuron_simple, 
+    plot_network
+)
 
 class input_signal():
     
@@ -69,7 +78,8 @@ class input_signal():
             if not hasattr(self,'piecewise_linear'):
                 raise ValueError(
                 '''
-                [soen_sim] must provide piecewise_linear for analog_dendritic_drive
+                [soen_sim] must give a value for provide piecewise_linear to use
+                           analog_dendritic_drive
                 ''')
 
         input_signal.input_signals[self.name] = self             
@@ -90,27 +100,36 @@ class dendrite():
         dendrite._next_uid += 1
         self.name = 'unnamed_dendrite__{}'.format(self.unique_label)
         self.pri=False
+
+        # check ahead of time if loop defined in custom params
+        # pull default params for that loop
         if 'loops_present' in params:
             self.loops_present = params['loops_present']
         else:
             self.loops_present = 'ri'
+
+        tp = 2*np.pi
+        # loop-specific defaul params
         if self.loops_present == 'ri':
-            self.circuit_betas = [2*np.pi* 1/4, 2*np.pi* 1/4, 2*np.pi*1e2]         
-        elif self.loops_present == 'rtti':
-            self.circuit_betas = [2*np.pi* 1/4, 2*np.pi* 1/4, 2*np.pi*1e2]
-        elif self.loops_present == 'pri':
-            self.circuit_betas = [2*np.pi* 1/4, 2*np.pi* 1/4, 2*np.pi* 1/4, 2*np.pi*1e2]
-        self.Ic =  100
-        self.beta_c =  0.3
-        if self.loops_present == 'ri':
+            self.circuit_betas = [tp*1/4, tp*1/4, tp*1e2]
             self.ib = 1.802395858835221
-            self.ib_di = 1.802395858835221 #**
+            self.ib_di = 1.802395858835221
+
         elif self.loops_present == 'rtti':
+            self.circuit_betas = [tp*1/4, tp*1/4, tp*1e2]
             self.ib = 2.0 
+            self.ib_di = 2.0 
+
         elif self.loops_present == 'pri':
+            self.circuit_betas = [tp*1/4, tp*1/4, tp*1/4, tp*1e2]
             self.ib = 2.1
             self.phi_p = .2
-        self.tau_di= 250
+
+        # miscelleneous params/settings
+        self.tau_di = 250
+        self.beta_di = 2*np.pi*1e2
+        self.Ic =  100
+        self.beta_c =  0.3
         self.normalize_input_connection_strengths = False
         self.total_excitatory_input_connection_strength = 1
         self.total_inhibitory_input_connection_strength = -0.5
@@ -119,34 +138,11 @@ class dendrite():
         self.rollover = 0
         self.valleyedout = 0
         self.doubleroll = 0
-        
-
 
         # UPDATE TO CUSTOM PARAMS
         self.__dict__.update(params)
         
-        ########
-        if self.loops_present == 'pri':
-            if type(self.circuit_betas) == list and len(self.circuit_betas) == 4:
-                self.circuit_betas = self.circuit_betas
-            else:
-                raise ValueError('''
-                    [soen_sim] circuit_betas for a pri dendrite is a list of four 
-                    real numbers greater than zero with dimensionless units. The 
-                    first element represents the self inductance of the left branch 
-                    of the PR washer. The second element represents the middle 
-                    branch of the PR washer. The third element represents the right 
-                    branch of the PR washer. The fourth element represents the total 
-                    inductance of the I loop, including the integrating kinetic 
-                    inductor and the output inductance.
-                ''')
 
-
-        ########
-
-
-        # print(self.type,self.dentype)
-        # self.loops_present = self.type
         if hasattr(self, 'dentype'):
             if self.dentype == 'refractory':
                 # print("REFRACTORY DENDRITE")
@@ -156,69 +152,47 @@ class dendrite():
                 self.beta_c = self.beta_c__refraction
                 self.ib = self.ib_ref
                 self.tau_di = self.tau_ref   
-                self.name = '{}__dend_{}'.format(self.name,'refraction')  
+                self.name = f'{self.name}__dend_refraction'
             elif self.dentype == 'soma':
+                # print("SOMATIC DENDRITE")
                 self.tau_di = self.tau_ni
                 self.ib = self.ib_n
-                self.name = '{}__{}'.format(self.name,'nr_ni')
-                # print("SOMATIC DENDRITE")
+                self.name = f'{self.name}__nr_ni'
         else:
+            # print("REGULAR DENDRITE")
             if "ib_di" in self.__dict__.keys():
                 self.ib = self.ib_di
             else:
                 self.ib = self.ib
             if "dend_name" in self.__dict__.keys():
                 self.name = self.dend_name
-            if "beta_di" in self.__dict__.keys():
-                # print("custom beta")
-                self.circuit_betas[-1] = self.beta_di
-            # print("REGULAR DENDRITE")
-        # print(self.ib)
-        self.beta_di = self.circuit_betas[-1]
+            self.circuit_betas[-1] = self.beta_di
+            
+        
         if 'integrated_current_threshold' in params:
             self.s_th = params['integrated_current_threshold']
         
-        params = self.__dict__
+        # params = self.__dict__
         self.bias_current = self.ib
         self.bias_dynamics = [self.ib]
-        # for k,v in params.items():
-        #     print(k," -> ",v)
-        # print(" ************************************************************* ")
-        # futher adjustments to parameters
 
-        if (self.loops_present != 'ri' 
-            and self.loops_present != 'pri' 
-            and self.loops_present != 'pri' 
-            and self.loops_present != 'rtti' 
-            and self.loops_present != 'prtti'):
+        # warnings
+        if self.loops_present not in ['ri','pri','rtti','prtti']:
             raise ValueError('''
             [soen_sim] loops_present must be:
                 \'ri\', \'pri\', \'rtti\', \'prtti\'. ''')
-        # print(self.name,"---------",self.loops_present)
-        if type(self.circuit_betas) == list and (len(self.circuit_betas) == 3 
-                                            or len(self.circuit_betas) == 5
-                                            or len(self.circuit_betas) == 4):
-            if self.loops_present == 'ri':
-                self.circuit_betas = self.circuit_betas
-            elif self.loops_present == 'rtti':
-                self.circuit_betas = self.circuit_betas
-            elif self.loops_present == 'pri':
-                self.circuit_betas = self.circuit_betas
-        else:
+
+        bs = [3,4,5]
+        if type(self.circuit_betas)==list and len(self.circuit_betas) not in bs:
             raise ValueError('''
-            [soen_sim] circuit_betas for an ri dendrite is a list of three real 
-            numbers greater than zero with dimensionless units. The first 
-            element represents the self inductance of the left branch of the DR 
-            loop. The second element represents the right branch of the DR loop. 
-            The third element represents the total inductance of the DI loop, 
-            including the integrating kinetic inductor and the output 
-            inductance.''')
+            [soen_sim] circuit_betas list must equal number of inductors for the
+            given circuit.  Note that the value for the DI loop is the total
+            inductance.
+                ri -> 3
+                rtti -> 3
+                pri -> 4''')
 
         jj_params = get_jj_params(self.Ic*1e-6,self.beta_c)
-
-        # if not hasattr(self, 'ib'):
-        #     print('ib switch')
-        #     self.ib = self.ib
 
         if type(self.tau_di).__name__ == 'list': 
             tau_vs_current = self.tau_di
@@ -226,12 +200,13 @@ class dendrite():
             for tau_s in tau_vs_current:
                 self.tau_list.append(tau_s[0])
                 self.s_list.append(tau_s[1])
-            self.tau_list.append(self.tau_list[-1]) # add one more entry with very large s
-            self.s_list.append(1e6) # add one more entry with very large s
+            self.tau_list.append(self.tau_list[-1]) # add entry with large s
+            self.s_list.append(1e6) # add entry with large s
             self.tau_di = self.tau_list[0]  
 
+        # jj_params setup based on custom params
         tau_di = self.tau_di * 1e-9
-        beta_di = self.circuit_betas[-1]
+        beta_di = self.beta_di
         Ic = self.Ic * 1e-6
         Ldi = p['Phi0']*beta_di/(2*np.pi*Ic)
         rdi = Ldi/tau_di
@@ -240,9 +215,6 @@ class dendrite():
             rdi_list = Ldi/(np.asarray(self.tau_list) * 1e-9)
             self.alpha_list = rdi_list/jj_params['r_j']
         self.jj_params = jj_params
-
-        # print(self.dentype)
-        # print(" ************************************************************* ")
 
         # prepare dendrite to have connections
         self.external_inputs = dict()
@@ -311,7 +283,7 @@ class synapse():
         self.name = 'unnamed_synapse__{}'.format(self.unique_label)
 
         # synaptic receiver specification
-        self.tau_rise = 0.02 # 20ps is default rise time (L_tot/r_ph = 100nH/5kOhm)
+        self.tau_rise = 0.02 # 20ps is default rise (L_tot/r_ph = 100nH/5kOhm)
         self.tau_fall = 50 # 50ns is default fall time for SPD recovery
         self.hotspot_duration = 2 #3 # two time constants is default
         self.spd_duration = 8
@@ -360,7 +332,7 @@ class neuron():
         self.unique_label = 'n{}'.format(self.uid)
         self.name = 'unnamed_neuron__{}'.format(self.unique_label)
 
-        # receiving and integration dendrite
+        # dendrite parameters
         if 'loops_present' in params:
             self.loops_present = params['loops_present']
         else:
@@ -371,13 +343,12 @@ class neuron():
         if self.loops_present == 'ri':
             self.ib = 1.802395858835221 #1.7 # dimensionless bias current   
             self.ib_n = 1.802395858835221
-            self.ib_di = 1.802395858835221
-            self.circuit_betas = [2*np.pi* 1/4, 2*np.pi* 1/4, self.beta_ni]
+            # self.circuit_betas = [2*np.pi* 1/4, 2*np.pi* 1/4, self.beta_ni]
         elif self.loops_present == 'rtti':
-            self.ib = 2.0 # dimensionless bias current
+            self.ib = 2.19 # dimensionless bias current
             self.ib_n = 2.19
             self.ib_di= 2.19
-            self.circuit_betas = [2*np.pi* 1/4, 2*np.pi* 1/4, self.beta_ni] 
+            # self.circuit_betas = [2*np.pi* 1/4, 2*np.pi* 1/4, self.beta_ni] 
         self.integration_loop_time_constant = 250
         self.absolute_refractory_period = 10
         self.normalize_input_connection_strengths = False
@@ -386,13 +357,8 @@ class neuron():
         self.offset_flux = 0 
         # J_ii, units of phi/s (normalized flux / normalized current in DI loop)
         self.self_feedback_coupling_strength = 0
-        self.s_th = 0.5 # units of Ic
-
         self.tau_ni = 50
-        self.beta_di = 2*np.pi*1e2
-        self.tau_di = 250
-        self.s_th = 0.5
-        self.integrated_current_threshold = self.s_th
+        self.integrated_current_threshold = self.s_th = 0.5
 
         # refractory dendrite
         if 'loops_present__refraction' in params:
@@ -431,64 +397,20 @@ class neuron():
         ### transmitter ###
         self.source_type = 'qd'
         self.num_photons_out_factor = 10
+        self.light_production_delay = 2
 
 
         # UPDATE TO CUSTOM PARAMS
         self.__dict__.update(params)
-        # print(self.loops_present)
+
         self.integrated_current_threshold = self.s_th
         params = self.__dict__
 
-        # for k,v in params.items():
-        #     print(k," -> ",v)
-        # print(" =========================================================== ")
-
-        # futher adjustments to parameters
-
-        ### receiving and integration dendrite ###
-        # loops
-        if (self.loops_present != 'ri' 
-            and self.loops_present != 'pri' 
-            and self.loops_present != 'pri' 
-            and self.loops_present != 'rtti' 
-            and self.loops_present != 'prtti'):
-            raise ValueError('''
-            [soen_sim] loops_present must be:
-                \'ri\', \'pri\', \'rtti\', \'prtti\'. ''')
-
-        if (self.loops_present__refraction != 'ri' 
-            and self.loops_present__refraction != 'pri' 
-            and self.loops_present__refraction != 'pri' 
-            and self.loops_present__refraction != 'rtti' 
-            and self.loops_present__refraction != 'prtti'):
-            raise ValueError('''
-            [soen_sim] loops_present_refraction must be:
-                \'ri\', \'pri\', \'rtti\', \'prtti\'. ''')
-
-        self.circuit_betas[-1] = self.beta_ni
-        # circuit_betas
-        if type(self.circuit_betas) == list and len(self.circuit_betas) == 3:
-            if self.loops_present == 'ri':
-                self.circuit_betas = self.circuit_betas
-            elif self.loops_present == 'rtti':
-                self.circuit_betas = self.circuit_betas
-        else:
-            raise ValueError('''
-            [soen_sim] circuit_betas for an ri dendrite is a list of three real 
-            numbers greater than zero with dimensionless units. The first 
-            element represents the self inductance of the left branch of the DR 
-            loop. The second element represents the right branch of the DR loop. 
-            The third element represents the total inductance of the DI loop, 
-            including the integrating kinetic inductor and the output 
-            inductance.''')
-        
-        # misc
-        self.Ic = self.Ic
-        self.beta_c = self.beta_c
+        # jj setup
         jj_params = get_jj_params(self.Ic*1e-6,self.beta_c)
 
         tau_ni = self.tau_ni * 1e-9
-        beta_ni = self.circuit_betas[-1]
+        beta_ni = self.beta_ni
         Ic = self.Ic * 1e-6
         Lni = p['Phi0']*beta_ni/(2*np.pi*Ic)
         rni = Lni/tau_ni
@@ -498,34 +420,11 @@ class neuron():
 
         ### refractory dendrite ###
         self.circuit_betas__refraction[-1] = self.beta_ref
-        if (type(self.circuit_betas__refraction) == list 
-            and (len(self.circuit_betas__refraction) == 3 
-            or len(self.circuit_betas__refraction) == 5)):
-
-            if self.loops_present__refraction == 'ri':
-                self.circuit_betas__refraction = self.circuit_betas__refraction
-            elif self.loops_present == 'rtti':
-                self.circuit_betas__refraction = self.circuit_betas__refraction
-        else:
-            raise ValueError('''
-            [soen_sim] circuit_betas for an ri dendrite is a list of three real 
-            numbers greater than zero with dimensionless units. The first 
-            element represents the self inductance of the left branch of the DR 
-            loop. The second element represents the right branch of the DR loop. 
-            The third element represents the total inductance of the DI loop, 
-            including the integrating kinetic inductor and the output 
-            inductance.''')
 
         jj_params__refraction = get_jj_params(self.Ic__refraction*1e-6,
                                               self.beta_c__refraction)
-
-        if hasattr(self, 'tau_ref'):
-            self.tau_ref = self.tau_ref
-        else:
-            self.tau_ref = self.tau_ref 
-        
         tau_ref = self.tau_ref * 1e-9
-        beta_nr = self.circuit_betas__refraction[-1]
+        beta_nr = self.beta_ref
         Ic = self.Ic__refraction * 1e-6
         Lnr = p['Phi0']*beta_nr/(2*np.pi*Ic)
         r_ref = Lnr/tau_ref
@@ -541,42 +440,15 @@ class neuron():
             auto = False
 
 
-        ### synapse to receiving dendrite ###
-        #none
-
         ### transmitter ###
-        # print(self.source_type)
-        if (self.source_type != 'ec' 
-            and self.source_type != 'qd' 
-            and self.source_type != 'delay_delta'):
+        if self.source_type not in ['ec' ,'qd','delay_delta']:
             raise ValueError('''[soen_sim] sources presently defined are: 
                                     'qd', 'ec', or 'delay_delta' ''')
 
-        if self.source_type == 'delay_delta':
-            if hasattr(self, 'light_production_delay'):
-                self.light_production_delay = self.light_production_delay
-            else:
-                self.light_production_delay = 2
-        else:
-            self.num_photons_out_factor = self.num_photons_out_factor
-
-        # print(self.num_photons_out_factor)
-        # print(" ============================================================= ")
-                                
+           
         # ======================================================================
-        #         receiving and integration dendrite
+        #                               soma
         # ======================================================================
-                
-        # create dendrite for neuronal receiving and integration loop
-        # neuron_dendrite = dendrite(name = '{}__{}'.format(self.name,'nr_ni'), loops_present = self.loops_present, 
-        #               circuit_betas = self.circuit_betas, junction_critical_current = self.Ic, junction_beta_c = self.beta_c,
-        #               bias_current = self.bias_current, 
-        #               integration_loop_time_constant = self.integration_loop_time_constant, 
-        #               normalize_input_connection_strengths = self.normalize_input_connection_strengths, 
-        #               total_excitatory_input_connection_strength = self.total_excitatory_input_connection_strength, 
-        #               total_inhibitory_input_connection_strength = self.total_inhibitory_input_connection_strength, 
-        #               offset_flux = self.offset_flux,
-        #               self_feedback_coupling_strength = self.self_feedback_coupling_strength)
         
         neuroden_params = params
         neuroden_params['dentype'] = 'soma'
@@ -585,24 +457,15 @@ class neuron():
         neuron_dendrite.is_soma = True    
         
         self.dend__nr_ni = neuron_dendrite
-        self.dend__nr_ni.absolute_refractory_period = self.absolute_refractory_period
-        
-        # ======================================================================
-        #         end receiving and integration dendrite
-        # ======================================================================
-        
-        # ======================================================================
-        #         refractory dendrite
-        # ======================================================================
+        # self.dend__nr_ni.absolute_refractory_period = self.absolute_refractory_period
         
         
-        # create dendrite for neuronal refraction
-        # neuron_refractory_dendrite = dendrite(name = '{}__dend_{}'.format(self.name,'refraction'), loops_present = self.loops_present__refraction, circuit_betas = self.circuit_betas__refraction, 
-        #                                       junction_critical_current = self.Ic__refraction, junction_beta_c = self.beta_c__refraction,
-        #                                       bias_current = self.ib_ref, integration_loop_time_constant = self.integration_loop_time_constant__refraction)
+        # ======================================================================
+        #                       refractory dendrite
+        # ======================================================================
+
         neuroref_params = params
         neuroref_params['dentype'] = 'refractory'
-        # neuroref_params['name'] = '{}__dend_{}'.format(self.name,'refraction')
         self.dend__ref = dendrite(**neuroref_params)
         # self.dend__ref = neuron_refractory_dendrite
 
@@ -615,35 +478,31 @@ class neuron():
             self.dend__nr_ni.add_input(self.dend__ref_2, connection_strength = self.refractory_dendrite_connection_strength)
         
         if auto:
-            
-                ib__list__ri, phi_r__array__ri, i_di__array__ri, r_fq__array__ri, phi_th_plus__vec__ri, phi_th_minus__vec__ri, s_max_plus__vec__ri, s_max_minus__vec__ri, s_max_plus__array__ri, s_max_minus__array__ri = dend_load_arrays_thresholds_saturations('default_ri')
-                ib__list__rtti, phi_r__array__rtti, i_di__array__rtti, r_fq__array__rtti, phi_th_plus__vec__rtti, phi_th_minus__vec__rtti, s_max_plus__vec__rtti, s_max_minus__vec__rtti, s_max_plus__array__rtti, s_max_minus__array__rtti = dend_load_arrays_thresholds_saturations('default_rtti')
+                d_params_ri = dend_load_arrays_thresholds_saturations('default_ri')
+                d_params_rtti = dend_load_arrays_thresholds_saturations('default_rtti')
                 if self.loops_present == 'ri':
-                    ib_list = ib__list__ri
-                    phi_th_minus_vec = phi_th_minus__vec__ri
-                    phi_th_plus_vec = phi_th_plus__vec__ri
-                    s_max_plus__array = s_max_plus__array__ri
+                    ib_list = d_params_ri["ib__list"]
+                    phi_th_minus_vec = d_params_ri["phi_th_minus__vec"]
+                    phi_th_plus_vec = d_params_ri["phi_th_plus__vec"]
+                    s_max_plus__array = d_params_ri["s_max_plus__array"]
                 elif self.loops_present == 'rtti':
-                    ib_list = ib__list__rtti
-                    phi_th_minus_vec = phi_th_minus__vec__rtti
-                    phi_th_plus_vec = phi_th_plus__vec__rtti
-                    s_max_plus__array = s_max_plus__array__rtti
+                    ib_list = d_params_rtti["ib__list"]
+                    phi_th_minus_vec = d_params_rtti["phi_th_minus__vec"]
+                    phi_th_plus_vec = d_params_rtti["phi_th_plus__vec"]
+                    s_max_plus__array = d_params_rtti["s_max_plus__array"]
+
                 if self.loops_present__refraction == 'ri':
-                    ib_list_r = ib__list__ri
-                    s_max_plus_vec__refractory = s_max_plus__vec__ri
+                    ib_list_r = d_params_ri["ib__list"]
+                    s_max_plus_vec__refractory = d_params_ri["s_max_plus__vec"]
                 elif self.loops_present__refraction == 'rtti':
-                    ib_list_r = ib__list__rtti
-                    s_max_plus_vec__refractory = s_max_plus__vec__rtti
+                    ib_list_r = d_params_rtti["ib__list"]
+                    s_max_plus_vec__refractory = d_params_rtti["s_max_plus__vec"]
                     
-                _ind_ib_soma = index_finder(ib_list[:],self.dend__nr_ni.ib) # ( np.abs( ib_list[:] - self.dend__nr_ni.ib ) ).argmin()
-                
-                # for depricated auto calculation
-                # phi_th_plus = phi_th_plus_vec[_ind_ib_soma]
-                # phi_th_minus = phi_th_minus_vec[_ind_ib_soma]
-                # delta = phi_th_plus - phi_th_minus
+                # ( np.abs( ib_list[:] - self.dend__nr_ni.ib ) ).argmin()
+                _ind_ib_soma = index_finder(ib_list[:],self.dend__nr_ni.ib) 
                 
                 phi_th_minus = phi_th_minus_vec[_ind_ib_soma]
-                _phi_vec_prelim = np.asarray( phi_r__array__ri[_ind_ib_soma] )
+                _phi_vec_prelim = np.asarray( d_params_ri["phi_r__array"][_ind_ib_soma] )
                 _phi_vec_prelim = _phi_vec_prelim[ np.where( _phi_vec_prelim >= 0 ) ]
                 _ind_phi_max = index_finder(_phi_vec_prelim,0.5)
                 
@@ -652,11 +511,13 @@ class neuron():
                 _ind_s_th = index_finder(s_max_plus__vec,self.s_th)
                 phi_a_s_th = _phi_vec_prelim[_ind_s_th]
                 delta = phi_a_s_th - phi_th_minus
-                                
-                _ind_ib_refractory = index_finder(ib_list_r[:],self.dend__ref.ib) # ( np.abs( ib_list_r[:] - self.dend__ref.ib ) ).argmin()
+
+                # ( np.abs( ib_list_r[:] - self.dend__ref.ib ) ).argmin()           
+                _ind_ib_refractory = index_finder(ib_list_r[:],self.dend__ref.ib) 
                 _s_max_refractory = s_max_plus_vec__refractory[_ind_ib_refractory]
-                                
-                self.refractory_dendrite_connection_strength = -delta/_s_max_refractory # ( phi_th_minus + delta/100 ) / s_max
+
+                # ( phi_th_minus + delta/100 ) / s_max              
+                self.refractory_dendrite_connection_strength = -delta/_s_max_refractory 
                 
         self.dend__nr_ni.add_input(self.dend__ref, connection_strength = self.refractory_dendrite_connection_strength)
 
@@ -760,9 +621,10 @@ class network():
         # end name 
         
         # JJ params
-        dummy_dendrite = dendrite(name='dummy') # make dummy dendrite to obtain default Ic, beta_c
+        # make dummy dendrite to obtain default Ic, beta_c
+        dummy_dendrite = dendrite(name='dummy') 
         jj_params = get_jj_params(dummy_dendrite.Ic*1e-6,dummy_dendrite.beta_c)
-        self.jj_params = jj_params # (this should be done somewhere else globally)
+        self.jj_params = jj_params # this should be done somewhere else globally
         
         # prepare network to have neurons
         self.neurons = dict()
@@ -928,129 +790,3 @@ class HardwareInTheLoop:
         for trace in self.traces:
             self.trace_biases[trace.name] = []
             # return net
-
-
-
-
-
-class _input_signal():
-    
-    _next_uid = 0
-    input_signals = dict()
-    
-    def __init__(self, **kwargs):
-        
-        #make new input signal
-        self.uid = input_signal._next_uid
-        input_signal._next_uid += 1
-        self.unique_label = 'in{}'.format(self.uid)
-        
-        # name the input signal
-        if 'name' in kwargs:
-            self.name = kwargs['name']
-        else:
-            self.name = 'unnamed_input_signal__{}'.format(self.unique_label)
-        # end name 
-        
-        if 'input_temporal_form' in kwargs: 
-            if (kwargs['input_temporal_form'] == 'constant' or
-                kwargs['input_temporal_form'] == 'constant_rate' or 
-                kwargs['input_temporal_form'] == 'arbitrary_spike_train' or
-                kwargs['input_temporal_form'] == 'arbitrary_spike_train_with_jitter' or
-                kwargs['input_temporal_form'] == 'analog_dendritic_drive'):
-                _temporal_form = kwargs['input_temporal_form']
-            else:
-                raise ValueError('[soen_sim] Tried to assign an invalid input signal temporal form to input %s (unique_label = %s)\nThe allowed values of input_temporal_form are ''single_spike'', ''constant_rate'', ''arbitrary_spike_train'', and ''analog_dendritic_drive''' % (self.name, self.unique_label))
-        else:
-            _temporal_form = 'single_spike'
-        self.input_temporal_form =  _temporal_form #'single_spike' by default
-        
-        if self.input_temporal_form == 'constant':
-            if 'applied_flux' in kwargs:
-                self.applied_flux = kwargs['applied_flux']
-            else:
-                raise ValueError('[soen_sim] If the input temporal form is constant, applied_flux is required as a keyword argument.')
-        
-        if self.input_temporal_form == 'arbitrary_spike_train' or self.input_temporal_form == 'arbitrary_spike_train_with_jitter':
-            if 'spike_times' in kwargs:
-                self.spike_times = kwargs['spike_times'] # spike times entered as a list of length >= 1 with entries having units of ns
-            else:
-                raise ValueError('[soen_sim] arbitrary spike train requires spike_times as input')
-                
-        # =============================================================================
-        #         arbitrary spike train with jitter
-        # =============================================================================
-        if self.input_temporal_form == 'arbitrary_spike_train_with_jitter': 
-            
-            if 'source_type' in kwargs:
-                self.source_type = kwargs['source_type']
-            else:
-                self.source_type = 'qd'
-                
-            if 'num_photons_per_spike' in kwargs:
-                self.num_photons_per_spike = kwargs['num_photons_per_spike'] # this many photons generated per spike time
-            else:
-                self.num_photons_per_spike = 1                
-    
-            from soen_utilities import pathfinder
-            _path=pathfinder()
-            
-            if self.source_type == 'qd':
-                load_string = 'source_qd_Nph_1.0e+04'
-            elif self.source_type == 'ec':
-                load_string = 'source_ec_Nph_1.0e+04'
-                
-            with open('{}{}{}.soen'.format(_path,'/soen_sim_data/',load_string), 'rb') as data_file:         
-                data_dict_imported = pickle.load(data_file) 
-                
-            time_vec__el = data_dict_imported['time_vec']#*t_tau_conversion
-            el_vec = data_dict_imported['dNphdt']
-            t_on_tron = data_dict_imported['t_on_tron']*1e9
-            tau_rad = data_dict_imported['tau_rad']
-            t_off = np.min([ t_on_tron+5*tau_rad , time_vec__el[-1] ]) 
-            
-            _ind_on = ( np.abs(t_on_tron-time_vec__el) ).argmin()
-            _ind_off = ( np.abs(t_off-time_vec__el) ).argmin()
-            
-            t_vec__el = time_vec__el[_ind_on:_ind_off] - time_vec__el[_ind_on]
-            # print('t_vec__el[0] = {:5.3f}ns, t_vec__el[-1] = {:5.3f}ns'.format(t_vec__el[0],t_vec__el[-1]))
-            dt_vec = np.diff(t_vec__el)
-            el_vec = el_vec[_ind_on:_ind_off]
-        
-            # form probability distribution
-            el_cumulative_vec = np.cumsum(el_vec[:-1]*dt_vec[:])
-            el_cumulative_vec = el_cumulative_vec/np.max(el_cumulative_vec)    
-            
-            # draw samples
-            num_samples = self.num_photons_per_spike
-            rng = default_rng()
-            
-            photon_delay_time_vec = np.zeros([len(self.spike_times),num_samples])
-            for pp in range(len(self.spike_times)):
-                for qq in range(num_samples):
-                    random_numbers = rng.random(size = num_samples)
-                    photon_delay_time_vec[pp,qq] = t_vec__el[ ( np.abs( el_cumulative_vec[:] - random_numbers[qq] ) ).argmin() ]
-                
-            # adjust spike times
-            self.spike_times__in = self.spike_times
-            for ii in range(len(self.spike_times)):
-                self.spike_times = self.spike_times + np.min( photon_delay_time_vec[ii,:] )                
-        # =============================================================================
-        #         end arbitrary spike train with jitter
-        # =============================================================================
-            
-        if self.input_temporal_form == 'constant_rate': # in this case, spike_times has the form [t_first_spike,rate] with rate in MHz
-            if 't_first_spike' in kwargs:
-                self.t_first_spike = kwargs['t_first_spike']
-            else:
-                self.t_first_spike = 50 # default time of first spike is 50ns
-            if 'rate' in kwargs:
-                self.rate = kwargs['rate']
-            else:
-                self.rate = 1 # default rate is 1MHz
-                
-        if self.input_temporal_form == 'analog_dendritic_drive':
-            if 'piecewise_linear' in kwargs:
-                self.piecewise_linear = kwargs['piecewise_linear']    
-            
-        input_signal.input_signals[self.name] = self

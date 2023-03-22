@@ -267,9 +267,9 @@ class SuperNode():
         print(f" loops_present = {self.neuron.loops_present}")
         print(f" s_th = {self.neuron.s_th}")
         print("\n")
-        print(f" ib_di = {self.neuron.ib_di}")
-        print(f" tau_di = {self.neuron.tau_di}")
-        print(f" beta_di = {self.neuron.beta_di}")
+        # print(f" ib_di = {self.neuron.ib_di}")
+        # print(f" tau_di = {self.neuron.tau_di}")
+        # print(f" beta_di = {self.neuron.beta_di}")
 
         print("\nREFRACTION:")
         print(f" ib_ref = {self.neuron.ib_ref}")

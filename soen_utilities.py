@@ -308,7 +308,21 @@ def dend_load_arrays_thresholds_saturations(load_string):
     ib__list, phi_r__array, i_di__array, r_fq__array, _, _ = dend_load_rate_array(load_string)
     phi_th_plus__vec, phi_th_minus__vec, s_max_plus__vec, s_max_minus__vec, s_max_plus__array, s_max_minus__array = dend_load_thresholds_saturations(load_string)
     
-    return ib__list, phi_r__array, i_di__array, r_fq__array, phi_th_plus__vec, phi_th_minus__vec, s_max_plus__vec, s_max_minus__vec, s_max_plus__array, s_max_minus__array
+    dend_thresh_params = {
+        "ib__list":ib__list,
+        "phi_r__array":phi_r__array,
+        "i_di__array":i_di__array,
+        "r_fq__array":r_fq__array,
+        "phi_th_plus__vec":phi_th_plus__vec,
+        "phi_th_minus__vec":phi_th_minus__vec,
+        "s_max_plus__vec":s_max_plus__vec,
+        "s_max_minus__vec":s_max_minus__vec,
+        "s_max_plus__array":s_max_plus__array,
+        "s_max_minus__array":s_max_minus__array,
+    }
+
+
+    return dend_thresh_params
 
 
 #%% determine depth of dendritic tree

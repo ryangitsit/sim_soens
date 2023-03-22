@@ -1855,11 +1855,13 @@ def activity_plot(neurons,net,phir=False,dend=True,title=None,
 
             ## add input/output spikes
             if spikes==True:
-                from super_functions import array_to_rows
-                rows = array_to_rows(net.spikes,2)
-                # axs[ii].plot(rows[ii],np.zeros(len(rows[ii])),
-                # 'xk', markersize=8, label='neuron fires')
-                axs[ii].plot(rows[ii],net.spike_signals[ii],'xk', markersize=8,
+                
+                ind = np.where(net.spikes[0]==ii)[0]
+                spike_times = np.array([net.spikes[1][i] for i in ind]).reshape(len(ind),)
+                
+                # rows = array_to_rows(net.spikes,2)
+                # print(rows)
+                axs[ii].plot(spike_times,net.spike_signals[ii],'xk', markersize=8,
                              label='neuron fires')
                 axs[ii].axhline(y = n.neuron.s_th, color = 'purple', linestyle = '--',
                                 label='Firing Threshold')
