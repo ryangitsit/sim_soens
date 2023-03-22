@@ -30,7 +30,7 @@ class input_signal():
         # UPDATE TO CUSTOM PARAMS
         self.__dict__.update(params)
         
-        print(self.input_temporal_form,self.input_temporal_form ,self.input_temporal_form )
+
         if self.input_temporal_form  not in ['constant',
                                              'constant_rate', 
                                              'arbitrary_spike_train', 
@@ -104,7 +104,7 @@ class dendrite():
         self.beta_c =  0.3
         if self.loops_present == 'ri':
             self.ib = 1.802395858835221
-            self.ib_di = 1.802395858835221
+            self.ib_di = 1.802395858835221 #**
         elif self.loops_present == 'rtti':
             self.ib = 2.0 
         elif self.loops_present == 'pri':
@@ -124,8 +124,7 @@ class dendrite():
 
         # UPDATE TO CUSTOM PARAMS
         self.__dict__.update(params)
-        # print(params['ib'])
-    
+        
         ########
         if self.loops_present == 'pri':
             if type(self.circuit_betas) == list and len(self.circuit_betas) == 4:
@@ -175,6 +174,7 @@ class dendrite():
                 self.circuit_betas[-1] = self.beta_di
             # print("REGULAR DENDRITE")
         # print(self.ib)
+        self.beta_di = self.circuit_betas[-1]
         if 'integrated_current_threshold' in params:
             self.s_th = params['integrated_current_threshold']
         
@@ -366,20 +366,18 @@ class neuron():
         else:
             self.loops_present = 'ri'
         self.beta_ni = 2*np.pi*1e2
-        if self.loops_present == 'ri':
-            self.circuit_betas = [2*np.pi* 1/4, 2*np.pi* 1/4, self.beta_ni]         
-        if self.loops_present == 'rtti':
-            self.circuit_betas = [2*np.pi* 1/4, 2*np.pi* 1/4, self.beta_ni]  
         self.Ic =  100
         self.beta_c =  0.3
         if self.loops_present == 'ri':
             self.ib = 1.802395858835221 #1.7 # dimensionless bias current   
             self.ib_n = 1.802395858835221
             self.ib_di = 1.802395858835221
+            self.circuit_betas = [2*np.pi* 1/4, 2*np.pi* 1/4, self.beta_ni]
         elif self.loops_present == 'rtti':
             self.ib = 2.0 # dimensionless bias current
             self.ib_n = 2.19
             self.ib_di= 2.19
+            self.circuit_betas = [2*np.pi* 1/4, 2*np.pi* 1/4, self.beta_ni] 
         self.integration_loop_time_constant = 250
         self.absolute_refractory_period = 10
         self.normalize_input_connection_strengths = False

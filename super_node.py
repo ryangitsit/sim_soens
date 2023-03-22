@@ -82,6 +82,7 @@ class SuperNode():
                                     dend_params["ib"] = self.ib_list_rtti[self.biases[i][j][k]]
                             else:
                                 dend_params["ib"] = self.ib_list_ri[self.biases[i][j][k]]
+                            dend_params["ib_di"] = dend_params["ib"]
                         if hasattr(self, 'taus'):
                             dend_params["tau_di"] = self.taus[i][j][k]
                         if hasattr(self, 'types'):
@@ -285,7 +286,7 @@ class SuperNode():
             print(f" {name}", dend.name)
             print(f"   ib_di = {dend.ib}")
             print(f"   tau_di = {dend.tau_di}")
-            print(f"   beta_di = {dend.beta}")
+            print(f"   beta_di = {dend.beta_di}")
             print(f"   loops_present = {dend.loops_present}")
             print(f"   synaptic_inputs = {list(dend.synaptic_inputs.keys())}")
             print(f"   dendritic_inputs = {list(dend.dendritic_inputs.keys())}")

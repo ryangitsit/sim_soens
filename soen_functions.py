@@ -1,4 +1,3 @@
-#%%
 import numpy as np
 import pickle
 import time
@@ -9,7 +8,6 @@ rng = default_rng()
 
 from soen_utilities import dend_load_rate_array, dend_load_arrays_thresholds_saturations, physical_constants, index_finder
 
-#%% necessary info
 
 ib__list__ri, phi_r__array__ri, i_di__array__ri, r_fq__array__ri, phi_th_plus__vec__ri, phi_th_minus__vec__ri, s_max_plus__vec__ri, s_max_minus__vec__ri, s_max_plus__array__ri, s_max_minus__array__ri = dend_load_arrays_thresholds_saturations('default_ri')
 ib__list__rtti, phi_r__array__rtti, i_di__array__rtti, r_fq__array__rtti, phi_th_plus__vec__rtti, phi_th_minus__vec__rtti, s_max_plus__vec__rtti, s_max_minus__vec__rtti, s_max_plus__array__rtti, s_max_minus__array__rtti = dend_load_arrays_thresholds_saturations('default_rtti')
@@ -17,7 +15,7 @@ ib__list__rtti, phi_r__array__rtti, i_di__array__rtti, r_fq__array__rtti, phi_th
 ib__vec__ri = np.asarray(ib__list__ri[:])
 ib__vec__rtti = np.asarray(ib__list__rtti[:])
 
-#%%
+
 
 def run_soen_sim(obj, **kwargs):
     

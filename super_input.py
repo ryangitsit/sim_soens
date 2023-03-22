@@ -5,29 +5,31 @@ from super_functions import *
 
 class SuperInput():
     def __init__(self,**entries):
-        self.type ="MNIST", # random for rand gen
-        self.duration = 100,
-        self.channels = 28*28,
-        self.slow_down = 10,
-        self.total_spikes = 25,
-        self.name = 'Super_Input'
+        self.type = "random"
+        self.duration = 500
+        self.channels = 10
+        self.slow_down = 10
+        self.total_spikes = 25
+        self.name = 'SuperInput'
         self.__dict__.update(entries)
+        self.temporal_form = 'arbitrary_spike_train'
         
-        if self.type == "MNIST":
+        if self.type == "random":
+            print("Generating random input...")
+            indices = np.random.randint(self.channels,size=self.total_spikes)
+            times = np.random.rand(self.total_spikes)*self.duration
+            self.spike_arrays = [indices,times]
+            self.spike_rows = self.array_to_rows(self.spike_arrays)
+
+        elif self.type == "defined":
+            self.spike_arrays = self.defined_spikes
+            self.spike_rows = self.array_to_rows(self.spike_arrays)
+        
+        elif self.type == "MNIST":
             self.channels = int(28*28)
             print("Generating MNNIST dataset...")
             mnist_indices, mnist_spikes = self.MNIST()
             self.spike_arrays = [mnist_indices,mnist_spikes]
-            self.spike_rows = self.array_to_rows(self.spike_arrays)
-
-        elif self.type == "random":
-            print("Generating random input...")
-            self.spike_arrays = [np.random.randint(self.channels,size=self.total_spikes),np.random.rand(self.total_spikes)*self.duration]
-            self.spike_rows = self.array_to_rows(self.spike_arrays)
-
-        elif self.type == "defined":
-            # print("Generating pre-defined input...")
-            self.spike_arrays = self.defined_spikes
             self.spike_rows = self.array_to_rows(self.spike_arrays)
 
         elif self.type == "saccade_MNIST":
@@ -48,23 +50,9 @@ class SuperInput():
             if array.any():
                 array = np.append(array,np.max(array)+.001)
             self.signals.append(input_signal(name = 'input_synaptic_drive', 
-                                input_temporal_form = 'arbitrary_spike_train', 
+                                input_temporal_form = self.temporal_form, 
                                 spike_times = array) )
             # print(self.spike_rows[i])
-
-
-    def gen_rand_input(self,spiking_indices,max_amounts):
-        # self.input = np.random.randint(self.duration, size=())
-        input = [ [] for _ in range(self.channels) ]
-        spikers = np.random.randint(self.channels,size=spiking_indices)
-        sum = []
-        for n in spikers:
-            input[n] = np.sort(np.random.randint(self.duration,size=np.random.randint(max_amounts)))
-            sum.append(len(input[n]))
-        print("Total number of spikes:", np.sum(sum))
-        print("Spiking at neurons: ", spikers)
-        return input
-
 
     def constant(self):
         input = input_signal(name = 'constant_input', 
@@ -104,7 +92,8 @@ class SuperInput():
         (X_train, y_train), (X_test, y_test) = mnist.load_data()
         print("loaded")
         # simplified classification (0 1 and 8)
-        X_train = X_train[(y_train == 1) | (y_train == 0) | (y_train == 2)]
+        X_train = X_train[(y_train == 0) | (y_train == 1) | (y_train == 2)]
+        y = y_train[(y_train == 0) | (y_train == 1) | (y_train == 2)]
 
         # pixel intensity to Hz (255 becoms ~63Hz)
         X_train = X_train / 4 
@@ -118,7 +107,7 @@ class SuperInput():
         self.data = {}
         channels = 28*28
         X = X_train[self.index].reshape(channels)
-        print(y_train[self.index])
+        # print(y_train[self.index])
         P = brian2.PoissonGroup(channels, rates=(X/self.slow_down)*brian2.Hz)
         MP = brian2.SpikeMonitor(P)
         net = brian2.Network(P, MP)
@@ -142,32 +131,7 @@ class SuperInput():
         count = 0
         for i in range(20):
             if len(dataset[y[i]]) < 3:
-                # print(y[i])
                 dataset[y[i]].append(aug_digit(X[i]))
-                # X_aug = aug_digit(X[i])
-                # import matplotlib.pyplot as plt
-                # fig, axs = plt.subplots(5, 5,figsize=(8,8))
-                # tiles = []
-                # for i in range(5):
-                #     for j in range(5):
-                #         x1=i*6
-                #         x2=i*6+6
-                #         y1=j*6
-                #         y2=j*6+6
-                #         print(x1,x2,y1,y2)
-                #         img = X_aug[x1:x2,y1:y2]
-
-                #         tiles.append(img)
-                #         # fig = plt.figure
-                #         axs[i,j].imshow(img, cmap='gray')
-                #         axs[i,j].set_xticks([])
-                #         axs[i,j].set_yticks([])
-                #         # axs[i,j].set_title(f'{x1},{x2}-{y1},{y2}')
-                # # for ax in axs:
-                # #     ax.set_xticks([])
-                # #     ax.set_yticks([])
-                # plt.show()
-
 
         for data in dataset:
             for sample in data:
@@ -175,14 +139,6 @@ class SuperInput():
                 tile_spikes = tiles_to_spikes(tiles,self.tile_time)
                 stream[0].extend(tile_spikes[0])
                 stream[1].extend(np.array(tile_spikes[1])+(self.tile_time*36)*count)
-                # print(tile_spikes[1])
-                # print(self.tile_time*36,count, self.tile_time*36*count)
                 count+=1
-        # print(len(dataset))
-        # print(len(dataset[0]),len(dataset[1]),len(dataset[2]))
 
-        # print(len(stream))
-        # print(len(stream[0]))
-        # from soen_plotting import raster_plot
-        # raster_plot(stream)
         return stream

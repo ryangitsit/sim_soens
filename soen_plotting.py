@@ -1782,7 +1782,7 @@ def raster_plot(spikes,duration=None,title=None,input=[],notebook=False):
 def activity_plot(neurons,net,phir=False,dend=True,title=None,
                         input=None,weighting=True,docstring=False,lay=100000,
                         spikes=True, path=None,SPD=False,ref=False,legend_out=False,
-                        size=(12,4), y_range=None,subtitles=None):
+                        size=(12,4), y_range=None,subtitles=None,legend=True):
     '''
     Plots signal activity for a given neuron or network of neurons
         - neurons    -> list of all neurons to be plotted
@@ -1940,13 +1940,13 @@ def activity_plot(neurons,net,phir=False,dend=True,title=None,
         plt.ylabel("Signal (Ic)",fontsize=16)
         plt.subplots_adjust(bottom=.25)
         plt.title(title,fontsize=18)
-
-    if legend_out==True:
-        plt.legend(loc='center left', bbox_to_anchor=(1, 1.2))
-        plt.subplots_adjust(right=.8)
-        plt.subplots_adjust(bottom=.15)
-    else:
-        plt.legend()
+    if legend==True:
+        if legend_out==True:
+            plt.legend(loc='center left', bbox_to_anchor=(1, 1.2))
+            plt.subplots_adjust(right=.8)
+            plt.subplots_adjust(bottom=.15)
+        else:
+            plt.legend()
     if path:
         plt.savefig(path)
     plt.show()
