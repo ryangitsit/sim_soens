@@ -40,7 +40,12 @@ def run_soen_sim(obj, **kwargs):
     if type(obj).__name__ == 'network':
         
         # convert to dimensionless time
-        obj.time_params = {'dt': dt, 'tf': tf, 'time_vec': time_vec, 't_tau_conversion': 1e-9/obj.jj_params['tau_0']}
+        obj.time_params = {
+            'dt': dt, 
+            'tf': tf, 
+            'time_vec': time_vec, 
+            't_tau_conversion': 1e-9/obj.jj_params['tau_0']
+            }
         t_tau_conversion = obj.time_params['t_tau_conversion']
         tau_vec = time_vec*t_tau_conversion
         d_tau = obj.time_params['dt']*t_tau_conversion
@@ -78,73 +83,70 @@ def run_soen_sim(obj, **kwargs):
             # add output data to dendrites for plotting and diagnostics
             for neuron_key in obj.neurons:
                 recursive_dendrite_data_attachment(obj.neurons[neuron_key].dend__nr_ni,obj)
+        
         else:
             print("new way")
-            # for name,neuron in obj.neurons.items():
-            for neuron in obj.nodes:
+            for node in obj.nodes:
                 # print("Initializing neuron: ", neuron.name)
-                neuron.neuron.time_params = obj.time_params
-                # print(neuron.dendrite_list)
-                for dend in neuron.dendrite_list:
-                    # print(" Initializing dendrite: ", dend.name)
+                node.neuron.time_params = obj.time_params
 
+                for dend in node.dendrite_list:
+                    # print(" Initializing dendrite: ", dend.name)
                     dendrite_init_and_drive_construct(dend,tau_vec,t_tau_conversion,d_tau)
                     rate_array_attachment(dend)
                     synapse_initialization(dend,tau_vec,t_tau_conversion)
 
-                output_synapse_initialization(neuron.neuron,tau_vec,t_tau_conversion)
-                transmitter_initialization(neuron.neuron,t_tau_conversion)
+                output_synapse_initialization(node.neuron,tau_vec,t_tau_conversion)
+                transmitter_initialization(node.neuron,t_tau_conversion)
 
             obj = net_step(obj,tau_vec,d_tau)
-            for dend in neuron.dendrite_list:
+            for dend in node.dendrite_list:
                 dendrite_data_attachment(dend,obj)
-            # print(obj.neurons)
-            # print("Here!")
-            
+
     return obj
 
-def dendrite_init_and_drive_construct(dendrite_object,tau_vec,t_tau_conversion,d_tau):
-    # print("  Constructing:",dendrite_object.name)          
-    dendrite_object.phi_r_external__vec = np.zeros([len(tau_vec)]) # from external drives
-    dendrite_object.phi_r = np.zeros([len(tau_vec)]) # from synapses and dendrites
-    dendrite_object.s = np.zeros([len(tau_vec)]) # output variable
-    dendrite_object.beta = dendrite_object.circuit_betas[-1]
+def dendrite_init_and_drive_construct(dend_obj,tau_vec,t_tau_conversion,d_tau):
+    # print("  Constructing:",dend_obj.name)          
+    dend_obj.phi_r_external__vec = np.zeros([len(tau_vec)]) # from external drives
+    dend_obj.phi_r = np.zeros([len(tau_vec)]) # from synapses and dendrites
+    dend_obj.s = np.zeros([len(tau_vec)]) # output variable
+    dend_obj.beta = dend_obj.circuit_betas[-1]
     
     # add external drives to this dendrite if they're present
-    dendrite_object = construct_dendritic_drives(dendrite_object) 
+    dend_obj = construct_dendritic_drives(dend_obj) 
     
     # turn external drives to this dendrite into flux
-    dendrite_object.phi_r_external__vec[:] = dendrite_object.offset_flux
-    for external_input in dendrite_object.external_inputs:
-        dendrite_object.phi_r_external__vec += dendrite_object.external_inputs[external_input].drive_signal * dendrite_object.external_connection_strengths[external_input]
+    dend_obj.phi_r_external__vec[:] = dend_obj.offset_flux
+    for external_input in dend_obj.external_inputs:
+        dend_obj.phi_r_external__vec += dend_obj.external_inputs[external_input].drive_signal * dend_obj.external_connection_strengths[external_input]
         
     # prepare somas for absolute refractory period
-    if hasattr(dendrite_object, 'is_soma'):
-        dendrite_object.absolute_refractory_period_converted = dendrite_object.absolute_refractory_period * t_tau_conversion
+    if hasattr(dend_obj, 'is_soma'):
+        dend_obj.absolute_refractory_period_converted = dend_obj.absolute_refractory_period * t_tau_conversion
         
     # normalize inputs
-    if dendrite_object.normalize_input_connection_strengths:        
+    if dend_obj.normalize_input_connection_strengths:        
         J_ij_e__init = 0 # excitatory
         J_ij_i__init = 0 # inhibitory
-        J_ij_e = dendrite_object.total_excitatory_input_connection_strength
-        J_ij_i = dendrite_object.total_inhibitory_input_connection_strength
+        J_ij_e = dend_obj.total_excitatory_input_connection_strength
+        J_ij_i = dend_obj.total_inhibitory_input_connection_strength
         # print('J_ij = {}'.format(J_ij))
-        for external_input in dendrite_object.external_inputs:
-            if dendrite_object.external_connection_strengths[external_input] >= 0:
-                J_ij_e__init += dendrite_object.external_connection_strengths[external_input]
-            elif dendrite_object.external_connection_strengths[external_input] < 0:
-                J_ij_i__init += dendrite_object.external_connection_strengths[external_input]
-        for synapse in dendrite_object.synaptic_inputs:
-            if dendrite_object.synaptic_connection_strengths[synapse] >= 0:
-                J_ij_e__init += dendrite_object.synaptic_connection_strengths[synapse]
-            elif dendrite_object.synaptic_connection_strengths[synapse] < 0:
-                J_ij_i__init += dendrite_object.synaptic_connection_strengths[synapse]
-        for dendrite in dendrite_object.dendritic_inputs:
-            if dendrite_object.dendritic_connection_strengths[dendrite] >= 0:
-                J_ij_e__init += dendrite_object.dendritic_connection_strengths[dendrite]
-            elif dendrite_object.dendritic_connection_strengths[dendrite] < 0:
-                if dendrite_object.dendritic_inputs[dendrite].name[-15:] != 'dend_refraction': # make sure this isn't the refractory dendrite. that one doesn't get included in this normalization.
-                    J_ij_i__init += dendrite_object.dendritic_connection_strengths[dendrite]
+        for external_input in dend_obj.external_inputs:
+            if dend_obj.external_connection_strengths[external_input] >= 0:
+                J_ij_e__init += dend_obj.external_connection_strengths[external_input]
+            elif dend_obj.external_connection_strengths[external_input] < 0:
+                J_ij_i__init += dend_obj.external_connection_strengths[external_input]
+        for synapse in dend_obj.synaptic_inputs:
+            if dend_obj.synaptic_connection_strengths[synapse] >= 0:
+                J_ij_e__init += dend_obj.synaptic_connection_strengths[synapse]
+            elif dend_obj.synaptic_connection_strengths[synapse] < 0:
+                J_ij_i__init += dend_obj.synaptic_connection_strengths[synapse]
+        for dendrite in dend_obj.dendritic_inputs:
+            if dend_obj.dendritic_connection_strengths[dendrite] >= 0:
+                J_ij_e__init += dend_obj.dendritic_connection_strengths[dendrite]
+            elif dend_obj.dendritic_connection_strengths[dendrite] < 0:
+                if dend_obj.dendritic_inputs[dendrite].name[-15:] != 'dend_refraction': # make sure this isn't the refractory dendrite. that one doesn't get included in this normalization.
+                    J_ij_i__init += dend_obj.dendritic_connection_strengths[dendrite]
         if J_ij_e__init > 0:
             factor_e = J_ij_e/J_ij_e__init
         else:
@@ -155,66 +157,66 @@ def dendrite_init_and_drive_construct(dendrite_object,tau_vec,t_tau_conversion,d
             factor_i = 0
         # print('J_ij__init = {}'.format(J_ij__init))
         # print('factor = {}'.format(factor))
-        for external_input in dendrite_object.external_inputs:
-            if dendrite_object.external_connection_strengths[external_input] >= 0:
-                dendrite_object.external_connection_strengths[external_input] = factor_e * dendrite_object.external_connection_strengths[external_input]
-            elif dendrite_object.external_connection_strengths[external_input] < 0:
-                dendrite_object.external_connection_strengths[external_input] = factor_i * dendrite_object.external_connection_strengths[external_input]
-        for synapse in dendrite_object.synaptic_inputs:
-            if dendrite_object.synaptic_connection_strengths[synapse] >= 0:
-                dendrite_object.synaptic_connection_strengths[synapse] = factor_e * dendrite_object.synaptic_connection_strengths[synapse]
-            elif dendrite_object.synaptic_connection_strengths[synapse] < 0:
-                dendrite_object.synaptic_connection_strengths[synapse] = factor_i * dendrite_object.synaptic_connection_strengths[synapse]
-        for dendrite in dendrite_object.dendritic_inputs:
-            if dendrite_object.dendritic_connection_strengths[dendrite] >= 0:
-                dendrite_object.dendritic_connection_strengths[dendrite] = factor_e * dendrite_object.dendritic_connection_strengths[dendrite]
-            elif dendrite_object.dendritic_connection_strengths[dendrite] < 0:
-                if dendrite_object.dendritic_inputs[dendrite].name[-15:] != 'dend_refraction': # make sure this isn't the refractory dendrite. that one doesn't get included in this normalization.
-                    dendrite_object.dendritic_connection_strengths[dendrite] = factor_i * dendrite_object.dendritic_connection_strengths[dendrite]
+        for external_input in dend_obj.external_inputs:
+            if dend_obj.external_connection_strengths[external_input] >= 0:
+                dend_obj.external_connection_strengths[external_input] = factor_e * dend_obj.external_connection_strengths[external_input]
+            elif dend_obj.external_connection_strengths[external_input] < 0:
+                dend_obj.external_connection_strengths[external_input] = factor_i * dend_obj.external_connection_strengths[external_input]
+        for synapse in dend_obj.synaptic_inputs:
+            if dend_obj.synaptic_connection_strengths[synapse] >= 0:
+                dend_obj.synaptic_connection_strengths[synapse] = factor_e * dend_obj.synaptic_connection_strengths[synapse]
+            elif dend_obj.synaptic_connection_strengths[synapse] < 0:
+                dend_obj.synaptic_connection_strengths[synapse] = factor_i * dend_obj.synaptic_connection_strengths[synapse]
+        for dendrite in dend_obj.dendritic_inputs:
+            if dend_obj.dendritic_connection_strengths[dendrite] >= 0:
+                dend_obj.dendritic_connection_strengths[dendrite] = factor_e * dend_obj.dendritic_connection_strengths[dendrite]
+            elif dend_obj.dendritic_connection_strengths[dendrite] < 0:
+                if dend_obj.dendritic_inputs[dendrite].name[-15:] != 'dend_refraction': # make sure this isn't the refractory dendrite. that one doesn't get included in this normalization.
+                    dend_obj.dendritic_connection_strengths[dendrite] = factor_i * dend_obj.dendritic_connection_strengths[dendrite]
         
     # check that timestep is sufficiently small:
-    if dendrite_object.loops_present == 'ri':
+    if dend_obj.loops_present == 'ri':
         ib_list = d_params_ri["ib__list"]
         r_fq_array = d_params_ri["r_fq__array"]
-    elif dendrite_object.loops_present == 'rtti':
+    elif dend_obj.loops_present == 'rtti':
         ib_list = d_params_rtti["ib__list"]
         r_fq_array = d_params_rtti["r_fq__array"]
-    elif dendrite_object.loops_present == 'pri':
+    elif dend_obj.loops_present == 'pri':
         ib_list = d_params_rtti["ib__list"]
         r_fq_array = d_params_rtti["r_fq__array"]
 
 
-    _ib_ind = index_finder(ib_list,dendrite_object.ib)
+    _ib_ind = index_finder(ib_list,dend_obj.ib)
     _flat_rate = [item for sublist in r_fq_array[_ib_ind] for item in sublist]
     _r_max = np.max(_flat_rate)
-    _min = 0.01*dendrite_object.beta/dendrite_object.alpha
-    _max = 0.1*dendrite_object.beta/dendrite_object.alpha
-    if d_tau > 0.1*dendrite_object.beta/dendrite_object.alpha:
+    _min = 0.01*dend_obj.beta/dend_obj.alpha
+    _max = 0.1*dend_obj.beta/dend_obj.alpha
+    if d_tau > 0.1*dend_obj.beta/dend_obj.alpha:
         _str = 'Warning: d_tau should be << beta/alpha.'
-        _str = '{} For dendrite {} with beta = {:4.2e} and alpha = {:4.2e}'.format(_str,dendrite_object.name,dendrite_object.beta,dendrite_object.alpha)        
+        _str = '{} For dendrite {} with beta = {:4.2e} and alpha = {:4.2e}'.format(_str,dend_obj.name,dend_obj.beta,dend_obj.alpha)        
         _str = '{} the recommended d_tau is {:5.3e}-{:5.3e} (dt = {:5.3e}ns-{:5.3e}ns)'.format(_str,_min,_max,_min/t_tau_conversion,_max/t_tau_conversion)
         # print('{}'.format(_str))
-    elif d_tau <= 0.1*dendrite_object.beta/dendrite_object.alpha:
-        _str = 'For dendrite {} d_tau = {:5.3e} = {:5.3e} x beta/alpha'.format(dendrite_object.name,d_tau,d_tau*dendrite_object.alpha/dendrite_object.beta)
+    elif d_tau <= 0.1*dend_obj.beta/dend_obj.alpha:
+        _str = 'For dendrite {} d_tau = {:5.3e} = {:5.3e} x beta/alpha'.format(dend_obj.name,d_tau,d_tau*dend_obj.alpha/dend_obj.beta)
         _str = '{} (0.01-0.1 x beta/alpha is recommended, dt = {:5.3e}ns-{:5.3e}ns)'.format(_str,_min/t_tau_conversion,_max/t_tau_conversion)
         # print('{}'.format(_str))
-    _min = 0.01*dendrite_object.beta/_r_max
-    _max = 0.1*dendrite_object.beta/_r_max
-    if d_tau > 0.1*dendrite_object.beta/_r_max:
+    _min = 0.01*dend_obj.beta/_r_max
+    _max = 0.1*dend_obj.beta/_r_max
+    if d_tau > 0.1*dend_obj.beta/_r_max:
         _str = 'Warning: d_tau should be << beta/r_max.'
-        _str = '{} For dendrite {} with beta = {:4.2e} and r_max = {:4.2e}'.format(_str,dendrite_object.name,dendrite_object.beta,_r_max)        
+        _str = '{} For dendrite {} with beta = {:4.2e} and r_max = {:4.2e}'.format(_str,dend_obj.name,dend_obj.beta,_r_max)        
         _str = '{} the recommended d_tau is {:5.3e}-{:5.3e} (dt = {:5.3e}ns-{:5.3e}ns)'.format(_str,_min,_max,_min/t_tau_conversion,_max/t_tau_conversion)
         # print('{}'.format(_str))
-    elif d_tau <= 0.1*dendrite_object.beta/_r_max:
-        _str = 'For dendrite {} d_tau = {:5.3e} = {:5.3e} x beta/r_max'.format(dendrite_object.name,d_tau,d_tau*_r_max/dendrite_object.beta)
+    elif d_tau <= 0.1*dend_obj.beta/_r_max:
+        _str = 'For dendrite {} d_tau = {:5.3e} = {:5.3e} x beta/r_max'.format(dend_obj.name,d_tau,d_tau*_r_max/dend_obj.beta)
         _str = '{} (0.01-0.1 x beta/r_max is recommended, dt = {:5.3e}ns-{:5.3e}ns)'.format(_str,_min/t_tau_conversion,_max/t_tau_conversion)
         # print('{}'.format(_str))
     return
 
 
-def rate_array_attachment(dendrite_object):
+def rate_array_attachment(dend_obj):
         
-    load_string = 'default_{}'.format(dendrite_object.loops_present)
+    load_string = f'default_{dend_obj.loops_present}'
         
     ib__list, phi_r__array, i_di__array, r_fq__array, _, _ = dend_load_rate_array(load_string) 
     ib__vec = np.asarray(ib__list)
@@ -224,63 +226,64 @@ def rate_array_attachment(dendrite_object):
     # bias_current = 2.2 #***
     # _ind__ib = -1 #( np.abs( ib__vec[:] - bias_current ) ).argmin() #***
     # print(ib__vec[-1])
-    # _ind__ib = ( np.abs( ib__vec[:] - dendrite_object.bias_current ) ).argmin()
+    # _ind__ib = ( np.abs( ib__vec[:] - dend_obj.bias_current ) ).argmin()
 
-    if dendrite_object.loops_present == 'pri':
+    if dend_obj.loops_present == 'pri':
         # print("slide pri")
-        _ind__ib = ( np.abs( ib__vec[:] - dendrite_object.phi_p ) ).argmin()
-    else:
-        # print("slide bias")
-        _ind__ib = -1 #( np.abs( ib__vec[:] - bias_current ) ).argmin() #***
-        # _ind__ib = ( np.abs( ib__vec[:] - dendrite_object.bias_current ) ).argmin()
-    dendrite_object.phi_r__vec = np.asarray(phi_r__array[_ind__ib])
-    dendrite_object.i_di__subarray = np.asarray(i_di__array[_ind__ib],dtype=object)
-    dendrite_object.r_fq__subarray = np.asarray(r_fq__array[_ind__ib],dtype=object) 
+        _ind__ib = ( np.abs( ib__vec[:] - dend_obj.phi_p ) ).argmin()
+
+    elif dend_obj.loops_present == 'ri':
+        _ind__ib = -1
+    else:  
+        _ind__ib = ( np.abs( ib__vec[:] - dend_obj.bias_current ) ).argmin()
+    dend_obj.phi_r__vec = np.asarray(phi_r__array[_ind__ib])
+    dend_obj.i_di__subarray = np.asarray(i_di__array[_ind__ib],dtype=object)
+    dend_obj.r_fq__subarray = np.asarray(r_fq__array[_ind__ib],dtype=object) 
     
     return
 
-def synapse_initialization(dendrite_object,tau_vec,t_tau_conversion):
+def synapse_initialization(dend_obj,tau_vec,t_tau_conversion):
     
-    for synapse_key in dendrite_object.synaptic_inputs:
-        # print("   Initializing synapse: ", dendrite_object.synaptic_inputs[synapse_key].name)
+    for synapse_key in dend_obj.synaptic_inputs:
+        # print("   Initializing synapse: ", dend_obj.synaptic_inputs[synapse_key].name)
         
-        # print('recursive_synapse_initialization:\n  dend_name = {}\n  syn_name = {}\n  in_name = {}\n  spike_times = {}'.format(dendrite_object.name,dendrite_object.synaptic_inputs[synapse_key].name,dendrite_object.synaptic_inputs[synapse_key].input_signal.name,dendrite_object.synaptic_inputs[synapse_key].input_signal.spike_times))          
+        # print('recursive_synapse_initialization:\n  dend_name = {}\n  syn_name = {}\n  in_name = {}\n  spike_times = {}'.format(dend_obj.name,dend_obj.synaptic_inputs[synapse_key].name,dend_obj.synaptic_inputs[synapse_key].input_signal.name,dend_obj.synaptic_inputs[synapse_key].input_signal.spike_times))          
         
-        dendrite_object.synaptic_inputs[synapse_key]._phi_spd_memory = 0
-        dendrite_object.synaptic_inputs[synapse_key]._st_ind_last = 0
-        dendrite_object.synaptic_inputs[synapse_key].phi_spd = np.zeros([len(tau_vec)])
+        dend_obj.synaptic_inputs[synapse_key]._phi_spd_memory = 0
+        dend_obj.synaptic_inputs[synapse_key]._st_ind_last = 0
+        dend_obj.synaptic_inputs[synapse_key].phi_spd = np.zeros([len(tau_vec)])
         
-        # print('dend = {}, syn = {}'.format(dendrite_object.name,dendrite_object.synaptic_inputs[synapse_key].name))
+        # print('dend = {}, syn = {}'.format(dend_obj.name,dend_obj.synaptic_inputs[synapse_key].name))
         
-        if hasattr(dendrite_object.synaptic_inputs[synapse_key],'input_signal'):
-            if hasattr(dendrite_object.synaptic_inputs[synapse_key].input_signal,'input_temporal_form'):
-                if dendrite_object.synaptic_inputs[synapse_key].input_signal.input_temporal_form == 'constant_rate':
+        if hasattr(dend_obj.synaptic_inputs[synapse_key],'input_signal'):
+            if hasattr(dend_obj.synaptic_inputs[synapse_key].input_signal,'input_temporal_form'):
+                if dend_obj.synaptic_inputs[synapse_key].input_signal.input_temporal_form == 'constant_rate':
                 
-                    rate = dendrite_object.synaptic_inputs[synapse_key].input_signal.rate * 1e6 # 1e6 because inputs are in MHz
+                    rate = dend_obj.synaptic_inputs[synapse_key].input_signal.rate * 1e6 # 1e6 because inputs are in MHz
                     # print('rate = {:3.1e}'.format(rate))
                     isi = (1/rate) * 1e9 # 1e9 to convert to ns
                     # print('isi = {:3.1e}'.format(isi))
                     t_f = tau_vec[-1]/t_tau_conversion
-                    t_on = dendrite_object.synaptic_inputs[synapse_key].input_signal.t_first_spike
-                    dendrite_object.synaptic_inputs[synapse_key].input_signal.spike_times = np.arange(t_on,t_f+isi,isi)
+                    t_on = dend_obj.synaptic_inputs[synapse_key].input_signal.t_first_spike
+                    dend_obj.synaptic_inputs[synapse_key].input_signal.spike_times = np.arange(t_on,t_f+isi,isi)
         else:
-            dendrite_object.synaptic_inputs[synapse_key].input_signal = dict()
-            # dendrite_object.synaptic_inputs[synapse_key].input_signal
-        # print(dendrite_object.synaptic_inputs)#[synapse_key].input_signal,synapse_key)
-        dendrite_object.synaptic_inputs[synapse_key].spike_times_converted = np.asarray(dendrite_object.synaptic_inputs[synapse_key].input_signal.spike_times) * t_tau_conversion
-        dendrite_object.synaptic_inputs[synapse_key].tau_rise_converted = dendrite_object.synaptic_inputs[synapse_key].tau_rise * t_tau_conversion
-        dendrite_object.synaptic_inputs[synapse_key].tau_fall_converted = dendrite_object.synaptic_inputs[synapse_key].tau_fall * t_tau_conversion
-        dendrite_object.synaptic_inputs[synapse_key].hotspot_duration_converted = dendrite_object.synaptic_inputs[synapse_key].hotspot_duration * t_tau_conversion
-        dendrite_object.synaptic_inputs[synapse_key].spd_duration_converted = dendrite_object.synaptic_inputs[synapse_key].spd_duration * t_tau_conversion
-        dendrite_object.synaptic_inputs[synapse_key].spd_reset_time_converted = dendrite_object.synaptic_inputs[synapse_key].spd_reset_time * t_tau_conversion
+            dend_obj.synaptic_inputs[synapse_key].input_signal = dict()
+            # dend_obj.synaptic_inputs[synapse_key].input_signal
+        # print(dend_obj.synaptic_inputs)#[synapse_key].input_signal,synapse_key)
+        dend_obj.synaptic_inputs[synapse_key].spike_times_converted = np.asarray(dend_obj.synaptic_inputs[synapse_key].input_signal.spike_times) * t_tau_conversion
+        dend_obj.synaptic_inputs[synapse_key].tau_rise_converted = dend_obj.synaptic_inputs[synapse_key].tau_rise * t_tau_conversion
+        dend_obj.synaptic_inputs[synapse_key].tau_fall_converted = dend_obj.synaptic_inputs[synapse_key].tau_fall * t_tau_conversion
+        dend_obj.synaptic_inputs[synapse_key].hotspot_duration_converted = dend_obj.synaptic_inputs[synapse_key].hotspot_duration * t_tau_conversion
+        dend_obj.synaptic_inputs[synapse_key].spd_duration_converted = dend_obj.synaptic_inputs[synapse_key].spd_duration * t_tau_conversion
+        dend_obj.synaptic_inputs[synapse_key].spd_reset_time_converted = dend_obj.synaptic_inputs[synapse_key].spd_reset_time * t_tau_conversion
         
         # remove spike times that came in faster than spd can respond
-        if len(dendrite_object.synaptic_inputs[synapse_key].spike_times_converted) > 1:
-            _spike_times_converted = [dendrite_object.synaptic_inputs[synapse_key].spike_times_converted[0]]
-            for ii in range(len(dendrite_object.synaptic_inputs[synapse_key].spike_times_converted[1:])):
-                if dendrite_object.synaptic_inputs[synapse_key].spike_times_converted[ii] - _spike_times_converted[-1] >= dendrite_object.synaptic_inputs[synapse_key].spd_reset_time_converted:
-                    _spike_times_converted.append(dendrite_object.synaptic_inputs[synapse_key].spike_times_converted[ii])
-            dendrite_object.synaptic_inputs[synapse_key].spike_times_converted = _spike_times_converted     
+        if len(dend_obj.synaptic_inputs[synapse_key].spike_times_converted) > 1:
+            _spike_times_converted = [dend_obj.synaptic_inputs[synapse_key].spike_times_converted[0]]
+            for ii in range(len(dend_obj.synaptic_inputs[synapse_key].spike_times_converted[1:])):
+                if dend_obj.synaptic_inputs[synapse_key].spike_times_converted[ii] - _spike_times_converted[-1] >= dend_obj.synaptic_inputs[synapse_key].spd_reset_time_converted:
+                    _spike_times_converted.append(dend_obj.synaptic_inputs[synapse_key].spike_times_converted[ii])
+            dend_obj.synaptic_inputs[synapse_key].spike_times_converted = _spike_times_converted     
     
     return
 
@@ -342,11 +345,11 @@ def transmitter_initialization(neuron_object,t_tau_conversion):
             
     return
 
-def dendrite_data_attachment(dendrite_object,neuron_object):
+def dendrite_data_attachment(dend_obj,neuron_object):
     
     # attach data to this dendrite
-    dendrite_object.output_data = {'s': dendrite_object.s, 'phi_r': dendrite_object.phi_r, 'tau_vec': neuron_object.time_params['tau_vec'], 'time_vec': neuron_object.time_params['tau_vec']/neuron_object.time_params['t_tau_conversion']}
-    dendrite_object.time_params = {'t_tau_conversion': neuron_object.time_params['t_tau_conversion']}
+    dend_obj.output_data = {'s': dend_obj.s, 'phi_r': dend_obj.phi_r, 'tau_vec': neuron_object.time_params['tau_vec'], 'time_vec': neuron_object.time_params['tau_vec']/neuron_object.time_params['t_tau_conversion']}
+    dend_obj.time_params = {'t_tau_conversion': neuron_object.time_params['t_tau_conversion']}
             
     return        
 
@@ -467,155 +470,150 @@ def net_step(network_object,tau_vec,d_tau):
     return network_object
 
 
-def dendrite_updater(dendrite_object,time_index,present_time,d_tau,HW=None):
+def dendrite_updater(dend_obj,time_index,present_time,d_tau,HW=None):
     
     # make sure dendrite isn't a soma that reached threshold
-    if hasattr(dendrite_object, 'is_soma'):
-        if dendrite_object.threshold_flag == True:
+    if hasattr(dend_obj, 'is_soma'):
+        if dend_obj.threshold_flag == True:
             update = False
-            if present_time - dendrite_object.spike_times[-1] > dendrite_object.absolute_refractory_period_converted: # wait for absolute refractory period before resetting soma
-                dendrite_object.threshold_flag = False # reset threshold flag
+            if present_time - dend_obj.spike_times[-1] > dend_obj.absolute_refractory_period_converted: # wait for absolute refractory period before resetting soma
+                dend_obj.threshold_flag = False # reset threshold flag
         else: 
             update = True
     else:
         update = True
                         
     # directly applied flux
-    dendrite_object.phi_r[time_index+1] = dendrite_object.phi_r_external__vec[time_index+1]
+    dend_obj.phi_r[time_index+1] = dend_obj.phi_r_external__vec[time_index+1]
     
 
     ### VVV May insert simulation learning here VVV ###
 
     # applied flux from dendrites
-    for dendrite_key in dendrite_object.dendritic_inputs:
-        dendrite_object.phi_r[time_index+1] += dendrite_object.dendritic_inputs[dendrite_key].s[time_index] * dendrite_object.dendritic_connection_strengths[dendrite_key]        
-        # print(dendrite_object.name,dendrite_object.s[time_index],dendrite_object.dendritic_inputs[dendrite_key].name,dendrite_object.dendritic_inputs[dendrite_key].s[time_index])
+    for dendrite_key in dend_obj.dendritic_inputs:
+        dend_obj.phi_r[time_index+1] += dend_obj.dendritic_inputs[dendrite_key].s[time_index] * dend_obj.dendritic_connection_strengths[dendrite_key]        
+        # print(dend_obj.name,dend_obj.s[time_index],dend_obj.dendritic_inputs[dendrite_key].name,dend_obj.dendritic_inputs[dendrite_key].s[time_index])
 
     ### ^^^ May insert simulation learning here ^^^ ###
 
     # self-feedback
-    dendrite_object.phi_r[time_index+1] += dendrite_object.self_feedback_coupling_strength * dendrite_object.s[time_index]
+    dend_obj.phi_r[time_index+1] += dend_obj.self_feedback_coupling_strength * dend_obj.s[time_index]
     
     # applied flux from synapses
-    for synapse_key in dendrite_object.synaptic_inputs:
-        # print(dendrite_object.synaptic_inputs[synapse_key])
+    for synapse_key in dend_obj.synaptic_inputs:
+        # print(dend_obj.synaptic_inputs[synapse_key])
         # find most recent spike time for this synapse
-        _st_ind = np.where( present_time > dendrite_object.synaptic_inputs[synapse_key].spike_times_converted[:] )[0]
+        _st_ind = np.where( present_time > dend_obj.synaptic_inputs[synapse_key].spike_times_converted[:] )[0]
         
         if len(_st_ind) > 0:
             
             _st_ind = int(_st_ind[-1])
-            if ( dendrite_object.synaptic_inputs[synapse_key].spike_times_converted[_st_ind] <= present_time # the spike happened in the past
-                and (present_time - dendrite_object.synaptic_inputs[synapse_key].spike_times_converted[_st_ind]) < dendrite_object.synaptic_inputs[synapse_key].spd_duration_converted  # the spike happened within a relevant duration                
+            if ( dend_obj.synaptic_inputs[synapse_key].spike_times_converted[_st_ind] <= present_time # the spike happened in the past
+                and (present_time - dend_obj.synaptic_inputs[synapse_key].spike_times_converted[_st_ind]) < dend_obj.synaptic_inputs[synapse_key].spd_duration_converted  # the spike happened within a relevant duration                
                 ):
                     
-                    _dt_spk = present_time - dendrite_object.synaptic_inputs[synapse_key].spike_times_converted[_st_ind]
-                    _phi_spd = spd_response( dendrite_object.synaptic_inputs[synapse_key].phi_peak, 
-                                            dendrite_object.synaptic_inputs[synapse_key].tau_rise_converted,
-                                            dendrite_object.synaptic_inputs[synapse_key].tau_fall_converted,
-                                            dendrite_object.synaptic_inputs[synapse_key].hotspot_duration_converted, _dt_spk)
+                    _dt_spk = present_time - dend_obj.synaptic_inputs[synapse_key].spike_times_converted[_st_ind]
+                    _phi_spd = spd_response( dend_obj.synaptic_inputs[synapse_key].phi_peak, 
+                                            dend_obj.synaptic_inputs[synapse_key].tau_rise_converted,
+                                            dend_obj.synaptic_inputs[synapse_key].tau_fall_converted,
+                                            dend_obj.synaptic_inputs[synapse_key].hotspot_duration_converted, _dt_spk)
                     
                     # to avoid going too low when a new spike comes in
-                    if _st_ind - dendrite_object.synaptic_inputs[synapse_key]._st_ind_last == 1: 
-                        _phi_spd = np.max( [ _phi_spd , dendrite_object.synaptic_inputs[synapse_key].phi_spd[time_index] ])
-                        dendrite_object.synaptic_inputs[synapse_key]._phi_spd_memory = _phi_spd
-                    if _phi_spd < dendrite_object.synaptic_inputs[synapse_key]._phi_spd_memory:
-                        dendrite_object.synaptic_inputs[synapse_key].phi_spd[time_index+1] = dendrite_object.synaptic_inputs[synapse_key]._phi_spd_memory
+                    if _st_ind - dend_obj.synaptic_inputs[synapse_key]._st_ind_last == 1: 
+                        _phi_spd = np.max( [ _phi_spd , dend_obj.synaptic_inputs[synapse_key].phi_spd[time_index] ])
+                        dend_obj.synaptic_inputs[synapse_key]._phi_spd_memory = _phi_spd
+                    if _phi_spd < dend_obj.synaptic_inputs[synapse_key]._phi_spd_memory:
+                        dend_obj.synaptic_inputs[synapse_key].phi_spd[time_index+1] = dend_obj.synaptic_inputs[synapse_key]._phi_spd_memory
                     else:
-                        dendrite_object.synaptic_inputs[synapse_key].phi_spd[time_index+1] = _phi_spd * dendrite_object.synaptic_connection_strengths[synapse_key]
+                        dend_obj.synaptic_inputs[synapse_key].phi_spd[time_index+1] = _phi_spd * dend_obj.synaptic_connection_strengths[synapse_key]
 
-                        # dendrite_object.synaptic_connection_strengths[synapse_key] = dendrite_object.synaptic_connection_strengths[synapse_key]*2
-                        # print(dendrite_object.synaptic_connection_strengths[synapse_key])
+                        # dend_obj.synaptic_connection_strengths[synapse_key] = dend_obj.synaptic_connection_strengths[synapse_key]*2
+                        # print(dend_obj.synaptic_connection_strengths[synapse_key])
 
-                        dendrite_object.synaptic_inputs[synapse_key]._phi_spd_memory = 0
+                        dend_obj.synaptic_inputs[synapse_key]._phi_spd_memory = 0
                 
-            dendrite_object.synaptic_inputs[synapse_key]._st_ind_last = _st_ind
+            dend_obj.synaptic_inputs[synapse_key]._st_ind_last = _st_ind
                     
-        dendrite_object.phi_r[time_index+1] += dendrite_object.synaptic_inputs[synapse_key].phi_spd[time_index+1]
+        dend_obj.phi_r[time_index+1] += dend_obj.synaptic_inputs[synapse_key].phi_spd[time_index+1]
         
-    if np.abs(dendrite_object.phi_r[time_index+1]) > .5:
-        # print('\nWarning: absolute value of flux drive to dendrite {} exceeded 1 on time step {} (phi_r = {:5.3f})'.format(dendrite_object.name,time_index+1,dendrite_object.phi_r[time_index+1]))
-        dendrite_object.rollover+=1
-        if np.abs(dendrite_object.phi_r[time_index+1]) > 1:
-            dendrite_object.valleyedout+=1
-            if np.abs(dendrite_object.phi_r[time_index+1]) > 1.5:
-                dendrite_object.doubleroll+=1
-    #         print('phi_r = {:5.3f}? Calm the fuck down, bro.'.format(dendrite_object.phi_r[time_index+1]))
+    if np.abs(dend_obj.phi_r[time_index+1]) > .5:
+        # print('\nWarning: absolute value of flux drive to dendrite {} exceeded 1 on time step {} (phi_r = {:5.3f})'.format(dend_obj.name,time_index+1,dend_obj.phi_r[time_index+1]))
+        dend_obj.rollover+=1
+        if np.abs(dend_obj.phi_r[time_index+1]) > 1:
+            dend_obj.valleyedout+=1
+            if np.abs(dend_obj.phi_r[time_index+1]) > 1.5:
+                dend_obj.doubleroll+=1
+    #         print('phi_r = {:5.3f}? Calm the fuck down, bro.'.format(dend_obj.phi_r[time_index+1]))
     #     print('\n')``
     # print("*")
     # find relevant entry in r_fq__array
 
     
     # new_bias=None
-    new_bias=dendrite_object.bias_current
-    # print(dendrite_object.ib_ramp)
-    # if time_index == 250: print(dendrite_object.ib_ramp)
-    if 'ib_ramp' in list(dendrite_object.__dict__.keys()):
-        if dendrite_object.ib_ramp == True:
+    new_bias=dend_obj.bias_current
+    # print(dend_obj.ib_ramp)
+    # if time_index == 250: print(dend_obj.ib_ramp)
+    if 'ib_ramp' in list(dend_obj.__dict__.keys()):
+        if dend_obj.ib_ramp == True:
             # print("Bias Current Ramp!")
-            # new_bias= 2.0523958588352214 - (2.0523958588352214-1.4)*time_index/dendrite_object.time_steps
-            new_bias= 1.4 + (2.0523958588352214-1.4)*time_index/dendrite_object.time_steps
+            # new_bias= dend_obj.ib_max - (dend_obj.ib_max-1.4)*time_index/dend_obj.time_steps
+            new_bias= 1.4 + (dend_obj.ib_max-1.4)*time_index/dend_obj.time_steps
     # else:
-    #     new_bias=dendrite_object.bias_current
+    #     new_bias=dend_obj.bias_current
     if HW:
+        print("Hardware stepping")
         # if HW.expect[HW.phase][0] != None and HW.expect[HW.phase][1] != None:
         # if len(HW.traces) > 0:
-        if 'trace' not in dendrite_object.name:
+        if 'trace' not in dend_obj.name:
 
             for trace in HW.traces:
-                if dendrite_object.name == list(trace.dendritic_inputs.keys())[0]:
-                    # print(dendrite_object.name, list(trace.dendritic_inputs.keys())[0], trace.name)
+                if dend_obj.name == list(trace.dendritic_inputs.keys())[0]:
+                    # print(dend_obj.name, list(trace.dendritic_inputs.keys())[0], trace.name)
 
                     if "minus" in trace.name:
                         if trace.s[time_index] > 0:
-                            new_bias = (1-trace.s[time_index]) * (2.0523958588352214-.99) + HW.baseline
+                            new_bias = (1-trace.s[time_index]) * (dend_obj.ib_max-.99) + HW.baseline
                         # if time_index == 2500 or time_index == 7500: 
-                        #     print("minus",trace.name,dendrite_object.name,new_bias)
+                        #     print("minus",trace.name,dend_obj.name,new_bias)
 
                     elif "plus" in trace.name:
                         if trace.s[time_index] > 0:
-                            new_bias = trace.s[time_index] * (2.0523958588352214-.99) + HW.baseline
+                            new_bias = trace.s[time_index] * (dend_obj.ib_max-.99) + HW.baseline
                     # if time_index == 2500 or time_index == 7500: 
-                    #     print("plus",trace.name,dendrite_object.name,new_bias)
+                    #     print("plus",trace.name,dend_obj.name,new_bias)
 
                 # if (time_index == 2500 or time_index == 7500): 
-                    # print("BIAS: ",dendrite_object.name,new_bias)
+                    # print("BIAS: ",dend_obj.name,new_bias)
 
-                dendrite_object.bias_current = new_bias
+                dend_obj.bias_current = new_bias
                 HW.trace_biases[trace.name].append(new_bias)
 
-    dendrite_object.bias_dynamics.append(new_bias)
-    _ind__phi_r = ( np.abs( dendrite_object.phi_r__vec[:] - dendrite_object.phi_r[time_index+1] ) ).argmin()
-    i_di__vec = np.asarray(dendrite_object.i_di__subarray[_ind__phi_r])
+    dend_obj.bias_dynamics.append(new_bias)
+    _ind__phi_r = ( np.abs( dend_obj.phi_r__vec[:] - dend_obj.phi_r[time_index+1] ) ).argmin()
+    i_di__vec = np.asarray(dend_obj.i_di__subarray[_ind__phi_r])
 
-    if dendrite_object.pri == True:
+    if dend_obj.pri == True:
         # if time_index == 100: print("PRI Bias Regime")
-        _ind__s = ( np.abs( i_di__vec[:] - (2.7 - dendrite_object.bias_current + dendrite_object.s[time_index] ) )).argmin()
+        _ind__s = ( np.abs( i_di__vec[:] - (2.7 - dend_obj.bias_current + dend_obj.s[time_index] ) )).argmin()
 
-    elif HW:
-        # if time_index == 100: print("Dynamic Bias Regime")
-        _ind__s = ( np.abs( i_di__vec[:] - (2.0523958588352214-new_bias+dendrite_object.s[time_index]) ) ).argmin() #*** (2.2-new_bias+dendrite_object.s[time_index])
-        # _ind__s = ( np.abs( i_di__vec[:] - (2.7 - dendrite_object.bias_current + dendrite_object.s[time_index] ) )).argmin()
-
-    # elif flux_offset...
+    elif dend_obj.loops_present=='ri':
+        _ind__s = ( np.abs( i_di__vec[:] - (dend_obj.ib_max-new_bias+dend_obj.s[time_index]) ) ).argmin()
 
     else:
-        # if time_index == 100: print("Default Bias Regime")
-        _ind__s = ( np.abs( i_di__vec[:] - (2.0523958588352214-new_bias+dendrite_object.s[time_index]) ) ).argmin()
-        # _ind__s = ( np.abs( i_di__vec[:] - dendrite_object.s[time_index] ) ).argmin()
+        _ind__s = ( np.abs( i_di__vec[:] - dend_obj.s[time_index] ) ).argmin()
 
-    r_fq = dendrite_object.r_fq__subarray[_ind__phi_r][_ind__s]
+    r_fq = dend_obj.r_fq__subarray[_ind__phi_r][_ind__s]
         
     # get alpha
-    if hasattr(dendrite_object,'alpha_list'):
-        _ind = np.where(dendrite_object.s_list > dendrite_object.s[time_index])
-        alpha = dendrite_object.alpha_list[_ind[0][0]]
+    if hasattr(dend_obj,'alpha_list'):
+        _ind = np.where(dend_obj.s_list > dend_obj.s[time_index])
+        alpha = dend_obj.alpha_list[_ind[0][0]]
     else:
-        alpha = dendrite_object.alpha    
+        alpha = dend_obj.alpha    
     
     ### vvv SIGNAL UPDATE vvv ###
     if update == True:
-        dendrite_object.s[time_index+1] = dendrite_object.s[time_index] * ( 1 - d_tau*alpha/dendrite_object.beta) + (d_tau/dendrite_object.beta) * r_fq
+        dend_obj.s[time_index+1] = dend_obj.s[time_index] * ( 1 - d_tau*alpha/dend_obj.beta) + (d_tau/dend_obj.beta) * r_fq
     ### ^^^ SIGNAL UPDATE ^^^ ###
 
     return
@@ -704,48 +702,48 @@ def output_synapse_updater(neuron_object,time_index,present_time):
 
 
 
-def recursive_dendrite_initialization_and_drive_construction(dendrite_object,tau_vec,t_tau_conversion,d_tau):
+def recursive_dendrite_initialization_and_drive_construction(dend_obj,tau_vec,t_tau_conversion,d_tau):
     # print("initializing")          
-    dendrite_object.phi_r_external__vec = np.zeros([len(tau_vec)]) # from external drives
-    dendrite_object.phi_r = np.zeros([len(tau_vec)]) # from synapses and dendrites
-    dendrite_object.s = np.zeros([len(tau_vec)]) # output variable
-    dendrite_object.beta = dendrite_object.circuit_betas[-1]
+    dend_obj.phi_r_external__vec = np.zeros([len(tau_vec)]) # from external drives
+    dend_obj.phi_r = np.zeros([len(tau_vec)]) # from synapses and dendrites
+    dend_obj.s = np.zeros([len(tau_vec)]) # output variable
+    dend_obj.beta = dend_obj.circuit_betas[-1]
     
     # add external drives to this dendrite if they're present
-    dendrite_object = construct_dendritic_drives(dendrite_object) 
+    dend_obj = construct_dendritic_drives(dend_obj) 
     
     # turn external drives to this dendrite into flux
-    dendrite_object.phi_r_external__vec[:] = dendrite_object.offset_flux
-    for external_input in dendrite_object.external_inputs:
-        dendrite_object.phi_r_external__vec += dendrite_object.external_inputs[external_input].drive_signal * dendrite_object.external_connection_strengths[external_input]
+    dend_obj.phi_r_external__vec[:] = dend_obj.offset_flux
+    for external_input in dend_obj.external_inputs:
+        dend_obj.phi_r_external__vec += dend_obj.external_inputs[external_input].drive_signal * dend_obj.external_connection_strengths[external_input]
         
     # prepare somas for absolute refractory period
-    if hasattr(dendrite_object, 'is_soma'):
-        dendrite_object.absolute_refractory_period_converted = dendrite_object.absolute_refractory_period * t_tau_conversion
+    if hasattr(dend_obj, 'is_soma'):
+        dend_obj.absolute_refractory_period_converted = dend_obj.absolute_refractory_period * t_tau_conversion
         
     # normalize inputs
-    if dendrite_object.normalize_input_connection_strengths:        
+    if dend_obj.normalize_input_connection_strengths:        
         J_ij_e__init = 0 # excitatory
         J_ij_i__init = 0 # inhibitory
-        J_ij_e = dendrite_object.total_excitatory_input_connection_strength
-        J_ij_i = dendrite_object.total_inhibitory_input_connection_strength
+        J_ij_e = dend_obj.total_excitatory_input_connection_strength
+        J_ij_i = dend_obj.total_inhibitory_input_connection_strength
         # print('J_ij = {}'.format(J_ij))
-        for external_input in dendrite_object.external_inputs:
-            if dendrite_object.external_connection_strengths[external_input] >= 0:
-                J_ij_e__init += dendrite_object.external_connection_strengths[external_input]
-            elif dendrite_object.external_connection_strengths[external_input] < 0:
-                J_ij_i__init += dendrite_object.external_connection_strengths[external_input]
-        for synapse in dendrite_object.synaptic_inputs:
-            if dendrite_object.synaptic_connection_strengths[synapse] >= 0:
-                J_ij_e__init += dendrite_object.synaptic_connection_strengths[synapse]
-            elif dendrite_object.synaptic_connection_strengths[synapse] < 0:
-                J_ij_i__init += dendrite_object.synaptic_connection_strengths[synapse]
-        for dendrite in dendrite_object.dendritic_inputs:
-            if dendrite_object.dendritic_connection_strengths[dendrite] >= 0:
-                J_ij_e__init += dendrite_object.dendritic_connection_strengths[dendrite]
-            elif dendrite_object.dendritic_connection_strengths[dendrite] < 0:
-                if dendrite_object.dendritic_inputs[dendrite].name[-15:] != 'dend_refraction': # make sure this isn't the refractory dendrite. that one doesn't get included in this normalization.
-                    J_ij_i__init += dendrite_object.dendritic_connection_strengths[dendrite]
+        for external_input in dend_obj.external_inputs:
+            if dend_obj.external_connection_strengths[external_input] >= 0:
+                J_ij_e__init += dend_obj.external_connection_strengths[external_input]
+            elif dend_obj.external_connection_strengths[external_input] < 0:
+                J_ij_i__init += dend_obj.external_connection_strengths[external_input]
+        for synapse in dend_obj.synaptic_inputs:
+            if dend_obj.synaptic_connection_strengths[synapse] >= 0:
+                J_ij_e__init += dend_obj.synaptic_connection_strengths[synapse]
+            elif dend_obj.synaptic_connection_strengths[synapse] < 0:
+                J_ij_i__init += dend_obj.synaptic_connection_strengths[synapse]
+        for dendrite in dend_obj.dendritic_inputs:
+            if dend_obj.dendritic_connection_strengths[dendrite] >= 0:
+                J_ij_e__init += dend_obj.dendritic_connection_strengths[dendrite]
+            elif dend_obj.dendritic_connection_strengths[dendrite] < 0:
+                if dend_obj.dendritic_inputs[dendrite].name[-15:] != 'dend_refraction': # make sure this isn't the refractory dendrite. that one doesn't get included in this normalization.
+                    J_ij_i__init += dend_obj.dendritic_connection_strengths[dendrite]
         if J_ij_e__init > 0:
             factor_e = J_ij_e/J_ij_e__init
         else:
@@ -756,132 +754,132 @@ def recursive_dendrite_initialization_and_drive_construction(dendrite_object,tau
             factor_i = 0
         # print('J_ij__init = {}'.format(J_ij__init))
         # print('factor = {}'.format(factor))
-        for external_input in dendrite_object.external_inputs:
-            if dendrite_object.external_connection_strengths[external_input] >= 0:
-                dendrite_object.external_connection_strengths[external_input] = factor_e * dendrite_object.external_connection_strengths[external_input]
-            elif dendrite_object.external_connection_strengths[external_input] < 0:
-                dendrite_object.external_connection_strengths[external_input] = factor_i * dendrite_object.external_connection_strengths[external_input]
-        for synapse in dendrite_object.synaptic_inputs:
-            if dendrite_object.synaptic_connection_strengths[synapse] >= 0:
-                dendrite_object.synaptic_connection_strengths[synapse] = factor_e * dendrite_object.synaptic_connection_strengths[synapse]
-            elif dendrite_object.synaptic_connection_strengths[synapse] < 0:
-                dendrite_object.synaptic_connection_strengths[synapse] = factor_i * dendrite_object.synaptic_connection_strengths[synapse]
-        for dendrite in dendrite_object.dendritic_inputs:
-            if dendrite_object.dendritic_connection_strengths[dendrite] >= 0:
-                dendrite_object.dendritic_connection_strengths[dendrite] = factor_e * dendrite_object.dendritic_connection_strengths[dendrite]
-            elif dendrite_object.dendritic_connection_strengths[dendrite] < 0:
-                if dendrite_object.dendritic_inputs[dendrite].name[-15:] != 'dend_refraction': # make sure this isn't the refractory dendrite. that one doesn't get included in this normalization.
-                    dendrite_object.dendritic_connection_strengths[dendrite] = factor_i * dendrite_object.dendritic_connection_strengths[dendrite]
+        for external_input in dend_obj.external_inputs:
+            if dend_obj.external_connection_strengths[external_input] >= 0:
+                dend_obj.external_connection_strengths[external_input] = factor_e * dend_obj.external_connection_strengths[external_input]
+            elif dend_obj.external_connection_strengths[external_input] < 0:
+                dend_obj.external_connection_strengths[external_input] = factor_i * dend_obj.external_connection_strengths[external_input]
+        for synapse in dend_obj.synaptic_inputs:
+            if dend_obj.synaptic_connection_strengths[synapse] >= 0:
+                dend_obj.synaptic_connection_strengths[synapse] = factor_e * dend_obj.synaptic_connection_strengths[synapse]
+            elif dend_obj.synaptic_connection_strengths[synapse] < 0:
+                dend_obj.synaptic_connection_strengths[synapse] = factor_i * dend_obj.synaptic_connection_strengths[synapse]
+        for dendrite in dend_obj.dendritic_inputs:
+            if dend_obj.dendritic_connection_strengths[dendrite] >= 0:
+                dend_obj.dendritic_connection_strengths[dendrite] = factor_e * dend_obj.dendritic_connection_strengths[dendrite]
+            elif dend_obj.dendritic_connection_strengths[dendrite] < 0:
+                if dend_obj.dendritic_inputs[dendrite].name[-15:] != 'dend_refraction': # make sure this isn't the refractory dendrite. that one doesn't get included in this normalization.
+                    dend_obj.dendritic_connection_strengths[dendrite] = factor_i * dend_obj.dendritic_connection_strengths[dendrite]
         
     # check that timestep is sufficiently small:
-    if dendrite_object.loops_present == 'ri':
+    if dend_obj.loops_present == 'ri':
         ib_list = d_params_ri["ib__list"]
         r_fq_array = d_params_ri["r_fq__array"]
-    elif dendrite_object.loops_present == 'rtti':
+    elif dend_obj.loops_present == 'rtti':
         ib_list = d_params_rtti["ib__list"]
         r_fq_array = d_params_rtti["r_fq__array"]
-    elif dendrite_object.loops_present == 'pri':
+    elif dend_obj.loops_present == 'pri':
         ib_list = ib__list__pri
         r_fq_array = r_fq__array__pri
-    _ib_ind = index_finder(ib_list,dendrite_object.ib)
+    _ib_ind = index_finder(ib_list,dend_obj.ib)
     _flat_rate = [item for sublist in r_fq_array[_ib_ind] for item in sublist]
     _r_max = np.max(_flat_rate)
-    _min = 0.01*dendrite_object.beta/dendrite_object.alpha
-    _max = 0.1*dendrite_object.beta/dendrite_object.alpha
-    if d_tau > 0.1*dendrite_object.beta/dendrite_object.alpha:
+    _min = 0.01*dend_obj.beta/dend_obj.alpha
+    _max = 0.1*dend_obj.beta/dend_obj.alpha
+    if d_tau > 0.1*dend_obj.beta/dend_obj.alpha:
         _str = 'Warning: d_tau should be << beta/alpha.'
-        _str = '{} For dendrite {} with beta = {:4.2e} and alpha = {:4.2e}'.format(_str,dendrite_object.name,dendrite_object.beta,dendrite_object.alpha)        
+        _str = '{} For dendrite {} with beta = {:4.2e} and alpha = {:4.2e}'.format(_str,dend_obj.name,dend_obj.beta,dend_obj.alpha)        
         _str = '{} the recommended d_tau is {:5.3e}-{:5.3e} (dt = {:5.3e}ns-{:5.3e}ns)'.format(_str,_min,_max,_min/t_tau_conversion,_max/t_tau_conversion)
         # print('{}'.format(_str))
-    elif d_tau <= 0.1*dendrite_object.beta/dendrite_object.alpha:
-        _str = 'For dendrite {} d_tau = {:5.3e} = {:5.3e} x beta/alpha'.format(dendrite_object.name,d_tau,d_tau*dendrite_object.alpha/dendrite_object.beta)
+    elif d_tau <= 0.1*dend_obj.beta/dend_obj.alpha:
+        _str = 'For dendrite {} d_tau = {:5.3e} = {:5.3e} x beta/alpha'.format(dend_obj.name,d_tau,d_tau*dend_obj.alpha/dend_obj.beta)
         _str = '{} (0.01-0.1 x beta/alpha is recommended, dt = {:5.3e}ns-{:5.3e}ns)'.format(_str,_min/t_tau_conversion,_max/t_tau_conversion)
         # print('{}'.format(_str))
-    _min = 0.01*dendrite_object.beta/_r_max
-    _max = 0.1*dendrite_object.beta/_r_max
-    if d_tau > 0.1*dendrite_object.beta/_r_max:
+    _min = 0.01*dend_obj.beta/_r_max
+    _max = 0.1*dend_obj.beta/_r_max
+    if d_tau > 0.1*dend_obj.beta/_r_max:
         _str = 'Warning: d_tau should be << beta/r_max.'
-        _str = '{} For dendrite {} with beta = {:4.2e} and r_max = {:4.2e}'.format(_str,dendrite_object.name,dendrite_object.beta,_r_max)        
+        _str = '{} For dendrite {} with beta = {:4.2e} and r_max = {:4.2e}'.format(_str,dend_obj.name,dend_obj.beta,_r_max)        
         _str = '{} the recommended d_tau is {:5.3e}-{:5.3e} (dt = {:5.3e}ns-{:5.3e}ns)'.format(_str,_min,_max,_min/t_tau_conversion,_max/t_tau_conversion)
         # print('{}'.format(_str))
-    elif d_tau <= 0.1*dendrite_object.beta/_r_max:
-        _str = 'For dendrite {} d_tau = {:5.3e} = {:5.3e} x beta/r_max'.format(dendrite_object.name,d_tau,d_tau*_r_max/dendrite_object.beta)
+    elif d_tau <= 0.1*dend_obj.beta/_r_max:
+        _str = 'For dendrite {} d_tau = {:5.3e} = {:5.3e} x beta/r_max'.format(dend_obj.name,d_tau,d_tau*_r_max/dend_obj.beta)
         _str = '{} (0.01-0.1 x beta/r_max is recommended, dt = {:5.3e}ns-{:5.3e}ns)'.format(_str,_min/t_tau_conversion,_max/t_tau_conversion)
         # print('{}'.format(_str))
         
     # step through all dendrites input to this one and call the present function recursively
-    # for dendrite_key in dendrite_object.dendritic_inputs:
-    #     recursive_dendrite_initialization_and_drive_construction(dendrite_object.dendritic_inputs[dendrite_key],tau_vec,t_tau_conversion,d_tau) 
-    for dendrite_key in dendrite_object.dendritic_inputs:
-        recursive_dendrite_initialization_and_drive_construction(dendrite_object.dendritic_inputs[dendrite_key],tau_vec,t_tau_conversion,d_tau) 
+    # for dendrite_key in dend_obj.dendritic_inputs:
+    #     recursive_dendrite_initialization_and_drive_construction(dend_obj.dendritic_inputs[dendrite_key],tau_vec,t_tau_conversion,d_tau) 
+    for dendrite_key in dend_obj.dendritic_inputs:
+        recursive_dendrite_initialization_and_drive_construction(dend_obj.dendritic_inputs[dendrite_key],tau_vec,t_tau_conversion,d_tau) 
 
     return
 
-def recursive_rate_array_attachment(dendrite_object):
+def recursive_rate_array_attachment(dend_obj):
         
-    load_string = 'default_{}'.format(dendrite_object.loops_present)
+    load_string = 'default_{}'.format(dend_obj.loops_present)
         
     ib__list, phi_r__array, i_di__array, r_fq__array, _, _ = dend_load_rate_array(load_string) 
     ib__vec = np.asarray(ib__list)
     
     # attach data to this dendrite
-    _ind__ib = ( np.abs( ib__vec[:] - dendrite_object.bias_current ) ).argmin()
-    dendrite_object.phi_r__vec = np.asarray(phi_r__array[_ind__ib])
-    dendrite_object.i_di__subarray = np.asarray(i_di__array[_ind__ib],dtype=object)
-    dendrite_object.r_fq__subarray = np.asarray(r_fq__array[_ind__ib],dtype=object)
+    _ind__ib = ( np.abs( ib__vec[:] - dend_obj.bias_current ) ).argmin()
+    dend_obj.phi_r__vec = np.asarray(phi_r__array[_ind__ib])
+    dend_obj.i_di__subarray = np.asarray(i_di__array[_ind__ib],dtype=object)
+    dend_obj.r_fq__subarray = np.asarray(r_fq__array[_ind__ib],dtype=object)
         
     # iterate recursively through all input dendrites
-    for dendrite_key in dendrite_object.dendritic_inputs:
-        recursive_rate_array_attachment(dendrite_object.dendritic_inputs[dendrite_key])        
+    for dendrite_key in dend_obj.dendritic_inputs:
+        recursive_rate_array_attachment(dend_obj.dendritic_inputs[dendrite_key])        
     
     return
 
-def recursive_synapse_initialization(dendrite_object,tau_vec,t_tau_conversion):
+def recursive_synapse_initialization(dend_obj,tau_vec,t_tau_conversion):
     
-    for synapse_key in dendrite_object.synaptic_inputs:
+    for synapse_key in dend_obj.synaptic_inputs:
         
-        # print('recursive_synapse_initialization:\n  dend_name = {}\n  syn_name = {}\n  in_name = {}\n  spike_times = {}'.format(dendrite_object.name,dendrite_object.synaptic_inputs[synapse_key].name,dendrite_object.synaptic_inputs[synapse_key].input_signal.name,dendrite_object.synaptic_inputs[synapse_key].input_signal.spike_times))          
+        # print('recursive_synapse_initialization:\n  dend_name = {}\n  syn_name = {}\n  in_name = {}\n  spike_times = {}'.format(dend_obj.name,dend_obj.synaptic_inputs[synapse_key].name,dend_obj.synaptic_inputs[synapse_key].input_signal.name,dend_obj.synaptic_inputs[synapse_key].input_signal.spike_times))          
         
-        dendrite_object.synaptic_inputs[synapse_key]._phi_spd_memory = 0
-        dendrite_object.synaptic_inputs[synapse_key]._st_ind_last = 0
-        dendrite_object.synaptic_inputs[synapse_key].phi_spd = np.zeros([len(tau_vec)])
+        dend_obj.synaptic_inputs[synapse_key]._phi_spd_memory = 0
+        dend_obj.synaptic_inputs[synapse_key]._st_ind_last = 0
+        dend_obj.synaptic_inputs[synapse_key].phi_spd = np.zeros([len(tau_vec)])
         
-        # print('dend = {}, syn = {}'.format(dendrite_object.name,dendrite_object.synaptic_inputs[synapse_key].name))
+        # print('dend = {}, syn = {}'.format(dend_obj.name,dend_obj.synaptic_inputs[synapse_key].name))
         
-        if hasattr(dendrite_object.synaptic_inputs[synapse_key],'input_signal'):
-            if hasattr(dendrite_object.synaptic_inputs[synapse_key].input_signal,'input_temporal_form'):
-                if dendrite_object.synaptic_inputs[synapse_key].input_signal.input_temporal_form == 'constant_rate':
+        if hasattr(dend_obj.synaptic_inputs[synapse_key],'input_signal'):
+            if hasattr(dend_obj.synaptic_inputs[synapse_key].input_signal,'input_temporal_form'):
+                if dend_obj.synaptic_inputs[synapse_key].input_signal.input_temporal_form == 'constant_rate':
                 
-                    rate = dendrite_object.synaptic_inputs[synapse_key].input_signal.rate * 1e6 # 1e6 because inputs are in MHz
+                    rate = dend_obj.synaptic_inputs[synapse_key].input_signal.rate * 1e6 # 1e6 because inputs are in MHz
                     # print('rate = {:3.1e}'.format(rate))
                     isi = (1/rate) * 1e9 # 1e9 to convert to ns
                     # print('isi = {:3.1e}'.format(isi))
                     t_f = tau_vec[-1]/t_tau_conversion
-                    t_on = dendrite_object.synaptic_inputs[synapse_key].input_signal.t_first_spike
-                    dendrite_object.synaptic_inputs[synapse_key].input_signal.spike_times = np.arange(t_on,t_f+isi,isi)
+                    t_on = dend_obj.synaptic_inputs[synapse_key].input_signal.t_first_spike
+                    dend_obj.synaptic_inputs[synapse_key].input_signal.spike_times = np.arange(t_on,t_f+isi,isi)
         else:
-            dendrite_object.synaptic_inputs[synapse_key].input_signal = dict()
-            # dendrite_object.synaptic_inputs[synapse_key].input_signal
-        # print(dendrite_object.synaptic_inputs)#[synapse_key].input_signal,synapse_key)
-        dendrite_object.synaptic_inputs[synapse_key].spike_times_converted = np.asarray(dendrite_object.synaptic_inputs[synapse_key].input_signal.spike_times) * t_tau_conversion
-        dendrite_object.synaptic_inputs[synapse_key].tau_rise_converted = dendrite_object.synaptic_inputs[synapse_key].tau_rise * t_tau_conversion
-        dendrite_object.synaptic_inputs[synapse_key].tau_fall_converted = dendrite_object.synaptic_inputs[synapse_key].tau_fall * t_tau_conversion
-        dendrite_object.synaptic_inputs[synapse_key].hotspot_duration_converted = dendrite_object.synaptic_inputs[synapse_key].hotspot_duration * t_tau_conversion
-        dendrite_object.synaptic_inputs[synapse_key].spd_duration_converted = dendrite_object.synaptic_inputs[synapse_key].spd_duration * t_tau_conversion
-        dendrite_object.synaptic_inputs[synapse_key].spd_reset_time_converted = dendrite_object.synaptic_inputs[synapse_key].spd_reset_time * t_tau_conversion
+            dend_obj.synaptic_inputs[synapse_key].input_signal = dict()
+            # dend_obj.synaptic_inputs[synapse_key].input_signal
+        # print(dend_obj.synaptic_inputs)#[synapse_key].input_signal,synapse_key)
+        dend_obj.synaptic_inputs[synapse_key].spike_times_converted = np.asarray(dend_obj.synaptic_inputs[synapse_key].input_signal.spike_times) * t_tau_conversion
+        dend_obj.synaptic_inputs[synapse_key].tau_rise_converted = dend_obj.synaptic_inputs[synapse_key].tau_rise * t_tau_conversion
+        dend_obj.synaptic_inputs[synapse_key].tau_fall_converted = dend_obj.synaptic_inputs[synapse_key].tau_fall * t_tau_conversion
+        dend_obj.synaptic_inputs[synapse_key].hotspot_duration_converted = dend_obj.synaptic_inputs[synapse_key].hotspot_duration * t_tau_conversion
+        dend_obj.synaptic_inputs[synapse_key].spd_duration_converted = dend_obj.synaptic_inputs[synapse_key].spd_duration * t_tau_conversion
+        dend_obj.synaptic_inputs[synapse_key].spd_reset_time_converted = dend_obj.synaptic_inputs[synapse_key].spd_reset_time * t_tau_conversion
         
         # remove spike times that came in faster than spd can respond
-        if len(dendrite_object.synaptic_inputs[synapse_key].spike_times_converted) > 1:
-            _spike_times_converted = [dendrite_object.synaptic_inputs[synapse_key].spike_times_converted[0]]
-            for ii in range(len(dendrite_object.synaptic_inputs[synapse_key].spike_times_converted[1:])):
-                if dendrite_object.synaptic_inputs[synapse_key].spike_times_converted[ii] - _spike_times_converted[-1] >= dendrite_object.synaptic_inputs[synapse_key].spd_reset_time_converted:
-                    _spike_times_converted.append(dendrite_object.synaptic_inputs[synapse_key].spike_times_converted[ii])
-            dendrite_object.synaptic_inputs[synapse_key].spike_times_converted = _spike_times_converted
+        if len(dend_obj.synaptic_inputs[synapse_key].spike_times_converted) > 1:
+            _spike_times_converted = [dend_obj.synaptic_inputs[synapse_key].spike_times_converted[0]]
+            for ii in range(len(dend_obj.synaptic_inputs[synapse_key].spike_times_converted[1:])):
+                if dend_obj.synaptic_inputs[synapse_key].spike_times_converted[ii] - _spike_times_converted[-1] >= dend_obj.synaptic_inputs[synapse_key].spd_reset_time_converted:
+                    _spike_times_converted.append(dend_obj.synaptic_inputs[synapse_key].spike_times_converted[ii])
+            dend_obj.synaptic_inputs[synapse_key].spike_times_converted = _spike_times_converted
         
     # iterate recursively through all input dendrites
-    for dendrite_key in dendrite_object.dendritic_inputs:
-        # if dendrite_object.dendritic_inputs[dendrite_key].synaptic_inputs:
-        recursive_synapse_initialization(dendrite_object.dendritic_inputs[dendrite_key],tau_vec,t_tau_conversion)        
+    for dendrite_key in dend_obj.dendritic_inputs:
+        # if dend_obj.dendritic_inputs[dendrite_key].synaptic_inputs:
+        recursive_synapse_initialization(dend_obj.dendritic_inputs[dendrite_key],tau_vec,t_tau_conversion)        
     
     return
 
@@ -942,104 +940,104 @@ def transmitter_initialization(neuron_object,t_tau_conversion):
             
     return
 
-def recursive_dendrite_updater(dendrite_object,time_index,present_time,d_tau):
+def recursive_dendrite_updater(dend_obj,time_index,present_time,d_tau):
     
     # make sure dendrite isn't a soma that reached threshold
-    if hasattr(dendrite_object, 'is_soma'):
-        if dendrite_object.threshold_flag == True:
+    if hasattr(dend_obj, 'is_soma'):
+        if dend_obj.threshold_flag == True:
             update = False
-            if present_time - dendrite_object.spike_times[-1] > dendrite_object.absolute_refractory_period_converted: # wait for absolute refractory period before resetting soma
-                dendrite_object.threshold_flag = False # reset threshold flag
+            if present_time - dend_obj.spike_times[-1] > dend_obj.absolute_refractory_period_converted: # wait for absolute refractory period before resetting soma
+                dend_obj.threshold_flag = False # reset threshold flag
         else: 
             update = True
     else:
         update = True
                         
     # directly applied flux
-    dendrite_object.phi_r[time_index+1] = dendrite_object.phi_r_external__vec[time_index+1]
+    dend_obj.phi_r[time_index+1] = dend_obj.phi_r_external__vec[time_index+1]
     
 
     ### VVV May insert simulation learning here VVV ###
 
     # applied flux from dendrites
-    for dendrite_key in dendrite_object.dendritic_inputs:
-        dendrite_object.phi_r[time_index+1] += dendrite_object.dendritic_inputs[dendrite_key].s[time_index] * dendrite_object.dendritic_connection_strengths[dendrite_key]        
-        # print(dendrite_object.name,dendrite_object.s[time_index],dendrite_object.dendritic_inputs[dendrite_key].name,dendrite_object.dendritic_inputs[dendrite_key].s[time_index])
+    for dendrite_key in dend_obj.dendritic_inputs:
+        dend_obj.phi_r[time_index+1] += dend_obj.dendritic_inputs[dendrite_key].s[time_index] * dend_obj.dendritic_connection_strengths[dendrite_key]        
+        # print(dend_obj.name,dend_obj.s[time_index],dend_obj.dendritic_inputs[dendrite_key].name,dend_obj.dendritic_inputs[dendrite_key].s[time_index])
 
     ### ^^^ May insert simulation learning here ^^^ ###
 
     # self-feedback
-    dendrite_object.phi_r[time_index+1] += dendrite_object.self_feedback_coupling_strength * dendrite_object.s[time_index]
+    dend_obj.phi_r[time_index+1] += dend_obj.self_feedback_coupling_strength * dend_obj.s[time_index]
     
     # applied flux from synapses
-    for synapse_key in dendrite_object.synaptic_inputs:
+    for synapse_key in dend_obj.synaptic_inputs:
         
         # find most recent spike time for this synapse
-        _st_ind = np.where( present_time > dendrite_object.synaptic_inputs[synapse_key].spike_times_converted[:] )[0]
+        _st_ind = np.where( present_time > dend_obj.synaptic_inputs[synapse_key].spike_times_converted[:] )[0]
         
         if len(_st_ind) > 0:
             
             _st_ind = int(_st_ind[-1])
-            if ( dendrite_object.synaptic_inputs[synapse_key].spike_times_converted[_st_ind] <= present_time # the spike happened in the past
-                and (present_time - dendrite_object.synaptic_inputs[synapse_key].spike_times_converted[_st_ind]) < dendrite_object.synaptic_inputs[synapse_key].spd_duration_converted  # the spike happened within a relevant duration                
+            if ( dend_obj.synaptic_inputs[synapse_key].spike_times_converted[_st_ind] <= present_time # the spike happened in the past
+                and (present_time - dend_obj.synaptic_inputs[synapse_key].spike_times_converted[_st_ind]) < dend_obj.synaptic_inputs[synapse_key].spd_duration_converted  # the spike happened within a relevant duration                
                 ):
                     
-                    _dt_spk = present_time - dendrite_object.synaptic_inputs[synapse_key].spike_times_converted[_st_ind]
-                    _phi_spd = spd_response( dendrite_object.synaptic_inputs[synapse_key].phi_peak, 
-                                            dendrite_object.synaptic_inputs[synapse_key].tau_rise_converted,
-                                            dendrite_object.synaptic_inputs[synapse_key].tau_fall_converted,
-                                            dendrite_object.synaptic_inputs[synapse_key].hotspot_duration_converted, _dt_spk)
+                    _dt_spk = present_time - dend_obj.synaptic_inputs[synapse_key].spike_times_converted[_st_ind]
+                    _phi_spd = spd_response( dend_obj.synaptic_inputs[synapse_key].phi_peak, 
+                                            dend_obj.synaptic_inputs[synapse_key].tau_rise_converted,
+                                            dend_obj.synaptic_inputs[synapse_key].tau_fall_converted,
+                                            dend_obj.synaptic_inputs[synapse_key].hotspot_duration_converted, _dt_spk)
                     
                     # to avoid going too low when a new spike comes in
-                    if _st_ind - dendrite_object.synaptic_inputs[synapse_key]._st_ind_last == 1: 
-                        _phi_spd = np.max( [ _phi_spd , dendrite_object.synaptic_inputs[synapse_key].phi_spd[time_index] ])
-                        dendrite_object.synaptic_inputs[synapse_key]._phi_spd_memory = _phi_spd
-                    if _phi_spd < dendrite_object.synaptic_inputs[synapse_key]._phi_spd_memory:
-                        dendrite_object.synaptic_inputs[synapse_key].phi_spd[time_index+1] = dendrite_object.synaptic_inputs[synapse_key]._phi_spd_memory
+                    if _st_ind - dend_obj.synaptic_inputs[synapse_key]._st_ind_last == 1: 
+                        _phi_spd = np.max( [ _phi_spd , dend_obj.synaptic_inputs[synapse_key].phi_spd[time_index] ])
+                        dend_obj.synaptic_inputs[synapse_key]._phi_spd_memory = _phi_spd
+                    if _phi_spd < dend_obj.synaptic_inputs[synapse_key]._phi_spd_memory:
+                        dend_obj.synaptic_inputs[synapse_key].phi_spd[time_index+1] = dend_obj.synaptic_inputs[synapse_key]._phi_spd_memory
                     else:
-                        dendrite_object.synaptic_inputs[synapse_key].phi_spd[time_index+1] = _phi_spd * dendrite_object.synaptic_connection_strengths[synapse_key]
+                        dend_obj.synaptic_inputs[synapse_key].phi_spd[time_index+1] = _phi_spd * dend_obj.synaptic_connection_strengths[synapse_key]
 
-                        # dendrite_object.synaptic_connection_strengths[synapse_key] = dendrite_object.synaptic_connection_strengths[synapse_key]*2
-                        # print(dendrite_object.synaptic_connection_strengths[synapse_key])
+                        # dend_obj.synaptic_connection_strengths[synapse_key] = dend_obj.synaptic_connection_strengths[synapse_key]*2
+                        # print(dend_obj.synaptic_connection_strengths[synapse_key])
 
-                        dendrite_object.synaptic_inputs[synapse_key]._phi_spd_memory = 0
+                        dend_obj.synaptic_inputs[synapse_key]._phi_spd_memory = 0
                 
-            dendrite_object.synaptic_inputs[synapse_key]._st_ind_last = _st_ind
+            dend_obj.synaptic_inputs[synapse_key]._st_ind_last = _st_ind
                     
-        dendrite_object.phi_r[time_index+1] += dendrite_object.synaptic_inputs[synapse_key].phi_spd[time_index+1]
+        dend_obj.phi_r[time_index+1] += dend_obj.synaptic_inputs[synapse_key].phi_spd[time_index+1]
         
-    if np.abs(dendrite_object.phi_r[time_index+1]) > .5:
-        # print('\nWarning: absolute value of flux drive to dendrite {} exceeded 1 on time step {} (phi_r = {:5.3f})'.format(dendrite_object.name,time_index+1,dendrite_object.phi_r[time_index+1]))
-        dendrite_object.rollover+=1
-        if np.abs(dendrite_object.phi_r[time_index+1]) > 1:
-            dendrite_object.valleyedout+=1
-            if np.abs(dendrite_object.phi_r[time_index+1]) > 1.5:
-                dendrite_object.doubleroll+=1
-    #         print('phi_r = {:5.3f}? Calm the fuck down, bro.'.format(dendrite_object.phi_r[time_index+1]))
+    if np.abs(dend_obj.phi_r[time_index+1]) > .5:
+        # print('\nWarning: absolute value of flux drive to dendrite {} exceeded 1 on time step {} (phi_r = {:5.3f})'.format(dend_obj.name,time_index+1,dend_obj.phi_r[time_index+1]))
+        dend_obj.rollover+=1
+        if np.abs(dend_obj.phi_r[time_index+1]) > 1:
+            dend_obj.valleyedout+=1
+            if np.abs(dend_obj.phi_r[time_index+1]) > 1.5:
+                dend_obj.doubleroll+=1
+    #         print('phi_r = {:5.3f}? Calm the fuck down, bro.'.format(dend_obj.phi_r[time_index+1]))
     #     print('\n')
     # print("*")
     # find relevant entry in r_fq__array
-    _ind__phi_r = ( np.abs( dendrite_object.phi_r__vec[:] - dendrite_object.phi_r[time_index+1] ) ).argmin()
-    i_di__vec = np.asarray(dendrite_object.i_di__subarray[_ind__phi_r])
-    _ind__s = ( np.abs( i_di__vec[:] - dendrite_object.s[time_index] ) ).argmin()
-    r_fq = dendrite_object.r_fq__subarray[_ind__phi_r][_ind__s]
+    _ind__phi_r = ( np.abs( dend_obj.phi_r__vec[:] - dend_obj.phi_r[time_index+1] ) ).argmin()
+    i_di__vec = np.asarray(dend_obj.i_di__subarray[_ind__phi_r])
+    _ind__s = ( np.abs( i_di__vec[:] - dend_obj.s[time_index] ) ).argmin()
+    r_fq = dend_obj.r_fq__subarray[_ind__phi_r][_ind__s]
         
     # get alpha
-    if hasattr(dendrite_object,'alpha_list'):
-        _ind = np.where(dendrite_object.s_list > dendrite_object.s[time_index])
-        alpha = dendrite_object.alpha_list[_ind[0][0]]
+    if hasattr(dend_obj,'alpha_list'):
+        _ind = np.where(dend_obj.s_list > dend_obj.s[time_index])
+        alpha = dend_obj.alpha_list[_ind[0][0]]
     else:
-        alpha = dendrite_object.alpha    
+        alpha = dend_obj.alpha    
     
     ### vvv SIGNAL UPDATE vvv ###
 
     if update == True:
-        dendrite_object.s[time_index+1] = dendrite_object.s[time_index] * ( 1 - d_tau*alpha/dendrite_object.beta) + (d_tau/dendrite_object.beta) * r_fq
+        dend_obj.s[time_index+1] = dend_obj.s[time_index] * ( 1 - d_tau*alpha/dend_obj.beta) + (d_tau/dend_obj.beta) * r_fq
 
     ### ^^^ SIGNAL UPDATE ^^^ ###
 
-    for dendrite in dendrite_object.dendritic_inputs:
-        recursive_dendrite_updater(dendrite_object.dendritic_inputs[dendrite],time_index,present_time,d_tau)
+    for dendrite in dend_obj.dendritic_inputs:
+        recursive_dendrite_updater(dend_obj.dendritic_inputs[dendrite],time_index,present_time,d_tau)
         
     return
 
@@ -1154,15 +1152,15 @@ def network_time_stepper(network_object,tau_vec,d_tau):
 
 
 
-def recursive_dendrite_data_attachment(dendrite_object,neuron_object):
+def recursive_dendrite_data_attachment(dend_obj,neuron_object):
     
     # attach data to this dendrite
-    dendrite_object.output_data = {'s': dendrite_object.s, 'phi_r': dendrite_object.phi_r, 'tau_vec': neuron_object.time_params['tau_vec'], 'time_vec': neuron_object.time_params['tau_vec']/neuron_object.time_params['t_tau_conversion']}
-    dendrite_object.time_params = {'t_tau_conversion': neuron_object.time_params['t_tau_conversion']}
+    dend_obj.output_data = {'s': dend_obj.s, 'phi_r': dend_obj.phi_r, 'tau_vec': neuron_object.time_params['tau_vec'], 'time_vec': neuron_object.time_params['tau_vec']/neuron_object.time_params['t_tau_conversion']}
+    dend_obj.time_params = {'t_tau_conversion': neuron_object.time_params['t_tau_conversion']}
             
     # iterate recursively through all input dendrites
-    for dendrite_key in dendrite_object.dendritic_inputs:
-        recursive_dendrite_data_attachment(dendrite_object.dendritic_inputs[dendrite_key],neuron_object)        
+    for dendrite_key in dend_obj.dendritic_inputs:
+        recursive_dendrite_data_attachment(dend_obj.dendritic_inputs[dendrite_key],neuron_object)        
         
     return        
 

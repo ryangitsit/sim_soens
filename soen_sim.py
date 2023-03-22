@@ -114,6 +114,7 @@ class dendrite():
             self.circuit_betas = [tp*1/4, tp*1/4, tp*1e2]
             self.ib = 1.802395858835221
             self.ib_di = 1.802395858835221
+            
 
         elif self.loops_present == 'rtti':
             self.circuit_betas = [tp*1/4, tp*1/4, tp*1e2]
@@ -124,7 +125,10 @@ class dendrite():
             self.circuit_betas = [tp*1/4, tp*1/4, tp*1/4, tp*1e2]
             self.ib = 2.1
             self.phi_p = .2
-
+        d_params = dend_load_arrays_thresholds_saturations(f'default_{self.loops_present}')
+        self.ib_max = d_params['ib__list'][-1]
+        # print(self.ib_max,self.name)
+        
         # miscelleneous params/settings
         self.tau_di = 250
         self.beta_di = 2*np.pi*1e2
@@ -665,16 +669,15 @@ class network():
             Phi_r.append(phi_r)
             spike_t = neuron.spike_times/neuron.time_params['t_tau_conversion']
             self.neurons[neuron_key].spike_t = spike_t
-            # print(spike_t)
             spikes[0].append(np.ones(len(spike_t))*count)
             spikes[1].append((spike_t))
             spike_signal = []
             spike_times = spike_t #/neuron.time_params['t_tau_conversion']
             for spike in spike_times:
                 spot = int(spike/self.dt)
-                # spread = int(5/self.dt)
-                # spike_signal.append(np.max(s[np.max([0,spot-spread]):spot+spread]))
-                spike_signal.append(s[spot])
+                spread = int(5/self.dt)
+                spike_signal.append(np.max(s[np.max([0,spot-spread]):spot+spread]))
+                # spike_signal.append(s[spot])
             spike_signals.append(spike_signal)
             count+=1
         spikes[0] = np.concatenate(spikes[0])
@@ -683,9 +686,7 @@ class network():
         self.spike_signals = spike_signals
         self.phi_r = Phi_r
         self.signal = S
-        neuron.spike_times = []
-        # print(spike_signal)
-        # print(spike_signals)
+
 
     def simulate(self):
         # print(self.nodes)
@@ -698,8 +699,8 @@ class network():
                 for syn in n.synapse_list:
                     if "synaptic_input" not in syn.__dict__:
                         syn.add_input(input_signal(name = 'input_synaptic_drive', 
-                                            input_temporal_form = 'arbitrary_spike_train', 
-                                            spike_times = []) )
+                                        input_temporal_form = 'arbitrary_spike_train', 
+                                        spike_times = []) )
                         count+=1
             # print(f"{count} synapses recieving no input.")
                 
@@ -709,7 +710,7 @@ class network():
 
 class HardwareInTheLoop:
     def __init__(self, **params):
-        self.expect = [[0,50],[None,None],[50,0],[None,None],[None,None],[None,None],[None,None]]
+        self.expect = [[0,50],[None,None],[50,0],[None,None],[None,None]]
         self.interval = 500
         self.phase = 0
         self.error_factor = 10
@@ -766,9 +767,8 @@ class HardwareInTheLoop:
                             # print("plus error: ",error[i])
                             freq = np.max([300 - np.abs(error[i])*freq_factor,50])
                             # print("plus frequency: ",freq)
-                            syn.input_signal.spike_times += list(np.arange(self.check_time,
-                                                                        self.check_time+self.interval,
-                                                                        freq))
+                            syn.input_signal.spike_times += list(
+                                np.arange(self.check_time,self.check_time+self.interval,freq))
                             syn.spike_times_converted = np.asarray(syn.input_signal.spike_times)*self.conversion
 
                     elif error[i] > 0:
@@ -776,9 +776,8 @@ class HardwareInTheLoop:
                             # print("minus error: ",error[i])
                             freq = np.max([300 - np.abs(error[i])*freq_factor,50])
                             # print("minus frequency: ",freq)
-                            syn.input_signal.spike_times += list(np.arange(self.check_time,
-                                                                        self.check_time+self.interval,
-                                                                        freq))
+                            syn.input_signal.spike_times += list(
+                                np.arange(self.check_time,self.check_time+self.interval,freq))
                             syn.spike_times_converted = np.asarray(syn.input_signal.spike_times)*self.conversion
 
                     # print(syn.name,syn.input_signal.spike_times)
