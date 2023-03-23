@@ -100,27 +100,27 @@ def main():
         pass
     elif form == 'WTA':
         syn11=common_synapse(f'soma_synapse_1{n_1.neuron.name}')
-        n_1.neuron.dend__nr_ni.add_input(syn11,connection_strength=inhibit)
+        n_1.neuron.dend_soma.add_input(syn11,connection_strength=inhibit)
         n_1.synapse_list.append(syn11)
 
         syn12=common_synapse(f'soma_synapse_2{n_1.neuron.name}')
-        n_1.neuron.dend__nr_ni.add_input(syn12,connection_strength=inhibit)
+        n_1.neuron.dend_soma.add_input(syn12,connection_strength=inhibit)
         n_1.synapse_list.append(syn12)
 
         syn21=common_synapse(f'soma_synapse_1{n_2.neuron.name}')
-        n_2.neuron.dend__nr_ni.add_input(syn21,connection_strength=inhibit)
+        n_2.neuron.dend_soma.add_input(syn21,connection_strength=inhibit)
         n_2.synapse_list.append(syn21)
 
         syn22=common_synapse(f'soma_synapse_2{n_2.neuron.name}')
-        n_2.neuron.dend__nr_ni.add_input(syn22,connection_strength=inhibit)
+        n_2.neuron.dend_soma.add_input(syn22,connection_strength=inhibit)
         n_2.synapse_list.append(syn22)
 
         syn31=common_synapse(f'soma_synapse_1{n_3.neuron.name}')
-        n_3.neuron.dend__nr_ni.add_input(syn31,connection_strength=inhibit)
+        n_3.neuron.dend_soma.add_input(syn31,connection_strength=inhibit)
         n_3.synapse_list.append(syn31)
 
         syn32=common_synapse(f'soma_synapse_2{n_3.neuron.name}')
-        n_3.neuron.dend__nr_ni.add_input(syn32,connection_strength=inhibit)
+        n_3.neuron.dend_soma.add_input(syn32,connection_strength=inhibit)
         n_3.synapse_list.append(syn32)
 
     

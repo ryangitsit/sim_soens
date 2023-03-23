@@ -96,8 +96,8 @@ class NeuralZoo():
         # create a neuron object given init params
         self.neuron = neuron(**self.params)
 
-        # add somatic dendrite (dend__nr_ni) and refractory dendrite to list
-        self.dendrite_list = [self.neuron.dend__nr_ni,self.neuron.dend__ref]
+        # add somatic dendrite (dend_soma) and refractory dendrite to list
+        self.dendrite_list = [self.neuron.dend_soma,self.neuron.dend__ref]
 
         # normalize input to soma to 1 in terms of weighting
         self.neuron.normalize_input_connection_strengths=1
@@ -202,7 +202,7 @@ class NeuralZoo():
                         d.output_connection_strength = self.weights[i][j][k]
 
         # add the somatic dendrite to the 0th layer of the arboric structure
-        dendrites.insert(0,[[self.neuron.dend__nr_ni]])
+        dendrites.insert(0,[[self.neuron.dend_soma]])
 
         # if syns attribute, connect as a function of grouping to final layer
         if hasattr(self, 'syns'):
@@ -411,7 +411,7 @@ class NeuralZoo():
                         trace_dend.add_input(d,connection_strength=cs)#2*np.random.rand())
                         syn = common_synapse(f'{d.name}_tracesyn_{trace_dend.name}_{int(np.random.rand()*100000)}')
                         trace_dend.add_input(syn,connection_strength=self.trace_syn_factor)
-                        # trace_dend.add_input(self.neuron.dend__nr_ni,connection_strength=soma_factor) ## 
+                        # trace_dend.add_input(self.neuron.dend_soma,connection_strength=soma_factor) ## 
                         self.trace_dendrites.append(trace_dend)
                         self.dendrite_list.append(trace_dend)
                         self.synapse_list.append(syn)
@@ -479,7 +479,7 @@ class NeuralZoo():
         neuron = self.custom()
         # ref2 = dendrite(**params)
         # self.neuron.add_input(ref2, connection_strength=-.67)
-        # ref2.add_input(self.neuron.dend__nr_ni, connection_strength=1)
+        # ref2.add_input(self.neuron.dend_soma, connection_strength=1)
         # self.second_ref = ref2
         return neuron
 
@@ -664,7 +664,7 @@ class NeuralZoo():
             name = "arbor"
             if "ref" in dend.name:
                 name = 'refractory'
-            elif "nr_ni" in dend.name:
+            elif "soma" in dend.name:
                 name = "soma"
             print(f" {name}", dend.name)
             print(f"   ib_di = {dend.ib}")
@@ -927,14 +927,14 @@ class NeuralZoo():
         #     print(w)
         # print("\n")
         # Start with checking dendritic inputs to soma and getting their names
-        soma_input = self.neuron.dend__nr_ni.dendritic_inputs
-        soma_input_names = list(self.neuron.dend__nr_ni.dendritic_inputs.keys())[1:]
+        soma_input = self.neuron.dend_soma.dendritic_inputs
+        soma_input_names = list(self.neuron.dend_soma.dendritic_inputs.keys())[1:]
 
         # initialize arbor list and add soma inputs
         arbor = []
         strengths = []
         arbor.append(soma_input_names)
-        s_list = list(self.neuron.dend__nr_ni.dendritic_connection_strengths.values())
+        s_list = list(self.neuron.dend_soma.dendritic_connection_strengths.values())
         strengths.append(s_list[1:])
         # call recursive function to explore all branches
         def recursive_search(input,names,leaf,arbor,count,strengths):
@@ -1158,9 +1158,9 @@ class NeuralZoo():
 
     def arbor_activity_plot(self,path=None):
         import matplotlib.pyplot as plt
-        # signal = net.neurons["custom_neuron"].dend__nr_ni.s
+        # signal = net.neurons["custom_neuron"].dend_soma.s
         # ref = net.neurons["custom_neuron"].dend__ref.s
-        signal = self.neuron.dend__nr_ni.s
+        signal = self.neuron.dend_soma.s
         S = []
         den_arb = self.dendrites
         L = len(den_arb)

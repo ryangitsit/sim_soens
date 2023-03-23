@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 from soen_plotting import raster_plot, activity_plot
 
 from super_input import SuperInput
-from params import net_args 
+# from params import net_args 
 
 from super_library import NeuralZoo
 from super_functions import *
@@ -131,13 +131,13 @@ def main():
     fig, axs = plt.subplots(2, 1,figsize=(12,6))
     for i,trace in enumerate(nA.dendrite_list):
         if "plus" not in trace.name and "minus" not in trace.name:
-            if "ref" not in trace.name and "nr_ni" not in trace.name:
+            if "ref" not in trace.name and "soma" not in trace.name:
                 # axs[0].plot(net.t,trace.phi_r,'--',label="phi "+trace.name)
                 axs[0].plot(net.t,trace.bias_dynamics, label = trace.name)
     axs[0].set_title("Neuron 1")
     for i,trace in enumerate(nB.dendrite_list):
         if "plus" not in trace.name and "minus" not in trace.name:
-            if "ref" not in trace.name and "nr_ni" not in trace.name:
+            if "ref" not in trace.name and "soma" not in trace.name:
                 # axs[1].plot(net.t,trace.phi_r,'--',label="phi "+trace.name)
                 axs[1].plot(net.t,trace.bias_dynamics, label = trace.name)
     axs[0].set_title("Neuron 1")

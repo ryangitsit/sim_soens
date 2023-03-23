@@ -113,7 +113,7 @@ def biasing():
         net = network(sim=True,dt=.1,tf=1400,nodes=[mono_point])
         # signals.append(mono_point.s)
         Ic = mono_point.dendrites[0][0][0].Ic
-        plt.plot(net.t,mono_point.neuron.dend__nr_ni.s*Ic,label=f"bias current = {np.round(i,2)}")
+        plt.plot(net.t,mono_point.neuron.dend_soma.s*Ic,label=f"bias current = {np.round(i,2)}")
     # print(mono_point.neuron.__dict__.keys()
     # plt.legend(loc='center left', bbox_to_anchor=(1, 0.5))
     # plt.subplots_adjust(right=.8)
@@ -144,7 +144,7 @@ biasing()
 #         net = network(sim=True,dt=.1,tf=1400,nodes=[mono_point])
 #         # signals.append(mono_point.s)
 #         Ic = mono_point.dendrites[0][0][0].Ic
-#         plt.plot(net.t,mono_point.neuron.dend__nr_ni.s*Ic,label=f"bias current = {np.round(i,2)}")
+#         plt.plot(net.t,mono_point.neuron.dend_soma.s*Ic,label=f"bias current = {np.round(i,2)}")
 #     # print(mono_point.neuron.__dict__.keys()
 #     # plt.legend(loc='center left', bbox_to_anchor=(1, 0.5))
 #     # plt.subplots_adjust(right=.8)

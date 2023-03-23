@@ -61,14 +61,14 @@ def run_soen_sim(obj, **kwargs):
                             
                 # initialize dendrites (phi_r vector) and make drive signals
                 # print('\n')
-                recursive_dendrite_initialization_and_drive_construction(obj.neurons[neuron_key].dend__nr_ni,tau_vec,t_tau_conversion,d_tau) # go through all other dendrites in the neuron's arbor
+                recursive_dendrite_initialization_and_drive_construction(obj.neurons[neuron_key].dend_soma,tau_vec,t_tau_conversion,d_tau) # go through all other dendrites in the neuron's arbor
                 # print('\n')
                 
                 # load rate arrays to all dendrites
-                recursive_rate_array_attachment(obj.neurons[neuron_key].dend__nr_ni)
+                recursive_rate_array_attachment(obj.neurons[neuron_key].dend_soma)
                 
                 # initialize all input synapses
-                recursive_synapse_initialization(obj.neurons[neuron_key].dend__nr_ni,tau_vec,t_tau_conversion)
+                recursive_synapse_initialization(obj.neurons[neuron_key].dend_soma,tau_vec,t_tau_conversion)
                 
                 # initialize all output synapses
                 output_synapse_initialization(obj.neurons[neuron_key],tau_vec,t_tau_conversion)
@@ -82,7 +82,7 @@ def run_soen_sim(obj, **kwargs):
             
             # add output data to dendrites for plotting and diagnostics
             for neuron_key in obj.neurons:
-                recursive_dendrite_data_attachment(obj.neurons[neuron_key].dend__nr_ni,obj)
+                recursive_dendrite_data_attachment(obj.neurons[neuron_key].dend_soma,obj)
         
         else:
             print("new way")
@@ -361,7 +361,7 @@ def net_step(network_object,tau_vec,d_tau):
                
     # set neuron threshold flags
     for neuron_key in network_object.neurons:
-        network_object.neurons[neuron_key].dend__nr_ni.threshold_flag = False
+        network_object.neurons[neuron_key].dend_soma.threshold_flag = False
     conversion = network_object.time_params['t_tau_conversion']
     # step through time
     _t0 = time.time_ns()
@@ -412,10 +412,10 @@ def net_step(network_object,tau_vec,d_tau):
             output_synapse_updater(neuron,ii,tau_vec[ii+1])
             
             # check if ni loop has increased above threshold
-            if neuron.dend__nr_ni.s[ii+1] >= neuron.integrated_current_threshold:
+            if neuron.dend_soma.s[ii+1] >= neuron.integrated_current_threshold:
                 
-                neuron.dend__nr_ni.threshold_flag = True
-                neuron.dend__nr_ni.spike_times.append(tau_vec[ii+1])
+                neuron.dend_soma.threshold_flag = True
+                neuron.dend_soma.spike_times.append(tau_vec[ii+1])
                 neuron.spike_times.append(tau_vec[ii+1])
                 neuron.spike_indices.append(ii+1)
                 
@@ -561,7 +561,7 @@ def dendrite_updater(dend_obj,time_index,present_time,d_tau,HW=None):
     # else:
     #     new_bias=dend_obj.bias_current
     if HW:
-        print("Hardware stepping")
+        # print("Hardware stepping")
         # if HW.expect[HW.phase][0] != None and HW.expect[HW.phase][1] != None:
         # if len(HW.traces) > 0:
         if 'trace' not in dend_obj.name:
@@ -1077,7 +1077,7 @@ def network_time_stepper(network_object,tau_vec,d_tau):
                
     # set neuron threshold flags
     for neuron_key in network_object.neurons:
-        network_object.neurons[neuron_key].dend__nr_ni.threshold_flag = False
+        network_object.neurons[neuron_key].dend_soma.threshold_flag = False
     
     # step through time
     _t0 = time.time_ns()
@@ -1087,16 +1087,16 @@ def network_time_stepper(network_object,tau_vec,d_tau):
         for neuron_key in network_object.neurons:
         
             # update all input synapses and dendrites
-            recursive_dendrite_updater(network_object.neurons[neuron_key].dend__nr_ni,ii,tau_vec[ii+1],d_tau)
+            recursive_dendrite_updater(network_object.neurons[neuron_key].dend_soma,ii,tau_vec[ii+1],d_tau)
             
             # update all output synapses
             output_synapse_updater(network_object.neurons[neuron_key],ii,tau_vec[ii+1])
             
             # check if ni loop has increased above threshold
-            if network_object.neurons[neuron_key].dend__nr_ni.s[ii+1] >= network_object.neurons[neuron_key].integrated_current_threshold:
+            if network_object.neurons[neuron_key].dend_soma.s[ii+1] >= network_object.neurons[neuron_key].integrated_current_threshold:
                 
-                network_object.neurons[neuron_key].dend__nr_ni.threshold_flag = True
-                network_object.neurons[neuron_key].dend__nr_ni.spike_times.append(tau_vec[ii+1])
+                network_object.neurons[neuron_key].dend_soma.threshold_flag = True
+                network_object.neurons[neuron_key].dend_soma.spike_times.append(tau_vec[ii+1])
                 network_object.neurons[neuron_key].spike_times.append(tau_vec[ii+1])
                 network_object.neurons[neuron_key].spike_indices.append(ii+1)
                 
@@ -1350,11 +1350,11 @@ def chi_squared_error(target_data,actual_data):
 def phi_thresholds(neuron_object):
     if neuron_object.loops_present == 'ri':
         d_params_ri = dend_load_arrays_thresholds_saturations('default_ri')
-        _ind_ib = ( np.abs( np.array(d_params_ri["ib__list"][:]) - neuron_object.dend__nr_ni.ib ) ).argmin()
+        _ind_ib = ( np.abs( np.array(d_params_ri["ib__list"][:]) - neuron_object.dend_soma.ib ) ).argmin()
         return [d_params_ri["phi_th_minus__vec"][_ind_ib],d_params_ri["phi_th_plus__vec"][_ind_ib]]
     elif neuron_object.loops_present == 'rtti':
         d_params_rtti = dend_load_arrays_thresholds_saturations('default_rtti')
-        _ind_ib = ( np.abs( np.array(d_params_rtti["ib__list"][:]) - neuron_object.dend__nr_ni.ib ) ).argmin()
+        _ind_ib = ( np.abs( np.array(d_params_rtti["ib__list"][:]) - neuron_object.dend_soma.ib ) ).argmin()
         return [d_params_rtti["phi_th_minus__vec"][_ind_ib],d_params_rtti["phi_th_plus__vec"][_ind_ib]]
 
 

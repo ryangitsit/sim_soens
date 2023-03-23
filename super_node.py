@@ -25,8 +25,8 @@ class SuperNode():
         # create a neuron object given init params
         self.neuron = neuron(**self.params)
 
-        # add somatic dendrite (dend__nr_ni) and refractory dendrite to list
-        self.dendrite_list = [self.neuron.dend__nr_ni,self.neuron.dend__ref]
+        # add somatic dendrite (dend_soma) and refractory dendrite to list
+        self.dendrite_list = [self.neuron.dend_soma,self.neuron.dend__ref]
 
         # normalize input to soma to 1 in terms of weighting
         self.neuron.normalize_input_connection_strengths=1
@@ -132,7 +132,7 @@ class SuperNode():
                         d.output_connection_strength = self.weights[i][j][k]
 
         # add the somatic dendrite to the 0th layer of the arboric structure
-        dendrites.insert(0,[[self.neuron.dend__nr_ni]])
+        dendrites.insert(0,[[self.neuron.dend_soma]])
 
         # if syns attribute, connect as a function of grouping to final layer
         if hasattr(self, 'syns'):
@@ -281,7 +281,7 @@ class SuperNode():
             name = "arbor"
             if "ref" in dend.name:
                 name = 'refractory'
-            elif "nr_ni" in dend.name:
+            elif "soma" in dend.name:
                 name = "soma"
             print(f" {name}", dend.name)
             print(f"   ib_di = {dend.ib}")

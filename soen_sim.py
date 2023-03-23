@@ -10,7 +10,10 @@ from soen_utilities import (
 )
 p = physical_constants()
 
-from soen_functions import run_soen_sim
+# from soen_functions import run_soen_sim
+from soen_time_stepper import run_soen_sim
+
+
 from soen_plotting import (
     plot_dendrite, 
     plot_synapse, 
@@ -161,7 +164,7 @@ class dendrite():
                 # print("SOMATIC DENDRITE")
                 self.tau_di = self.tau_ni
                 self.ib = self.ib_n
-                self.name = f'{self.name}__nr_ni'
+                self.name = f'{self.name}_soma'
         else:
             # print("REGULAR DENDRITE")
             if "ib_di" in self.__dict__.keys():
@@ -456,12 +459,12 @@ class neuron():
         
         neuroden_params = params
         neuroden_params['dentype'] = 'soma'
-        # neuroden_params['name'] = '{}__{}'.format(self.name,'nr_ni')
+        # neuroden_params['name'] = '{}__{}'.format(self.name,'soma')
         neuron_dendrite = dendrite(**neuroden_params)
         neuron_dendrite.is_soma = True    
         
-        self.dend__nr_ni = neuron_dendrite
-        # self.dend__nr_ni.absolute_refractory_period = self.absolute_refractory_period
+        self.dend_soma = neuron_dendrite
+        # self.dend_soma.absolute_refractory_period = self.absolute_refractory_period
         
         
         # ======================================================================
@@ -479,7 +482,7 @@ class neuron():
             neuroref_params['dentype'] = 'refractory'
             # neuroref_params['name'] = '{}_2__dend_{}'.format(self.name,'refraction')
             self.dend__ref_2 = dendrite(**neuroref_params)
-            self.dend__nr_ni.add_input(self.dend__ref_2, connection_strength = self.refractory_dendrite_connection_strength)
+            self.dend_soma.add_input(self.dend__ref_2, connection_strength = self.refractory_dendrite_connection_strength)
         
         if auto:
                 d_params_ri = dend_load_arrays_thresholds_saturations('default_ri')
@@ -502,8 +505,8 @@ class neuron():
                     ib_list_r = d_params_rtti["ib__list"]
                     s_max_plus_vec__refractory = d_params_rtti["s_max_plus__vec"]
                     
-                # ( np.abs( ib_list[:] - self.dend__nr_ni.ib ) ).argmin()
-                _ind_ib_soma = index_finder(ib_list[:],self.dend__nr_ni.ib) 
+                # ( np.abs( ib_list[:] - self.dend_soma.ib ) ).argmin()
+                _ind_ib_soma = index_finder(ib_list[:],self.dend_soma.ib) 
                 
                 phi_th_minus = phi_th_minus_vec[_ind_ib_soma]
                 _phi_vec_prelim = np.asarray( d_params_ri["phi_r__array"][_ind_ib_soma] )
@@ -523,7 +526,7 @@ class neuron():
                 # ( phi_th_minus + delta/100 ) / s_max              
                 self.refractory_dendrite_connection_strength = -delta/_s_max_refractory 
                 
-        self.dend__nr_ni.add_input(self.dend__ref, connection_strength = self.refractory_dendrite_connection_strength)
+        self.dend_soma.add_input(self.dend__ref, connection_strength = self.refractory_dendrite_connection_strength)
 
 
         # ======================================================================
@@ -560,7 +563,7 @@ class neuron():
         # prepare for spikes        
         self.spike_times = []
         self.spike_indices = []
-        self.dend__nr_ni.spike_times = []
+        self.dend_soma.spike_times = []
         
         # prepare for output synapses
         self.synaptic_outputs = dict()
@@ -570,7 +573,7 @@ class neuron():
         
     def add_input(self, connection_object, connection_strength = 1):
         # print(self.name, "<--", connection_object.name)
-        self.dend__nr_ni.add_input(connection_object, connection_strength)
+        self.dend_soma.add_input(connection_object, connection_strength)
         return
         
     def add_output(self, connection_object):
@@ -614,6 +617,8 @@ class network():
         self.new_way=False
         self.null_synapses=False
         self.nodes=[]
+        self.dt = 0.1
+        self.tf = 250
 
         self.__dict__.update(kwargs)
 
@@ -643,9 +648,7 @@ class network():
         # return
     
     def run_sim(self, **kwargs):
-        self.dt = kwargs['dt']
-        self.tf = kwargs['tf']
-        self = run_soen_sim(self, **kwargs)
+        self = run_soen_sim(self)
         return self
     
     def plot(self):
@@ -663,9 +666,9 @@ class network():
         # print(self.neurons)
         for neuron_key in self.neurons:
             neuron = self.neurons[neuron_key]
-            s = neuron.dend__nr_ni.s
+            s = neuron.dend_soma.s
             S.append(s)
-            phi_r = neuron.dend__nr_ni.phi_r
+            phi_r = neuron.dend_soma.phi_r
             Phi_r.append(phi_r)
             spike_t = neuron.spike_times/neuron.time_params['t_tau_conversion']
             self.neurons[neuron_key].spike_t = spike_t
@@ -704,7 +707,7 @@ class network():
                         count+=1
             # print(f"{count} synapses recieving no input.")
                 
-        self.run_sim(dt=self.dt, tf=self.tf)
+        self.run_sim()
         self.get_recordings()
 
 
@@ -714,7 +717,8 @@ class HardwareInTheLoop:
         self.interval = 500
         self.phase = 0
         self.error_factor = 10
-        self.traces=None
+        # self.traces=None
+        self.traces = []
         self.__dict__.update(params)
         
         self.check_time = self.interval*(self.phase+1)

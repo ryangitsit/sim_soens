@@ -330,7 +330,7 @@ def dend_load_arrays_thresholds_saturations(load_string):
 def depth_of_dendritic_tree(soen_object):
     
     if type(soen_object).__name__ == 'neuron':
-        dendrite = soen_object.dend__nr_ni
+        dendrite = soen_object.dend_soma
         
     def find_synapses(_dendrite,counter):
         

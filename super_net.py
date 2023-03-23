@@ -66,7 +66,7 @@ class FractalNet():
         # for k,v in neurons[0].__dict__.items():
         #     print(k,": ",v,"\n")
         # neurons[0].plot_custom_structure()
-        # print(neurons[0].neuron.dend__nr_ni.dendritic_inputs['n0_lay0_branch0_den1'].dendritic_inputs['n0_lay1_branch1_den0'].synaptic_inputs['3'].name)
+        # print(neurons[0].neuron.dend_soma.dendritic_inputs['n0_lay0_branch0_den1'].dendritic_inputs['n0_lay1_branch1_den0'].synaptic_inputs['3'].name)
 
     def make_net(self):
         self.layer_n = 3
@@ -76,7 +76,7 @@ class FractalNet():
             for j in range(branches):
                 self.neurons[i].neuron.add_output(self.neurons[0].synapse_list[(j*3)+(i-1)])
                 # print(self.neurons[0].neuron.name, i, (j*3)+(i-1), self.neurons[0].synapse_list[(j*3)+(i-1)].name)
-        # print(self.neurons[0].neuron.dend__nr_ni.dendritic_inputs['n0_lay0_branch0_den1'].dendritic_inputs['n0_lay1_branch1_den0'].synaptic_inputs['3'].__dict__)
+        # print(self.neurons[0].neuron.dend_soma.dendritic_inputs['n0_lay0_branch0_den1'].dendritic_inputs['n0_lay1_branch1_den0'].synaptic_inputs['3'].__dict__)
         # print(self.neurons[1].neuron.__dict__)
         # for i in range(self.N):
         #     print(i," - ", self.neurons[i].synapse_list[0].__dict__)
@@ -219,8 +219,9 @@ class PointReservoir:
 
     def run_network(self,prune_synapses=True):
         self.net = network(dt=self.dt,tf=self.tf,nodes=self.neurons,new_way=False)
+        self.net.null_synapses = prune_synapses
         print("running network")
-        self.net.simulate(prune_synapses)
+        self.net.simulate()
 
 
 class SuperNet:
@@ -390,10 +391,10 @@ class SuperNet:
         count = 0
         for neuron_key in self.net.neurons:
 
-            s = self.net.neurons[neuron_key].dend__nr_ni.s
+            s = self.net.neurons[neuron_key].dend_soma.s
             S.append(s)
 
-            phi_r = self.net.neurons[neuron_key].dend__nr_ni.phi_r
+            phi_r = self.net.neurons[neuron_key].dend_soma.phi_r
             Phi_r.append(phi_r)
 
             spike_t = self.net.neurons[neuron_key].spike_times

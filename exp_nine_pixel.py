@@ -58,7 +58,7 @@ def main():
         # import matplotlib.pyplot as plt
         # # spd = nine_neuron.dendrites[0][0][0].synaptic_inputs[1].phi_spd
         # dend_s = nine_neuron.dendrites[0][0][0].s
-        # signal = nine_neuron.neuron.dend__nr_ni.s
+        # signal = nine_neuron.neuron.dend_soma.s
         # ref = nine_neuron.neuron.dend__ref.s
 
         # plt.figure(figsize=(12,4))

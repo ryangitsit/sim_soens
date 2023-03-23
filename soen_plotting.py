@@ -724,7 +724,7 @@ def plot_neuron(neuron_object):
         return
     
     already_plotted_synapses = []
-    find_synapses_recursively_and_plot(neuron_object.dend__nr_ni,ax[0],already_plotted_synapses)
+    find_synapses_recursively_and_plot(neuron_object.dend_soma,ax[0],already_plotted_synapses)
     
     # dendrites
     def find_dendrites_recursively_and_plot(dendrite_object,ax,counter):
@@ -747,18 +747,18 @@ def plot_neuron(neuron_object):
             
         return
     
-    find_dendrites_recursively_and_plot(neuron_object.dend__nr_ni,ax,0)
+    find_dendrites_recursively_and_plot(neuron_object.dend_soma,ax,0)
     
     ib__list, phi_r__array, i_di__array, r_fq__array, phi_th_plus__vec, phi_th_minus__vec, s_max_plus__vec, s_max_minus__vec, s_max_plus__array, s_max_minus__array = dend_load_arrays_thresholds_saturations('default_{}'.format(neuron_object.loops_present))
-    _ind_ib = ( np.abs( ib__list[:] - neuron_object.dend__nr_ni.ib ) ).argmin()
+    _ind_ib = ( np.abs( ib__list[:] - neuron_object.dend_soma.ib ) ).argmin()
 
-    ax[len(ax)-_num-1].plot(_time_vec[:], neuron_object.dend__nr_ni.phi_r[:], color = colors['blue3'], label = 'total flux to NR')
+    ax[len(ax)-_num-1].plot(_time_vec[:], neuron_object.dend_soma.phi_r[:], color = colors['blue3'], label = 'total flux to NR')
     ax[len(ax)-_num-1].plot([_time_vec[0],_time_vec[-1]], [phi_th_plus__vec[_ind_ib],phi_th_plus__vec[_ind_ib]], ':', color = colors['red5'], label = 'flux threshold +')
     ax[len(ax)-_num-1].plot([_time_vec[0],_time_vec[-1]], [phi_th_minus__vec[_ind_ib],phi_th_minus__vec[_ind_ib]], ':', color = colors['red5'], label = 'flux threshold -')
-    ax[len(ax)-_num-1].plot(_time_vec[_spike_ind_vec], neuron_object.dend__nr_ni.phi_r[_spike_ind_vec], 'x', color = colors['blue5'])
+    ax[len(ax)-_num-1].plot(_time_vec[_spike_ind_vec], neuron_object.dend_soma.phi_r[_spike_ind_vec], 'x', color = colors['blue5'])
     
-    ax[len(ax)-_num].plot(_time_vec[:], neuron_object.dend__nr_ni.s[:], color = colors['blue3'], label = 'current in NI')
-    ax[len(ax)-_num].plot(_time_vec[_spike_ind_vec], neuron_object.dend__nr_ni.s[_spike_ind_vec], 'x', color = colors['blue5'])
+    ax[len(ax)-_num].plot(_time_vec[:], neuron_object.dend_soma.s[:], color = colors['blue3'], label = 'current in NI')
+    ax[len(ax)-_num].plot(_time_vec[_spike_ind_vec], neuron_object.dend_soma.s[_spike_ind_vec], 'x', color = colors['blue5'])
     ax[len(ax)-_num].plot([_time_vec[0],_time_vec[-1]] , [neuron_object.integrated_current_threshold,neuron_object.integrated_current_threshold], ':', color = colors['red5'], label = 'threshold')
     
     if not neuron_object.plot_simple:
@@ -865,7 +865,7 @@ def plot_neuron_simple(neuron_object):
         return
     
     already_plotted_synapses = []
-    find_synapses_recursively_and_plot(neuron_object.dend__nr_ni,ax[0],already_plotted_synapses)
+    find_synapses_recursively_and_plot(neuron_object.dend_soma,ax[0],already_plotted_synapses)
             
     # output synapses from neuron
     for synapse_key in neuron_object.synaptic_outputs:
@@ -897,19 +897,19 @@ def plot_neuron_simple(neuron_object):
             
         return
     
-    find_dendrites_recursively_and_plot(neuron_object.dend__nr_ni,[ax[1],ax[2]],0)
+    find_dendrites_recursively_and_plot(neuron_object.dend_soma,[ax[1],ax[2]],0)
     
     ib__list, phi_r__array, i_di__array, r_fq__array, phi_th_plus__vec, phi_th_minus__vec, s_max_plus__vec, s_max_minus__vec, s_max_plus__array, s_max_minus__array = dend_load_arrays_thresholds_saturations('default_{}'.format(neuron_object.loops_present))
-    _ind_ib = ( np.abs( ib__list[:] - neuron_object.dend__nr_ni.ib ) ).argmin()
+    _ind_ib = ( np.abs( ib__list[:] - neuron_object.dend_soma.ib ) ).argmin()
 
-    ax[3].plot(_time_vec[:], neuron_object.dend__nr_ni.phi_r[:], color = colors['blue3'], label = 'total flux to NR')
+    ax[3].plot(_time_vec[:], neuron_object.dend_soma.phi_r[:], color = colors['blue3'], label = 'total flux to NR')
     ax[3].plot([_time_vec[0],_time_vec[-1]], [phi_th_plus__vec[_ind_ib],phi_th_plus__vec[_ind_ib]], ':', color = colors['red5'], label = 'flux threshold +')
     ax[3].plot([_time_vec[0],_time_vec[-1]], [phi_th_minus__vec[_ind_ib],phi_th_minus__vec[_ind_ib]], ':', color = colors['red5'], label = 'flux threshold -')
-    ax[3].plot(_time_vec[_spike_ind_vec], neuron_object.dend__nr_ni.phi_r[_spike_ind_vec], 'x', color = colors['blue5'])
+    ax[3].plot(_time_vec[_spike_ind_vec], neuron_object.dend_soma.phi_r[_spike_ind_vec], 'x', color = colors['blue5'])
     
-    ax[4].plot(_time_vec[:], neuron_object.dend__nr_ni.s[:], color = colors['blue3'], label = 'current in NI')
-    ax[4].plot(_time_vec[_spike_ind_vec], neuron_object.dend__nr_ni.s[_spike_ind_vec], 'x', color = colors['blue5'])
-    if (neuron_object.integrated_current_threshold-np.max(neuron_object.dend__nr_ni.s[:]))/neuron_object.integrated_current_threshold < 0.5 or np.max(neuron_object.dend__nr_ni.s[:]) > neuron_object.integrated_current_threshold:
+    ax[4].plot(_time_vec[:], neuron_object.dend_soma.s[:], color = colors['blue3'], label = 'current in NI')
+    ax[4].plot(_time_vec[_spike_ind_vec], neuron_object.dend_soma.s[_spike_ind_vec], 'x', color = colors['blue5'])
+    if (neuron_object.integrated_current_threshold-np.max(neuron_object.dend_soma.s[:]))/neuron_object.integrated_current_threshold < 0.5 or np.max(neuron_object.dend_soma.s[:]) > neuron_object.integrated_current_threshold:
         ax[len(ax)-_num].plot([_time_vec[0],_time_vec[-1]] , [neuron_object.integrated_current_threshold,neuron_object.integrated_current_threshold], ':', color = colors['red5'], label = 'threshold')
     
         
@@ -956,8 +956,8 @@ def plot_neuron_phase_portrait(neuron_object):
     fig, ax = plt.subplots(nrows = 1, ncols = 1, sharex = True, sharey = False, figsize = ( fig_size[0] , 2*fig_size[1]) )
     plt.suptitle( 'soen neuron: {}; phase portrait'.format(neuron_object.name) )
     
-    neuron_refractory_flux = neuron_object.dend__ref.s * neuron_object.dend__nr_ni.dendritic_connection_strengths['{}__dend_{}'.format(neuron_object.name,'refraction')]
-    neuron_applied_flux_without_refraction = neuron_object.dend__nr_ni.phi_r - neuron_refractory_flux
+    neuron_refractory_flux = neuron_object.dend__ref.s * neuron_object.dend_soma.dendritic_connection_strengths['{}__dend_{}'.format(neuron_object.name,'refraction')]
+    neuron_applied_flux_without_refraction = neuron_object.dend_soma.phi_r - neuron_refractory_flux
     neuron_refractory_flux = -neuron_refractory_flux
     
     ax.plot(neuron_applied_flux_without_refraction, neuron_refractory_flux, color = colors['blue3'], label = 'non-refractory flux to NR')
@@ -982,7 +982,7 @@ def plot_neuron_phase_portrait(neuron_object):
         
     ax.plot(neuron_applied_flux_without_refraction[0], neuron_refractory_flux[0], 'o', color = colors['green3'], label = 'starting point')
 
-    find_synapses_recursively_and_plot(neuron_object.dend__nr_ni,ax)     
+    find_synapses_recursively_and_plot(neuron_object.dend_soma,ax)     
     
     # put red crosses at neuron spike times
     _ind_vec = np.zeros([len(neuron_object.spike_times)], dtype = int)
@@ -1046,7 +1046,7 @@ def plot_neuron_rate_out_vs_rate_in(ib_n__vec, beta_ni__vec, rate_applied__vec, 
     color_list = [['blue1','blue2','blue3','blue4','blue5'],['green1','green2','green3','green4','green5'],['yellow1','yellow2','yellow3','yellow4','yellow5'],['red1','red2','red3','red4','red5']]
         
     fig, ax = plt.subplots(nrows = 1, ncols = 1, sharex = True, sharey = False, figsize = ( fig_size[0] , fig_size[1]) ) # 
-    plt.suptitle('neuron with constant drive: loops present = {}\ntau_ni = {:5.3e}ns, s_th__factor = {:3.1f}'.format( neuron_object.loops_present, neuron_object.dend__nr_ni.tau_di, s_th__factor ) )
+    plt.suptitle('neuron with constant drive: loops present = {}\ntau_ni = {:5.3e}ns, s_th__factor = {:3.1f}'.format( neuron_object.loops_present, neuron_object.dend_soma.tau_di, s_th__factor ) )
     
     for ii in range(len(ib_n__vec)):
         for jj in range(len(beta_ni__vec)):            
@@ -1076,7 +1076,7 @@ def plot_monosynaptic_point_neuron__rate_out_vs_rate_in(ib_n__vec, beta_ni__vec,
         
     fig, ax = plt.subplots(nrows = 1, ncols = 1, sharex = True, sharey = False, figsize = ( fig_size[0] , fig_size[1]) ) # 
     _str = 'neuron with constant rate in: loops present = {}'.format(neuron_object.loops_present)
-    _str = '{}\ntau_ni = {:5.3f}ns, s_th = {:4.2f}'.format(_str, neuron_object.dend__nr_ni.tau_di, neuron_object.integrated_current_threshold)
+    _str = '{}\ntau_ni = {:5.3f}ns, s_th = {:4.2f}'.format(_str, neuron_object.dend_soma.tau_di, neuron_object.integrated_current_threshold)
     _str = '{}\nib_ref = {:5.3f}, beta_ref = {:5.3e}, tau_ref = {:5.3f}ns'.format(_str, neuron_object.dend__ref.ib, neuron_object.dend__ref.beta, neuron_object.dend__ref.tau_di)
     plt.suptitle('{}'.format( _str ) )
     
@@ -1093,7 +1093,7 @@ def plot_monosynaptic_point_neuron__rate_out_vs_rate_in(ib_n__vec, beta_ni__vec,
     ax.grid(which = 'both', axis = 'both', color = colors['grey4'])
     ax.grid(which='minor', linewidth = 0.15)
     
-    _str = 'tau_ni_{:5.3f}ns_s_th_{:4.2f}'.format(neuron_object.dend__nr_ni.tau_di, neuron_object.integrated_current_threshold)
+    _str = 'tau_ni_{:5.3f}ns_s_th_{:4.2f}'.format(neuron_object.dend_soma.tau_di, neuron_object.integrated_current_threshold)
     _str = '{}_ib_ref_{:5.3f}_beta_ref_{:5.3e}_tau_ref_{:5.3f}ns'.format(_str, neuron_object.dend__ref.ib, neuron_object.dend__ref.beta, neuron_object.dend__ref.tau_di)
     plt.savefig('one_syn_one_neu__{}.pdf'.format(_str))
     
@@ -1109,7 +1109,7 @@ def plot_monosynaptic_monodendritic_neuron__rate_out_vs_rate_in(rate_in__vec, ra
                 
         fig, ax = plt.subplots(nrows = 1, ncols = 1, sharex = True, sharey = False, figsize = ( fig_size[0] , fig_size[1]) ) # 
         _str = 'neuron with constant rate in: loops present = {}, beta_di = {:5.3e}'.format(neuron_object.loops_present, beta_di__vec[kk])
-        _str = '{}\nib_n = {:5.3f}, beta_ni = {:5.3e}, tau_ni = {:5.3f}ns, s_th = {:4.2f}'.format(_str, neuron_object.dend__nr_ni.ib, neuron_object.dend__nr_ni.beta, neuron_object.dend__nr_ni.tau_di, neuron_object.integrated_current_threshold)
+        _str = '{}\nib_n = {:5.3f}, beta_ni = {:5.3e}, tau_ni = {:5.3f}ns, s_th = {:4.2f}'.format(_str, neuron_object.dend_soma.ib, neuron_object.dend_soma.beta, neuron_object.dend_soma.tau_di, neuron_object.integrated_current_threshold)
         _str = '{}\nib_ref = {:5.3f}, beta_ref = {:5.3e}, tau_ref = {:5.3f}ns'.format(_str, neuron_object.dend__ref.ib, neuron_object.dend__ref.beta, neuron_object.dend__ref.tau_di)
         plt.suptitle('{}'.format( _str ) )
     
@@ -1126,7 +1126,7 @@ def plot_monosynaptic_monodendritic_neuron__rate_out_vs_rate_in(rate_in__vec, ra
         ax.grid(which = 'both', axis = 'both', color = colors['grey4'])
         ax.grid(which='minor', linewidth = 0.15)
         
-        _str = 'tau_ni_{:5.3f}ns_s_th_{:4.2f}'.format(neuron_object.dend__nr_ni.tau_di, neuron_object.integrated_current_threshold)
+        _str = 'tau_ni_{:5.3f}ns_s_th_{:4.2f}'.format(neuron_object.dend_soma.tau_di, neuron_object.integrated_current_threshold)
         _str = '{}_ib_ref_{:5.3f}_beta_ref_{:5.3e}_tau_ref_{:5.3f}ns'.format(_str, neuron_object.dend__ref.ib, neuron_object.dend__ref.beta, neuron_object.dend__ref.tau_di)
         _str = '{}_beta_di_{:5.3e}'.format(_str, beta_di__vec[kk])
         plt.savefig('one_syn_one_dend_one_neu__{}.pdf'.format(_str))
@@ -1169,7 +1169,7 @@ def plot_monosynaptic_monodendritic_neuron__single_synapse_event(spike_times__ar
         fig, ax = plt.subplots(nrows = 2, ncols = 1, sharex = True, sharey = False, figsize = ( fig_size[0] , fig_size[1]) ) # 
         _str = 'neuron, one syn, one dend, one synapse event: loops present = {}'.format(neuron_object.loops_present)
         _str = '{}\nbeta_di = {:5.3e}, tau_di = {:5.3e}ns'.format(_str, dendrite_object.beta, tau_di__vec[jj])
-        _str = '{}\nib_n = {:5.3f}, tau_ni = {:5.3f}ns, s_th = {:4.2f}'.format(_str, neuron_object.dend__nr_ni.ib, neuron_object.dend__nr_ni.tau_di, neuron_object.integrated_current_threshold)
+        _str = '{}\nib_n = {:5.3f}, tau_ni = {:5.3f}ns, s_th = {:4.2f}'.format(_str, neuron_object.dend_soma.ib, neuron_object.dend_soma.tau_di, neuron_object.integrated_current_threshold)
         _str = '{}\nib_ref = {:5.3f}, beta_ref = {:5.3e}, tau_ref = {:5.3f}ns'.format(_str, neuron_object.dend__ref.ib, neuron_object.dend__ref.beta, neuron_object.dend__ref.tau_di)
         plt.suptitle('{}'.format( _str ) )
     
@@ -1189,7 +1189,7 @@ def plot_monosynaptic_monodendritic_neuron__single_synapse_event(spike_times__ar
             ax[qq].grid(which='minor', linewidth = 0.15)
         plt.subplots_adjust(wspace=0.3, hspace=0)
         
-        # _str = 'tau_ni_{:5.3f}ns_s_th_{:4.2f}'.format(neuron_object.dend__nr_ni.tau_di, neuron_object.integrated_current_threshold)
+        # _str = 'tau_ni_{:5.3f}ns_s_th_{:4.2f}'.format(neuron_object.dend_soma.tau_di, neuron_object.integrated_current_threshold)
         # _str = '{}_ib_ref_{:5.3f}_beta_ref_{:5.3e}_tau_ref_{:5.3f}ns'.format(_str, neuron_object.dend__ref.ib, neuron_object.dend__ref.beta, neuron_object.dend__ref.tau_di)
         # _str = '{}_beta_di_{:5.3e}'.format(_str, beta_di__vec[kk])
         # plt.savefig('one_syn_one_dend_one_neu__{}.pdf'.format(_str))
@@ -1200,7 +1200,7 @@ def plot_monosynaptic_monodendritic_neuron__single_synapse_event(spike_times__ar
         fig, ax = plt.subplots(nrows = 2, ncols = 1, sharex = True, sharey = False, figsize = ( fig_size[0] , fig_size[1]) ) # 
         _str = 'neuron, one syn, one dend, one synapse event: loops present = {}'.format(neuron_object.loops_present)
         _str = '{}\nbeta_di = {:5.3e}, beta_ni = {:5.3e}'.format(_str, dendrite_object.beta, beta_ni__vec[ii])
-        _str = '{}\nib_n = {:5.3f}, tau_ni = {:5.3f}ns, s_th = {:4.2f}'.format(_str, neuron_object.dend__nr_ni.ib, neuron_object.dend__nr_ni.tau_di, neuron_object.integrated_current_threshold)
+        _str = '{}\nib_n = {:5.3f}, tau_ni = {:5.3f}ns, s_th = {:4.2f}'.format(_str, neuron_object.dend_soma.ib, neuron_object.dend_soma.tau_di, neuron_object.integrated_current_threshold)
         _str = '{}\nib_ref = {:5.3f}, beta_ref = {:5.3e}, tau_ref = {:5.3f}ns'.format(_str, neuron_object.dend__ref.ib, neuron_object.dend__ref.beta, neuron_object.dend__ref.tau_di)
         plt.suptitle('{}'.format( _str ) )
     
@@ -1225,7 +1225,7 @@ def plot_monosynaptic_monodendritic_neuron__single_synapse_event(spike_times__ar
 
 def plot_n_synapse_one_neuron(num_sy, Jij, s_max__mat, ib__vec, num_sy_fire__vec, neuron_1):
     
-    dendrite_1 = neuron_1.dend__nr_ni
+    dendrite_1 = neuron_1.dend_soma
     color_list = colors_gist(np.linspace(.1, 1,len(ib__vec)))
         
     fig, ax = plt.subplots(nrows = 1, ncols = 1, sharex = True, sharey = False, figsize = ( fig_size[0] , p['golden_ratio']*fig_size[1]) ) # 
@@ -1855,7 +1855,7 @@ def activity_plot(neurons,net,phir=False,dend=True,title=None,
 
             ## add input/output spikes
             if spikes==True:
-                
+
                 ind = np.where(net.spikes[0]==ii)[0]
                 spike_times = np.array([net.spikes[1][i] for i in ind]).reshape(len(ind),)
                 
