@@ -154,6 +154,7 @@ class PointReservoir:
             self.neurons.append(neuron)
 
     def make_net(self):
+        self.connectivity = []
         np.random.seed(self.run)
         connections = 0
         for i in range(self.N):
@@ -166,6 +167,7 @@ class PointReservoir:
                         for syn in self.neurons[j].synapse_list:
                             if "synaptic_input" not in syn.__dict__:
                                 self.neurons[i].neuron.add_output(syn)
+                                self.connectivity.append([i,j])
                                 # syn.connection_strength = np.random.rand()
                                 connections+=1
                                 break
@@ -174,47 +176,76 @@ class PointReservoir:
     def connect_input(self,input):
         connections = 0
         syn_finder = 0
+        self.input_connectivity = []
+        self.input_channels = len(input.spike_rows)
         for repeat in range(10):
             for i,row in enumerate(input.spike_rows):
                 # print((len(input.spike_rows)*repeat+i)%72)
-                for syn in self.neurons[(len(input.spike_rows)*repeat+i)%72].synapse_list:
+                # j = (len(input.spike_rows)*repeat+i)%72
+                count=0
+                for j,syn in enumerate(self.neurons[(len(input.spike_rows)*repeat+i)%72].synapse_list):
                     if "synaptic_input" not in syn.__dict__:
+                        self.input_connectivity.append([i,j])
                         array = np.sort(row)
                         array = np.append(array,np.max(array)+.001)
                         syn.add_input(input_signal(name = 'input_synaptic_drive', 
                                             input_temporal_form = 'arbitrary_spike_train', 
                                             spike_times = array) )
-                        # print(syn.__dict__.synaptic_input)
+                        count+=1
                         connections += 1 
                         break
-        # print("Input connections: ", connections)
+
+    def graph_input(self):
+        import networkx as nx
+        from networkx.algorithms import bipartite
+        import matplotlib.pyplot as plt
+        self.input_connectivity = []
+        G = nx.Graph()
+        keys_in = np.arange(0,self.input_channels,1)
+        keys_res = np.arange(self.input_channels,self.input_channels+self.N,1)
+        ki = []
+        kr = []
+        for i in keys_in:
+            ki.append(str(i))
+        for j in keys_in:
+            kr.append(str(j))
+        G.add_nodes_from(keys_in, bipartite=0)
+        G.add_nodes_from(keys_res,bipartite=1)
+
+        add_edges = []
+        print(self.input_connectivity)
+        for ii, connect in self.input_connectivity:
+            print(ii)
+            add_edges.append( (str(connect[ii][0]),str(connect[ii][1]+self.input_channels)))
+            # G.add_edge(connect[0],connect[1]+self.input_channels)
+        self.edges=add_edges    
+        G.add_edges_from(add_edges)
+        bipartite.is_bipartite(G)
+
+        nx.draw_networkx(G, pos = nx.drawing.layout.bipartite_layout(G, keys_in), width = 2)
+        plt.show()
 
 
-        # connections = 0
-        # syn_finder = 0
-        # while syn_finder == 0:
-        #     for row in input.spike_rows:
-        #         syn_found = 0
-        #         for n in self.neurons:
-        #             for syn in n.synapse_list:
-        #                 if "synaptic_input" not in syn.__dict__:
-        #                     array = np.sort(row)
-        #                     array = np.append(array,np.max(array)+.001)
-        #                     syn.add_input(input_signal(name = 'input_synaptic_drive', 
-        #                                         input_temporal_form = 'arbitrary_spike_train', 
-        #                                         spike_times = array) )
-        #                     # print(syn.__dict__.synaptic_input)
-        #                     connections += 1 
-        #                     syn_found += 1
-        #                     print(syn_found,connections)
-        #                     break
-        #             if syn_found > 0:
-        #                 break
-        #         if syn_found == 0:
-        #             syn_finder += 1
-        #         # syn_found = 0
-        # print("Input connections: ", connections)
-        # self.neurons[i].synapse_list[j].add_input(input)
+
+
+    def graph_net(self):
+
+        import networkx as nx
+        import matplotlib.pyplot as plt
+        G = nx.DiGraph()
+        G.add_nodes_from(range(self.N))
+        for connect in self.connectivity:
+            G.add_edge(connect[0],connect[1],with_labels=True)
+
+        # print(len(G.edges()))
+        # print(G.degree())
+        # print(max(list(zip(*G.degree()))[1]))
+        # print(np.mean(list(zip(*G.degree()))[1]))
+        plt.figure(figsize=(14,14))
+        nx.draw_circular(G, with_labels=True)
+        plt.show()
+
+
 
 
     def run_network(self,prune_synapses=True):
@@ -348,6 +379,7 @@ class SuperNet:
                 count+=1
         print("input neurons: ", len(self.inputs))
         # print(self.inputs[1].spike_times)
+        self.input_connectivity = []
         ### change for more complex input
         if self.in_connect == "random":
             p = self.input_p
@@ -357,6 +389,7 @@ class SuperNet:
                     if rnd < p:
                         # print(i,j)
                         self.dendrites[j].add_input(self.synapse_in[i], connection_strength = self.W_SID[j])
+                        self.input_connectivity.append([i,j])
 
         elif self.in_connect == "ordered":
             for i in range(len(self.synapse_in)):
@@ -364,6 +397,7 @@ class SuperNet:
                     self.dendrites[i].add_input(self.synapse_in[i], connection_strength = self.W_SID[i])
                 else:
                     self.dendrites[i-self.N].add_input(self.synapse_in[i], connection_strength = self.W_SID[i-self.N])
+                self.input_connectivity.append([i,j])
         self.make_net()
 
     def make_net(self):

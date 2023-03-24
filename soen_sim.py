@@ -205,7 +205,7 @@ class dendrite():
         if type(self.tau_di).__name__ == 'list': 
             tau_vs_current = self.tau_di
             self.tau_list, self.s_list = [], []
-            for tau_s in tau_vs_current:
+            for tau_s in ta :
                 self.tau_list.append(tau_s[0])
                 self.s_list.append(tau_s[1])
             self.tau_list.append(self.tau_list[-1]) # add entry with large s

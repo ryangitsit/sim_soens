@@ -343,5 +343,20 @@ class SuperNode():
         structure(self)
 
     def plot_neuron_activity(self,net,**kwargs):
+        '''
+        Plots signal activity for a given neuron
+            - net        -> network within which neurons were simulated
+            - phir       -> plot phi_r of soma and phi_r thresholds
+            - dend       -> plot dendritic signals
+            - input      -> mark moments of input events with red spikes
+            - SPD        -> plot synaptic flux
+            - ref        -> plot refractory signal
+            - weighting  -> weight dendritic signals by their connection strength
+            - spikes     -> plot output spikes over signal
+            - legend_out -> place legend outside of plots
+            - size       -> (x,y) size of figure
+            - path       -> save plot to path
+            
+        '''
         from soen_plotting import activity_plot
         activity_plot([self],net,**kwargs)
