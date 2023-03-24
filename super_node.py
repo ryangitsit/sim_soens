@@ -231,22 +231,34 @@ class SuperNode():
 
     def uniform_input(self,input):
         '''
-        Add the same input channel to all available synapses
+        uniform_input:
+         - syntax -> SuperNode.uniform_input(SuperInput)
+         - Adds the same input channel to all available synapses
+         - note, the first channel of the SuperInput object will be used
         '''
         for S in self.synapse_list:
             S.add_input(input.signals[0])
 
-    def custom_input(self,input,connections):
+    def custom_input(self,input,synapse_indices):
         '''
-        Add the same input channel to specific synapses
+        custom_input:
+         - syntax -> SuperNode.custom_input(SuperInput,synapse_indices)
+            - synapse_indices = list of `synapse_list` indices to connect to
+         - Adds the same input channel to specific synapses
          - Simply defined as list of indice tuples
         '''
-        for connect in connections:
+        for connect in synapse_indices:
             self.synapses_list[connect].add_input(input.signals[0])
                             
     def multi_channel_input(self,input,connectivity=None):
         '''
-        Add specific input channels to specific synapses
+        multi_channel_input:
+         - syntax -> multi_channel_input(SuperInput,connectivity)]
+            - connectivity = list of length 2 lists that define synapse_list
+              index and SuperInput.signal index
+            - connectivity = [[synapse_index_1,SuperInput_index_7],[...],[...]]
+         - Connects multi-channel input to multiple synapses according to
+           specified connectivity
         '''
         for connect in connectivity:
             # print(connect[0],connect[1])
