@@ -134,6 +134,10 @@ class SuperNode():
         # add the somatic dendrite to the 0th layer of the arboric structure
         dendrites.insert(0,[[self.neuron.dend_soma]])
 
+        # make dendrites readable through node object
+        if dendrites:
+            self.dendrites = dendrites
+
         # if syns attribute, connect as a function of grouping to final layer
         if hasattr(self, 'syns'):
             self.synapses = [[] for _ in range(len(self.syns))]
@@ -200,10 +204,10 @@ class SuperNode():
                                     connect = np.random.rand()
                                 dendrites[i][j][k].add_input(s, 
                                     connection_strength = connect)
+                                
+        else:
+            self.synaptic_layer()
 
-        # make dendrites readable through node object
-        if dendrites:
-            self.dendrites = dendrites
 
         
 
@@ -212,9 +216,6 @@ class SuperNode():
     ############################################################################  
 
     def synaptic_layer(self):
-        '''
-        Simply adds a synapse to all dendrites on the outer layer
-        '''
         self.synapse_list = []
         count = 0
         if hasattr(self,'w_sd'):
@@ -223,7 +224,7 @@ class SuperNode():
             w_sd = 1
         for g in self.dendrites[len(self.dendrites)-1]:
             for d in g:
-                syn = synapse(name = f'{self.neuron.name}_syn{count}')
+                syn = synapse(name=f'{self.neuron.name}_syn{count}')
                 self.synapse_list.append(syn)
                 count+=1
                 d.add_input(syn,connection_strength=w_sd)
@@ -258,39 +259,42 @@ class SuperNode():
     ############################################################################  
 
     def parameter_print(self):
-        print("\nSOMA:")
-        print(f" ib = {self.neuron.ib}")
+        print("\nSOMATIC DENDRITE:")
+        # print(f" ib = {self.neuron.ib}")
         print(f" ib_n = {self.neuron.ib_n}")
         print(f" tau_ni = {self.neuron.tau_ni}")
         print(f" beta_ni = {self.neuron.beta_ni}")
         # print(f" tau = {self.neuron.tau}")
         print(f" loops_present = {self.neuron.loops_present}")
         print(f" s_th = {self.neuron.s_th}")
-        print("\n")
-        # print(f" ib_di = {self.neuron.ib_di}")
-        # print(f" tau_di = {self.neuron.tau_di}")
-        # print(f" beta_di = {self.neuron.beta_di}")
+        print(f" synaptic_inputs = {list(self.neuron.dend_soma.synaptic_inputs.keys())}")
+        print(f" dendritic_inputs = {list(self.neuron.dend_soma.dendritic_inputs.keys())}")
 
-        print("\nREFRACTION:")
+        print("\nREFRACTORY DENDRITE:")
         print(f" ib_ref = {self.neuron.ib_ref}")
         print(f" tau_ref = {self.neuron.tau_ref}")
         print(f" beta_ref = {self.neuron.beta_ref}")
+        print(f" loops_present = {self.neuron.loops_present}")
+        print(f" dendritic_inputs = {list(self.neuron.dend__ref.dendritic_inputs.keys())}")
 
-        print("\nDENDRITES:")
+        print("\nDENDRITIC ARBOR:")
+        if len(self.dendrite_list) == 2: print ('  empty')
         for dend in self.dendrite_list:
-            name = "arbor"
-            if "ref" in dend.name:
-                name = 'refractory'
-            elif "soma" in dend.name:
-                name = "soma"
-            print(f" {name}", dend.name)
-            print(f"   ib_di = {dend.ib}")
-            print(f"   tau_di = {dend.tau_di}")
-            print(f"   beta_di = {dend.beta_di}")
-            print(f"   loops_present = {dend.loops_present}")
-            print(f"   synaptic_inputs = {list(dend.synaptic_inputs.keys())}")
-            print(f"   dendritic_inputs = {list(dend.dendritic_inputs.keys())}")
-        print("\n\n")
+            # name = " IN-ARBOR"
+            # if "REFRACTORY:" in dend.name:
+            #     name = 'refractory'
+            # elif "SOMATIC:" in dend.name:
+            #     name = "soma"
+            if 'ref' not in dend.name and 'soma' not in dend.name:
+                print(f" ", dend.name)
+                print(f"   ib_di = {dend.ib}")
+                print(f"   tau_di = {dend.tau_di}")
+                print(f"   beta_di = {dend.beta_di}")
+                print(f"   loops_present = {dend.loops_present}")
+                print(f"   synaptic_inputs = {list(dend.synaptic_inputs.keys())}")
+                print(f"   dendritic_inputs = {list(dend.dendritic_inputs.keys())}")
+
+        # print("\n\n")
 
         # print("\nCONNECTIVITY:")
 

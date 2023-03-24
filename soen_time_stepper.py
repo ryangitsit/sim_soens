@@ -173,7 +173,7 @@ def net_step(net,tau_vec,d_tau):
                 # end add spike to output synapses
                        
     _t1 = time.time()
-    print(f'\nSimulation completed in time = {(_t1-_t0)} seconds \n')
+    # print(f'\nSimulation completed in time = {(_t1-_t0)} seconds \n')
         
     return net
 
@@ -243,23 +243,22 @@ def dendrite_updater(dend_obj,time_index,present_time,d_tau,HW=None):
                     
         dend_obj.phi_r[time_index+1] += dend_obj.synaptic_inputs[synapse_key].phi_spd[time_index+1]
         
-    if np.abs(dend_obj.phi_r[time_index+1]) > .5:
-        # print('\nWarning: absolute value of flux drive to dendrite {} exceeded 1 on time step {} (phi_r = {:5.3f})'.format(dend_obj.name,time_index+1,dend_obj.phi_r[time_index+1]))
-        dend_obj.rollover+=1
-        if np.abs(dend_obj.phi_r[time_index+1]) > 1:
-            dend_obj.valleyedout+=1
-            if np.abs(dend_obj.phi_r[time_index+1]) > 1.5:
-                dend_obj.doubleroll+=1
-    #         print('phi_r = {:5.3f}? Calm the fuck down, bro.'.format(dend_obj.phi_r[time_index+1]))
+    # for counting moments any types of flex rollover
+    # if np.abs(dend_obj.phi_r[time_index+1]) > .5:
+    #     # print('\nWarning: absolute value of flux drive to dendrite {} exceeded 1 on time step {} (phi_r = {:5.3f})'.format(dend_obj.name,time_index+1,dend_obj.phi_r[time_index+1]))
+    #     dend_obj.rollover+=1
+    #     if np.abs(dend_obj.phi_r[time_index+1]) > 1:
+    #         dend_obj.valleyedout+=1
+    #         if np.abs(dend_obj.phi_r[time_index+1]) > 1.5:
+    #             dend_obj.doubleroll+=1
+    # #         print('phi_r = {:5.3f}? Calm the fuck down, bro.'.format(dend_obj.phi_r[time_index+1]))
 
-
-    
 
     new_bias=dend_obj.bias_current
-    if 'ib_ramp' in list(dend_obj.__dict__.keys()):
-        if dend_obj.ib_ramp == True:
+    # if 'ib_ramp' in list(dend_obj.__dict__.keys()):
+    #     if dend_obj.ib_ramp == True:
 
-            new_bias= 1.4 + (dend_obj.ib_max-1.4)*time_index/dend_obj.time_steps
+    #         new_bias= 1.4 + (dend_obj.ib_max-1.4)*time_index/dend_obj.time_steps
 
     if HW:
 

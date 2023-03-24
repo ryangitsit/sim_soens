@@ -164,6 +164,7 @@ class dendrite():
                 # print("SOMATIC DENDRITE")
                 self.tau_di = self.tau_ni
                 self.ib = self.ib_n
+                self.beta_di = self.beta_ni
                 self.name = f'{self.name}_soma'
         else:
             # print("REGULAR DENDRITE")
@@ -173,7 +174,7 @@ class dendrite():
                 self.ib = self.ib
             if "dend_name" in self.__dict__.keys():
                 self.name = self.dend_name
-            self.circuit_betas[-1] = self.beta_di
+        self.circuit_betas[-1] = self.beta_di
             
         
         if 'integrated_current_threshold' in params:
@@ -295,7 +296,7 @@ class synapse():
         self.hotspot_duration = 2 #3 # two time constants is default
         self.spd_duration = 8
         self.phi_peak = 0.5 # default peak flux is Phi0/2
-        self.spd_reset_time = self.tau_fall
+        self.spd_reset_time = 35 #self.tau_fall
         
         self.__dict__.update(params)
 

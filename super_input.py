@@ -53,6 +53,7 @@ class SuperInput():
                                 input_temporal_form = self.temporal_form, 
                                 spike_times = array) )
             # print(self.spike_rows[i])
+        
 
     def constant(self):
         input = input_signal(name = 'constant_input', 
@@ -142,3 +143,5 @@ class SuperInput():
                 count+=1
 
         return stream
+    
+
