@@ -5,11 +5,7 @@ import time
 from numpy.random import default_rng
 rng = default_rng()
 
-from soen_utilities import (
-    dend_load_rate_array, 
-)
-
-from soen_initialize import (
+from .soen_initialize import (
     dendrite_drive_construct,
     rate_array_attachment,
     synapse_initialization,
@@ -61,8 +57,9 @@ def run_soen_sim(net):
         net = net_step(net,tau_vec,d_tau)
 
         # attach results to dendrite objects
-        for dend in node.dendrite_list:
-            dendrite_data_attachment(dend,net)
+        for node in net.nodes:
+            for dend in node.dendrite_list:
+                dendrite_data_attachment(dend,net)
         
     # formerly, there were unique sim methods for each element
     else:
@@ -257,7 +254,6 @@ def dendrite_updater(dend_obj,time_index,present_time,d_tau,HW=None):
     new_bias=dend_obj.bias_current
     # if 'ib_ramp' in list(dend_obj.__dict__.keys()):
     #     if dend_obj.ib_ramp == True:
-
     #         new_bias= 1.4 + (dend_obj.ib_max-1.4)*time_index/dend_obj.time_steps
 
     if HW:

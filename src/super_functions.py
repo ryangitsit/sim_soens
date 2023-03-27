@@ -135,6 +135,7 @@ def picklin(path,name):
     import pickle
     file = os.path.join(path, name)
     file = file + '.pickle'
+    print(file)
     file_to_read = open(file, "rb")
     obj = pickle.load(file_to_read)
     file_to_read.close()

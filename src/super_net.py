@@ -1,9 +1,9 @@
 import numpy as np
 
-from soen_utilities import index_finder, dend_load_arrays_thresholds_saturations
-from soen_sim import input_signal, network
-from soen_component_library import common_dendrite, common_synapse, common_neuron
-from super_library import NeuralZoo
+from .soen_utilities import index_finder, dend_load_arrays_thresholds_saturations
+from .soen_sim import input_signal, network
+from .super_library import NeuralZoo
+
 """
 ### THIS FILE TO BE REWRITTEN ###
 ToDo:

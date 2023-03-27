@@ -1,23 +1,23 @@
 import numpy as np
 import matplotlib.pyplot as plt
+import sys
+sys.path.append('../')
 
-from soen_plotting import raster_plot, activity_plot
+from src.soen_plotting import raster_plot, activity_plot
 
-from super_input import SuperInput
+from src.super_input import SuperInput
 # from params import net_args 
 
-from super_library import NeuralZoo
-from super_functions import *
-from soen_sim import network, dendrite, HardwareInTheLoop
-from soen_component_library import common_synapse
+from src.super_library import NeuralZoo
+from src.super_functions import *
+from src.soen_sim import network, dendrite, HardwareInTheLoop
 
-"""
-ADD NEURON OUTOUT TO TRACE DENDRITES
-"""
 
 
 def main():
-
+    '''
+    Dendritic Plasticity Demonstration
+    '''
     # define two 2-d input patterns via rates
     rates_1 = [51,51,51,95,95,95,50,50,50]
     rates_2 = [60,60,60,120,120,120,60,60,60]
@@ -109,20 +109,6 @@ def main():
 
     # create and run netword
     net = network(sim=True,dt=.1,tf=duration,nodes=nodes,null_synapses=True,new_way=True,hardware=HW)
-
-
-
-    # # check for rollover
-    # print("\nNEURON 1")
-    # for dend in nA.dendrite_list:
-    #     print(dend.name, " - Rollover: ",dend.rollover)
-    #     print(dend.name, " - Valleyed: ",dend.valleyedout)
-    #     print(dend.name, " - Double: ", dend.doubleroll)
-    # print("\nNEURON 2")
-    # for dend in nB.dendrite_list:
-    #     print(dend.name, " - Rollover: ",dend.rollover)
-    #     print(dend.name, " - Valleyed: ",dend.valleyedout)
-    #     print(dend.name, " - Double: ", dend.doubleroll)
 
     subtitles= ["Neuron 1","Neuron 2"]
     activity_plot(nodes,net,title=title,subtitles=subtitles,input=input_obj, size=(16,6),phir=True)

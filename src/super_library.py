@@ -3,10 +3,10 @@ import numpy as np
 # from _util import (
 #     physical_constants, index_finder)
 
-from soen_component_library import (
-    common_dendrite, common_synapse, common_neuron)
+# from .soen_component_library import (
+#     common_dendrite, common_synapse, common_neuron)
 
-from soen_sim import neuron, dendrite
+from .soen_sim import neuron, dendrite, synapse
 
 # from soen_utilities import (
 #     dend_load_rate_array, dend_load_arrays_thresholds_saturations,
@@ -209,7 +209,7 @@ class NeuralZoo():
             self.synapses = [[] for _ in range(len(self.syns))]
             for i,group in enumerate(self.syns):
                 for j,s in enumerate(group):
-                    self.synapses[i].append(common_synapse(s))
+                    self.synapses[i].append(synapse(name=s))
             count=0
             for j, subgroup in enumerate(dendrites[len(dendrites)-1]):
                 for k,d in enumerate(subgroup):
@@ -234,7 +234,7 @@ class NeuralZoo():
             for ii,S in enumerate(self.synaptic_structure):
 
                 # make a synapse
-                syn = common_synapse(f'{self.neuron.name[-2:]}_syn{ii}')
+                syn = synapse(name=f'{self.neuron.name[-2:]}_syn{ii}')
 
                 # append to easy-access list
                 self.synapse_list.append(syn)
@@ -291,7 +291,7 @@ class NeuralZoo():
             w_sd = 1
         for g in self.dendrites[len(self.dendrites)-1]:
             for d in g:
-                syn = common_synapse(f'{self.neuron.name}_syn{count}')
+                syn = synapse(name=f'{self.neuron.name}_syn{count}')
                 self.synapse_list.append(syn)
                 count+=1
                 d.add_input(syn,connection_strength=w_sd)
@@ -324,62 +324,62 @@ class NeuralZoo():
     #                           premade neurons                                #
     ############################################################################  
 
-    def single(self):
+    # def single(self):
 
-        self.synapse = common_synapse(1)
+    #     self.synapse = synapse(name=1)
 
-        self.dendrite = common_dendrite(1, 'ri', self.beta_di, 
-                                          self.tau_di, self.ib)
+    #     self.dendrite = common_dendrite(1, 'ri', self.beta_di, 
+    #                                       self.tau_di, self.ib)
                                     
-        self.dendrite.add_input(self.synapse, connection_strength = self.w_sd)
+    #     self.dendrite.add_input(self.synapse, connection_strength = self.w_sd)
 
-        self.neuron = common_neuron(1, 'ri', self.beta_ni, self.tau_ni, 
-                                      self.ib_n, self.s_th, 
-                                      self.beta_ref, self.tau_ref, self.ib_ref)
+    #     self.neuron = common_neuron(1, 'ri', self.beta_ni, self.tau_ni, 
+    #                                   self.ib_n, self.s_th, 
+    #                                   self.beta_ref, self.tau_ref, self.ib_ref)
 
-        self.neuron.add_input(self.dendrite, connection_strength = self.w_dn)
+    #     self.neuron.add_input(self.dendrite, connection_strength = self.w_dn)
 
 
-    def fractal_three(self):
-        H = 3 # depth
-        n = [3,3] # fanning at each layer, (length = H-1), from soma to synapses
+    # def fractal_three(self):
+    #     H = 3 # depth
+    #     n = [3,3] # fanning at each layer, (length = H-1), from soma to synapses
 
-        fractal_neuron = common_neuron(1, 'ri', self.beta_ni, self.tau_ni, 
-                                       self.ib_n, self.s_th, 
-                                       self.beta_ref, self.tau_ref, self.ib_ref)
-        # fractal_neuron.name = 'name'
-        dendrites = [ [] for _ in range(H-1) ]
-        synapses = []
+    #     fractal_neuron = common_neuron(1, 'ri', self.beta_ni, self.tau_ni, 
+    #                                    self.ib_n, self.s_th, 
+    #                                    self.beta_ref, self.tau_ref, self.ib_ref)
+    #     # fractal_neuron.name = 'name'
+    #     dendrites = [ [] for _ in range(H-1) ]
+    #     synapses = []
 
-        count=0
-        count_syn=0
-        last_layer = 1
-        # returns dendrites[layer][dendrite] = dendrites[H-1][n_h]
-        for h in range(H-1): 
-            for d in range(n[h]*last_layer):
-                dendrites[h].append(common_dendrite(count, 'ri', self.beta_di, 
-                                    self.tau_di, self.ib))
+    #     count=0
+    #     count_syn=0
+    #     last_layer = 1
+    #     # returns dendrites[layer][dendrite] = dendrites[H-1][n_h]
+    #     for h in range(H-1): 
+    #         for d in range(n[h]*last_layer):
+    #             dendrites[h].append(common_dendrite(count, 'ri', self.beta_di, 
+    #                                 self.tau_di, self.ib))
 
-                if h == H-2:
-                    synapses.append(common_synapse(d))
-                    dendrites[h][d].add_input(synapses[d], 
-                                              connection_strength = self.w_sd)
-                count+=1
-            last_layer = n[h]
+    #             if h == H-2:
+    #                 synapses.append(synapse(name=d))
+    #                 dendrites[h][d].add_input(synapses[d], 
+    #                                           connection_strength = self.w_sd)
+    #             count+=1
+    #         last_layer = n[h]
 
-        for i,layer in enumerate(dendrites):
-            # print("layer:", i)
-            for j,d in enumerate(layer):
-                # print("  dendrite", j)
-                if i < H-2:
-                    for g in range(n[1]):
-                        d.add_input(dendrites[i+1][j*n[1]+g], 
-                                    connection_strength=self.w_dd)
-                        # print(j,j*n[1]+g)
-                    fractal_neuron.add_input(d, connection_strength=self.w_dn)
-        self.dendrites = dendrites
-        self.synapses = synapses
-        self.fractal_neuron = fractal_neuron
+    #     for i,layer in enumerate(dendrites):
+    #         # print("layer:", i)
+    #         for j,d in enumerate(layer):
+    #             # print("  dendrite", j)
+    #             if i < H-2:
+    #                 for g in range(n[1]):
+    #                     d.add_input(dendrites[i+1][j*n[1]+g], 
+    #                                 connection_strength=self.w_dd)
+    #                     # print(j,j*n[1]+g)
+    #                 fractal_neuron.add_input(d, connection_strength=self.w_dn)
+    #     self.dendrites = dendrites
+    #     self.synapses = synapses
+    #     self.fractal_neuron = fractal_neuron
 
 
     def plastic_neuron(self):
@@ -409,7 +409,7 @@ class NeuralZoo():
                     for ei in exin:
                         trace_dend = dendrite(name=f'n{self.n_count}_d{i}_{ei}',tau_di=self.trace_tau)
                         trace_dend.add_input(d,connection_strength=cs)#2*np.random.rand())
-                        syn = common_synapse(f'{d.name}_tracesyn_{trace_dend.name}_{int(np.random.rand()*100000)}')
+                        syn = synapse(name=f'{d.name}_tracesyn_{trace_dend.name}_{int(np.random.rand()*100000)}')
                         trace_dend.add_input(syn,connection_strength=self.trace_syn_factor)
                         # trace_dend.add_input(self.neuron.dend_soma,connection_strength=soma_factor) ## 
                         self.trace_dendrites.append(trace_dend)

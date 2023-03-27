@@ -1,7 +1,7 @@
 import numpy as np
 
 # from soen_component_library import common_synapse
-from soen_sim import neuron, dendrite, synapse
+from .soen_sim import neuron, dendrite, synapse
 
 
 class SuperNode():
@@ -9,9 +9,50 @@ class SuperNode():
     def __init__(self,**entries):
         '''
         Generate node object
-            - node object is an object that makes and contains a neuron object
-            - contains other structural and meta parameters about the neuron
-
+         - node object is an object that makes and contains a neuron object
+         - contains other structural and meta parameters about the neuron
+         - structure defined by the weights argument [layer][group][dends]
+             - for example (values = weights of connections):
+                 weights = [
+                 [[0.2,0.5]], # 2 dends in lay1 (1 grp max), feed to soma
+                 [[.1,.3,.5],[.7,.7]] # 3 dends feed to first dend of lay1
+                 ]                    # 2 dends feed to dend2 of lay1
+         - all general parameters, and those associated with dendrites (_di),
+             refractory dendrites (_ref), and somas (_ni or _n) accepted
+         - for parameters specfically arranged according to dendritic tree,
+             pass in a list of lists of that parameter with the dendritic
+             strucuture (biases, taus, types, betas)
+             - note, this method applies to in-arbor dendrites only and the
+                 parameter structure should exclude the soma
+             - betas takes exponents
+             - biases take list indices
+         - Synapses will automatically be placed at every outermost dendrite
+           unless synaptic_strucure used (a list of arbor structures [with soma]
+           where each item is a synapse and values are strength of connection to 
+           that component)
+         - kwargs (use SuperNode.parameter_print() to view)
+            # general params
+            - ib_n
+            - ib
+            - ib_di
+            - ib_ref
+            - tau_ni
+            - tau_di
+            - tau_ref
+            - beta_ni
+            - beta_di
+            - beta_ref
+            - w_sd
+            - w_dn
+            - seed
+            - loops_present
+            - loops_present_ref
+            # group params
+            - weights
+            - biases
+            - taus
+            - types
+            - synaptic_structure
         '''  
 
         self.random_syn = False
@@ -73,15 +114,17 @@ class SuperNode():
                         #   - general dendrite parameters defined in this node's
                         #     initialization 
                         if hasattr(self, 'betas'):
-                            dend_params["beta_di"] =(np.pi*2)*10**self.betas[i][j][k]
+                            beta = self.betas[i][j][k]
+                            dend_params["beta_di"] =(np.pi*2)*10**beta
                         if hasattr(self, 'biases'):
                             if hasattr(self, 'types'):
+                                bias = self.biases[i][j][k]
                                 if self.types[i][j][k] == 'ri':
-                                    dend_params["ib"] = self.ib_list_ri[self.biases[i][j][k]]
+                                    dend_params["ib"] = self.ib_list_ri[bias]
                                 else:
-                                    dend_params["ib"] = self.ib_list_rtti[self.biases[i][j][k]]
+                                    dend_params["ib"] = self.ib_list_rtti[bias]
                             else:
-                                dend_params["ib"] = self.ib_list_ri[self.biases[i][j][k]]
+                                dend_params["ib"] = self.ib_list_ri[bias]
                             dend_params["ib_di"] = dend_params["ib"]
                         if hasattr(self, 'taus'):
                             dend_params["tau_di"] = self.taus[i][j][k]
@@ -92,7 +135,8 @@ class SuperNode():
                             dend_params["loops_present"] = 'ri'
 
                         # self.params = self.__dict__
-                        dend_params["dend_name"] = f"{self.neuron.name}_lay{i+1}_branch{j}_den{k}"
+                        name = f"{self.neuron.name}_lay{i+1}_branch{j}_den{k}"
+                        dend_params["dend_name"] = name
                         dend_params["type"] = type
 
                         # generate a dendrite given parameters
@@ -198,10 +242,10 @@ class SuperNode():
                         for k,d in enumerate(subgroup):
                             s=S[i][j][k]
                             if s !=0:
-                                if self.random_syn == False:
-                                    connect = self.synaptic_structure[ii][i][j][k]
-                                elif self.random_syn == True:
-                                    connect = np.random.rand()
+                                if self.random_syn==False:
+                                    connect=self.synaptic_structure[ii][i][j][k]
+                                elif self.random_syn==True:
+                                    connect=np.random.rand()
                                 dendrites[i][j][k].add_input(s, 
                                     connection_strength = connect)
                                 
@@ -279,15 +323,18 @@ class SuperNode():
         # print(f" tau = {self.neuron.tau}")
         print(f" loops_present = {self.neuron.loops_present}")
         print(f" s_th = {self.neuron.s_th}")
-        print(f" synaptic_inputs = {list(self.neuron.dend_soma.synaptic_inputs.keys())}")
-        print(f" dendritic_inputs = {list(self.neuron.dend_soma.dendritic_inputs.keys())}")
+        syn_in = list(self.neuron.dend_soma.synaptic_inputs.keys())
+        print(f" synaptic_inputs = {syn_in}")
+        dend_in = list(self.neuron.dend_soma.dendritic_inputs.keys())
+        print(f" dendritic_inputs = {dend_in}")
 
         print("\nREFRACTORY DENDRITE:")
         print(f" ib_ref = {self.neuron.ib_ref}")
         print(f" tau_ref = {self.neuron.tau_ref}")
         print(f" beta_ref = {self.neuron.beta_ref}")
         print(f" loops_present = {self.neuron.loops_present}")
-        print(f" dendritic_inputs = {list(self.neuron.dend__ref.dendritic_inputs.keys())}")
+        ref_in = list(self.neuron.dend__ref.dendritic_inputs.keys())
+        print(f" dendritic_inputs = {ref_in}")
 
         print("\nDENDRITIC ARBOR:")
         if len(self.dendrite_list) == 2: print ('  empty')
@@ -303,8 +350,10 @@ class SuperNode():
                 print(f"   tau_di = {dend.tau_di}")
                 print(f"   beta_di = {dend.beta_di}")
                 print(f"   loops_present = {dend.loops_present}")
-                print(f"   synaptic_inputs = {list(dend.synaptic_inputs.keys())}")
-                print(f"   dendritic_inputs = {list(dend.dendritic_inputs.keys())}")
+                syns_in = list(dend.synaptic_inputs.keys())
+                dends_in = list(dend.dendritic_inputs.keys())
+                print(f"   synaptic_inputs = {syns_in}")
+                print(f"   dendritic_inputs = {dends_in}")
 
         # print("\n\n")
 
@@ -335,11 +384,11 @@ class SuperNode():
                             return
                         
     def plot_arbor_activity(self,net,**kwargs):
-        from soen_plotting import arbor_activity
+        from .soen_plotting import arbor_activity
         arbor_activity(self,net,**kwargs)
 
     def plot_structure(self):
-        from soen_plotting import structure
+        from .soen_plotting import structure
         structure(self)
 
     def plot_neuron_activity(self,net,**kwargs):
@@ -351,12 +400,12 @@ class SuperNode():
             - input      -> mark moments of input events with red spikes
             - SPD        -> plot synaptic flux
             - ref        -> plot refractory signal
-            - weighting  -> weight dendritic signals by their connection strength
+            - weighting  -> weight dendritic signals by connection strength
             - spikes     -> plot output spikes over signal
             - legend_out -> place legend outside of plots
             - size       -> (x,y) size of figure
             - path       -> save plot to path
             
         '''
-        from soen_plotting import activity_plot
+        from .soen_plotting import activity_plot
         activity_plot([self],net,**kwargs)

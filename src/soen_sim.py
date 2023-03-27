@@ -1,29 +1,31 @@
 import numpy as np
 
-from numpy.random import default_rng
-
-from soen_utilities import (
+from .soen_utilities import (
     get_jj_params, 
     dend_load_arrays_thresholds_saturations, 
     physical_constants, 
     index_finder
 )
-p = physical_constants()
-
-# from soen_functions import run_soen_sim
-from soen_time_stepper import run_soen_sim
-
-
-from soen_plotting import (
+from .soen_time_stepper import run_soen_sim
+from .soen_plotting import (
     plot_dendrite, 
     plot_synapse, 
     plot_neuron, 
     plot_neuron_simple, 
     plot_network
 )
+p = physical_constants()
+
 
 class input_signal():
-    
+    '''
+    Input Signal Object:
+     - input_signal(
+        name='...',
+        input_temporal_form = type of input = 'arbitrary_spike_train'
+        spike_times = times of spikes for that input channel (ns) = array
+        )
+    '''
     _next_uid = 0
     input_signals = dict()
     
@@ -34,7 +36,7 @@ class input_signal():
         input_signal._next_uid += 1
         self.unique_label = 'in{}'.format(self.uid)
         self.name = 'unnamed_input_signal__{}'.format(self.unique_label)
-        self.input_temporal_form = 'single_spike'
+        self.input_temporal_form = 'arbitrary_spike_train'
         self.source_type = 'qd'
         self.num_photons_per_spike = 1 
 
@@ -55,27 +57,31 @@ class input_signal():
             and ''analog_dendritic_drive
             ''')
 
-        
+        # currently not supported
         if self.input_temporal_form == 'constant':
             if not hasattr(self,'applied_flux'):
                 raise ValueError('''
                 [soen_sim] If the input temporal form is constant, applied_flux 
                 is required as a keyword argument.''')
         
-        if self.input_temporal_form in ['arbitrary_spike_train']:
+        # typical form
+        elif self.input_temporal_form in ['arbitrary_spike_train']:
             if not hasattr(self,'spike_times'):
                 raise ValueError(
             '''
             [soen_sim] arbitrary spike train requires spike_times as input
             ''')
         
-
+        # not supported (constant rate spike train)
+        # easier to use np.arange with arbitrary spike train
         if self.input_temporal_form == 'constant_rate':
             if not hasattr(self,'t_first_spike'):
                 self.t_first_spike = 50
             if not hasattr(self,'t_first_spike'):
                 self.rate= 1
 
+        # currently not supported 
+        # drive signals directly to receiving loop
         if self.input_temporal_form == 'analog_dendritic_drive':
             print('analog_dendritic_drive')
             if not hasattr(self,'piecewise_linear'):
@@ -90,7 +96,23 @@ class input_signal():
             
 
 class dendrite():
-    
+    '''
+    Dendrite object class
+    - keyword arguments (_ni, _n --> soma, _di --> in-arbor dendrite)
+        - ib, ib_n, ib_di = bias current 
+        - loops_present = type of dendrite ('ri','rtti','pri')
+        - beta_di, beta_ni = inductance parameter (2*np.pi*1e[2,3,4,5,6])
+        - tau_ni, tau_di = time constant (defines leak rate)
+    - a dendrite has sereral key roles
+        - somatic dendrite 'dend_soma' --> cell body, attached to transmitter,
+          can fire
+        - refractory dendrite 'dend_ref' --> receives flux from soma when soma
+          fires.  It then couples this flux back to soma inhibitively with a 
+          leak rate
+        - in-arbor dendrite layi_groupj_dendk --> a dendrite in a tree that 
+          eventually leads to soma.  The outermost layer usually hosts the 
+          dendrites that are associated with synapses
+    '''
     _next_uid = 0
     dendrites = dict()
 
@@ -128,7 +150,10 @@ class dendrite():
             self.circuit_betas = [tp*1/4, tp*1/4, tp*1/4, tp*1e2]
             self.ib = 2.1
             self.phi_p = .2
-        d_params = dend_load_arrays_thresholds_saturations(f'default_{self.loops_present}')
+        string = self.loops_present
+        if string == 'pri':
+            string = 'ri'
+        d_params = dend_load_arrays_thresholds_saturations(f'default_{string}')
         self.ib_max = d_params['ib__list'][-1]
         # print(self.ib_max,self.name)
         
@@ -149,7 +174,6 @@ class dendrite():
         # UPDATE TO CUSTOM PARAMS
         self.__dict__.update(params)
         
-
         if hasattr(self, 'dentype'):
             if self.dentype == 'refractory':
                 # print("REFRACTORY DENDRITE")
@@ -176,7 +200,6 @@ class dendrite():
                 self.name = self.dend_name
         self.circuit_betas[-1] = self.beta_di
             
-        
         if 'integrated_current_threshold' in params:
             self.s_th = params['integrated_current_threshold']
         
@@ -205,7 +228,7 @@ class dendrite():
         if type(self.tau_di).__name__ == 'list': 
             tau_vs_current = self.tau_di
             self.tau_list, self.s_list = [], []
-            for tau_s in ta :
+            for tau_s in tau_vs_current:
                 self.tau_list.append(tau_s[0])
                 self.s_list.append(tau_s[1])
             self.tau_list.append(self.tau_list[-1]) # add entry with large s
@@ -237,45 +260,54 @@ class dendrite():
         return 
     
     def add_input(self, connection_object, connection_strength = 1):
-        
+        '''
+        Add any object with an output as input to this object
+         - connection strength kwarg defines weighting of connection
+        '''
+        name = connection_object.name
+        cs = connection_strength
         if type(connection_object).__name__ == 'input_signal':
-            self.external_inputs[connection_object.name] = input_signal.input_signals[connection_object.name]
-            self.external_connection_strengths[connection_object.name] = connection_strength
+            self.external_inputs[name] = input_signal.input_signals[name]
+            self.external_connection_strengths[name] = cs
 
         if type(connection_object).__name__ == 'synapse':
-            self.synaptic_inputs[connection_object.name] = synapse.synapses[connection_object.name]
-            self.synaptic_connection_strengths[connection_object.name] = connection_strength
+            self.synaptic_inputs[name] = synapse.synapses[name]
+            self.synaptic_connection_strengths[name] = cs
             
         if type(connection_object).__name__ == 'dendrite':
-            self.dendritic_inputs[connection_object.name] = dendrite.dendrites[connection_object.name]            
-            self.dendritic_connection_strengths[connection_object.name] = connection_strength
+            self.dendritic_inputs[name] = dendrite.dendrites[name]            
+            self.dendritic_connection_strengths[name] = cs
             
         if type(connection_object).__name__ == 'neuron':
-            self.dendritic_inputs[connection_object.name] = neuron.neurons[connection_object.name]            
-            self.dendritic_connection_strengths[connection_object.name] = connection_strength
+            self.dendritic_inputs[name] = neuron.neurons[name]            
+            self.dendritic_connection_strengths[name] = cs
         
         return self
     
     def run_sim(self, **kwargs):
         self = run_soen_sim(self, **kwargs)
         return self
-    
-    def plot(self):
-        plot_dendrite(self)
-        return
+
+    # deprecated    
+    # def plot(self):
+    #     plot_dendrite(self)
+    #     return
 
     def __del__(self):
-        # print('dendrite deleted')
+        # print(f'dendrite {self.name} deleted')
         return
     
 
 
 class synapse():  
     '''
-    Synapse object can be attached to any dendritic receiving loop 
-        - Steep rise (tau_rise) followed by slower decay (tau_fall)
-        - phi_peak defines amplitude of rise\
-        - reset time defines the period that no new photons can be received
+    Synapse object class 
+     - can be attached to any dendritic receiving loop 
+     - default settings are closest to current empirical data
+     - best left as is
+     - steep rise (tau_rise) followed by slower decay (tau_fall)
+     - phi_peak defines amplitude of rise
+     - reset time defines the period that no new photons can be received
     '''
 
     _next_uid = 0
@@ -293,10 +325,10 @@ class synapse():
         # synaptic receiver specification
         self.tau_rise = 0.02 # 20ps is default rise (L_tot/r_ph = 100nH/5kOhm)
         self.tau_fall = 50 # 50ns is default fall time for SPD recovery
-        self.hotspot_duration = 2 #3 # two time constants is default
+        self.hotspot_duration = 3 #3 # two time constants is default
         self.spd_duration = 8
         self.phi_peak = 0.5 # default peak flux is Phi0/2
-        self.spd_reset_time = 35 #self.tau_fall
+        self.spd_reset_time = 50 #self.tau_fall
         
         self.__dict__.update(params)
 
@@ -327,8 +359,17 @@ class synapse():
         return
     
     
-class neuron():    
-
+class neuron():
+    '''
+    Neuron object class
+    - keyword arguments (_ref applies to refractory dendrite)
+        - ib, ib_n, ib_ref = bias current 
+        - loops_present, loops_present_ref = dendrite type ('ri','rtti','pri')
+        - beta_ni, beta_ref = inductance parameter (2*np.pi*1e[2,3,4,5,6])
+        - tau_ni, tau_ref = time constant (defines leak rate)
+        - s_th = spiking threshold
+    - the neuron class automatically constructs soma and refractory dendrites
+    '''
     _next_uid = 0
     neurons = dict()
     
@@ -391,7 +432,7 @@ class neuron():
         elif self.loops_present__refraction == 'rtti':
             self.ib_ref = 3.1 
         self.tau_ref= 50
-        self.refractory_dendrite_connection_strength = 'auto'
+        dend_ref_cs = 'auto'
         auto = True
         self.second_ref=False
 
@@ -410,7 +451,7 @@ class neuron():
 
         # UPDATE TO CUSTOM PARAMS
         self.__dict__.update(params)
-
+        self.circuit_betas = [2*np.pi* 1/4, 2*np.pi* 1/4, self.beta_ni]
         self.integrated_current_threshold = self.s_th
         params = self.__dict__
 
@@ -439,12 +480,13 @@ class neuron():
         self.alpha__refraction = r_ref/jj_params['r_j']
         self.jj_params__refraction = jj_params__refraction
 
-        if type(self.refractory_dendrite_connection_strength).__name__ != 'str':
+        ref_connect = dend_ref_cs
+        if type(ref_connect).__name__ != 'str':
             auto = False
-        elif self.refractory_dendrite_connection_strength == 'auto':
+        elif ref_connect == 'auto':
             auto = True
-        elif self.refractory_dendrite_connection_strength == 'match_excitatory':
-            self.refractory_dendrite_connection_strength = self.total_excitatory_input_connection_strength
+        elif ref_connect == 'match_excitatory':
+            ref_connect = self.total_excitatory_input_connection_strength
             auto = False
 
 
@@ -465,7 +507,8 @@ class neuron():
         neuron_dendrite.is_soma = True    
         
         self.dend_soma = neuron_dendrite
-        # self.dend_soma.absolute_refractory_period = self.absolute_refractory_period
+        ref = self.absolute_refractory_period
+        self.dend_soma.absolute_refractory_period=ref
         
         
         # ======================================================================
@@ -481,53 +524,59 @@ class neuron():
             print("SECOND REF")
             neuroref_params = params
             neuroref_params['dentype'] = 'refractory'
-            # neuroref_params['name'] = '{}_2__dend_{}'.format(self.name,'refraction')
             self.dend__ref_2 = dendrite(**neuroref_params)
-            self.dend_soma.add_input(self.dend__ref_2, connection_strength = self.refractory_dendrite_connection_strength)
+            self.dend_soma.add_input(
+                self.dend__ref_2, 
+                connection_strength=dend_ref_cs
+                )
         
+        # automatically normalizes refractory strength
         if auto:
-                d_params_ri = dend_load_arrays_thresholds_saturations('default_ri')
-                d_params_rtti = dend_load_arrays_thresholds_saturations('default_rtti')
-                if self.loops_present == 'ri':
-                    ib_list = d_params_ri["ib__list"]
-                    phi_th_minus_vec = d_params_ri["phi_th_minus__vec"]
-                    phi_th_plus_vec = d_params_ri["phi_th_plus__vec"]
-                    s_max_plus__array = d_params_ri["s_max_plus__array"]
-                elif self.loops_present == 'rtti':
-                    ib_list = d_params_rtti["ib__list"]
-                    phi_th_minus_vec = d_params_rtti["phi_th_minus__vec"]
-                    phi_th_plus_vec = d_params_rtti["phi_th_plus__vec"]
-                    s_max_plus__array = d_params_rtti["s_max_plus__array"]
+            d_params_ri = dend_load_arrays_thresholds_saturations('default_ri')
+            d_params_rtti = dend_load_arrays_thresholds_saturations('default_rtti')
+            if self.loops_present == 'ri':
+                ib_list = d_params_ri["ib__list"]
+                phi_th_minus_vec = d_params_ri["phi_th_minus__vec"]
+                phi_th_plus_vec = d_params_ri["phi_th_plus__vec"]
+                s_max_plus__array = d_params_ri["s_max_plus__array"]
+            elif self.loops_present == 'rtti':
+                ib_list = d_params_rtti["ib__list"]
+                phi_th_minus_vec = d_params_rtti["phi_th_minus__vec"]
+                phi_th_plus_vec = d_params_rtti["phi_th_plus__vec"]
+                s_max_plus__array = d_params_rtti["s_max_plus__array"]
 
-                if self.loops_present__refraction == 'ri':
-                    ib_list_r = d_params_ri["ib__list"]
-                    s_max_plus_vec__refractory = d_params_ri["s_max_plus__vec"]
-                elif self.loops_present__refraction == 'rtti':
-                    ib_list_r = d_params_rtti["ib__list"]
-                    s_max_plus_vec__refractory = d_params_rtti["s_max_plus__vec"]
-                    
-                # ( np.abs( ib_list[:] - self.dend_soma.ib ) ).argmin()
-                _ind_ib_soma = index_finder(ib_list[:],self.dend_soma.ib) 
+            if self.loops_present__refraction == 'ri':
+                ib_list_r = d_params_ri["ib__list"]
+                s_max_plus_vec__refractory = d_params_ri["s_max_plus__vec"]
+            elif self.loops_present__refraction == 'rtti':
+                ib_list_r = d_params_rtti["ib__list"]
+                s_max_plus_vec__refractory = d_params_rtti["s_max_plus__vec"]
                 
-                phi_th_minus = phi_th_minus_vec[_ind_ib_soma]
-                _phi_vec_prelim = np.asarray( d_params_ri["phi_r__array"][_ind_ib_soma] )
-                _phi_vec_prelim = _phi_vec_prelim[ np.where( _phi_vec_prelim >= 0 ) ]
-                _ind_phi_max = index_finder(_phi_vec_prelim,0.5)
-                
-                s_max_plus__vec = s_max_plus__array[_ind_ib_soma][:_ind_phi_max]
-                
-                _ind_s_th = index_finder(s_max_plus__vec,self.s_th)
-                phi_a_s_th = _phi_vec_prelim[_ind_s_th]
-                delta = phi_a_s_th - phi_th_minus
+            # ( np.abs( ib_list[:] - self.dend_soma.ib ) ).argmin()
+            _ind_ib_soma = index_finder(ib_list[:],self.dend_soma.ib) 
+            
+            phi_th_minus=phi_th_minus_vec[_ind_ib_soma]
+            _phi_vec_prelim=np.asarray(d_params_ri["phi_r__array"][_ind_ib_soma])
+            _phi_vec_prelim=_phi_vec_prelim[ np.where( _phi_vec_prelim >= 0 ) ]
+            _ind_phi_max=index_finder(_phi_vec_prelim,0.5)
+            
+            s_max_plus__vec = s_max_plus__array[_ind_ib_soma][:_ind_phi_max]
+            
+            _ind_s_th = index_finder(s_max_plus__vec,self.s_th)
+            phi_a_s_th = _phi_vec_prelim[_ind_s_th]
+            delta = phi_a_s_th - phi_th_minus
 
-                # ( np.abs( ib_list_r[:] - self.dend__ref.ib ) ).argmin()           
-                _ind_ib_refractory = index_finder(ib_list_r[:],self.dend__ref.ib) 
-                _s_max_refractory = s_max_plus_vec__refractory[_ind_ib_refractory]
+            # ( np.abs( ib_list_r[:] - self.dend__ref.ib ) ).argmin()           
+            _ind_ib_refractory = index_finder(ib_list_r[:],self.dend__ref.ib) 
+            _s_max_refractory = s_max_plus_vec__refractory[_ind_ib_refractory]
 
-                # ( phi_th_minus + delta/100 ) / s_max              
-                self.refractory_dendrite_connection_strength = -delta/_s_max_refractory 
+            # ( phi_th_minus + delta/100 ) / s_max              
+            dend_ref_cs = -delta/_s_max_refractory 
                 
-        self.dend_soma.add_input(self.dend__ref, connection_strength = self.refractory_dendrite_connection_strength)
+        self.dend_soma.add_input(
+            self.dend__ref,
+            connection_strength = dend_ref_cs
+            )
 
 
         # ======================================================================
@@ -579,24 +628,25 @@ class neuron():
         
     def add_output(self, connection_object):
         if type(connection_object).__name__ == 'synapse':
+            name = connection_object.name
             # print(self.name, "-->", connection_object.name)
-            self.synaptic_outputs[connection_object.name] = synapse.synapses[connection_object.name]
-            synapse.synapses[connection_object.name].add_input(self)
+            self.synaptic_outputs[name] = synapse.synapses[name]
+            synapse.synapses[name].add_input(self)
         else: 
-            raise ValueError('[soen_sim] an output from a neuron must be a synapse')
-                
+            raise ValueError('[soen_sim] a neuron can only output to a synapse')     
         return
     
     def run_sim(self, **kwargs):
         self = run_soen_sim(self, **kwargs)
         return self
-    
-    def plot(self):
-        if self.plot_simple:
-            plot_neuron_simple(self)
-        else:
-            plot_neuron(self)
-        return
+
+    ## deprecated --> use node.plot_neuron_activity(net)    
+    # def plot(self):
+    #     if self.plot_simple:
+    #         plot_neuron_simple(self)
+    #     else:
+    #         plot_neuron(self)
+    #     return
 
     def __del__(self):
         # print('dendrite deleted')
@@ -604,10 +654,12 @@ class neuron():
     
 
 class network():
-    
+    '''
+    Network object class
+     - 
+    '''
     _next_uid = 0
     network = dict()
-    # from scipy.sparse import csr_matrix
     
     def __init__(self, **kwargs):
         self.sim = False
@@ -620,15 +672,9 @@ class network():
         self.nodes=[]
         self.dt = 0.1
         self.tf = 250
+        self.name = 'unnamed_network__{}'.format(self.unique_label)
 
         self.__dict__.update(kwargs)
-
-        # name the network
-        if 'name' in kwargs:
-            self.name = kwargs['name']
-        else:
-            self.name = 'unnamed_network__{}'.format(self.unique_label)
-        # end name 
         
         # JJ params
         # make dummy dendrite to obtain default Ic, beta_c
@@ -651,13 +697,20 @@ class network():
     def run_sim(self, **kwargs):
         self = run_soen_sim(self)
         return self
-    
-    def plot(self):
-        plot_network(self)
-        return
+
+    ## deprecated, use activitiy_plot(nodes,net)    
+    # def plot(self):
+    #     plot_network(self)
+    #     return
 
     def get_recordings(self):
-        self.t = self.neurons[list(self.neurons.keys())[0]].time_params['time_vec']
+        '''
+        Collects network data and makes accessible
+         - net.spikes = [indices, times] of spikes
+         - net.neuron.phi_r = received flux history of that neuron
+         - net.neuron.s = soma signal history of that neuron
+        '''
+        self.t = self.time_params['time_vec'] 
         spikes = [ [] for _ in range(2) ]
         # print(spikes)
         S = []
@@ -693,8 +746,13 @@ class network():
 
 
     def simulate(self):
-        # print(self.nodes)
-        # net = network(name = 'network_under_test')
+        '''
+        Simulates network
+         - adds nodes to net
+         - checks if any synapses without input and gives empty array of spikes
+         - runs simulation
+         - gets recordings
+        '''
         for n in self.nodes:
             self.add_neuron(n.neuron)
         if self.null_synapses == True:
@@ -702,17 +760,26 @@ class network():
             for n in self.nodes:
                 for syn in n.synapse_list:
                     if "synaptic_input" not in syn.__dict__:
-                        syn.add_input(input_signal(name = 'input_synaptic_drive', 
-                                        input_temporal_form = 'arbitrary_spike_train', 
-                                        spike_times = []) )
+                        syn.add_input(input_signal(
+                            name = 'input_synaptic_drive', 
+                            input_temporal_form = 'arbitrary_spike_train', 
+                            spike_times = []
+                            ))
                         count+=1
             # print(f"{count} synapses recieving no input.")
-                
         self.run_sim()
         self.get_recordings()
 
 
 class HardwareInTheLoop:
+    '''
+    HardwareInTheLoop object class
+     - takes expected spiking value at certain intervals for array of neurons
+     - at end of interval, checks spikes with .forward_pass()
+     - then propogates error onto trace dendrites with .backward_pass() in the 
+       form of received spikes to trace SPDs added for next interval
+        - proportionate to size of error
+    '''
     def __init__(self, **params):
         self.expect = [[0,50],[None,None],[50,0],[None,None],[None,None]]
         self.interval = 500
@@ -761,6 +828,7 @@ class HardwareInTheLoop:
     def backward_error(self,nodes):
         freq_factor = self.freq_factor
         error = self.errors[self.phase]
+        conv = self.conversion
         # print("self ERROR: ", error,"\n")
         for i in range(len(error)):
             for dend in nodes[i].trace_dendrites:
@@ -770,20 +838,28 @@ class HardwareInTheLoop:
                     if error[i] < 0:
                         if 'plus' in syn.name:
                             # print("plus error: ",error[i])
-                            freq = np.max([300 - np.abs(error[i])*freq_factor,50])
+                            freq = np.max([300-np.abs(error[i])*freq_factor,50])
                             # print("plus frequency: ",freq)
                             syn.input_signal.spike_times += list(
-                                np.arange(self.check_time,self.check_time+self.interval,freq))
-                            syn.spike_times_converted = np.asarray(syn.input_signal.spike_times)*self.conversion
+                                np.arange(
+                                self.check_time,
+                                self.check_time+self.interval,
+                                freq))
+                            st = syn.input_signal.spike_times
+                            syn.spike_times_converted = np.asarray(st)*conv
 
                     elif error[i] > 0:
                         if 'minus' in syn.name:
                             # print("minus error: ",error[i])
-                            freq = np.max([300 - np.abs(error[i])*freq_factor,50])
+                            freq = np.max([300-np.abs(error[i])*freq_factor,50])
                             # print("minus frequency: ",freq)
                             syn.input_signal.spike_times += list(
-                                np.arange(self.check_time,self.check_time+self.interval,freq))
-                            syn.spike_times_converted = np.asarray(syn.input_signal.spike_times)*self.conversion
+                                np.arange(
+                                self.check_time,
+                                self.check_time+self.interval,
+                                freq))
+                            st = syn.input_signal.spike_times
+                            syn.spike_times_converted = np.asarray(st)*conv
 
                     # print(syn.name,syn.input_signal.spike_times)
                         

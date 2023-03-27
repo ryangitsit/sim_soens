@@ -1,16 +1,24 @@
 import numpy as np
-from soen_utilities import dend_load_arrays_thresholds_saturations, index_finder
+from .soen_utilities import dend_load_arrays_thresholds_saturations, index_finder
 
 
 """
 Parameter dictionaries for call from other class initializations
 """
 
-ib__list__ri, phi_r__array__ri, i_di__array__ri, r_fq__array__ri, phi_th_plus__vec__ri, phi_th_minus__vec__ri, s_max_plus__vec__ri, s_max_minus__vec__ri, s_max_plus__array__ri, s_max_minus__array__ri = dend_load_arrays_thresholds_saturations('default_ri')
-ib__list__rtti, phi_r__array__rtti, i_di__array__rtti, r_fq__array__rtti, phi_th_plus__vec__rtti, phi_th_minus__vec__rtti, s_max_plus__vec__rtti, s_max_minus__vec__rtti, s_max_plus__array__rtti, s_max_minus__array__rtti = dend_load_arrays_thresholds_saturations('default_rtti')
-print(ib__list__ri)
-print(ib__list__rtti)
+# ib__list__ri, phi_r__array__ri, i_di__array__ri, r_fq__array__ri, phi_th_plus__vec__ri, phi_th_minus__vec__ri, s_max_plus__vec__ri, s_max_minus__vec__ri, s_max_plus__array__ri, s_max_minus__array__ri = dend_load_arrays_thresholds_saturations('default_ri')
+# ib__list__rtti, phi_r__array__rtti, i_di__array__rtti, r_fq__array__rtti, phi_th_plus__vec__rtti, phi_th_minus__vec__rtti, s_max_plus__vec__rtti, s_max_minus__vec__rtti, s_max_plus__array__rtti, s_max_minus__array__rtti = dend_load_arrays_thresholds_saturations('default_rtti')
+# # print(ib__list__ri)
+# # print(ib__list__rtti)
 
+d_params_ri = dend_load_arrays_thresholds_saturations('default_ri')
+d_params_rtti = dend_load_arrays_thresholds_saturations('default_rtti')
+ib__vec__ri = np.asarray(d_params_ri['ib__list'][:])
+ib__vec__rtti = np.asarray(d_params_rtti['ib__list'][:])
+ib__list__ri = d_params_ri["ib__list"]
+ib__list__rtti = d_params_rtti["ib__list"]
+s_max_plus__vec__ri = d_params_ri["s_max_plus__vec"]
+s_max_plus__vec__rtti = d_params_rtti["s_max_plus__vec"]
 
 pred_params = {
 

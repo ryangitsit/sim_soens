@@ -1,14 +1,13 @@
-#%%
 import numpy as np
 import matplotlib.pyplot as plt
+import sys
+sys.path.append('../')
 
-from soen_sim import input_signal, network
-
-from super_library import NeuralZoo
-from super_input import SuperInput
-from super_functions import array_to_rows
-
-from soen_plotting import raster_plot
+from src.soen_sim import input_signal, network
+from src.super_node import SuperNode
+from src.super_input import SuperInput
+from src.super_functions import array_to_rows
+from src.soen_plotting import raster_plot
 
 def main():
     fan_in = 2
@@ -94,9 +93,9 @@ def main():
         # W3 =  [[array([0.1280559 , 0.47768202, 0.64164514])], [array([0.18242561, 0.05261172, 0.36735059]), array([0.56271541, 0.37259406, 0.30359262]), array([0.67250937, 0.32851443, 0.04819799])]] 
         
         
-        n_1 = NeuralZoo(type="custom",weights=W1,**params) 
-        n_2 = NeuralZoo(type="custom",weights=W2,**params) 
-        n_3 = NeuralZoo(type="custom",weights=W3,**params) 
+        n_1 = SuperNode(weights=W1,**params) 
+        n_2 = SuperNode(weights=W2,**params) 
+        n_3 = SuperNode(weights=W3,**params) 
 
         n_1.synaptic_layer()
         n_2.synaptic_layer()

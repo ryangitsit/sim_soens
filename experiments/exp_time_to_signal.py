@@ -1,15 +1,15 @@
 import numpy as np
 import matplotlib.pyplot as plt
+import sys
+sys.path.append('../')
 
-from soen_plotting import raster_plot, activity_plot
-
-from super_input import SuperInput
-from params import net_args 
-
-from super_library import NeuralZoo
-from super_functions import *
-from soen_sim import network, dendrite, HardwareInTheLoop
-from soen_component_library import common_synapse
+from src.soen_plotting import raster_plot, activity_plot
+from src.super_input import SuperInput
+from src.params import net_args 
+from src.super_node import SuperNode
+from src.super_functions import *
+from src.soen_sim import network, dendrite, HardwareInTheLoop
+# from src.soen_component_library import common_synapse
 
 
 
@@ -33,7 +33,7 @@ def main():
         def_spikes = [indices,times]
         input = SuperInput(channels=1, type='defined', defined_spikes=def_spikes)
         syn_struct = [[[[1]]]] 
-        mono_point = NeuralZoo(type="custom",synaptic_structure=syn_struct,s_th=100)
+        mono_point = SuperNode(synaptic_structure=syn_struct,s_th=100)
 
 
         mono_point.ib_ni = 1.4
@@ -78,8 +78,7 @@ def main():
                 input = SuperInput(channels=1, type='defined', defined_spikes=def_spikes)
 
                 syn_struct = [[[[1]]]] 
-                mono_point = NeuralZoo(
-                    type="custom",
+                mono_point = SuperNode(
                     synaptic_structure=syn_struct,
                     s_th=100,
                     tau_ni=10**6,

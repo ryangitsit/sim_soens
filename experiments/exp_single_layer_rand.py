@@ -1,16 +1,12 @@
 import numpy as np
-# import matplotlib.pyplot as plt
-
-from soen_sim import input_signal, network
-from soen_component_library import common_synapse
-
-from super_library import NeuralZoo
-# from super_input import SuperInput
-from super_functions import array_to_rows, spks_to_txt, picklit, picklin,save_dict
-
-# from soen_plotting import raster_plot
 import random
-from super_argparse import setup_argument_parser
+import sys
+sys.path.append('../')
+
+from src.soen_sim import input_signal, network, synapse
+from src.super_node import SuperNode
+from src.super_functions import array_to_rows, spks_to_txt, picklit, picklin,save_dict
+from src.super_argparse import setup_argument_parser
 
 def main():
 
@@ -33,7 +29,7 @@ def main():
     # picklit(input,"results","saccade_mnist_10")
     # spks_to_txt(input.spike_arrays,36,10,"single_layer/","input")
 
-    input = picklin("results","saccade_mnist_10")
+    input_data = picklin("..\\results","saccade_mnist_10")
 
     # print("input generated")
     # raster_plot(input.spike_arrays)
@@ -88,9 +84,9 @@ def main():
     # W2 =  [[np.array([0.78851345, 0.27407871, 0.30803972])], [np.array([0.2549654 , 0.67385715, 0.57587251]), np.array([0.559625  , 0.44622867, 0.60465558]), np.array([0.04828061, 0.27477089, 0.69585055])], [np.array([0.11005697, 0.19632138, 0.39042952, 0.12591339]), np.array([0.16299855, 0.33534171, 0.1850659 , 0.45389967]), np.array([0.06385376, 0.51709817, 0.82845702, 0.01157012]), np.array([0.23659099, 0.31359119, 0.75644638, 0.4096279 ]), np.array([0.20260746, 0.14851041, 0.051098  , 0.05830404]), np.array([0.62678092, 0.75935016, 0.03536966, 0.49896926]), np.array([0.037     , 0.66069881, 0.48698776, 0.35310226]), np.array([0.55448332, 0.2248576 , 0.53403215, 0.33103462]), np.array([0.19723041, 0.06784297, 0.63379481, 0.78139109])]]
     # W3 =  [[np.array([0.15910554, 0.34525008, 0.82845176])], [np.array([0.6074373 , 0.74592134, 0.4729844 ]), np.array([0.64526965, 0.30684274, 0.72314327]), np.array([0.54478218, 0.68085802, 0.00556301])], [np.array([0.24749122, 0.55304051, 0.74067455, 0.82094564]), np.array([0.61945409, 0.45426127, 0.38886517, 0.34920898]), np.array([0.46183024, 0.82483073, 0.48337518, 0.54794052]), np.array([0.40051994, 0.2327313 , 0.83357001, 0.23183207]), np.array([0.40931346, 0.42232051, 0.13605793, 0.20694464]), np.array([0.57282178, 0.73085263, 0.16810304, 0.30714569]), np.array([0.64450811, 0.72173314, 0.57867988, 0.82859903]), np.array([0.51109458, 0.67535165, 0.81185724, 0.62344794]), np.array([0.24820321, 0.1297074 , 0.03402139, 0.44610799])]]
 
-    n_1 = NeuralZoo(type="custom",weights=W1,**params) 
-    n_2 = NeuralZoo(type="custom",weights=W2,**params) 
-    n_3 = NeuralZoo(type="custom",weights=W3,**params) 
+    n_1 = SuperNode(weights=W1,**params) 
+    n_2 = SuperNode(weights=W2,**params) 
+    n_3 = SuperNode(weights=W3,**params) 
 
     n_1.synaptic_layer()
     n_2.synaptic_layer()
@@ -99,27 +95,27 @@ def main():
     if form == 'standalone':
         pass
     elif form == 'WTA':
-        syn11=common_synapse(f'soma_synapse_1{n_1.neuron.name}')
+        syn11=synapse(name=f'soma_synapse_1{n_1.neuron.name}')
         n_1.neuron.dend_soma.add_input(syn11,connection_strength=inhibit)
         n_1.synapse_list.append(syn11)
 
-        syn12=common_synapse(f'soma_synapse_2{n_1.neuron.name}')
+        syn12=synapse(name=f'soma_synapse_2{n_1.neuron.name}')
         n_1.neuron.dend_soma.add_input(syn12,connection_strength=inhibit)
         n_1.synapse_list.append(syn12)
 
-        syn21=common_synapse(f'soma_synapse_1{n_2.neuron.name}')
+        syn21=synapse(name=f'soma_synapse_1{n_2.neuron.name}')
         n_2.neuron.dend_soma.add_input(syn21,connection_strength=inhibit)
         n_2.synapse_list.append(syn21)
 
-        syn22=common_synapse(f'soma_synapse_2{n_2.neuron.name}')
+        syn22=synapse(name=f'soma_synapse_2{n_2.neuron.name}')
         n_2.neuron.dend_soma.add_input(syn22,connection_strength=inhibit)
         n_2.synapse_list.append(syn22)
 
-        syn31=common_synapse(f'soma_synapse_1{n_3.neuron.name}')
+        syn31=synapse(name=f'soma_synapse_1{n_3.neuron.name}')
         n_3.neuron.dend_soma.add_input(syn31,connection_strength=inhibit)
         n_3.synapse_list.append(syn31)
 
-        syn32=common_synapse(f'soma_synapse_2{n_3.neuron.name}')
+        syn32=synapse(name=f'soma_synapse_2{n_3.neuron.name}')
         n_3.neuron.dend_soma.add_input(syn32,connection_strength=inhibit)
         n_3.synapse_list.append(syn32)
 
@@ -140,12 +136,12 @@ def main():
     # for i in range(len(input.spike_rows)):
     for i in range(len(n_1.synapse_list)-2):
         for n in neurons:
-            n.synapse_list[i].add_input(input.signals[i])
+            n.synapse_list[i].add_input(input_data.signals[i])
     # print('tf = ',np.max(input.spike_arrays[1])+100)
     # print('total input spikes = ', len(input.spike_arrays[1]))
-    net = network(dt=0.1,tf=np.max(input.spike_arrays[1])+360,nodes=neurons)
+    net = network(dt=0.1,tf=np.max(input_data.spike_arrays[1])+360,nodes=neurons)
     net.simulate()
-    from soen_plotting import raster_plot
+    from .soen_plotting import raster_plot
     neurons[0].plot_custom_structure()
     neurons[0].arbor_activity_plot()
     neurons[1].arbor_activity_plot()

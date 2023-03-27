@@ -1,15 +1,14 @@
 import numpy as np
-import matplotlib.pyplot as plt
-
-from soen_sim import input_signal, network
-
-from super_library import NeuralZoo
-from super_input import SuperInput
-from super_functions import array_to_rows, spks_to_txt, picklit, picklin
-
-from soen_plotting import raster_plot
 import random
-from super_argparse import setup_argument_parser
+import sys
+sys.path.append('../')
+
+from src.soen_sim import input_signal, network
+from src.super_node import SuperNode
+from src.super_input import SuperInput
+from src.super_functions import array_to_rows, spks_to_txt, picklit, picklin
+from src.soen_plotting import raster_plot
+from src.super_argparse import setup_argument_parser
 
 def main():
 
@@ -26,7 +25,7 @@ def main():
     # picklit(input,"results","saccade_mnist_10")
     # spks_to_txt(input.spike_arrays,36,10,"single_layer/","input")
 
-    input = picklin("results","saccade_mnist_10")
+    input = picklin("..\\results","saccade_mnist_10")
 
     # print("input generated")
     # raster_plot(input.spike_arrays)
@@ -56,9 +55,9 @@ def main():
     W2 =  [[np.array([0.3882577 , 0.36188725, 0.20522705])], [np.array([-0.42916033, -0.22117618, -0.38283165]), np.array([-0.23988397, -0.45551301, -0.09830606]), np.array([-0.52848658, -0.25843576, -0.06741026])], [np.array([-0.03896332, -0.34285907, -0.2234364 , -0.02197801]), np.array([0.49128107, 0.36724272, 0.01882161, 0.24881669]), np.array([-0.5606351 , -0.4256968 , -0.48772881, -0.22681596]), np.array([0.46056542, 0.24982304, 0.19253616, 0.48885291]), np.array([-0.04620455, -0.42103049, -0.01011089, -0.33042036]), np.array([0.01350135, 0.49978422, 0.05839576, 0.25534382]), np.array([0.03565049, 0.02002225, 0.37511452, 0.18699317]), np.array([-0.18930888, -0.12689792, -0.46455288, -0.2725641 ]), np.array([0.51625816, 0.11798277, 0.5914419 , 0.00813793])]]
     W3 =  [[np.array([-0.52752977, -0.41900608, -0.04629707])], [np.array([-0.02364441, -0.33915702, -0.26994239]), np.array([-0.50484561, -0.55917022, -0.59032025]), np.array([0.34589999, 0.22490057, 0.29812211])], [np.array([0.54905814, 0.50587667, 0.3310234 , 0.34638242]), np.array([0.1035894 , 0.16388841, 0.11186747, 0.03628561]), np.array([-0.46472384, -0.31730277, -0.47900104, -0.23682077]), np.array([-0.36292224, -0.39423829, -0.0749922 , -0.05216149]), np.array([-0.58073368, -0.56263935, -0.14850184, -0.3450179 ]), np.array([-0.2205613 , -0.46345103, -0.55508483, -0.39850353]), np.array([-0.23409645, -0.31872053, -0.24793407, -0.27027444]), np.array([-0.23297006, -0.24019577, -0.01469594, -0.55198111]), np.array([-0.09635262, -0.09562517, -0.23161685, -0.52053636])]]
 
-    n_1 = NeuralZoo(type="custom",weights=W1,**params) 
-    n_2 = NeuralZoo(type="custom",weights=W2,**params) 
-    n_3 = NeuralZoo(type="custom",weights=W3,**params) 
+    n_1 = SuperNode(weights=W1,**params) 
+    n_2 = SuperNode(weights=W2,**params) 
+    n_3 = SuperNode(weights=W3,**params) 
 
     n_1.synaptic_layer()
     n_2.synaptic_layer()

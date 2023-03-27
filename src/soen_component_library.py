@@ -1,15 +1,25 @@
-#%%
 import numpy as np
 
-from soen_sim import input_signal, dendrite, synapse, neuron
+from .soen_sim import input_signal, dendrite, synapse, neuron
 # from soen_sim_lib__util import arg_helper
 # from soen_sim__parameters import common_parameters
-from soen_utilities import dend_load_arrays_thresholds_saturations, color_dictionary
+from .soen_utilities import dend_load_arrays_thresholds_saturations, color_dictionary
 
 # common_params = common_parameters()
-ib__list, phi_r__array, i_di__array, r_fq__array, phi_th_plus__vec, phi_th_minus__vec, s_max_plus__vec, s_max_minus__vec, s_max_plus__array, s_max_minus__array = dend_load_arrays_thresholds_saturations('default')
+# ib__list, phi_r__array, i_di__array, r_fq__array, phi_th_plus__vec, phi_th_minus__vec, s_max_plus__vec, s_max_minus__vec, s_max_plus__array, s_max_minus__array = dend_load_arrays_thresholds_saturations('default')
 
-#%% common components
+
+d_params_ri = dend_load_arrays_thresholds_saturations('default_ri')
+d_params_rtti = dend_load_arrays_thresholds_saturations('default_rtti')
+ib__vec__ri = np.asarray(d_params_ri['ib__list'][:])
+ib__vec__rtti = np.asarray(d_params_rtti['ib__list'][:])
+ib__list__ri = d_params_ri["ib__list"]
+ib__list__rtti = d_params_rtti["ib__list"]
+s_max_plus__vec__ri = d_params_ri["s_max_plus__vec"]
+s_max_plus__vec__rtti = d_params_rtti["s_max_plus__vec"]
+
+
+#common components
 
 # =============================================================================
 # soen_sim_lib__util
@@ -156,7 +166,7 @@ def common_neuron(name, loops_present, beta_ni, tau_ni, ib, s_th, beta_ref, tau_
     
     return neuron_1
 
-#%%
+#
 
 # =============================================================================
 # synapses with dendrites
@@ -251,7 +261,7 @@ def one_syn_two_dend_one_dend_band_pass(params = dict()):
     
     return syn, dend_1a, dend_1b, dend_2
 
-#%%
+#
 # =============================================================================
 # nine pixel helpers
 # =============================================================================

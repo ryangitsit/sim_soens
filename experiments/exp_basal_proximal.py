@@ -1,12 +1,14 @@
-from super_library import NeuralZoo
-
-
-from params import default_neuron_params
-from super_input import SuperInput
-from soen_sim import input_signal, synapse, neuron, network
-from soen_plotting import raster_plot
 import numpy as np
 import matplotlib.pyplot as plt
+import sys
+sys.path.append('../')
+
+
+from src.super_library import NeuralZoo
+# from src.params import default_neuron_params
+from src.super_input import SuperInput
+from src.soen_sim import input_signal, synapse, neuron, network
+from src.soen_plotting import raster_plot
 
 '''
 Simple test case for two-neuron predictive-processing method

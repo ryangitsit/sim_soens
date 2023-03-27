@@ -1,7 +1,7 @@
 import numpy as np
 import pickle
 
-from soen_utilities import (
+from .soen_utilities import (
     dend_load_rate_array, 
     dend_load_arrays_thresholds_saturations, 
     index_finder
@@ -218,7 +218,7 @@ def transmitter_initialization(neuron_object,t_tau_conversion):
     
     if neuron_object.source_type == 'qd' or neuron_object.source_type == 'ec':
     
-        from soen_utilities import pathfinder
+        from .soen_utilities import pathfinder
         _path = pathfinder()
         
         if neuron_object.source_type == 'qd':
@@ -257,8 +257,14 @@ def transmitter_initialization(neuron_object,t_tau_conversion):
 def dendrite_data_attachment(dend_obj,neuron_object):
     
     # attach data to this dendrite
-    dend_obj.output_data = {'s': dend_obj.s, 'phi_r': dend_obj.phi_r, 'tau_vec': neuron_object.time_params['tau_vec'], 'time_vec': neuron_object.time_params['tau_vec']/neuron_object.time_params['t_tau_conversion']}
-    dend_obj.time_params = {'t_tau_conversion': neuron_object.time_params['t_tau_conversion']}
+    dend_obj.output_data = {
+        's': dend_obj.s, 
+        'phi_r': dend_obj.phi_r, 
+        'tau_vec': neuron_object.time_params['tau_vec'], 
+        'time_vec': neuron_object.time_params['tau_vec']/neuron_object.time_params['t_tau_conversion']}
+    
+    dend_obj.time_params = {
+        't_tau_conversion': neuron_object.time_params['t_tau_conversion']}
             
     return        
 

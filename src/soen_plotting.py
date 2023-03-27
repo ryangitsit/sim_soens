@@ -6,7 +6,14 @@ import matplotlib as mp
 import pickle
 from itertools import cycle
 
-from soen_utilities import depth_of_dendritic_tree, dend_load_arrays_thresholds_saturations, color_dictionary, physical_constants, colors_gist, index_finder
+from .soen_utilities import (
+    depth_of_dendritic_tree, 
+    dend_load_arrays_thresholds_saturations, 
+    color_dictionary, 
+    physical_constants, 
+    colors_gist, 
+    index_finder
+)
 
 colors = color_dictionary()
 p = physical_constants()
@@ -26,7 +33,19 @@ def plot_dendrite(d_i):
     fig, ax = plt.subplots(nrows = 2, ncols = 1, sharex = True, sharey = False, figsize = ( fig_size[0] , 2*fig_size[1]) )
     plt.suptitle( 'soen dendrite: {}, loops present = {}\nib = {:5.3f}\nbeta_c = {:5.3f}, beta_di/2pi = {:5.3e}, tau_di = {:3.1e}ns'.format( d_i.name, d_i.loops_present, d_i.bias_current, d_i.beta_c, d_i.circuit_betas[-1]/(2*np.pi), d_i.tau_di ) )
     
-    ib__list, phi_r__array, i_di__array, r_fq__array, phi_th_plus__vec, phi_th_minus__vec, s_max_plus__vec, s_max_minus__vec, s_max_plus__array, s_max_minus__array = dend_load_arrays_thresholds_saturations('default_{}'.format(d_i.loops_present))
+    d_params = dend_load_arrays_thresholds_saturations(f'default_{d_i.loops_present}')
+    ib__list = d_params["ib__list"]
+    phi_r__array = d_params["phi_r__array"]
+    i_di__array = d_params["i_di__array"]
+    r_fq__array = d_params["r_fq__array"]
+    phi_th_plus__vec = d_params["phi_th_plus__vec"]
+    phi_th_minus__vec  = d_params["phi_th_minus__vec"]
+    s_max_plus__vec  = d_params["s_max_plus__vec"]
+    s_max_minus__vec = d_params["s_max_minus__vec"]
+    s_max_plus__array = d_params["s_max_plus__array"]
+    s_max_minus__array  = d_params["s_max_minus__array"]
+    
+    
     ib_vec = np.asarray(ib__list)
     
     _time_vec = d_i.output_data['tau_vec']/d_i.time_params['t_tau_conversion']
@@ -807,6 +826,9 @@ def plot_neuron(neuron_object):
     return
 
 def plot_neuron_simple(neuron_object):
+    neuron_object.bias_current = neuron_object.ib_n
+    neuron_object.bias_current__refraction = neuron_object.ib_ref
+    neuron_object.integration_loop_time_constant__refraction = neuron_object.tau_ref
     
     if fig_size[0] < 10:
         
@@ -899,7 +921,18 @@ def plot_neuron_simple(neuron_object):
     
     find_dendrites_recursively_and_plot(neuron_object.dend_soma,[ax[1],ax[2]],0)
     
-    ib__list, phi_r__array, i_di__array, r_fq__array, phi_th_plus__vec, phi_th_minus__vec, s_max_plus__vec, s_max_minus__vec, s_max_plus__array, s_max_minus__array = dend_load_arrays_thresholds_saturations('default_{}'.format(neuron_object.loops_present))
+    d_params = dend_load_arrays_thresholds_saturations(f'default_{neuron_object.dend_soma.loops_present}')
+    ib__list = d_params["ib__list"]
+    phi_r__array = d_params["phi_r__array"]
+    i_di__array = d_params["i_di__array"]
+    r_fq__array = d_params["r_fq__array"]
+    phi_th_plus__vec = d_params["phi_th_plus__vec"]
+    phi_th_minus__vec  = d_params["phi_th_minus__vec"]
+    s_max_plus__vec  = d_params["s_max_plus__vec"]
+    s_max_minus__vec = d_params["s_max_minus__vec"]
+    s_max_plus__array = d_params["s_max_plus__array"]
+    s_max_minus__array  = d_params["s_max_minus__array"]
+    
     _ind_ib = ( np.abs( ib__list[:] - neuron_object.dend_soma.ib ) ).argmin()
 
     ax[3].plot(_time_vec[:], neuron_object.dend_soma.phi_r[:], color = colors['blue3'], label = 'total flux to NR')
@@ -1814,7 +1847,7 @@ def activity_plot(neurons,net,phir=False,dend=True,title=None,
             axs[ii].plot(net.t,signal,  label='soma signal', linewidth=4)
 
             if phir==True:
-                from soen_functions import phi_thresholds
+                from .soen_functions import phi_thresholds
                 phi_ths = phi_thresholds(n.neuron)
                 axs[ii].axhline(y = phi_ths[1], color = 'purple', 
                                 linestyle = '--',linewidth=.5,label=r"$\phi_{th}$")
@@ -1896,7 +1929,7 @@ def activity_plot(neurons,net,phir=False,dend=True,title=None,
         plt.plot(net.t,signal,  label='soma signal', linewidth=4)
 
         if phir:
-            from soen_functions import phi_thresholds
+            from .soen_functions import phi_thresholds
             phi_ths = phi_thresholds(neurons[0].neuron)
             plt.axhline(y = phi_ths[1], color = 'purple', linestyle = '--',
                         linewidth=.5,label=r"$\phi_{th}$")

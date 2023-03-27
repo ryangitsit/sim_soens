@@ -1,15 +1,22 @@
 import numpy as np
 import matplotlib.pyplot as plt
+import sys
+sys.path.append('../')
+from src.super_node import SuperNode
 
-from super_library import NeuralZoo
-from params import default_neuron_params
-from super_input import SuperInput
-from soen_sim import input_signal, synapse, neuron, network
-from soen_plotting import raster_plot, arbor_activity, structure
-from params import nine_pixel_params
+# from src.super_library import SuperNode
+from src.params import default_neuron_params,nine_pixel_params
+from src.super_input import SuperInput
+from src.soen_sim import input_signal, synapse, neuron, network
+from src.soen_plotting import raster_plot, arbor_activity, structure
+
 
 
 def main():
+    '''
+    Nine-Pixel Classifier
+
+    '''
     nine_pixel_params['weights']= [
             [[1.5,.9678933,.3]],
             [[0.5,0.5],[0.5,0.5],[0.5,0.5]],
@@ -17,8 +24,8 @@ def main():
         ]
     nine_pixel_params["s_th"] = 0.05
     # nine_pixel_params["tau_ref"] = 50
-    nine_neuron = NeuralZoo(type="custom",**nine_pixel_params) 
-    structure(nine_neuron)
+    # nine_neuron = SuperNode(**nine_pixel_params) 
+    # structure(nine_neuron)
     # nine_neuron.plot_custom_structure()
 
     z = np.array([0,1,4,7,8]) # z-pixel array
@@ -27,7 +34,8 @@ def main():
     letters = [z,v,n]
 
     for let in letters:
-        
+        nine_neuron = SuperNode(**nine_pixel_params) 
+        # structure(nine_neuron)
         indices = let
         times = np.ones(len(indices))*20
         def_spikes = [indices,times]
@@ -43,13 +51,25 @@ def main():
                         count+=1
         # print(count)
 
-        net = network(name = 'network_under_test')
-        net.add_neuron(nine_neuron.neuron)
+        net = network(
+            sim=True,     # run simulation
+            dt=.1,        # time step (ns)
+            tf=100,       # total duration (ns)
+            nodes=[nine_neuron]) # nodes in network to simulate
 
-        net.run_sim(dt = .1, tf = 100)
-        net.get_recordings()
+
+        # net = network(name = 'network_under_test')
+        # net.add_neuron(nine_neuron.neuron)
+
+        # net.run_sim(dt = .1, tf = 100)
+        # net.get_recordings()
+
+
         # nine_neuron.arbor_activity_plot()
-        arbor_activity(nine_neuron,net,phir=True)
+        # arbor_activity(nine_neuron,net,phir=True)
+        
+        nine_neuron.plot_neuron_activity(net,dend=False,phir=True)
+
 
 
     #     print("Number of spikes: ", len(net.spikes[0]))

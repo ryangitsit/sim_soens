@@ -1,7 +1,8 @@
-#%%
 import numpy as np
-from soen_sim import input_signal
-from super_functions import *
+
+
+from .soen_sim import input_signal
+from .super_functions import *
 
 class SuperInput():
     def __init__(self,**entries):
