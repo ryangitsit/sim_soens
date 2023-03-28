@@ -1,5 +1,5 @@
 
-from src.super_functions import *
+from sim_soens.super_functions import *
 from sklearn.linear_model import LogisticRegression
 import os
 from soen_plotting import raster_plot

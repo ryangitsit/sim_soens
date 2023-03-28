@@ -1,12 +1,12 @@
 import sys
 sys.path.append('../')
-from src.super_library import NeuralZoo
+from sim_soens.super_library import NeuralZoo
 
 
-from src.params import default_neuron_params
-from src.soen_functions import phi_thresholds
-from src.super_input import SuperInput
-from src.soen_sim import input_signal, synapse, neuron, network
+from sim_soens.params import default_neuron_params
+from sim_soens.soen_functions import phi_thresholds
+from sim_soens.super_input import SuperInput
+from sim_soens.soen_sim import input_signal, synapse, neuron, network
 # from soen_plotting import raster_plot
 import numpy as np
 import matplotlib.pyplot as plt
@@ -14,7 +14,7 @@ import seaborn as sns
 sns.color_palette("pastel")
 
 
-from src.soen_utilities import dend_load_arrays_thresholds_saturations
+from sim_soens.soen_utilities import dend_load_arrays_thresholds_saturations
 
 def main():
     ib__list, phi_r__array, i_di__array, r_fq__array, phi_th_plus__vec, phi_th_minus__vec, s_max_plus__vec, s_max_minus__vec, s_max_plus__array, s_max_minus__array = dend_load_arrays_thresholds_saturations('default_ri')

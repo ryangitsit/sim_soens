@@ -2,10 +2,10 @@ import numpy as np
 import sys
 sys.path.append('../')
 
-from src.super_net import PointReservoir
-from src.super_functions import picklin, spks_to_txt
-from src.super_argparse import setup_argument_parser
-from src.soen_plotting import raster_plot
+from sim_soens.super_net import PointReservoir
+from sim_soens.super_functions import picklin, spks_to_txt
+from sim_soens.super_argparse import setup_argument_parser
+from sim_soens.soen_plotting import raster_plot
 import time
 
 

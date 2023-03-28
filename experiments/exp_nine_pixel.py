@@ -2,13 +2,13 @@ import numpy as np
 import matplotlib.pyplot as plt
 import sys
 sys.path.append('../')
-from src.super_node import SuperNode
+from sim_soens.super_node import SuperNode
 
 # from src.super_library import SuperNode
-from src.params import default_neuron_params,nine_pixel_params
-from src.super_input import SuperInput
-from src.soen_sim import input_signal, synapse, neuron, network
-from src.soen_plotting import raster_plot, arbor_activity, structure
+from sim_soens.params import default_neuron_params,nine_pixel_params
+from sim_soens.super_input import SuperInput
+from sim_soens.soen_sim import input_signal, synapse, neuron, network
+from sim_soens.soen_plotting import raster_plot, arbor_activity, structure
 
 
 

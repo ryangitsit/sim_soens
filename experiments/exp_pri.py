@@ -3,12 +3,12 @@ import matplotlib.pyplot as plt
 import sys
 sys.path.append('../')
 
-from src.soen_plotting import raster_plot, activity_plot
-from src.super_input import SuperInput
-from src.params import net_args 
-from src.super_node import SuperNode
-from src.super_functions import *
-from src.soen_sim import network, dendrite, HardwareInTheLoop
+from sim_soens.soen_plotting import raster_plot, activity_plot
+from sim_soens.super_input import SuperInput
+from sim_soens.params import net_args 
+from sim_soens.super_node import SuperNode
+from sim_soens.super_functions import *
+from sim_soens.soen_sim import network, dendrite, HardwareInTheLoop
 # from src.soen_component_library import common_synapse
 
 

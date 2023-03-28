@@ -6,3 +6,5 @@ __pycache__/
 testing.py
 testing_.py
 results/
+sim_soens.egg-info/
+build/

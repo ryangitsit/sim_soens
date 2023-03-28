@@ -4,11 +4,11 @@ import sys
 sys.path.append('../')
 
 
-from src.super_library import NeuralZoo
+from sim_soens.super_library import NeuralZoo
 # from src.params import default_neuron_params
-from src.super_input import SuperInput
-from src.soen_sim import input_signal, synapse, neuron, network
-from src.soen_plotting import raster_plot
+from sim_soens.super_input import SuperInput
+from sim_soens.soen_sim import input_signal, synapse, neuron, network
+from sim_soens.soen_plotting import raster_plot
 
 '''
 Simple test case for two-neuron predictive-processing method

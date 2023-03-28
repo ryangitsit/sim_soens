@@ -3,12 +3,12 @@ import random
 import sys
 sys.path.append('../')
 
-from src.soen_sim import input_signal, network
-from src.super_node import SuperNode
-from src.super_input import SuperInput
-from src.super_functions import array_to_rows, spks_to_txt, picklit, picklin
-from src.soen_plotting import raster_plot
-from src.super_argparse import setup_argument_parser
+from sim_soens.soen_sim import input_signal, network
+from sim_soens.super_node import SuperNode
+from sim_soens.super_input import SuperInput
+from sim_soens.super_functions import array_to_rows, spks_to_txt, picklit, picklin
+from sim_soens.soen_plotting import raster_plot
+from sim_soens.super_argparse import setup_argument_parser
 
 def main():
 
