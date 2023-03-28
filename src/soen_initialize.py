@@ -16,7 +16,7 @@ ib__vec__rtti = np.asarray(d_params_rtti['ib__list'][:])
 
 def dendrite_drive_construct(dend_obj,tau_vec,t_tau_conversion,d_tau):
     # print("  Constructing:",dend_obj.name)          
-    dend_obj.phi_r_external__vec = np.zeros([len(tau_vec)]) # from external drives
+    dend_obj.phi_r_external__vec = np.zeros([len(tau_vec)]) # from ext drives
     dend_obj.phi_r = np.zeros([len(tau_vec)]) # from synapses and dendrites
     dend_obj.s = np.zeros([len(tau_vec)]) # output variable
     dend_obj.beta = dend_obj.circuit_betas[-1]
@@ -27,11 +27,14 @@ def dendrite_drive_construct(dend_obj,tau_vec,t_tau_conversion,d_tau):
     # turn external drives to this dendrite into flux
     dend_obj.phi_r_external__vec[:] = dend_obj.offset_flux
     for external_input in dend_obj.external_inputs:
-        dend_obj.phi_r_external__vec += dend_obj.external_inputs[external_input].drive_signal * dend_obj.external_connection_strengths[external_input]
+        signal = dend_obj.external_inputs[external_input].drive_signal
+        strength = dend_obj.external_connection_strengths[external_input]
+        dend_obj.phi_r_external__vec += signal * strength
         
     # prepare somas for absolute refractory period
     if hasattr(dend_obj, 'is_soma'):
-        dend_obj.absolute_refractory_period_converted = dend_obj.absolute_refractory_period * t_tau_conversion
+        arp = dend_obj.absolute_refractory_period
+        dend_obj.absolute_refractory_period_converted = arp * t_tau_conversion
         
     # normalize inputs
     if dend_obj.normalize_input_connection_strengths:        
@@ -54,7 +57,9 @@ def dendrite_drive_construct(dend_obj,tau_vec,t_tau_conversion,d_tau):
             if dend_obj.dendritic_connection_strengths[dendrite] >= 0:
                 J_ij_e__init += dend_obj.dendritic_connection_strengths[dendrite]
             elif dend_obj.dendritic_connection_strengths[dendrite] < 0:
-                if dend_obj.dendritic_inputs[dendrite].name[-15:] != 'dend_refraction': # make sure this isn't the refractory dendrite. that one doesn't get included in this normalization.
+                # make sure this isn't the refractory dendrite. 
+                # ref doesn't get included in this normalization.
+                if dend_obj.dendritic_inputs[dendrite].name[-15:] != 'dend_refraction': 
                     J_ij_i__init += dend_obj.dendritic_connection_strengths[dendrite]
         if J_ij_e__init > 0:
             factor_e = J_ij_e/J_ij_e__init
@@ -64,24 +69,31 @@ def dendrite_drive_construct(dend_obj,tau_vec,t_tau_conversion,d_tau):
             factor_i = J_ij_i/J_ij_i__init
         else:
             factor_i = 0
-        # print('J_ij__init = {}'.format(J_ij__init))
-        # print('factor = {}'.format(factor))
+
+        # external weighting
         for external_input in dend_obj.external_inputs:
-            if dend_obj.external_connection_strengths[external_input] >= 0:
-                dend_obj.external_connection_strengths[external_input] = factor_e * dend_obj.external_connection_strengths[external_input]
-            elif dend_obj.external_connection_strengths[external_input] < 0:
-                dend_obj.external_connection_strengths[external_input] = factor_i * dend_obj.external_connection_strengths[external_input]
+            ext_strength = dend_obj.external_connection_strengths[external_input]
+            if ext_strength >= 0:
+                dend_obj.external_connection_strengths[external_input]*=factor_e
+            elif ext_strength < 0:
+                dend_obj.external_connection_strengths[external_input]*=factor_i
+
+        # synaptic weighting
         for synapse in dend_obj.synaptic_inputs:
+            syn_strength = dend_obj.synaptic_connection_strengths[synapse]
             if dend_obj.synaptic_connection_strengths[synapse] >= 0:
-                dend_obj.synaptic_connection_strengths[synapse] = factor_e * dend_obj.synaptic_connection_strengths[synapse]
+                dend_obj.synaptic_connection_strengths[synapse] *= factor_e
             elif dend_obj.synaptic_connection_strengths[synapse] < 0:
-                dend_obj.synaptic_connection_strengths[synapse] = factor_i * dend_obj.synaptic_connection_strengths[synapse]
+                dend_obj.synaptic_connection_strengths[synapse] *= factor_i
+
+        # dendritic weighting
         for dendrite in dend_obj.dendritic_inputs:
             if dend_obj.dendritic_connection_strengths[dendrite] >= 0:
-                dend_obj.dendritic_connection_strengths[dendrite] = factor_e * dend_obj.dendritic_connection_strengths[dendrite]
+                dend_obj.dendritic_connection_strengths[dendrite] *= factor_e
             elif dend_obj.dendritic_connection_strengths[dendrite] < 0:
-                if dend_obj.dendritic_inputs[dendrite].name[-15:] != 'dend_refraction': # make sure this isn't the refractory dendrite. that one doesn't get included in this normalization.
-                    dend_obj.dendritic_connection_strengths[dendrite] = factor_i * dend_obj.dendritic_connection_strengths[dendrite]
+                # make sure this isn't the refractory dendrite.
+                if dend_obj.dendritic_inputs[dendrite].name[-15:]!='dend_refraction':
+                    dend_obj.dendritic_connection_strengths[dendrite] *= factor_i
         
     # check that timestep is sufficiently small:
     if dend_obj.loops_present == 'ri':
@@ -155,9 +167,7 @@ def synapse_initialization(dend_obj,tau_vec,t_tau_conversion):
     
     for synapse_key in dend_obj.synaptic_inputs:
         # print("   Initializing synapse: ", dend_obj.synaptic_inputs[synapse_key].name)
-        
-        # print('recursive_synapse_initialization:\n  dend_name = {}\n  syn_name = {}\n  in_name = {}\n  spike_times = {}'.format(dend_obj.name,dend_obj.synaptic_inputs[synapse_key].name,dend_obj.synaptic_inputs[synapse_key].input_signal.name,dend_obj.synaptic_inputs[synapse_key].input_signal.spike_times))          
-        
+                
         dend_obj.synaptic_inputs[synapse_key]._phi_spd_memory = 0
         dend_obj.synaptic_inputs[synapse_key]._st_ind_last = 0
         dend_obj.synaptic_inputs[synapse_key].phi_spd = np.zeros([len(tau_vec)])
@@ -200,18 +210,17 @@ def synapse_initialization(dend_obj,tau_vec,t_tau_conversion):
 def output_synapse_initialization(neuron_object,tau_vec,t_tau_conversion):
     
     for synapse_key in neuron_object.synaptic_outputs:
-        
-        neuron_object.synaptic_outputs[synapse_key]._phi_spd_memory = 0
-        neuron_object.synaptic_outputs[synapse_key]._st_ind_last = 0
-        neuron_object.synaptic_outputs[synapse_key].phi_spd = np.zeros([len(tau_vec)])
-        
-        neuron_object.synaptic_outputs[synapse_key].spike_times_converted = []
-        neuron_object.synaptic_outputs[synapse_key].tau_rise_converted = neuron_object.synaptic_outputs[synapse_key].tau_rise * t_tau_conversion
-        neuron_object.synaptic_outputs[synapse_key].tau_fall_converted = neuron_object.synaptic_outputs[synapse_key].tau_fall * t_tau_conversion
-        neuron_object.synaptic_outputs[synapse_key].hotspot_duration_converted = neuron_object.synaptic_outputs[synapse_key].hotspot_duration * t_tau_conversion
-        neuron_object.synaptic_outputs[synapse_key].spd_duration_converted = neuron_object.synaptic_outputs[synapse_key].spd_duration * t_tau_conversion
-        neuron_object.synaptic_outputs[synapse_key].spd_reset_time_converted = neuron_object.synaptic_outputs[synapse_key].spd_reset_time * t_tau_conversion
-    
+        syn = neuron_object.synaptic_outputs[synapse_key]
+        syn._phi_spd_memory = 0
+        syn._st_ind_last = 0
+        syn.phi_spd = np.zeros([len(tau_vec)])
+        syn.spike_times_converted = []
+        syn.tau_rise_converted = syn.tau_rise * t_tau_conversion
+        syn.tau_fall_converted = syn.tau_fall * t_tau_conversion
+        syn.hotspot_duration_converted = syn.hotspot_duration * t_tau_conversion
+        syn.spd_duration_converted = syn.spd_duration * t_tau_conversion
+        syn.spd_reset_time_converted = syn.spd_reset_time * t_tau_conversion
+        neuron_object.synaptic_outputs[synapse_key] = syn
     return
 
 def transmitter_initialization(neuron_object,t_tau_conversion):
@@ -226,7 +235,7 @@ def transmitter_initialization(neuron_object,t_tau_conversion):
         elif neuron_object.source_type == 'ec':
             load_string = 'source_ec_Nph_1.0e+04'
             
-        with open('{}{}{}.soen'.format(_path,'/soen_sim_data/',load_string), 'rb') as data_file:         
+        with open(f'{_path}/soen_sim_data/{load_string}.soen', 'rb') as data_file:         
             data_dict_imported = pickle.load(data_file) 
             
         time_vec__el = data_dict_imported['time_vec']#*t_tau_conversion

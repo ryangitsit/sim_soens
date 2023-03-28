@@ -32,7 +32,10 @@ Plan:
 
 
 class NeuralZoo():
-
+    '''
+    NeuralZoo object class
+     - offers a variety of archetypal neurons ready-to-implement
+    '''
     def __init__(self,**entries):
         
         self.random_syn = False

@@ -135,17 +135,18 @@ class PointReservoir:
             - Internal connectivity
         '''
         self.neurons = []
+        w_sd = 1
         syn_struct = [
-            [[[1]]],
-            [[[1]]],
-            [[[1]]],
-            [[[1]]],
-            [[[1]]],
-            [[[1]]],
-            [[[1]]],
-            [[[1]]],
-            [[[1]]],
-            [[[1]]],
+            [[[w_sd]]],
+            [[[w_sd]]],
+            [[[w_sd]]],
+            [[[w_sd]]],
+            [[[w_sd]]],
+            [[[w_sd]]],
+            [[[w_sd]]],
+            [[[w_sd]]],
+            [[[w_sd]]],
+            [[[w_sd]]],
         ]
         
         for i in range(self.N):
@@ -178,12 +179,13 @@ class PointReservoir:
         syn_finder = 0
         self.input_connectivity = []
         self.input_channels = len(input.spike_rows)
-        for repeat in range(10):
+        
+        for repeat in range(self.laps):
             for i,row in enumerate(input.spike_rows):
                 # print((len(input.spike_rows)*repeat+i)%72)
                 # j = (len(input.spike_rows)*repeat+i)%72
                 count=0
-                for j,syn in enumerate(self.neurons[(len(input.spike_rows)*repeat+i)%72].synapse_list):
+                for j,syn in enumerate(self.neurons[(len(input.spike_rows)*repeat+i)%self.N].synapse_list):
                     if "synaptic_input" not in syn.__dict__:
                         self.input_connectivity.append([i,j])
                         array = np.sort(row)

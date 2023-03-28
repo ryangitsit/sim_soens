@@ -5,6 +5,16 @@ from .soen_sim import input_signal
 from .super_functions import *
 
 class SuperInput():
+    '''
+    Input object class
+     - generates an input object that is compatible with any soen_sim synapse
+     - by default, takes the form of an arbitrary spike train or n>=1 channels
+     - offers:
+        - random input (channels, total_spikes, duration)
+        - defined input (channels, spikes, duration)
+        - MNIST
+        - saccade MNIST
+    '''
     def __init__(self,**entries):
         self.type = "random"
         self.duration = 500
