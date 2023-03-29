@@ -1,12 +1,13 @@
-
+import sys
+sys.path.append('../')
 from sim_soens.super_functions import *
 from sklearn.linear_model import LogisticRegression
 import os
-from soen_plotting import raster_plot
+from sim_soens.soen_plotting import raster_plot
 
 def main():
 
-    directory = 'results/reservoirs_3/'
+    directory = '../results/reservoirs_3/'
     count = 0
     correct = 0
     for filename in os.listdir(directory):
