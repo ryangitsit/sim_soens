@@ -13,7 +13,6 @@ from sim_soens.super_functions import *
 from sim_soens.soen_sim import network, dendrite, HardwareInTheLoop
 
 
-
 def main():
     '''
     Dendritic Plasticity Demonstration

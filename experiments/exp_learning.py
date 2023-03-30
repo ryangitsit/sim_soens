@@ -172,7 +172,7 @@ def main():
 
                 for i in range(len(node_z.dendrite_list)):
                     if 'ref' not in node_z.dendrite_list[i].name:
-                        dend_z = node_z.dendrite_list[i]
+                        dend_z = node_z.dendrite_list[i] 
                         dend_v = node_v.dendrite_list[i]
                         dend_n = node_n.dendrite_list[i]
 
