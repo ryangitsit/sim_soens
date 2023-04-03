@@ -85,31 +85,53 @@ def main():
 
     np.random.seed(10)
 
-    def train_9pixel_classifier(letters,all_spikes):
+    def train_9pixel_classifier(letters,all_spikes,learning_rate,inhibition):
         weights = [
             [[.5,.5,.5]],
             [[.3,.3,.3],[.3,.3,.3],[.3,.3,.3]]
         ]
+        # weights = [
+        #     [[.7,.7,.7]],
+        #     [[.3,.3,.3],[.3,.3,.3],[.3,.3,.3]]
+        # ]
 
-        node_z = SuperNode(weights=weights)
-        node_v = SuperNode(weights=weights)
-        node_n = SuperNode(weights=weights)
+        # vals=3
+        # weights_z = [
+        #     [np.random.rand(vals)],
+        #     [np.random.rand(vals),np.random.rand(vals),np.random.rand(vals)]
+        # ]
+        # weights_v = [
+        #     [np.random.rand(vals)],
+        #     [np.random.rand(vals),np.random.rand(vals),np.random.rand(vals)]
+        # ]
+        # weights_n = [
+        #     [np.random.rand(vals)],
+        #     [np.random.rand(vals),np.random.rand(vals),np.random.rand(vals)]
+        # ]
+
+        weights_z = weights
+        weights_v = weights
+        weights_n = weights
+
+        node_z = SuperNode(weights=weights_z)
+        node_v = SuperNode(weights=weights_v)
+        node_n = SuperNode(weights=weights_n)
 
         syn_z = synapse(name='somatic_synapse_z')
         node_z.synapse_list.append(syn_z)
-        node_z.neuron.dend_soma.add_input(syn_z,connection_strength=-1)
+        node_z.neuron.dend_soma.add_input(syn_z,connection_strength=inhibition)
         node_z.neuron.add_output(node_v.synapse_list[-1])
         node_z.neuron.add_output(node_n.synapse_list[-1])
 
         syn_v = synapse(name='somatic_synapse_v')
         node_v.synapse_list.append(syn_v)
-        node_v.neuron.dend_soma.add_input(syn_v,connection_strength=-1)
+        node_v.neuron.dend_soma.add_input(syn_v,connection_strength=inhibition)
         node_v.neuron.add_output(node_z.synapse_list[-1])
         node_v.neuron.add_output(node_n.synapse_list[-1])
 
         syn_n = synapse(name='somatic_synapse_n')
         node_n.synapse_list.append(syn_n)
-        node_n.neuron.dend_soma.add_input(syn_n,connection_strength=-1)
+        node_n.neuron.dend_soma.add_input(syn_n,connection_strength=inhibition)
         node_n.neuron.add_output(node_z.synapse_list[-1])
         node_n.neuron.add_output(node_v.synapse_list[-1])
 
@@ -122,8 +144,8 @@ def main():
         expects = [expect_z,expect_v,expect_n]
         # spike_trajectories = [[] for i in range(len(names))]
 
-        for run in range(300):
-            if run%10==0:print(f"Run {run}:")
+        for run in range(10000):
+            if run%10==0: print(f"\nRun {run}:")
             total_error_z=0
             total_error_v=0
             total_error_n=0
@@ -131,7 +153,18 @@ def main():
             for i,let_idx in enumerate(all_spikes):
                 
                 # defined_spikes=[let_idx,spike_times]
-                defined_spikes = all_spikes[i]
+                # defined_spikes = all_spikes[i]
+
+                if np.random.rand() <= .1:
+                    # print("random")
+                    letters = make_letters()
+                    letter = one_pixel_noise(letters[names[i]])
+                    # plot_letter(letter,names[i])
+                    in_spikes = make_spikes(letter,20)
+                    defined_spikes = in_spikes
+                else:
+                    # print("defined")
+                    defined_spikes = all_spikes[i]
                 input = SuperInput(type='defined',defined_spikes=defined_spikes)
 
                 node_z.one_to_one(input)
@@ -141,11 +174,6 @@ def main():
                 net = network(sim=True,dt=.1,tf=100,nodes=[node_z,node_v,node_n])
                 
                 spikes = array_to_rows(net.spikes,3)
-                
-                if run%10==0:
-                    print(" ",names[i])
-                    for s in spikes:
-                        print("  ",s)
 
                 error_z = expects[0][i] - len(spikes[0])
                 error_v = expects[1][i] - len(spikes[1])
@@ -162,28 +190,30 @@ def main():
                 node_v.neuron.spike_times=[]
                 node_n.neuron.spike_times=[]
 
-                total_change_z = 0
-                total_change_v = 0
-                total_change_n = 0
+                # total_change_z = 0
+                # total_change_v = 0
+                # total_change_n = 0
 
                 offsets_z = {}
                 offsets_v = {}
                 offsets_n = {}
+                
+                total_changes = np.zeros((3))
 
-                for i in range(len(node_z.dendrite_list)):
-                    if 'ref' not in node_z.dendrite_list[i].name:
-                        dend_z = node_z.dendrite_list[i] 
-                        dend_v = node_v.dendrite_list[i]
-                        dend_n = node_n.dendrite_list[i]
+                for ii in range(len(node_z.dendrite_list)):
+                    if 'ref' not in node_z.dendrite_list[ii].name:
+                        dend_z = node_z.dendrite_list[ii] 
+                        dend_v = node_v.dendrite_list[ii]
+                        dend_n = node_n.dendrite_list[ii]
 
 
-                        step_z = error_z*np.mean(dend_z.s)*.01
-                        step_v = error_v*np.mean(dend_v.s)*.01
-                        step_n = error_n*np.mean(dend_n.s)*.01
+                        step_z = (np.mean(dend_z.s))*error_z*learning_rate
+                        step_v = (np.mean(dend_v.s))*error_v*learning_rate
+                        step_n = (np.mean(dend_n.s))*error_n*learning_rate
 
-                        total_change_z+=step_z
-                        total_change_v+=step_v
-                        total_change_n+=step_n
+                        total_changes[0]+=step_z
+                        total_changes[1]+=step_v
+                        total_changes[2]+=step_n
 
                         dend_z.offset_flux += step_z
                         dend_v.offset_flux += step_v
@@ -193,12 +223,24 @@ def main():
                         offsets_v[dend_v.name] = dend_v.offset_flux
                         offsets_n[dend_n.name] = dend_n.offset_flux
 
+                if run%10==0:
+                    print("  ",names[i])
+                    for iii,s in enumerate(spikes):
+                        print(f"   {np.around(s,2)} --> {total_changes[iii]}")
+                    # node_z.plot_arbor_activity(net,phir=True)
+                    # node_v.plot_arbor_activity(net,phir=True)
+                    # node_n.plot_arbor_activity(net,phir=True)
+
                 # if run%10==0:
-                #     print("  ",names[i],"spikes = ",len(out_spikes)," error = ",error,out_spikes,total_change)
+                #     print("  ",names[i],"spikes = ",len(out_spikes)," error = ",
+                # error,out_spikes,total_change)
 
             if np.sum([total_error_z,total_error_z,total_error_z]) == 0:
                 print(f"Converged! (in {run} runs)")
-                # print(" ",names[i],"spikes = ",len(out_spikes)," error = ",error,out_spikes,total_change)
+                # print(" ",names[i],"spikes = ",len(out_spikes)," error = ",
+                # error,out_spikes,total_change)
+                print([total_error_z,total_error_z,total_error_z])
+                print(spikes)
                 print(" z offset =",offsets_z)
                 print(" v offset =",offsets_v)
                 print(" n offset =",offsets_n)
@@ -207,14 +249,16 @@ def main():
                 break
 
     np.random.seed(10)
+    learning_rate=.01
+    inhibition=-1
     letters = make_letters()
     names = list(letters.keys())
-    # all_spikes = []
-    # for name,pixels in letters.items():
-    #     # plot_letter(pixels)
-    #     all_spikes.append(make_spikes(pixels,20))
-    # train_9pixel_classifier(letters,all_spikes)
-    # print(names)
+    all_spikes = []
+    for name,pixels in letters.items():
+        # plot_letter(pixels)
+        all_spikes.append(make_spikes(pixels,20))
+    train_9pixel_classifier(letters,all_spikes,learning_rate,inhibition)
+    print(names)
 
 
     def single_9pixel_classifier(let_idxs,spike_times,expect):
@@ -253,14 +297,16 @@ def main():
                         offsets[dend.name] = dend.offset_flux
 
                 if run%10==0:
-                    print("  ",names[i],"spikes = ",len(out_spikes)," error = ",error,out_spikes,total_change)
+                    print("  ",names[i],"spikes = ",len(out_spikes)," error = ",
+                          error,out_spikes,total_change)
 
                 # if i == 0:
                 #   node_z.plot_arbor_activity(net,phir=True)
 
             if total_error==0:
                 print(f"Converged! (in {run} runs)")
-                print(" ",names[i],"spikes = ",len(out_spikes)," error = ",error,out_spikes,total_change)
+                print(" ",names[i],"spikes = ",len(out_spikes)," error = ",
+                      error,out_spikes,total_change)
                 print(" ",offsets)
                 node_z.plot_arbor_activity(net)
                 break
@@ -364,38 +410,57 @@ def main():
                 'rand_neuron_77132_lay2_branch2_den1': -0.2533917538265178, 
                 'rand_neuron_77132_lay2_branch2_den2': 0.09256149661966233}
 
-    correct_offsets = [correct_z,correct_v,correct_n]
-    tests=100
-    expects = [
-        [5,0,0],
-        [0,5,0],
-        [0,0,5]
-    ]
 
-    for l in range(3):
-        correct = 0
-        for i in range(tests):
-            print("-")
-            letters = make_letters()
-            looters = {}
-            # noise_int = np.random.randint(3)
-            for ii,(name, pixels) in enumerate(letters.items()):
-                p = pixels
-                looters[name] = one_pixel_noise(p)
-                # if ii == noise_int:
-                #     # print(ii)
-                #     looters[name] = one_pixel_noise(p)
-                # else:
-                #     looters[name] = letters[name]
+    def test_on_noise(correct_offsets):
+        tests=10
+        expects = [
+            [5,0,0],
+            [0,5,0],
+            [0,0,5]
+        ]
 
-                # plot_letter(looters[name])
+        for l in range(3):
+            correct = 0
+            for i in range(tests):
+                print("-")
+                letters = make_letters()
+                looters = {}
+                # noise_int = np.random.randint(3)
+                for ii,(name, pixels) in enumerate(letters.items()):
+                    p = pixels
+                    looters[name] = one_pixel_noise(p)
+                    # if ii == noise_int:
+                    #     # print(ii)
+                    #     looters[name] = one_pixel_noise(p)
+                    # else:
+                    #     looters[name] = letters[name]
 
-            correct += test_9pixel_classifier(correct_offsets[l],expects[l],looters,20,l)
-        print(f"{names[l]} --> accuracy = {100*correct/tests}%")
+                    # plot_letter(looters[name])
+
+                correct += test_9pixel_classifier(correct_offsets[l],expects[l],looters,20,l)
+            print(f"{names[l]} --> accuracy = {100*correct/tests}%")
+
+    # correct_offsets = [correct_z,correct_v,correct_n]
+    # test_on_noise(correct_offsets)
+
+if __name__=='__main__':
+    main()
 
 
 
-    # names = ['z','v','n']
+
+
+
+
+
+
+
+
+
+
+
+
+        # names = ['z','v','n']
     # expect = [0,0,5]
     # spike_trajectories = [[] for i in range(len(letters))]
     # for run in range(300):
@@ -417,8 +482,8 @@ def main():
     #         total_change = 0
     #         offsets = {}
     #         count = 0
-    #         for dend in node_z.dendrite_list:
-    #             if 'ref' not in dend.name:
+            # for dend in node_z.dendrite_list:
+            #     if 'ref' not in dend.name:
     #                 step = error*np.mean(dend.s)*.01
     #                 total_change+=step
     #                 dend.offset_flux += step
@@ -450,6 +515,3 @@ def main():
     #  v offset = {'rand_neuron_20449_soma': -0.04263633299098412, 'rand_neuron_20449_lay1_branch0_den0': 0.0701461826670961, 'rand_neuron_20449_lay1_branch0_den1': 0.06877023093800687, 'rand_neuron_20449_lay1_branch0_den2': -0.07495985689875015, 'rand_neuron_20449_lay2_branch0_den0': 0.27633012555480013, 'rand_neuron_20449_lay2_branch0_den1': -0.2371128130333391, 'rand_neuron_20449_lay2_branch0_den2': 0.380266967900081, 'rand_neuron_20449_lay2_branch1_den0': 0.36882194594968254, 'rand_neuron_20449_lay2_branch1_den1': -0.23748206487042078, 'rand_neuron_20449_lay2_branch1_den2': 0.36882194594968254, 'rand_neuron_20449_lay2_branch2_den0': -0.22195471349909865, 'rand_neuron_20449_lay2_branch2_den1': 0.27633012555480013, 'rand_neuron_20449_lay2_branch2_den2': -0.24873131000482887}
     #  n offset = {'rand_neuron_36358_soma': -0.07486545497234011, 'rand_neuron_36358_lay1_branch0_den0': -0.022340479767096275, 'rand_neuron_36358_lay1_branch0_den1': 0.03443815318245595, 'rand_neuron_36358_lay1_branch0_den2': 0.1239558153546989, 'rand_neuron_36358_lay2_branch0_den0': -0.23237041636107128, 'rand_neuron_36358_lay2_branch0_den1': 0.3746560351812661, 'rand_neuron_36358_lay2_branch0_den2': -0.2306915957822732, 'rand_neuron_36358_lay2_branch1_den0': 0.07975166684240759, 'rand_neuron_36358_lay2_branch1_den1': -0.13258086770115457, 'rand_neuron_36358_lay2_branch1_den2': 
     # 0.07975166684240759, 'rand_neuron_36358_lay2_branch2_den0': 0.3878146763449766, 'rand_neuron_36358_lay2_branch2_den1': -0.23237041636107128, 'rand_neuron_36358_lay2_branch2_den2': 0.16311564190585467}
-
-if __name__=='__main__':
-    main()

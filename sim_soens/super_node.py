@@ -32,21 +32,27 @@ class SuperNode():
            that component)
          - kwargs (use SuperNode.parameter_print() to view)
             # general params
+
             - ib_n
             - ib
             - ib_di
             - ib_ref
+
             - tau_ni
             - tau_di
+
             - tau_ref
             - beta_ni
             - beta_di
             - beta_ref
+
             - w_sd
             - w_dn
             - seed
+
             - loops_present
             - loops_present_ref
+
             # group params
             - weights
             - biases
@@ -65,6 +71,7 @@ class SuperNode():
 
         # create a neuron object given init params
         self.neuron = neuron(**self.params)
+        self.neuron.dend_soma.branch=0
 
         # add somatic dendrite (dend_soma) and refractory dendrite to list
         self.dendrite_list = [self.neuron.dend_soma,self.neuron.dend__ref]
@@ -325,7 +332,7 @@ class SuperNode():
     ############################################################################  
 
     def parameter_print(self):
-        print("\nSOMATIC DENDRITE:")
+        print("\nSOMA:")
         # print(f" ib = {self.neuron.ib}")
         print(f" ib_n = {self.neuron.ib_n}")
         print(f" tau_ni = {self.neuron.tau_ni}")

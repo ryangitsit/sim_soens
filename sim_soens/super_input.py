@@ -21,6 +21,7 @@ class SuperInput():
         self.channels = 10
         self.slow_down = 10
         self.total_spikes = 25
+        self.sample = 0
         self.name = 'SuperInput'
         self.__dict__.update(entries)
         self.temporal_form = 'arbitrary_spike_train'
@@ -36,14 +37,15 @@ class SuperInput():
             # print("Generating defined input...")
             self.defined_spikes = np.array(self.defined_spikes)
             if self.defined_spikes.shape[0] != 2:
+                # print("auto_times")
                 indices = np.zeros(len(self.defined_spikes)).astype(int)
-                self.defined_spikes = [indices,self.defined_spikes]
+                self.defined_spikes = np.array([indices,self.defined_spikes])
             self.spike_arrays = self.defined_spikes
             self.spike_rows = self.array_to_rows(self.spike_arrays)
         
         elif self.type == "MNIST":
             self.channels = int(28*28)
-            print("Generating MNNIST dataset...")
+            # print("Generating MNNIST dataset...")
             mnist_indices, mnist_spikes = self.MNIST()
             self.spike_arrays = [mnist_indices,mnist_spikes]
             self.spike_rows = self.array_to_rows(self.spike_arrays)
@@ -100,21 +102,21 @@ class SuperInput():
     def array_to_rows(self,array):
         rows = [ [] for _ in range(self.channels) ]
         for i in range(len(array[0])):
-            rows[array[0][i]].append(array[1][i])
+            rows[int(array[0][i])].append(array[1][i])
         return rows
 
     def MNIST(self):
         import brian2
         from keras.datasets import mnist
-        print("load")
+        # print("load")
         (X_train, y_train), (X_test, y_test) = mnist.load_data()
-        print("loaded")
+        # print("loaded")
         # simplified classification (0 1 and 8)
-        X_train = X_train[(y_train == 0) | (y_train == 1) | (y_train == 2)]
-        y = y_train[(y_train == 0) | (y_train == 1) | (y_train == 2)]
+        # X_train = X_train[(y_train == 0) | (y_train == 1) | (y_train == 2)]
+        # y = y_train[(y_train == 0) | (y_train == 1) | (y_train == 2)]
 
         # pixel intensity to Hz (255 becoms ~63Hz)
-        X_train = X_train / 4 
+        # X_train = X_train / 4 
         numbers = [0,1,2]
         classes = ["zero", "one", "two"]
 
@@ -124,7 +126,10 @@ class SuperInput():
         self.times = []
         self.data = {}
         channels = 28*28
-        X = X_train[self.index].reshape(channels)
+        # X = X_train[self.index].reshape(channels)
+
+        X = (X_train[(y_train == self.index)][self.sample]).reshape(channels)
+
         # print(y_train[self.index])
         P = brian2.PoissonGroup(channels, rates=(X/self.slow_down)*brian2.Hz)
         MP = brian2.SpikeMonitor(P)

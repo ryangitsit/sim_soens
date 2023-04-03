@@ -92,8 +92,8 @@ def net_step(net,tau_vec,d_tau):
         # print("No hardware in the loop.")
         net.hardware=None
         HW=None
-
-    _t0 = time.time()
+    if net.timer==True:
+        _t0 = time.time()
     for ii in range(len(tau_vec)-1):
 
         if net.hardware:
@@ -118,8 +118,9 @@ def net_step(net,tau_vec,d_tau):
             
             neuron = spike(neuron,ii,tau_vec)
                        
-    _t1 = time.time()
-    # print(f'\nSimulation completed in time = {(_t1-_t0)} seconds \n')
+    if net.timer==True:
+        _t1 = time.time()
+        print(f'\nSimulation completed in time = {(_t1-_t0)} seconds \n')
         
     return net
 

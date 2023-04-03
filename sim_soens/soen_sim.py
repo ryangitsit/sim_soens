@@ -672,6 +672,7 @@ class network():
         self.nodes=[]
         self.dt = 0.1
         self.tf = 250
+        self.timer=False
         self.name = 'unnamed_network__{}'.format(self.unique_label)
 
         self.__dict__.update(kwargs)

@@ -14,37 +14,39 @@ Enjoy!
    - Type the following in the command line of your desired local directory
    - `git clone https://github.com/ryangitsit/sim_soens.git` 
  - Be sure to have the necessary python packages with the following commands
-   - `pip3 install numpy`
-   - `pip3 install matplotlib`
-   - `pip3 install brian2`
-   - `pip3 install scipy` 
- - Open `soen_tutorial` for a simulator walkthrough 
+   - `pip install -r requirements.txt` 
+ - Open `NICE_tutorial` for a simulator walkthrough 
    - How to use jupyter notebooks: https://www.dataquest.io/blog/jupyter-notebook-tutorial/
-   - Or just use vscode jupyter extension to use in your IDE
+   - Or just use vscode jupyter extension to use in the vscode IDE
 
 ## Features
- - *Custom neuron generation
-   - Any possible SOEN neuron morphology can be called with a single line 
- - *Networking
-   - Simply define network size, connectivity, and neuron types
+ - Custom neuron generation
+   - Any possible SOEN neuron morphology can be called through the 'CustomNode` class
+ - Networking
+   - Hand craft networks with specified connectivity or call on pre-made nets
  - Input options
    - Canonical and custom datasets can be called natively
+     - Random
+     - Defined
      - Neuromorphic MNIST
+     - Saccade MNIST
      - **Heidelberg spoken digit dataset
      - **IBM DVS gesture dataset
  - Visualization tools
-   - See neuron morphologies, dendrite behavior and network activity with built-\
-     in plotting functions
+   - Neuron morphologies
+   - Dendrite behavior
+   - Network activity
 
 ## Algorithms
- - *Liquid State Machines
+ - Liquid State Machines
  - **Eprop
  - **Dendritic credit assignment
 
 
 ## Benchmarks
- - *Nine pixel classifier with a single neuron
+ - Nine pixel classifier with a single neuron
  - **Image classifcation
+   - MNIST
  - **Speech recognition
  - **Gesture recognition
 
