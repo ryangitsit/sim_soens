@@ -453,22 +453,28 @@ def structure(node):
         else:
             color = 'k'
         if dot1[7] != None and dot1[7] != 0:
-            width = np.max([int(dot1[7]*5),1])
+            width = np.max([int(np.abs(dot1[7]*5)),1])
         else:
             width = .01
         # print(i,dot1,'-->',to_dot)
 
+        line_style = '-'
+        if dot1[7] != None and dot1[7]<0:
+            line_style='--'
+
         if to_dot[2]==len(arbor)-1 and to_dot!=dot1:
             # print("to soma")
             plt.plot(
-                [x1,x2],[y1,y2],
+                [x1,x2],[y1,y2],linestyle=line_style,
                 color=color,linewidth=width,label=f'branch {dot1[6]}'
                 )
         else:
-            plt.plot([x1,x2],[y1,y2],color=color,linewidth=width)
+            plt.plot([x1,x2],[y1,y2],linestyle=line_style,color=color,linewidth=width)
     
-    ms = np.array([30,20,15,8])*13/sum(Ns)
-
+    if sum(Ns) > 30:
+        ms = np.array([30,20,15,8])*15/sum(Ns)
+    else:
+        ms = np.array([30,20,15,8])
 
     plt.plot(Xdot[-1],Ydot[-1],'*k',ms=ms[0])
     plt.plot(Xdot[-1],Ydot[-1],'*y',ms=ms[1],label='Soma')
@@ -477,7 +483,11 @@ def structure(node):
     plt.plot(X_synapses[0],Y_synapses[0],'>r',ms=ms[3],label='Synapses')
     plt.plot(X_synapses[1:],Y_synapses[1:],'>r',ms=ms[3])
 
-    plt.legend(borderpad=1)
+    # plt.legend(borderpad=1)
+
+
+    plt.legend(borderpad=1,markerscale=.7)
+
     x_labels[-1] += " (soma)"
     plt.xticks(x_ticks,x_labels,fontsize=12)
     plt.xlim(1-.1*len(arbor),len(arbor)*1.1)

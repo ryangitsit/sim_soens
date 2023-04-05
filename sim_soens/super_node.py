@@ -260,7 +260,16 @@ class SuperNode():
             self.synaptic_layer()
 
 
-        
+    def __copy__(self):
+        copy_object = SuperNode()
+        return copy_object
+
+    def __deepcopy__(self, memodict={}):
+        import copy
+        copy_object = SuperNode()
+        copy_object.neuron = self.neuron
+        copy_object.dendrites = copy.deepcopy(self.dendrites)
+        return copy_object
 
     ############################################################################
     #                           input functions                                #

@@ -110,6 +110,7 @@ class SuperInput():
         from keras.datasets import mnist
         # print("load")
         (X_train, y_train), (X_test, y_test) = mnist.load_data()
+        print(len(X_train))
         # print("loaded")
         # simplified classification (0 1 and 8)
         # X_train = X_train[(y_train == 0) | (y_train == 1) | (y_train == 2)]

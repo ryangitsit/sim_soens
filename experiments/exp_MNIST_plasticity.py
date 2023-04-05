@@ -99,6 +99,8 @@ for run in range(10000):
         if total_error<25:
             samples_passed+=1
 
+    print(f"samples passed: {samples_passed}/100")
+
     if samples_passed > 70:
         print("converged!")
         print("weights = ",weights)

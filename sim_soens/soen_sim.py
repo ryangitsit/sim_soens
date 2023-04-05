@@ -689,6 +689,24 @@ class network():
 
         if self.sim==True:
             self.simulate()
+
+    def __copy__(self):
+        copy_object = network()
+        return copy_object
+
+    def __deepcopy__(self, memodict={}):
+        copy_object = network()
+        copy_object.time_params= self.time_params
+        copy_object.neurons= self.neurons
+        copy_object.nodes= self.nodes
+        copy_object.t= self.t
+        copy_object.spikes= self.spikes
+        copy_object.spike_signals= self.spike_signals
+        copy_object.phi_r = self.phi_r
+        copy_object.signal= self.signal
+        copy_object.dt= self.dt
+        copy_object.tf= self.tf
+        return copy_object
  
     def add_neuron(self, neuron_object):
         self.neurons[neuron_object.name] = neuron_object
