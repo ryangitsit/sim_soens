@@ -125,6 +125,7 @@ class dendrite():
         dendrite._next_uid += 1
         self.name = 'unnamed_dendrite__{}'.format(self.unique_label)
         self.pri=False
+        self.offset_trj = []
 
         # check ahead of time if loop defined in custom params
         # pull default params for that loop

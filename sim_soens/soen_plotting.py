@@ -244,7 +244,9 @@ def activity_plot(
     plt.show()
 
 
-def arbor_activity(node,net,phir=False,size=(12,6),norm_soma=False):
+def arbor_activity(
+        node,net,phir=False,size=(12,6),norm_soma=False,show=True,title=None
+        ):
     '''
     Plots signal and optional flux over dendritic structure
     '''
@@ -294,7 +296,7 @@ def arbor_activity(node,net,phir=False,size=(12,6),norm_soma=False):
                 if layer_sizes[-i] < 30:
                     lw = 3
                 else:
-                    lw = 1/layer_sizes[-i]
+                    lw = 3 # 1/layer_sizes[-i]
 
                 if 'soma' in dend.name:
                     s_factor=1
@@ -324,10 +326,13 @@ def arbor_activity(node,net,phir=False,size=(12,6),norm_soma=False):
     plt.ylim(-1*max_s,np.max(ys)+1*max_s)
     plt.ylabel(f"Signal Range = [{np.round(min_s,2)},{np.round(max_s,2)}]",
                fontsize=18)
-
-    plt.title("Dendritic Arbor Activity",fontsize=20)
+    if title==None:
+        plt.title("Dendritic Arbor Activity",fontsize=20)
+    else:
+        plt.title(title,fontsize=20)
     # plt.legend()
-    plt.show()
+    if show==True:
+        plt.show()
     
 
 

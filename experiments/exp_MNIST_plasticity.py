@@ -30,7 +30,7 @@ def make_dataset(digits,samples,slowdown,duration):
             dataset[i].append([spikes[0],spikes[1]])
 
             axs[i][j].plot(spikes[1],spikes[0],'.k',ms=.5)
-            # axs[i][j].set_xticks([])
+            axs[i][j].set_xticks([])
             axs[i][j].set_yticks([])
     picklit(
         dataset,
@@ -66,7 +66,8 @@ count=0
 for run in range(10000):
     # if run%10==0: 
     print("Run: ",run)
-    for sample in range(10):
+    samples_passed=0
+    for sample in range(100):
         total_error = 0
         for digit in range(3):
             
@@ -96,24 +97,27 @@ for run in range(10000):
             count+=1
 
         if total_error<25:
-            print("converged!")
-            print("weights = ",weights)
-            print("offsets = ",offsets)
-            print(offsets)
-            picklit(
-                offsets,
-                "results/MNIST/",
-                f"converged_in_{count}"
-                )
-            picklit(
-                weights,
-                "results/MNIST/",
-                f"init_weights"
-                )
-            break
+            samples_passed+=1
 
-    if total_error<25:
+    if samples_passed > 70:
+        print("converged!")
+        print("weights = ",weights)
+        print("offsets = ",offsets)
+        print(offsets)
+        picklit(
+            offsets,
+            "results/MNIST/",
+            f"converged_in_{run}"
+            )
+        picklit(
+            weights,
+            "results/MNIST/",
+            f"init_weights"
+            )
         break
+
+    # if total_error<25:
+    #     break
             
 
 
