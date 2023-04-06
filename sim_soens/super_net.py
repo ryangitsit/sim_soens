@@ -270,9 +270,12 @@ class SuperNet:
 
     def make_nodes(self):
         self.nodes = []
-        for i in range(self.N):
-            self.nodes.append(SuperNode(net_idx=i,**self.node_params))
-    
+        count = 0
+        for i,quantity in enumerate(self.node_quantities):
+            for ii in range(quantity):
+                self.nodes.append(SuperNode(net_idx=count,**self.node_params[i]))
+                count += 1
+
     def connect(self):
         np.random.seed(None)
         if hasattr(self,'prob_connect'):

@@ -27,33 +27,16 @@ class SuperInput():
         self.temporal_form = 'arbitrary_spike_train'
         
         if self.type == "random":
-            # print("Generating random input...")
-            indices = np.random.randint(self.channels,size=self.total_spikes)
-            times = np.random.rand(self.total_spikes)*self.duration
-            self.spike_arrays = [indices,times]
-            self.spike_rows = self.array_to_rows(self.spike_arrays)
+            self.random()
 
         elif self.type == "defined":
-            # print("Generating defined input...")
-            self.defined_spikes = np.array(self.defined_spikes)
-            if self.defined_spikes.shape[0] != 2:
-                # print("auto_times")
-                indices = np.zeros(len(self.defined_spikes)).astype(int)
-                self.defined_spikes = np.array([indices,self.defined_spikes])
-            self.spike_arrays = self.defined_spikes
-            self.spike_rows = self.array_to_rows(self.spike_arrays)
+            self.defined()
         
         elif self.type == "MNIST":
-            self.channels = int(28*28)
-            # print("Generating MNNIST dataset...")
-            mnist_indices, mnist_spikes = self.MNIST()
-            self.spike_arrays = [mnist_indices,mnist_spikes]
-            self.spike_rows = self.array_to_rows(self.spike_arrays)
+            self.MNIST()
 
         elif self.type == "saccade_MNIST":
-            self.channels = 36
-            self.spike_arrays = self.saccade_MNIST()
-            self.spike_rows = self.array_to_rows(self.spike_arrays)
+            self.saccade_MNIST()
 
         elif self.type == "constant":
             self.constant()
@@ -73,6 +56,75 @@ class SuperInput():
                                 spike_times = array) )
             # print(self.spike_rows[i])
         
+    def random(self):
+        '''
+        SuperInput.random():
+         - syntax:
+           input = SuperInput(
+            type         = 'random',  # specify input type
+            channels     = 10,        # how many input channels
+            total_spikes = 100,       # how many spikes in total
+            duration     = 500        # over what duration
+            )
+         - use: generate a SuperInput object to be added as input to any synapse
+        '''
+        # print("Generating random input...")
+        indices = np.random.randint(self.channels,size=self.total_spikes)
+        times = np.random.rand(self.total_spikes)*self.duration
+        self.spike_arrays = [indices,times]
+        self.spike_rows = self.array_to_rows(self.spike_arrays)
+
+    def defined(self):
+        '''
+        SuperInput.defined():
+         - syntax:
+           input = SuperInput(
+            type         = 'defined',   # specify input type
+            channels     = 10,          # how many input channels
+            spike_times  = [27,54,...], # can be array of times only
+                                        # or list of two arrays [indices, times]
+            )
+         - use: generate a SuperInput object to be added as input to any synapse
+        '''
+        # print("Generating defined input...")
+        self.defined_spikes = np.array(self.defined_spikes)
+        if self.defined_spikes.shape[0] != 2:
+            # print("auto_times")
+            indices = np.zeros(len(self.defined_spikes)).astype(int)
+            self.defined_spikes = np.array([indices,self.defined_spikes])
+        self.spike_arrays = self.defined_spikes
+        self.spike_rows = self.array_to_rows(self.spike_arrays)
+        
+    def MNIST(self):
+        '''
+        input= SuperInput(
+            type='MNIST',  # specify input type  
+            index=i,       # specify input type MNIST digit
+            sample=j,      # MNIST sample
+            slow_down=100, # factor by which to slow down rate encoding
+            duration=1000 # duration of input
+            )
+        '''
+        self.channels = int(28*28)
+        # print("Generating MNNIST dataset...")
+        mnist_indices, mnist_spikes = self.make_MNIST()
+        self.spike_arrays = [mnist_indices,mnist_spikes]
+        self.spike_rows = self.array_to_rows(self.spike_arrays)
+
+    def saccade_MNIST(self):
+        '''
+        SuperInput.defined():
+         - syntax:
+           input = SuperInput(
+            type      = "saccade_MNIST", # specify input type
+            channels  = 36,              # n*n pixels tile (must be a square)
+            tile_time = 50,              # how long to rate encode each tile
+            )
+         - use: generate a SuperInput object to be added as input to any synapse
+        '''
+        self.channels = 36
+        self.spike_arrays = self.make_saccade_MNIST()
+        self.spike_rows = self.array_to_rows(self.spike_arrays)
 
     def constant(self):
         input = input_signal(name = 'constant_input', 
@@ -105,7 +157,7 @@ class SuperInput():
             rows[int(array[0][i])].append(array[1][i])
         return rows
 
-    def MNIST(self):
+    def make_MNIST(self):
         import brian2
         from keras.datasets import mnist
         # print("load")
@@ -142,7 +194,7 @@ class SuperInput():
 
         return self.indices, self.times
 
-    def saccade_MNIST(self):
+    def make_saccade_MNIST(self):
         import matplotlib.pyplot as plt
         from keras.datasets import mnist
         (X_train, y_train), (X_test, y_test) = mnist.load_data()
@@ -166,4 +218,7 @@ class SuperInput():
 
         return stream
     
+    def plot(self,**kwargs):
+        from .soen_plotting import raster_plot
+        raster_plot(self.spike_arrays,**kwargs)
 

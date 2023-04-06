@@ -24,12 +24,14 @@ fig_size = plt.rcParams['figure.figsize']
 # Plots added by Ryan
 # =============================================================================
 
-def raster_plot(spikes,duration=None,title=None,input=[],notebook=False):
+def raster_plot(
+        spikes,duration=None,title=None,input=[],notebook=False,size=(10, 6)
+        ):
     from matplotlib import pyplot as plt
     if notebook==True:
         plt.figure(figsize=(6, 4))
     else:
-        plt.figure(figsize=(10, 6))
+        plt.figure(figsize=size)
     plt.plot(spikes[1], spikes[0], '.k')
     if len(input)>0:
         plt.plot(input[1], input[0]*(max(spikes[0])/max(input[0])), '.', markersize=7.5, color='r')
@@ -245,7 +247,8 @@ def activity_plot(
 
 
 def arbor_activity(
-        node,net,phir=False,size=(12,6),norm_soma=False,show=True,title=None
+        node,net,
+        phir=False,size=(12,6),norm_soma=False,show=True,title=None,spikes=False
         ):
     '''
     Plots signal and optional flux over dendritic structure
@@ -304,6 +307,30 @@ def arbor_activity(
                         x, y,
                         label=dend.name[18:],linewidth=lw,color=colors[0]
                         )
+                    if spikes==True:
+                        print("arbor plot spikes to come :)")
+                        # if len(dend.spike_times) > 0:
+                            # convert = net.time_params['t_tau_conversion']
+                            # print(convert)
+                            # spike_t = dend.spike_times/convert
+                            # spike_signals = []
+                            # for spike in spike_t:
+                            #     spot = int(spike/net.dt)
+                            #     spread = int(5/net.dt)
+                            #     spike_signals.append(
+                            #         np.max(
+                            #         dend.s[np.max([0,spot-spread]):spot+spread]
+                            #         )
+                            #         )
+                            # times = np.array(dend.spike_times)/(net.tf)
+                            # times = times*(1+(net.tf-convert)/net.tf)
+                            # times *= 1.0155
+                            # plt.plot(
+                            #     times+np.min(x),
+                            #     spike_signals+np.min(y),'xk', 
+                            #     markersize=4, 
+                            #     label='neuron fires'
+                            #     )
                 else:
                     plot = plt.plot(
                         x,y,label=dend.name[18:],linewidth=lw,
@@ -318,12 +345,12 @@ def arbor_activity(
         x_labels.append(f"layer {len(node.dendrites)-(i+1)}")
         layers.append(groups)        
     x_labels[-1] += " (soma)"
-    plt.xlim(-.3*net.tf,net.tf*((len(node.dendrites)-1)*1.1+1.3))
+    # plt.xlim(-.3*net.tf,net.tf*((len(node.dendrites)-1)*1.1+1.3))
     plt.xticks(x_ticks,x_labels,fontsize=18)
 
     plt.yticks([])
     #max_s*(np.max(layer_sizes)+len(node.dendrites[-1])-.5))
-    plt.ylim(-1*max_s,np.max(ys)+1*max_s)
+    # plt.ylim(-1*max_s,np.max(ys)+1*max_s)
     plt.ylabel(f"Signal Range = [{np.round(min_s,2)},{np.round(max_s,2)}]",
                fontsize=18)
     if title==None:
