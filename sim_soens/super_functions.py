@@ -166,3 +166,56 @@ def spks_to_binmatrix(N,T,spikes):
     for i in range(len(spikes[0])):
         binned[int(spikes[0][i])][int(np.floor(spikes[1][i]))] += 1
     return binned
+
+def make_letters():
+
+    # non-noisy nine-pixel letters
+    letters = {
+        'z': [1,1,0,
+              0,1,0,
+              0,1,1],
+
+        'v': [1,0,1,
+              1,0,1,
+              0,1,0],
+
+        'n': [0,1,0,
+              1,0,1,
+              1,0,1]
+    }
+
+    return letters
+
+def plot_letters(letters):
+    import matplotlib.cm as cm
+    import matplotlib.pyplot as plt
+    fig, axs = plt.subplots(1, len(letters),figsize=(12,6))
+    for  j,(name,pixels) in enumerate(letters.items()):
+        arrays = [[] for i in range(3)]
+        count = 0
+        for col in range(3):
+            for row in range(3):
+                arrays[col].append(pixels[count])
+                count+=1
+        pixels = np.array(arrays).reshape(3,3)
+
+        axs[j].set_xticks([])
+        axs[j].set_yticks([])
+        axs[j].set_title(name)
+        axs[j].imshow(
+            pixels,
+            interpolation='nearest',
+            cmap=cm.Blues
+            )
+    plt.show()
+
+def make_inputs(letters,spike_time):
+    from sim_soens.super_input import SuperInput
+    # make the input spikes for different letters
+    inputs = []
+    for name, pixels in letters.items():
+        idx = np.where(np.array(letters[name])==1)[0]
+        spike_times = np.ones(len(idx))*spike_time
+        defined_spikes=[idx,spike_times]
+        inputs.append(SuperInput(type='defined',defined_spikes=defined_spikes))
+    return inputs

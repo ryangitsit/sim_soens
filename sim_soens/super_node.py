@@ -2,7 +2,9 @@ import numpy as np
 
 # from soen_component_library import common_synapse
 from .soen_sim import neuron, dendrite, synapse
-
+from sim_soens.soen_utilities import dend_load_arrays_thresholds_saturations
+d_params_ri = dend_load_arrays_thresholds_saturations('default_ri')
+d_params_rtti = dend_load_arrays_thresholds_saturations('default_rtti')
 
 class SuperNode():
 
@@ -127,11 +129,11 @@ class SuperNode():
                             if hasattr(self, 'types'):
                                 bias = self.biases[i][j][k]
                                 if self.types[i][j][k] == 'ri':
-                                    dend_params["ib"] = self.ib_list_ri[bias]
+                                    dend_params["ib"] = d_params_ri["ib__list"][bias]
                                 else:
-                                    dend_params["ib"] = self.ib_list_rtti[bias]
+                                    dend_params["ib"] = d_params_rtti["ib__list"][bias]
                             else:
-                                dend_params["ib"] = self.ib_list_ri[bias]
+                                dend_params["ib"] = d_params_ri["ib__list"][bias]
                             dend_params["ib_di"] = dend_params["ib"]
                         if hasattr(self, 'taus'):
                             dend_params["tau_di"] = self.taus[i][j][k]

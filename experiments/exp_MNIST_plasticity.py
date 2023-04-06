@@ -93,7 +93,7 @@ for run in range(10000):
             offsets = {}
             for dend in MNIST_node.dendrite_list:
                 if 'ref' not in dend.name:
-                    step = error*np.mean(dend.s)*.01
+                    step = error*np.mean(dend.s)*.001
                     dend.offset_flux += step
                     offsets[dend.name] = dend.offset_flux
 
