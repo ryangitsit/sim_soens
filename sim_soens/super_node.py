@@ -60,7 +60,7 @@ class SuperNode():
             - types
             - synaptic_structure
         '''  
-
+        self.w_sd=1
         self.random_syn = False
         self.__dict__.update(entries)
         self.params = self.__dict__  
@@ -256,6 +256,24 @@ class SuperNode():
                                 dendrites[i][j][k].add_input(s, 
                                     connection_strength = connect)
                                 
+        elif hasattr(self, 'synaptic_indices'):
+
+            self.synapse_list = []
+            for i,layer in enumerate(self.dendrites):
+                for j,group in enumerate(layer):
+                    for k,dend in enumerate(group):
+                        for ii,syn in enumerate(self.synaptic_indices):
+                            name = f'{self.neuron.name[-2:]}_syn{ii}'
+                            s = synapse(name=name)
+                            self.synapse_list.append(s)
+                            if hasattr(self, 'synaptic_strengths'):
+                                connect = self.synaptic_strengths[ii]
+                            else:
+                                connect = self.w_sd
+                            dendrites[syn[0]][syn[1]][syn[2]].add_input(
+                                s, 
+                                connection_strength = connect
+                                )                       
         else:
             self.synaptic_layer()
 

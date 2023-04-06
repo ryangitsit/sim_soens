@@ -39,9 +39,9 @@ def make_dataset(digits,samples,slowdown,duration):
         )
     plt.show()
     
-    # dataset = np.array(dataset)
-    # plt.plot(dataset[0][2][1],dataset[0][2][0],'.k')# ,ms=.5)
-    # plt.show()
+#     dataset = np.array(dataset)
+#     plt.plot(dataset[0][2][1],dataset[0][2][0],'.k')# ,ms=.5)
+#     plt.show()
 
 
 
@@ -52,6 +52,7 @@ dataset = picklin("datasets/MNIST/","duration=5000_slowdown=100")
 # plt.show()
 # raster_plot(dataset[0][2])
 
+
 np.random.seed(10)
 f_idx = 28
 lay_2 = [np.random.rand(f_idx)*21/28 for _ in range(f_idx)]
@@ -61,14 +62,15 @@ weights = [
 ]
 MNIST_node = SuperNode(weights=weights,tau_di=5)
 
-expect = [42,10,10]
-count=0
+expect = [10,20,30]
 for run in range(10000):
     # if run%10==0: 
     print("Run: ",run)
     samples_passed=0
     for sample in range(100):
-        total_error = 0
+        
+        errors = []
+        outputs = []
         for digit in range(3):
             
             input = SuperInput(type="defined",channels=784,defined_spikes=dataset[digit][sample])
@@ -78,15 +80,15 @@ for run in range(10000):
             
             MNIST_node.one_to_one(input)
 
-            net = network(sim=True,dt=.1,tf=1000,nodes=[MNIST_node],timer=False)
+            net = network(sim=True,dt=.1,tf=500,nodes=[MNIST_node],timer=False)
             out_spikes = net.spikes[1]
             output = len(out_spikes)
+            outputs.append(output)
             MNIST_node.neuron.spike_times=[]
 
-            if sample==0: print("  ",digit,output)
 
             error = expect[digit] - output
-            total_error+= np.abs(error)
+            errors.append(np.abs(error))
 
             offsets = {}
             for dend in MNIST_node.dendrite_list:
@@ -94,10 +96,14 @@ for run in range(10000):
                     step = error*np.mean(dend.s)*.01
                     dend.offset_flux += step
                     offsets[dend.name] = dend.offset_flux
-            count+=1
 
-        if total_error<25:
+        if errors[0]<5 and errors[1]<5 and errors[2]<5:
             samples_passed+=1
+
+        if sample%10==0:
+            print(" sample: ",sample)
+            print("  ",outputs)
+
 
     print(f"samples passed: {samples_passed}/100")
 
@@ -123,5 +129,5 @@ for run in range(10000):
             
 
 
-MNIST_node.plot_neuron_activity(net,dend=False,phir=True,ref=True)
-MNIST_node.plot_arbor_activity(net,size=(36,14))
+# MNIST_node.plot_neuron_activity(net,dend=False,phir=True,ref=True)
+# MNIST_node.plot_arbor_activity(net,size=(36,14))

@@ -379,6 +379,7 @@ def structure(node):
     Xdot = []
     X_synapses = []
     Y_synapses = []
+    syn_values = []
     dots = []
     x_ticks = []
     x_labels = []
@@ -415,6 +416,8 @@ def structure(node):
                     for s,syn in enumerate(dend.synaptic_inputs):
                         X_synapses.append(x-.1)
                         Y_synapses.append(y_space[s])
+                        idx = list(dend.synaptic_connection_strengths.keys())[s]
+                        syn_values.append(dend.synaptic_connection_strengths[idx])
                 
                 if hasattr(dend, 'branch'):
                     branch = dend.branch
@@ -473,15 +476,28 @@ def structure(node):
     
     if sum(Ns) > 30:
         ms = np.array([30,20,15,8])*15/sum(Ns)
+        syn_values = np.array(syn_values)*8*15/sum(Ns)
+
     else:
         ms = np.array([30,20,15,8])
+        syn_values = np.array(syn_values)*200
+
 
     plt.plot(Xdot[-1],Ydot[-1],'*k',ms=ms[0])
     plt.plot(Xdot[-1],Ydot[-1],'*y',ms=ms[1],label='Soma')
     plt.plot(Xdot[0],Ydot[0],'ok',ms=ms[2],label='Dendrites')
     plt.plot(Xdot[1:-1],Ydot[1:-1],'ok',ms=ms[2])
-    plt.plot(X_synapses[0],Y_synapses[0],'>r',ms=ms[3],label='Synapses')
-    plt.plot(X_synapses[1:],Y_synapses[1:],'>r',ms=ms[3])
+
+
+    syn_colors = []
+    for s in syn_values:
+        if s > 0:
+            syn_colors.append('r')
+        else:
+            syn_colors.append('b')
+    syn_values = np.abs(syn_values)
+    plt.scatter(X_synapses,Y_synapses,marker='>', c=syn_colors,s=syn_values,label='Synapses')
+    # plt.scatter(X_synapses[1:],Y_synapses[1:],marker='>', c='r',s=syn_values[1:])
 
     # plt.legend(borderpad=1)
 
