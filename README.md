@@ -21,7 +21,7 @@ Enjoy!
 
 ## Features
  - Custom neuron generation
-   - Any possible SOEN neuron morphology can be called through the 'CustomNode` class
+   - Any possible SOEN neuron morphology can be called through the 'SuperNode` class
  - Networking
    - Hand craft networks with specified connectivity or call on pre-made nets
  - Input options
@@ -30,27 +30,7 @@ Enjoy!
      - Defined
      - Neuromorphic MNIST
      - Saccade MNIST
-     - **Heidelberg spoken digit dataset
-     - **IBM DVS gesture dataset
  - Visualization tools
    - Neuron morphologies
    - Dendrite behavior
    - Network activity
-<!-- 
-## Algorithms
- - Liquid State Machines
- - **Eprop
- - **Dendritic credit assignment
-
-
-## Benchmarks
- - Nine pixel classifier with a single neuron
- - **Image classifcation
-   - MNIST
- - **Speech recognition
- - **Gesture recognition
-
-\
-\
-*in development\
-**planned -->
