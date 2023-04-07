@@ -39,7 +39,9 @@ def main():
         indices = let
         times = np.ones(len(indices))*20
         def_spikes = [indices,times]
-        input = SuperInput(channels=9, type='defined', defined_spikes=def_spikes, duration=100)
+        input = SuperInput(
+            channels=9, type='defined', defined_spikes=def_spikes, duration=100
+            )
 
         count = 0
         for g in nine_neuron.synapses:
@@ -47,7 +49,9 @@ def main():
                 for i,row in enumerate(input.spike_rows):
                     if i == int(s.name)-1:
                         s.add_input(input_signal(name = 'input_synaptic_drive', 
-                        input_temporal_form = 'arbitrary_spike_train', spike_times = input.spike_rows[i]))
+                        input_temporal_form = 'arbitrary_spike_train', 
+                        spike_times = input.spike_rows[i])
+                        )
                         count+=1
         # print(count)
 
@@ -71,25 +75,6 @@ def main():
         nine_neuron.plot_neuron_activity(net,dend=False,phir=True)
 
 
-
-    #     print("Number of spikes: ", len(net.spikes[0]))
-
-
-        # import matplotlib.pyplot as plt
-        # # spd = nine_neuron.dendrites[0][0][0].synaptic_inputs[1].phi_spd
-        # dend_s = nine_neuron.dendrites[0][0][0].s
-        # signal = nine_neuron.neuron.dend_soma.s
-        # ref = nine_neuron.neuron.dend__ref.s
-
-        # plt.figure(figsize=(12,4))
-        # plt.plot(net.t,signal, label='soma signal')
-        # # plt.plot(net.spikes[1],net.spike_signals[0],'xk', label='neuron fires')
-        # plt.axhline(y = nine_neuron.s_th, color = 'purple', linestyle = '--')
-        # # plt.plot(net.t,spd, label='phi_spd')
-        # # plt.plot(net.t,dend_s, label='dendrite signal')
-        # # plt.plot(ref[::10], label='refractory signal')
-        # plt.legend()
-        # plt.show()
 
 if __name__=='__main__':
     main()

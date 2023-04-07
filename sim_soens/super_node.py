@@ -1,6 +1,5 @@
 import numpy as np
 
-# from soen_component_library import common_synapse
 from .soen_sim import neuron, dendrite, synapse
 from sim_soens.soen_utilities import dend_load_arrays_thresholds_saturations
 d_params_ri = dend_load_arrays_thresholds_saturations('default_ri')

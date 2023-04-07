@@ -3,9 +3,6 @@ import numpy as np
 # from _util import (
 #     physical_constants, index_finder)
 
-# from .soen_component_library import (
-#     common_dendrite, common_synapse, common_neuron)
-
 from .soen_sim import neuron, dendrite, synapse
 
 # from soen_utilities import (
@@ -88,8 +85,7 @@ class NeuralZoo():
 
     def custom(self):
         '''
-        Arbitrary neuron generation
-            - Define dendritic structure with weight or structure input
+        LEGACY FUNCTION REPLACED WITH SUPERNODE
         '''    
 
         # give neuron name if not already assigned

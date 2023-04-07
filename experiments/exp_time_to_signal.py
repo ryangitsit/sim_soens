@@ -9,7 +9,6 @@ from sim_soens.params import net_args
 from sim_soens.super_node import SuperNode
 from sim_soens.super_functions import *
 from sim_soens.soen_sim import network, dendrite, HardwareInTheLoop
-# from src.soen_component_library import common_synapse
 
 
 

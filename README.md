@@ -36,7 +36,7 @@ Enjoy!
    - Neuron morphologies
    - Dendrite behavior
    - Network activity
-
+<!-- 
 ## Algorithms
  - Liquid State Machines
  - **Eprop
@@ -53,4 +53,4 @@ Enjoy!
 \
 \
 *in development\
-**planned
+**planned -->
