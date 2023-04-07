@@ -251,13 +251,14 @@ def pathfinder():
     # dir_list = os.listdir(os.getcwd())
     # for d in dir_list:
     #     print(d)
-    # for _str in sys.path:
-    #     # print(_str)
-    #     dir_index = _str.find("sim_soens")
-    #     if _str[dir_index:dir_index+9] == 'sim_soens':
-    #         path = _str.replace('\\','/')[:dir_index+9] +'/'
-    #         break
-    path = os.getcwd()+'/sim_soens'
+    for _str in sys.path:
+        # print(_str)
+        dir_index = _str.find("sim_soens")
+        if _str[dir_index:dir_index+9] == 'sim_soens':
+            path = _str.replace('\\','/')[:dir_index+9] +'/'
+            break
+        else:
+            path = os.getcwd()+'/sim_soens'
     return path
 
 def dend_load_rate_array(load_string):

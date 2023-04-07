@@ -56,7 +56,7 @@ dataset = picklin("datasets/MNIST/","duration=5000_slowdown=100")
 
 np.random.seed(10)
 f_idx = 28
-lay_2 = [np.random.rand(f_idx)*21/28 for _ in range(f_idx)]
+lay_2 = [np.random.rand(f_idx)/28 for _ in range(f_idx)]
 weights = [
     [np.random.rand(f_idx)],
     lay_2
@@ -94,7 +94,7 @@ for run in range(10000):
             offsets = {}
             for dend in MNIST_node.dendrite_list:
                 if 'ref' not in dend.name:
-                    step = error*np.mean(dend.s)*.001
+                    step = error*np.mean(dend.s)*.0001
                     dend.offset_flux += step
                     offsets[dend.name] = dend.offset_flux
 
