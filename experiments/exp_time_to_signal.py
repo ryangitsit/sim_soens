@@ -1,11 +1,11 @@
 import numpy as np
 import matplotlib.pyplot as plt
 import sys
+sys.path.append('../sim_soens')
 sys.path.append('../')
 
 from sim_soens.soen_plotting import raster_plot, activity_plot
 from sim_soens.super_input import SuperInput
-from sim_soens.params import net_args 
 from sim_soens.super_node import SuperNode
 from sim_soens.super_functions import *
 from sim_soens.soen_sim import network, dendrite, HardwareInTheLoop

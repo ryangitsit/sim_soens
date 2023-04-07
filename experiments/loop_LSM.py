@@ -1,4 +1,5 @@
 import sys
+sys.path.append('../sim_soens')
 sys.path.append('../')
 from sim_soens.super_functions import *
 from sklearn.linear_model import LogisticRegression

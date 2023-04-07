@@ -1,5 +1,6 @@
 import numpy as np
 import sys
+sys.path.append('../sim_soens')
 sys.path.append('../')
 
 from sim_soens.super_net import PointReservoir

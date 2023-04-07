@@ -1,13 +1,13 @@
 import numpy as np
 
-from .soen_utilities import (
+from sim_soens.soen_utilities import (
     get_jj_params, 
     dend_load_arrays_thresholds_saturations, 
     physical_constants, 
     index_finder
 )
-from .soen_time_stepper import run_soen_sim
-from .soen_plotting import (
+from sim_soens.soen_time_stepper import run_soen_sim
+from sim_soens.soen_plotting import (
     plot_dendrite, 
     plot_synapse, 
     plot_neuron, 

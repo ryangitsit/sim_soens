@@ -1,6 +1,6 @@
 import numpy as np
 
-from .soen_sim import neuron, dendrite, synapse
+from sim_soens.soen_sim import neuron, dendrite, synapse
 from sim_soens.soen_utilities import dend_load_arrays_thresholds_saturations
 d_params_ri = dend_load_arrays_thresholds_saturations('default_ri')
 d_params_rtti = dend_load_arrays_thresholds_saturations('default_rtti')
@@ -429,11 +429,11 @@ class SuperNode():
                             return
                         
     def plot_arbor_activity(self,net,**kwargs):
-        from .soen_plotting import arbor_activity
+        from sim_soens.soen_plotting import arbor_activity
         arbor_activity(self,net,**kwargs)
 
     def plot_structure(self):
-        from .soen_plotting import structure
+        from sim_soens.soen_plotting import structure
         structure(self)
 
     def plot_neuron_activity(self,net,**kwargs):
@@ -452,5 +452,5 @@ class SuperNode():
             - path       -> save plot to path
             
         '''
-        from .soen_plotting import activity_plot
+        from sim_soens.soen_plotting import activity_plot
         activity_plot([self],net,**kwargs)

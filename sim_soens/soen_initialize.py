@@ -1,7 +1,7 @@
 import numpy as np
 import pickle
 
-from .soen_utilities import (
+from sim_soens.soen_utilities import (
     dend_load_rate_array, 
     dend_load_arrays_thresholds_saturations, 
     index_finder
@@ -113,24 +113,61 @@ def dendrite_drive_construct(dend_obj,tau_vec,t_tau_conversion,d_tau):
     _min = 0.01*dend_obj.beta/dend_obj.alpha
     _max = 0.1*dend_obj.beta/dend_obj.alpha
     if d_tau > 0.1*dend_obj.beta/dend_obj.alpha:
-        _str = 'Warning: d_tau should be << beta/alpha.'
-        _str = '{} For dendrite {} with beta = {:4.2e} and alpha = {:4.2e}'.format(_str,dend_obj.name,dend_obj.beta,dend_obj.alpha)        
-        _str = '{} the recommended d_tau is {:5.3e}-{:5.3e} (dt = {:5.3e}ns-{:5.3e}ns)'.format(_str,_min,_max,_min/t_tau_conversion,_max/t_tau_conversion)
+        _str='Warning: d_tau should be << beta/alpha.'
+        _str='{} For dendrite {} with beta = {:4.2e} and alpha = {:4.2e}'.format(
+            _str,
+            dend_obj.name,
+            dend_obj.beta,
+            dend_obj.alpha
+            )        
+        _str='{} the recommended d_tau is {:5.3e}-{:5.3e} (dt = {:5.3e}ns-{:5.3e}ns)'.format(
+            _str,
+            _min,
+            _max,
+            _min/t_tau_conversion,
+            _max/t_tau_conversion
+            )
         # print('{}'.format(_str))
     elif d_tau <= 0.1*dend_obj.beta/dend_obj.alpha:
-        _str = 'For dendrite {} d_tau = {:5.3e} = {:5.3e} x beta/alpha'.format(dend_obj.name,d_tau,d_tau*dend_obj.alpha/dend_obj.beta)
-        _str = '{} (0.01-0.1 x beta/alpha is recommended, dt = {:5.3e}ns-{:5.3e}ns)'.format(_str,_min/t_tau_conversion,_max/t_tau_conversion)
+        _str='For dendrite {} d_tau = {:5.3e} = {:5.3e} x beta/alpha'.format(
+            dend_obj.name,
+            d_tau,
+            d_tau*dend_obj.alpha/dend_obj.beta
+            )
+        _str='{} (0.01-0.1 x beta/alpha is recommended, dt = {:5.3e}ns-{:5.3e}ns)'.format(
+            _str,
+            _min/t_tau_conversion,
+            _max/t_tau_conversion
+            )
         # print('{}'.format(_str))
     _min = 0.01*dend_obj.beta/_r_max
     _max = 0.1*dend_obj.beta/_r_max
     if d_tau > 0.1*dend_obj.beta/_r_max:
-        _str = 'Warning: d_tau should be << beta/r_max.'
-        _str = '{} For dendrite {} with beta = {:4.2e} and r_max = {:4.2e}'.format(_str,dend_obj.name,dend_obj.beta,_r_max)        
-        _str = '{} the recommended d_tau is {:5.3e}-{:5.3e} (dt = {:5.3e}ns-{:5.3e}ns)'.format(_str,_min,_max,_min/t_tau_conversion,_max/t_tau_conversion)
+        _str='Warning: d_tau should be << beta/r_max.'
+        _str='{} For dendrite {} with beta = {:4.2e} and r_max = {:4.2e}'.format(
+            _str,
+            dend_obj.name,
+            dend_obj.beta,
+            _r_max
+            )        
+        _str='{} the recommended d_tau is {:5.3e}-{:5.3e} (dt = {:5.3e}ns-{:5.3e}ns)'.format(
+            _str,
+            _min,
+            _max,
+            _min/t_tau_conversion,
+            _max/t_tau_conversion
+            )
         # print('{}'.format(_str))
     elif d_tau <= 0.1*dend_obj.beta/_r_max:
-        _str = 'For dendrite {} d_tau = {:5.3e} = {:5.3e} x beta/r_max'.format(dend_obj.name,d_tau,d_tau*_r_max/dend_obj.beta)
-        _str = '{} (0.01-0.1 x beta/r_max is recommended, dt = {:5.3e}ns-{:5.3e}ns)'.format(_str,_min/t_tau_conversion,_max/t_tau_conversion)
+        _str='For dendrite {} d_tau = {:5.3e} = {:5.3e} x beta/r_max'.format(
+            dend_obj.name,
+            d_tau,
+            d_tau*_r_max/dend_obj.beta)
+        _str='{} (0.01-0.1 x beta/r_max is recommended, dt = {:5.3e}ns-{:5.3e}ns)'.format(
+            _str,
+            _min/t_tau_conversion,
+            _max/t_tau_conversion
+            )
         # print('{}'.format(_str))
     return
 
@@ -166,43 +203,54 @@ def rate_array_attachment(dend_obj):
 def synapse_initialization(dend_obj,tau_vec,t_tau_conversion):
     
     for synapse_key in dend_obj.synaptic_inputs:
-        # print("   Initializing synapse: ", dend_obj.synaptic_inputs[synapse_key].name)
-                
-        dend_obj.synaptic_inputs[synapse_key]._phi_spd_memory = 0
-        dend_obj.synaptic_inputs[synapse_key]._st_ind_last = 0
-        dend_obj.synaptic_inputs[synapse_key].phi_spd = np.zeros([len(tau_vec)])
+        # print(
+        # "   Initializing synapse: ", 
+        # dend_obj.synaptic_inputs[synapse_key].name
+        # )
         
-        # print('dend = {}, syn = {}'.format(dend_obj.name,dend_obj.synaptic_inputs[synapse_key].name))
+        syn_obj = dend_obj.synaptic_inputs[synapse_key]
+
+        syn_obj._phi_spd_memory = 0
+        syn_obj._st_ind_last = 0
+        syn_obj.phi_spd = np.zeros([len(tau_vec)])
         
-        if hasattr(dend_obj.synaptic_inputs[synapse_key],'input_signal'):
-            if hasattr(dend_obj.synaptic_inputs[synapse_key].input_signal,'input_temporal_form'):
-                if dend_obj.synaptic_inputs[synapse_key].input_signal.input_temporal_form == 'constant_rate':
-                
-                    rate = dend_obj.synaptic_inputs[synapse_key].input_signal.rate * 1e6 # 1e6 because inputs are in MHz
+        # print('dend = {}, syn = {}'.format(dend_obj.name,syn_obj.name))
+        
+        if hasattr(syn_obj,'input_signal'):
+            if hasattr(syn_obj.input_signal,'input_temporal_form'):
+                if syn_obj.input_signal.input_temporal_form == 'constant_rate':
+                    
+                    # 1e6 because inputs are in MHz
+                    rate = syn_obj.input_signal.rate * 1e6 
                     # print('rate = {:3.1e}'.format(rate))
                     isi = (1/rate) * 1e9 # 1e9 to convert to ns
                     # print('isi = {:3.1e}'.format(isi))
                     t_f = tau_vec[-1]/t_tau_conversion
-                    t_on = dend_obj.synaptic_inputs[synapse_key].input_signal.t_first_spike
-                    dend_obj.synaptic_inputs[synapse_key].input_signal.spike_times = np.arange(t_on,t_f+isi,isi)
+                    t_on = syn_obj.input_signal.t_first_spike
+                    syn_obj.input_signal.spike_times=np.arange(t_on,t_f+isi,isi)
         else:
-            dend_obj.synaptic_inputs[synapse_key].input_signal = dict()
-            # dend_obj.synaptic_inputs[synapse_key].input_signal
+            syn_obj.input_signal = dict()
+            # syn_obj.input_signal
         # print(dend_obj.synaptic_inputs)#[synapse_key].input_signal,synapse_key)
-        dend_obj.synaptic_inputs[synapse_key].spike_times_converted = np.asarray(dend_obj.synaptic_inputs[synapse_key].input_signal.spike_times) * t_tau_conversion
-        dend_obj.synaptic_inputs[synapse_key].tau_rise_converted = dend_obj.synaptic_inputs[synapse_key].tau_rise * t_tau_conversion
-        dend_obj.synaptic_inputs[synapse_key].tau_fall_converted = dend_obj.synaptic_inputs[synapse_key].tau_fall * t_tau_conversion
-        dend_obj.synaptic_inputs[synapse_key].hotspot_duration_converted = dend_obj.synaptic_inputs[synapse_key].hotspot_duration * t_tau_conversion
-        dend_obj.synaptic_inputs[synapse_key].spd_duration_converted = dend_obj.synaptic_inputs[synapse_key].spd_duration * t_tau_conversion
-        dend_obj.synaptic_inputs[synapse_key].spd_reset_time_converted = dend_obj.synaptic_inputs[synapse_key].spd_reset_time * t_tau_conversion
+        
+        syn_obj.spike_times_converted = np.asarray(
+            syn_obj.input_signal.spike_times
+            ) * t_tau_conversion
+        syn_obj.tau_rise_converted=syn_obj.tau_rise * t_tau_conversion
+        syn_obj.tau_fall_converted=syn_obj.tau_fall * t_tau_conversion
+        syn_obj.hotspot_duration_converted=syn_obj.hotspot_duration*t_tau_conversion
+        syn_obj.spd_duration_converted=syn_obj.spd_duration*t_tau_conversion
+        syn_obj.spd_reset_time_converted=syn_obj.spd_reset_time*t_tau_conversion
         
         # remove spike times that came in faster than spd can respond
-        if len(dend_obj.synaptic_inputs[synapse_key].spike_times_converted) > 1:
-            _spike_times_converted = [dend_obj.synaptic_inputs[synapse_key].spike_times_converted[0]]
-            for ii in range(len(dend_obj.synaptic_inputs[synapse_key].spike_times_converted[1:])):
-                if dend_obj.synaptic_inputs[synapse_key].spike_times_converted[ii] - _spike_times_converted[-1] >= dend_obj.synaptic_inputs[synapse_key].spd_reset_time_converted:
-                    _spike_times_converted.append(dend_obj.synaptic_inputs[synapse_key].spike_times_converted[ii])
-            dend_obj.synaptic_inputs[synapse_key].spike_times_converted = _spike_times_converted     
+        if len(syn_obj.spike_times_converted) > 1:
+            _spike_times_converted = [syn_obj.spike_times_converted[0]]
+            for ii in range(len(syn_obj.spike_times_converted[1:])):
+                if (syn_obj.spike_times_converted[ii]-_spike_times_converted[-1]
+                    >= syn_obj.spd_reset_time_converted
+                    ):
+                    _spike_times_converted.append(syn_obj.spike_times_converted[ii])
+            syn_obj.spike_times_converted = _spike_times_converted     
     
     return
 
@@ -227,7 +275,7 @@ def transmitter_initialization(neuron_object,t_tau_conversion):
     
     if neuron_object.source_type == 'qd' or neuron_object.source_type == 'ec':
     
-        from .soen_utilities import pathfinder
+        from sim_soens.soen_utilities import pathfinder
         _path = pathfinder()
         
         if neuron_object.source_type == 'qd':
@@ -248,7 +296,7 @@ def transmitter_initialization(neuron_object,t_tau_conversion):
         _ind_off = ( np.abs(t_off-time_vec__el) ).argmin()
         
         t_vec__el = time_vec__el[_ind_on:_ind_off] - time_vec__el[_ind_on]
-        neuron_object.time_params['tau_vec__electroluminescence'] = t_vec__el * t_tau_conversion
+        neuron_object.time_params['tau_vec__electroluminescence']=t_vec__el*t_tau_conversion
         dt_vec = np.diff(t_vec__el)
         el_vec = el_vec[_ind_on:_ind_off]
     
@@ -259,7 +307,7 @@ def transmitter_initialization(neuron_object,t_tau_conversion):
         
     elif neuron_object.source_type == 'delay_delta':
         
-        neuron_object.light_production_delay = neuron_object.light_production_delay * t_tau_conversion 
+        neuron_object.light_production_delay=neuron_object.light_production_delay*t_tau_conversion 
             
     return
 
@@ -283,10 +331,15 @@ def construct_dendritic_drives(obj):
     for dir_sig in obj.external_inputs:
         
         if hasattr(obj.external_inputs[dir_sig],'piecewise_linear'):
-            dendritic_drive = dendritic_drive__piecewise_linear(obj.time_params['time_vec'],obj.external_inputs[dir_sig].piecewise_linear)
+            dendritic_drive = dendritic_drive__piecewise_linear(
+                obj.time_params['time_vec'],
+                obj.external_inputs[dir_sig].piecewise_linear
+                )
                         
         if hasattr(obj.external_inputs[dir_sig],'applied_flux'):
-            dendritic_drive = obj.external_inputs[dir_sig].applied_flux * np.ones([len(obj.phi_r_external__vec)])
+            dendritic_drive = obj.external_inputs[dir_sig].applied_flux*np.ones(
+                [len(obj.phi_r_external__vec)]
+                )
 
         # plot_dendritic_drive(time_vec, dendritic_drive)
         obj.external_inputs[dir_sig].drive_signal = dendritic_drive
@@ -304,7 +357,9 @@ def dendritic_drive__piecewise_linear(time_vec,pwl):
         partial_time_vec = time_vec[t1_ind:t2_ind+1]
         input_signal__dd[t1_ind] = pwl[ii][1]
         for jj in range(len(partial_time_vec)-1):
-            input_signal__dd[t1_ind+jj+1] = input_signal__dd[t1_ind+jj]+(partial_time_vec[jj+1]-partial_time_vec[jj])*slope
+            input_signal__dd[t1_ind+jj+1] = input_signal__dd[t1_ind+jj]+(
+                partial_time_vec[jj+1]-partial_time_vec[jj]
+                )*slope
     input_signal__dd[t2_ind:] = pwl[-1][1]*np.ones([len(time_vec)-t2_ind])
     
     return input_signal__dd

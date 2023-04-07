@@ -1,7 +1,8 @@
-
+w
 import numpy as np
 import matplotlib.pyplot as plt
 import sys
+sys.path.append('../sim_soens')
 sys.path.append('../')
 
 from sim_soens.soen_plotting import raster_plot, activity_plot

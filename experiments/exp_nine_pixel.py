@@ -1,14 +1,14 @@
 import numpy as np
 import matplotlib.pyplot as plt
 import sys
+sys.path.append('../sim_soens')
 sys.path.append('../')
-from sim_soens.super_node import SuperNode
 
-# from src.super_library import SuperNode
-from sim_soens.params import default_neuron_params,nine_pixel_params
-from sim_soens.super_input import SuperInput
-from sim_soens.soen_sim import input_signal, synapse, neuron, network
-from sim_soens.soen_plotting import raster_plot, arbor_activity, structure
+from sim_soens.super_node import SuperNode
+from sim_soens.super_functions import *
+from sim_soens.soen_sim import network
+from sim_soens.soen_plotting import activity_plot
+
 
 
 
@@ -17,62 +17,93 @@ def main():
     Nine-Pixel Classifier
 
     '''
-    nine_pixel_params['weights']= [
-            [[1.5,.9678933,.3]],
+    params = {
+        
+        'weights': [
+            [[.5,.4,.3]],
             [[0.5,0.5],[0.5,0.5],[0.5,0.5]],
             [[0.35,-0.65],[0.35,-0.65],[0.35,-0.65],[0.35,-0.65],[0.35,-0.65],[0.35,-0.65]]
-        ]
-    nine_pixel_params["s_th"] = 0.05
-    # nine_pixel_params["tau_ref"] = 50
-    # nine_neuron = SuperNode(**nine_pixel_params) 
-    # structure(nine_neuron)
-    # nine_neuron.plot_custom_structure()
+        ],
 
-    z = np.array([0,1,4,7,8]) # z-pixel array
-    v = np.array([1,4,3,6,8])-1 # v
-    n = np.array([2,4,6,7,9])-1 # n
-    letters = [z,v,n]
+        # the time constant at every dendrite
+        'taus': [
+            [[10,150,1000]],
+            [[250,250],[250,250],[250,250]],
+            [[250,250],[250,250],[250,250],[250,250],[250,250],[250,250]]
+        ],
 
-    for let in letters:
-        nine_neuron = SuperNode(**nine_pixel_params) 
-        # structure(nine_neuron)
-        indices = let
-        times = np.ones(len(indices))*20
-        def_spikes = [indices,times]
-        input = SuperInput(
-            channels=9, type='defined', defined_spikes=def_spikes, duration=100
-            )
+        # numbervalues refer to indices of a list of bias values for which 
+        # rate-arrays have been generated
+        'biases': [
+            [[3,3,3]],
+            [[5,5],[5,5],[5,5]],
+            [[-4,3],[-4,3],[-4,3],[-4,3],[-4,3],[-4,3]]
+        ],
 
+        # defines dendrite type for each dendrite
+        'types': [
+            [['rtti','rtti','rtti']],
+            [['ri','ri'],['ri','ri'],['ri','ri']],
+            [['rtti','ri'],['rtti','ri'],['rtti','ri'],['rtti','ri'],['rtti','ri'],['rtti','ri']]
+        ],
+
+        # input from this (number) channel goes to the (index position) synapse
+        'syns': [['2','5'],['4','6'],['5','8'],['4','6'],['1','3'],['7','9'],
+                ['4','6'],['2','5'],['7','9'],['1','3'],['4','6'],['5','8']],
+
+        # with this associated weight
+        'syn_w': [[.6,.6],[.5,.5],[.6,.6],[.5,.5],[.6,.6],[.5,.5],
+                [.6,.6],[.5,.5],[.6,.6],[.5,.5],[.6,.6],[.5,.5]],
+        
+        # other neuron and denrite parameters
+        "tau_di": 250,
+        "ib_n"  : 1.5523958588352207, 
+        "tau_ni": 50,
+        "ib_ref": 1.7523958588352209, 
+    }
+
+
+    # create a neuron with this structure and parameters
+    nine_neuron = SuperNode(s_th=.1,**params) 
+    nine_neuron.plot_structure()
+
+    letters=make_letters()
+    inputs = make_inputs(letters,20)
+    plot_letters(letters)
+
+    # for saving neuron states
+    run_neurons = []
+
+    # test on letters
+    for i,let in enumerate(letters):
+
+        # make a nine-pixel classifier neuron
+        nine_neuron = SuperNode(s_th=.1,**params) 
+
+        # letter defined input
+        input = inputs[i]
+
+        # add input channels to appropriate synapses
+        # this has since been automated
         count = 0
         for g in nine_neuron.synapses:
             for s in g:
                 for i,row in enumerate(input.spike_rows):
                     if i == int(s.name)-1:
-                        s.add_input(input_signal(name = 'input_synaptic_drive', 
-                        input_temporal_form = 'arbitrary_spike_train', 
-                        spike_times = input.spike_rows[i])
-                        )
+                        s.add_input(input.signals[i])
                         count+=1
-        # print(count)
+        run_neurons.append(nine_neuron)
 
-        net = network(
-            sim=True,     # run simulation
-            dt=.1,        # time step (ns)
-            tf=100,       # total duration (ns)
-            nodes=[nine_neuron]) # nodes in network to simulate
+    # run all neurons simultaneously
+    net = network(sim=True,dt=.1,tf=150,nodes=run_neurons,new_way=True)
 
+    # plot!
+    title = 'Responses to All Three 9-Pixel Images'
+    subtitles =['Z','V','N']
+    activity_plot(run_neurons,net,dend=False,phir=True,size=(12,8),title=title,subtitles=subtitles)
 
-        # net = network(name = 'network_under_test')
-        # net.add_neuron(nine_neuron.neuron)
-
-        # net.run_sim(dt = .1, tf = 100)
-        # net.get_recordings()
-
-
-        # nine_neuron.arbor_activity_plot()
-        # arbor_activity(nine_neuron,net,phir=True)
-        
-        nine_neuron.plot_neuron_activity(net,dend=False,phir=True)
+    for n in run_neurons:
+        n.plot_arbor_activity(net,phir=True)
 
 
 

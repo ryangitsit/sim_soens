@@ -1,8 +1,8 @@
 import numpy as np
 
 
-from .soen_sim import input_signal
-from .super_functions import *
+from sim_soens.soen_sim import input_signal
+from sim_soens.super_functions import *
 
 class SuperInput():
     '''
@@ -219,6 +219,6 @@ class SuperInput():
         return stream
     
     def plot(self,**kwargs):
-        from .soen_plotting import raster_plot
+        from sim_soens.soen_plotting import raster_plot
         raster_plot(self.spike_arrays,**kwargs)
 

@@ -1,6 +1,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 import sys
+sys.path.append('../sim_soens')
 sys.path.append('../')
 
 from sim_soens.soen_sim import input_signal, network

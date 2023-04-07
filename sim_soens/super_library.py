@@ -3,19 +3,8 @@ import numpy as np
 # from _util import (
 #     physical_constants, index_finder)
 
-from .soen_sim import neuron, dendrite, synapse
+from sim_soens.soen_sim import neuron, dendrite, synapse
 
-# from soen_utilities import (
-#     dend_load_rate_array, dend_load_arrays_thresholds_saturations,
-#     physical_constants, index_finder)
-
-# from soen_sim import input_signal, synapse, neuron, network
-# from super_input import SuperInput
-# from params import default_neuron_params, nine_pixel_params, weights_3
-# from _plotting__soen import raster_plot
-
-
-# from super_input import SuperInput
 
 '''
 Here a class for calling from a 'zoo' of possible neurons is implemented.
@@ -406,11 +395,19 @@ class NeuralZoo():
                     cs = self.weights[0][0][i]*self.trace_factor
                     # print(cs)
                     for ei in exin:
-                        trace_dend = dendrite(name=f'n{self.n_count}_d{i}_{ei}',tau_di=self.trace_tau)
-                        trace_dend.add_input(d,connection_strength=cs)#2*np.random.rand())
-                        syn = synapse(name=f'{d.name}_tracesyn_{trace_dend.name}_{int(np.random.rand()*100000)}')
-                        trace_dend.add_input(syn,connection_strength=self.trace_syn_factor)
-                        # trace_dend.add_input(self.neuron.dend_soma,connection_strength=soma_factor) ## 
+                        trace_dend = dendrite(
+                            name=f'n{self.n_count}_d{i}_{ei}',
+                            tau_di=self.trace_tau
+                            )
+                        trace_dend.add_input(d,connection_strength=cs)
+                        rnd = int(np.random.rand()*100000)
+                        syn = synapse(
+                            name=f'{d.name}_tracesyn_{trace_dend.name}_{rnd}'
+                            )
+                        trace_dend.add_input(
+                            syn,
+                            connection_strength=self.trace_syn_factor
+                            )
                         self.trace_dendrites.append(trace_dend)
                         self.dendrite_list.append(trace_dend)
                         self.synapse_list.append(syn)
@@ -630,7 +627,10 @@ class NeuralZoo():
         ]
         self.weights = [[[.5,.5,-.25]]]
         neuron = self.custom()
-        self.dendrites[1][0][1].add_input(self.dendrites[1][0][0], connection_strength=.5)
+        self.dendrites[1][0][1].add_input(
+            self.dendrites[1][0][0], 
+            connection_strength=.5
+            )
         return neuron
 
 
@@ -697,219 +697,26 @@ class NeuralZoo():
     ############################################################################
     #                  plotting (to be moved --> soen_plotting)                #
     ############################################################################  
-
-    def plot_neuron_activity(self,net,phir=False,dend=True,title=None,
-                            input=None,weighting=True,docstring=False,lay=100000,
-                            spikes=True, path=None,SPD=False,ref=False,legend_out=False,
-                            size=(12,4)):
+    def plot_neuron_activity(self,net,**kwargs):
         '''
-        Plots signal activity for a given network or neuron
-         - phir      -> plot phi_r of soma and phi_r thresholds
-         - dend      -> plot dendritic signals
-         - input     -> mark moments of input events with red spikes
-         - weighting -> weight dendritic signals by their connection strength
+        Plots signal activity for a given neuron
+         - syntax     -> NeuralZoo.plot_neuron_activity(net,spikes=True,input=input)
+         - kwargs:
+            - net        -> network within which neurons were simulated
+            - phir       -> plot phi_r of soma and phi_r thresholds
+            - dend       -> plot dendritic signals
+            - input      -> mark moments of input events with red spikes
+            - SPD        -> plot synaptic flux
+            - ref        -> plot refractory signal
+            - weighting  -> weight dendritic signals by connection strength
+            - spikes     -> plot output spikes over signal
+            - legend_out -> place legend outside of plots
+            - size       -> (x,y) size of figure
+            - path       -> save plot to path
+            
         '''
-        if docstring == True:
-            print(self.plot_neuron_activity.__doc__)
-            return
-        signal = self.dendrites[0][0][0].s
-        refractory = self.neuron.dend__ref.s
-        phi_r = self.dendrites[0][0][0].phi_r
-
-        import matplotlib.pyplot as plt
-        plt.figure(figsize=size)
-        # spd_indices = np.array(self.synapses).shape
-        # spd = self.synapses[spd_indices[0]-1][spd_indices[1]-1][spd_indices[2]-1].phi_spd
-        # plt.plot(net.t,spd, label='phi_spd')
-        plt.plot(net.t,signal,  label='soma signal', linewidth=4)
-        if phir:
-            # print(phi_r)
-            from soen_functions import phi_thresholds
-            phi_ths = phi_thresholds(self.neuron)
-            plt.axhline(y = phi_ths[1], color = 'purple', linestyle = '--',linewidth=.5,label=r"$\phi_{th}$")
-            if any(ele < 0 for ele in phi_r):
-                # print("True")
-                plt.axhline(y = phi_ths[0], color = 'purple', linestyle = '--',linewidth=.5)
-            plt.plot(net.t,phi_r,  label=r'$\phi_r$ (soma)')
-        if dend:
-            for i,layer in enumerate(self.dendrites):
-                if i < lay +1 :
-                    for j,branch in enumerate(layer):
-                        for k,dendrite in enumerate(branch):
-                            if i == 0 and j == 0 and k ==0:
-                                pass
-                            else:
-                                # print(dendrite.__dict__.keys())
-                                # print(dendrite.external_connection_strengths)
-                                if weighting == True:
-                                    weight = dendrite.weights[i-1][j][k]
-                                    dend_s = dendrite.s*weight
-                                else:
-                                    dend_s = dendrite.s
-                                plt.plot(net.t,dend_s,'--', label='w * '+dendrite.name)
-                            if SPD==True:
-                                # print("Plotting SPD")
-                                for spd in dendrite.synaptic_inputs:
-                                    plt.plot(net.t,dendrite.synaptic_inputs[spd].phi_spd,label="SPD")
-                            # if i==1 and j==0 and k==0:
-                        #     print(dendrite.__dict__.keys())
-                        #     print(dendrite.weights[i-1][j][k])
-                        # print(print(self.weights[i][j][k]))
-                        # linewidth=dendrite.external_connection_strengths[0],
-        if ref==True:
-            plt.plot(net.t,refractory, ':',color = 'r', label='refractory signal')
-        ## add input/output spikes
-        if spikes==True:
-            if len(net.spikes[0]) > 0:
-                plt.plot(net.spikes[1],net.spike_signals[0],'xk', markersize=8, label='neuron fires')
-                plt.axhline(y = self.neuron.s_th, color = 'purple', linestyle = '--',label='Firing Threshold')
-            if input:
-                plt.plot(input.spike_arrays[1],np.zeros(len(input.spike_arrays[1])),'xr', markersize=5, label='input event')
-        if SPD==True:
-            # plt.plot(net.t,)
-            pass
-        # print(self.synapses[0][0][0].__dict__)
-        # print(net.spikes[0])
-        plt.plot(net.t,signal,  color='#1f77b4',linewidth=4)
-        plt.xlabel("Simulation Time (ns)",fontsize=18)
-        plt.ylabel("Signal (Ic)",fontsize=18)
-        plt.subplots_adjust(bottom=.25)
-        if title:
-            plt.title(title,fontsize=22)
-        if legend_out==True:
-            plt.legend(loc='center left', bbox_to_anchor=(1, 0.5))
-            plt.subplots_adjust(right=.8)
-            plt.subplots_adjust(bottom=.15)
-        else:
-            plt.legend()
-        # plt.legend()
-        if path:
-            plt.savefig(path)
-        plt.show()
-
-
-    def plot_basal_proximal(self,net,phir=False,dend=True,title=None,
-                            input=None,input_2=None,weighting=True,docstring=False):
-        '''
-        Plots signal activity for a given network or neuron
-         - phir      -> plot phi_r of soma and phi_r thresholds
-         - dend      -> plot dendritic signals
-         - input     -> mark moments of input events with red spikes
-         - weighting -> weight dendritic signals by their connection strength
-        '''
-        if docstring == True:
-            print(self.plot_neuron_activity.__doc__)
-            return
-        signal = self.dendrites[0][0][0].s
-        ref = self.neuron.dend__ref.s
-        phi_r = self.dendrites[0][0][0].phi_r
-
-        import matplotlib.pyplot as plt
-        plt.figure(figsize=(12,4))
-        # spd_indices = np.array(self.synapses).shape
-        # spd = self.synapses[spd_indices[0]-1][spd_indices[1]-1][spd_indices[2]-1].phi_spd
-        # plt.plot(net.t,spd, label='phi_spd')
-        plt.plot(net.t,signal,  label='soma signal', linewidth=2.5)
-        # if phir:
-        #     # print(phi_r)
-        #     from soen_functions import phi_thresholds
-        #     phi_ths = phi_thresholds(self.neuron)
-        #     plt.axhline(y = phi_ths[1], color = 'purple', linestyle = '--',linewidth=.5,label="phi_th")
-        #     if any(ele < 0 for ele in phi_r):
-        #         print("True")
-        #         plt.axhline(y = phi_ths[0], color = 'purple', linestyle = '--',linewidth=.5)
-            # plt.plot(net.t,phi_r,  label='phi_r (soma)')
-        dend_names = ['basal', 'proximal', 'inhibitory']
-        if dend:
-            for i,layer in enumerate(self.dendrites):
-                for j,branch in enumerate(layer):
-                    for k,dendrite in enumerate(branch):
-                        if i == 0 and j == 0 and k ==0:
-                            pass
-                        else:
-                            # print(dendrite.__dict__.keys())
-                            # print(dendrite.external_connection_strengths)
-                            if weighting == True:
-                                weight = dendrite.weights[i-1][j][k]
-                                dend_s = dendrite.s*weight
-                            else:
-                                dend_s = dendrite.s
-
-                            plt.plot(net.t,dend_s,'--', label='w * '+dend_names[k])
-                            # plt.plot(net.t,dendrite.phi_r,label='phi '+dendrite.name)
-                        # if i==1 and j==0 and k==0:
-                        #     print(dendrite.__dict__.keys())
-                        #     print(dendrite.weights[i-1][j][k])
-                        # print(print(self.weights[i][j][k]))
-                        # linewidth=dendrite.external_connection_strengths[0],
-
-        # plt.plot(net.t,self.dendrites[1][0][0].phi_r,color='r',label='basal_phi')
-
-        # plt.plot(net.t,ref, ':',color = 'r', label='refractory signal')
-        ## add input/output spike
-        colors = ['r','g']
-        # for neuron_key in net.neurons:
-        #     if neuron_key == self.neuron.name:
-        #         neuron = net.neurons[neuron_key]
-        #         spike_times = neuron.spike_times/neuron.time_params['t_tau_conversion']
-        #         print(spike_times)
-        #         plt.plot(spike_times,np.ones(len(spike_times))*self.neuron.s_th,'xk', markersize=8, label=f'neuron fires')
-        spike_times = net.neurons[self.neuron.name].spike_t
-        # print(spike_times)
-
-        plt.plot(spike_times,np.ones(len(spike_times))*self.neuron.s_th,'xk', markersize=8, label=f'neuron fires')
-
-        plt.axhline(y = self.neuron.s_th, color = 'purple', linestyle = ':',label='Firing Threshold')
-        if input:
-            plt.plot(input.spike_arrays[1],np.zeros(len(input.spike_arrays[1])),'x',color='orange', markersize=5, label='proximal input event')
-        if input_2:
-            plt.plot(input_2.spike_arrays[1],np.zeros(len(input_2.spike_arrays[1])),'xg', markersize=5, label='basal input event')
-        # plt.plot(net.t,phi_r,  label='phi_r (soma)')
-        plt.xlabel("Simulation Time (ns)")
-        plt.ylabel("Signal (Ic)")
-        if title:
-            plt.title(title)
-        plt.legend(loc='center left', bbox_to_anchor=(1, 0.5))
-        plt.subplots_adjust(right=.8)
-        plt.subplots_adjust(bottom=.15)
-        # plt.legend()
-        plt.show()
-                    
-    def plot_structure(self):
-        '''
-        This is only for 3fractal neuron
-        '''
-
-        import matplotlib.pyplot as plt
-        layers = [[] for i in range(len(self.dendrites))]
-        for i in range(len(layers)):
-            for j in range(len(self.dendrites[i])):
-                layers[i].append(list(self.dendrites[i][j].dendritic_inputs.keys()))
-        # print(layers)
-        colors = ['r','b','g',]
-        Ns = [len(layers[i]) for i in range(len(layers))]
-        Ns.reverse()
-        Ns.append(1)
-        for i,l in enumerate(layers):
-            for j,d in enumerate(l):
-                if len(d) > 0:
-                    for k in layers[i][j]:
-                        plt.plot([i+.5, i+1.5], [k-3,j+3], '-k', color=colors[j])
-        for i in range(Ns[-2]):
-            plt.plot([len(layers)-.5, len(layers)+.5], [i+len(Ns),len(Ns)+1], 
-                '-k', color=colors[i], linewidth=1)
-        for i,n in enumerate(Ns):
-            if n == np.max(Ns):
-                plt.plot(np.ones(n)*i+.5, np.arange(n), 'ok', ms=10)
-            else:
-                plt.plot(np.ones(n)*i+.5, np.arange(n)+(.5*np.max(Ns)-.5*n), 
-                    'ok', ms=10)
-        plt.xticks([.5, 1.5,2.5], ['Layer 1', 'layer 2', 'soma'])
-        plt.yticks([],[])
-        plt.xlim(0,len(layers)+1)
-        plt.ylim(-1, max(Ns))
-        plt.title('Dendritic Arbor')
-        plt.show()
+        from sim_soens.soen_plotting import activity_plot
+        activity_plot([self],net,**kwargs)
 
 
     def get_structure(self):
@@ -1007,7 +814,9 @@ class NeuralZoo():
                 count+=1
                 i_count+=1
             else:
-                b,s,a,strengths,i,count,i_count = recursive_squish(b,s,a,strengths,i,count,i_count)
+                b,s,a,strengths,i,count,i_count = recursive_squish(
+                    b,s,a,strengths,i,count,i_count
+                    )
                 # print(i_count,count)
             if i_count == len(arbor):
                 break
@@ -1015,39 +824,7 @@ class NeuralZoo():
 
         arbor = b
         strengths = s
-        # for a in strengths:
-        #     print(a)
-        # print("\n")
-
-        # b = [arbor[0],arbor[1],arbor[2]+arbor[3]+arbor[4]]
-        # for a in b:
-        #     print(a,"\n")
-        # if len(self.weights) != len(arbor):
-        #     for i,a in enumerate(arbor):
-        #         lists =  sum(type(el)== type([]) for el in a)
-        #         if lists > 1:
-        #             layer = []
-        #             s_layer = []
-        #             for j in range(lists):
-        #                 if len(arbor) >= lists+j:
-        #                     if j == 0:
-        #                         layer = arbor[lists+j]
-        #                         s_layer = strengths[lists+j]
-        #                     else:
-        #                         layer = layer + arbor[lists+j]
-        #                         s_layer = s_layer + strengths[lists+j]
-        #             arbor[i+1] = layer
-        #             strengths[i+1] = s_layer
-        #             for j in range(lists-1):
-        #                 del arbor[lists+1+j]
-        #                 del strengths[lists+1+j]
-        #         if len(arbor)==i+lists:
-        #             break
-                
         return arbor,strengths
-
-
-
 
 
     def plot_custom_structure(self):
@@ -1155,133 +932,24 @@ class NeuralZoo():
         plt.title('Dendritic Arbor',fontsize=20)
         plt.show()
 
-    def arbor_activity_plot(self,path=None):
-        import matplotlib.pyplot as plt
-        # signal = net.neurons["custom_neuron"].dend_soma.s
-        # ref = net.neurons["custom_neuron"].dend__ref.s
-        signal = self.neuron.dend_soma.s
-        S = []
-        den_arb = self.dendrites
-        L = len(den_arb)
-        M = len(den_arb[-1])
-        # print(M)
-        plt.figure(figsize=(16,8))
-        for i,l in enumerate(den_arb):
-            for j,g in enumerate(l):
-                for k,d in enumerate(g):
-                    soma=0
-                    if i==0 and j==0 and k==0:
-                        soma=1
-                    if i < 10:
-                        s = d.s[::10]
-                        phi = d.phi_r[::10]
-                        t = np.linspace(0,1,len(s)) # self.neuron.time_params['time_vec'] #
-                        S.append(d.s)
-                        # print(i,j,k,'  --  ',np.max(d.s))
-                        # print(len(l),len(den_arb[i-1]))
-                        plt.plot(t+(L-i)*1.2,(s+j*4.2+k*1.5)*(M/len(l))+1.75*(M-i) + 3*soma, 
-                                 linewidth=2, label=f'{i} mean dendritic signal')
-                        plt.plot(t+(L-i)*1.2,(phi+j*4.2+k*1.5)*(M/len(l))+1.75*(M-i) + 3*soma, 
-                                 '--', linewidth=2, label=f'{i} mean dendritic signal')
-        T = t + L*1.6
-        # s_n = signal[::10]+19.5
-        # plt.plot(T,s_n,linewidth=3,color='r')
-        plt.xticks([],[])
-        plt.yticks([],[])
-        plt.title('Signal Propagation Across Arbor')
-        if path:
-            import os
-            try:
-                os.makedirs(path)    
-            except FileExistsError:
-                pass
-            plt.savefig(path)
-            plt.close()
-        else:
-            plt.show()
+    def plot_structure(self):
+        '''
+        Plots arbitrary neuron structure
+            - syntax
+                -> NeuralZoo.plot_structure()
+            - Weighting represented in line widths
+            - Dashed lines inhibitory
+            - Star is cell body
+            - Dots are dendrites
+        '''
+        from sim_soens.soen_plotting import structure
+        structure(self)
 
-    def arbor_activity_plot_(self):
-        import matplotlib.pyplot as plt
-        import matplotlib.colors as mcolors
-        colors = mcolors.TABLEAU_COLORS
-        c_names = list(colors) + list(colors) + list(colors)
-        # print(c_names[0])
-        # print(colors[c_names[0]])
-        arbor,strengths = self.get_structure()
-
-        # colors = ['r','b','g',]
-        Ns = []
-        for i,a in enumerate(arbor):
-            count = 0
-            lsts = sum(type(el)== type([]) for el in a)
-            if lsts > 0:
-                for j in range(lsts):
-                    count+=len(arbor[i][j])
-            else: count = len(a)
-            Ns.append(count)
-        Ns.insert(0,1)
-        Ns.reverse()
-        arbor[0] = [arbor[0]]
-        strengths[0] = [strengths[0]]
-        layers=len(arbor)
-        Ns_ = Ns[::-1]
-        m=max(Ns)
-        c_dexes=[[] for _ in range(len(Ns))]
-        den_arb = self.dendrites
-        L = len(den_arb)
-        M = len(den_arb[-1])
-        for i,l in enumerate(arbor):
-            count= 0
-            row_sum = 0
-            for j,b in enumerate(l):
-                for k,d in enumerate(b):
-                    # if i == 0:
-                    #     c_dexes[i].append(k)
-                    #     s = den_arb[i][j][k].s[::10]
-                    #     t = np.linspace(0,1,len(s))
-                    #     plt.plot(t+(layers-i-.5),s+((m/2)+(len(b)/2)-(k+1)))
-                    # else:
-                    # c_dexes[i].append(c_dexes[i-1][j])
-                    # c_index = c_dexes[i-1][j]
-                    y1=(m/2)+Ns_[i+1]/2 - 1 - (j+k) - row_sum #-((Ns_[i]/2)%2)/2
-                    y2=(m/2)+Ns_[i]/2 - j - 1 
-                    # print(i,j,k,row_sum)
-                    s = den_arb[i][j][k].s[::10]
-                    t = np.linspace(0,1,len(s))
-                    if i == len(arbor)-1:
-                        plt.plot(t+(layers-i-.5),s+y2)
-                    else:
-                        plt.plot(t+(layers-i-.5),s+y1)
-                    # else:
-                    #     plt.plot([layers-i-.5, layers-i+.5], [y1,y2], '--', 
-                    #              color=colors[c_names[c_index]], 
-                    #              linewidth=strengths[i][j][k]*5*(-1))
-                    count+=1
-                row_sum += len(arbor[i][j])-1 
-
-        x_ticks=[]
-        x_labels=[]
-        for i,n in enumerate(Ns):
-            x_labels.append(f"L{len(Ns)-(i+1)}")
-            x_ticks.append(i+.5)
-            if n == np.max(Ns):
-                plt.plot(np.ones(n)*i+.5,np.arange(n),'ok',ms=100/(np.max(Ns)))
-            elif n != 1:
-                factor = 1 # make proportional
-                plt.plot(np.ones(n)*i+.5,np.arange(n)*factor+(.5*np.max(Ns)-.5*n), 
-                         'ok', ms=100/(np.max(Ns)))
-            else:
-                plt.plot(np.ones(n)*i+.5, np.arange(n)+(.5*np.max(Ns)-.5*n), '*k', ms=30)
-                plt.plot(np.ones(n)*i+.5, np.arange(n)+(.5*np.max(Ns)-.5*n), '*y', ms=20)
-
-        x_labels[-1]="soma"
-        plt.yticks([],[])
-        plt.xticks(x_ticks,x_labels)
-        plt.xlim(0,len(Ns))
-        plt.ylim(-1, max(Ns))
-        plt.xlabel("Layers",fontsize=16)
-        plt.ylabel("Dendrites",fontsize=16)
-        plt.title('Dendritic Arbor',fontsize=20)
-        plt.show()
-
-# %%
+    def plot_arbor_activity(self,net,**kwargs):
+        '''
+        Plots signal and optional flux over dendritic structure
+        - syntax
+            -> NeuralZoo.plot_arbor_activity(net,phir=True)
+        '''
+        from sim_soens.soen_plotting import arbor_activity
+        arbor_activity(self,net,**kwargs)

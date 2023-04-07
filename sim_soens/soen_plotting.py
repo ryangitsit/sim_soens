@@ -6,7 +6,7 @@ import matplotlib as mp
 import pickle
 from itertools import cycle
 
-from .soen_utilities import (
+from sim_soens.soen_utilities import (
     depth_of_dendritic_tree, 
     dend_load_arrays_thresholds_saturations, 
     color_dictionary, 
@@ -53,6 +53,8 @@ def activity_plot(
         ):
     '''
     Plots signal activity for a given neuron or network of neurons
+     - syntax     -> NeuralZoo.plot_neuron_activity(net,spikes=True,input=input)
+     - kwargs:
         - neurons    -> list of all neurons to be plotted
         - net        -> network within which neurons were simulated
         - phir       -> plot phi_r of soma and phi_r thresholds
@@ -82,7 +84,7 @@ def activity_plot(
             axs[ii].plot(net.t,signal,  label='soma signal', linewidth=4)
 
             if phir==True:
-                from .soen_functions import phi_thresholds
+                from sim_soens.soen_functions import phi_thresholds
                 phi_ths = phi_thresholds(n.neuron)
                 axs[ii].axhline(
                     y = phi_ths[1], color = 'purple', 
@@ -179,7 +181,7 @@ def activity_plot(
         plt.plot(net.t,signal,  label='soma signal', linewidth=4)
 
         if phir:
-            from .soen_functions import phi_thresholds
+            from sim_soens.soen_functions import phi_thresholds
             phi_ths = phi_thresholds(neurons[0].neuron)
             plt.axhline(y = phi_ths[1], color = 'purple', linestyle = '--',
                         linewidth=.5,label=r"$\phi_{th}$")
@@ -252,6 +254,8 @@ def arbor_activity(
         ):
     '''
     Plots signal and optional flux over dendritic structure
+     - syntax
+        -> SuperNode.plot_arbor_activity(net,phir=True)
     '''
     plt.style.use('seaborn-v0_8-muted')
     # print(plt.__dict__['pcolor'].__doc__)
@@ -366,6 +370,8 @@ def arbor_activity(
 def structure(node):
     '''
     Plots arbitrary neuron structure
+        - syntax
+            -> SuperNode.plot_structure()
         - Weighting represented in line widths
         - Dashed lines inhibitory
         - Star is cell body
@@ -499,7 +505,12 @@ def structure(node):
                 color=color,linewidth=width,label=f'branch {dot1[6]}'
                 )
         else:
-            plt.plot([x1,x2],[y1,y2],linestyle=line_style,color=color,linewidth=width)
+            plt.plot(
+                [x1,x2],[y1,y2],
+                linestyle=line_style,
+                color=color,
+                linewidth=width
+                )
     
     if sum(Ns) > 30:
         ms = np.array([30,20,15,8])*15/sum(Ns)
@@ -523,8 +534,14 @@ def structure(node):
         else:
             syn_colors.append('b')
     syn_values = np.abs(syn_values)
-    plt.scatter(X_synapses,Y_synapses,marker='>', c=syn_colors,s=syn_values,label='Synapses')
-    # plt.scatter(X_synapses[1:],Y_synapses[1:],marker='>', c='r',s=syn_values[1:])
+    plt.scatter(
+        X_synapses,
+        Y_synapses,
+        marker='>', 
+        c=syn_colors,
+        s=syn_values,
+        label='Synapses'
+        )
 
     # plt.legend(borderpad=1)
 
@@ -542,6 +559,87 @@ def structure(node):
     plt.show()
 
 
+
+def plot_basal_proximal(node,net,phir=False,dend=True,title=None,
+                        input=None,input_2=None,weighting=True,docstring=False):
+    '''
+    Plots signal activity for a given network or neuron
+        - phir      -> plot phi_r of soma and phi_r thresholds
+        - dend      -> plot dendritic signals
+        - input     -> mark moments of input events with red spikes
+        - weighting -> weight dendritic signals by their connection strength
+    '''
+    if docstring == True:
+        print(node.plot_neuron_activity.__doc__)
+        return
+    signal = node.dendrites[0][0][0].s
+    ref = node.neuron.dend__ref.s
+    phi_r = node.dendrites[0][0][0].phi_r
+
+    import matplotlib.pyplot as plt
+    plt.figure(figsize=(12,4))
+    plt.plot(net.t,signal,  label='soma signal', linewidth=2.5)
+    dend_names = ['basal', 'proximal', 'inhibitory']
+    if dend:
+        for i,layer in enumerate(node.dendrites):
+            for j,branch in enumerate(layer):
+                for k,dendrite in enumerate(branch):
+                    if i == 0 and j == 0 and k ==0:
+                        pass
+                    else:
+                        # print(dendrite.__dict__.keys())
+                        # print(dendrite.external_connection_strengths)
+                        if weighting == True:
+                            weight = dendrite.weights[i-1][j][k]
+                            dend_s = dendrite.s*weight
+                        else:
+                            dend_s = dendrite.s
+
+                        plt.plot(net.t,dend_s,'--', label='w * '+dend_names[k])
+    colors = ['r','g']
+    spike_times = net.neurons[node.neuron.name].spike_t
+    # print(spike_times)
+
+    plt.plot(
+        spike_times,np.ones(len(spike_times))*node.neuron.s_th,
+        'xk', 
+        markersize=8, 
+        label=f'neuron fires'
+        )
+
+    plt.axhline(
+        y = node.neuron.s_th, 
+        color = 'purple', 
+        linestyle = ':',
+        label='Firing Threshold'
+        )
+    
+    if input:
+        plt.plot(
+            input.spike_arrays[1],
+            np.zeros(len(input.spike_arrays[1])),
+            'x',color='orange', 
+            markersize=5, 
+            label='proximal input event'
+            )
+    if input_2:
+        plt.plot(
+            input_2.spike_arrays[1],
+            np.zeros(len(input_2.spike_arrays[1])),
+            'xg',
+            markersize=5,
+            label='basal input event'
+            )
+    # plt.plot(net.t,phi_r,  label='phi_r (soma)')
+    plt.xlabel("Simulation Time (ns)")
+    plt.ylabel("Signal (Ic)")
+    if title:
+        plt.title(title)
+    plt.legend(loc='center left', bbox_to_anchor=(1, 0.5))
+    plt.subplots_adjust(right=.8)
+    plt.subplots_adjust(bottom=.15)
+    # plt.legend()
+    plt.show()
 # =============================================================================
 # End plots added by Ryan
 # =============================================================================

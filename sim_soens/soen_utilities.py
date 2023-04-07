@@ -6,7 +6,7 @@ from scipy.optimize import fsolve
 import sys
 import copy
 import matplotlib as mp
-from .soen_sim_data import *
+from sim_soens.soen_sim_data import *
 
 # from soen_utilities import physical_constants, material_parameters, color_dictionary
 # colors = color_dictionary()
