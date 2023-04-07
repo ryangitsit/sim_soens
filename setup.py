@@ -8,7 +8,7 @@ setup(name='sim_soens',
         author_email='rmoloughlin11@gmail.com',
         license='NIST',
         zip_safe=False,
-        packages=find_packages(where=["sim_soens"]),
+        packages=find_packages(where="sim_soens"),
         package_dir={"": "soen_sim_data"},
         include_package_data=True
 )
