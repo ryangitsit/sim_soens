@@ -1,2 +1,1 @@
-sim_soens
 soen_sim_data

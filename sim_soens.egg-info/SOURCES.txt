@@ -1,7 +1,7 @@
+MANIFEST.in
 README.md
 setup.py
 sim_soens/__init__.py
-sim_soens/params.py
 sim_soens/soen_functions.py
 sim_soens/soen_initialize.py
 sim_soens/soen_plotting.py

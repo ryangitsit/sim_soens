@@ -1,7 +1,7 @@
 Metadata-Version: 2.1
 Name: sim-soens
 Version: 0.1
-Summary: Simulator for superconducting optoelectronic network
+Summary: simulator for superconducting optoelectronic network
 Home-page: https://github.com/ryangitsit/sim_soens
 Author: Ryan O'Loughlin
 Author-email: rmoloughlin11@gmail.com

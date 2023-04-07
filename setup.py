@@ -9,6 +9,6 @@ setup(name='sim_soens',
         license='NIST',
         zip_safe=False,
         packages=find_packages(where="sim_soens"),
-        package_dir={"": "soen_sim_data"},
+        # package_dir={"": "soen_sim_data"},
         include_package_data=True
 )
