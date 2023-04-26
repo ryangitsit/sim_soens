@@ -1,5 +1,6 @@
 import numpy as np
 import matplotlib.pyplot as plt
+import time
 import sys
 sys.path.append('../sim_soens')
 sys.path.append('../')
@@ -54,73 +55,125 @@ dataset = picklin("datasets/MNIST/","duration=5000_slowdown=100")
 # raster_plot(dataset[0][2])
 
 
+
 np.random.seed(10)
 f_idx = 28
-lay_2 = [np.random.rand(f_idx)/28 for _ in range(f_idx)]
+lay_2 = [np.random.rand(f_idx)*21/28 for _ in range(f_idx)]
 weights = [
     [np.random.rand(f_idx)],
     lay_2
 ]
-MNIST_node = SuperNode(weights=weights,tau_di=5)
 
-expect = [10,20,30]
+node_zero = SuperNode(name='node_zero',weights=weights,tau_di=5)
+node_one  = SuperNode(name='node_one',weights=weights,tau_di=5)
+node_two  = SuperNode(name='node_two',weights=weights,tau_di=5)
+
+nodes=[node_zero,node_one,node_two]
+
+inhibition = -1
+for node in nodes:
+    syn_soma = synapse(name=f'{node.name}_somatic_synapse')
+    node.synapse_list.append(syn_soma)
+    node.neuron.dend_soma.add_input(syn_soma,connection_strength=inhibition)
+    for other_node in nodes:
+        if other_node.name != node.name:
+            node.neuron.add_output(other_node.synapse_list[-1])
+
+
+desired = [
+    [30,0,0],
+    [0,30,0],
+    [0,0,30],
+]
+
 for run in range(10000):
     # if run%10==0: 
     print("Run: ",run)
     samples_passed=0
-    for sample in range(100):
+    for sample in range(10):
         
-        errors = []
-        outputs = []
+        total_errors = [[] for i in range(3)]
+        outputs = [[] for i in range(3)]
         for digit in range(3):
             
+            # s0 = time.perf_counter()
             input = SuperInput(type="defined",channels=784,defined_spikes=dataset[digit][sample])
-            # raster_plot(input.spike_arrays)
-
-
             
-            MNIST_node.one_to_one(input)
+            for node in nodes:
+                for i,channel in enumerate(input.signals):
+                    node.synapse_list[i].add_input(channel)
+                # node.one_to_one(input)
+            # f0 = time.perf_counter()
+            # print("Input time: ", f0-s0)
 
-            net = network(sim=True,dt=.1,tf=500,nodes=[MNIST_node],timer=False)
-            out_spikes = net.spikes[1]
-            output = len(out_spikes)
-            outputs.append(output)
-            MNIST_node.neuron.spike_times=[]
+            net = network(sim=True,dt=.1,tf=500,nodes=nodes,timer=False)
+
+            spikes = array_to_rows(net.spikes,3)
+
+            error_zero = desired[0][digit] - len(spikes[0])
+            error_one  = desired[1][digit] - len(spikes[1])
+            error_two  = desired[2][digit] - len(spikes[2])
+            
+            errors = [error_zero,error_one,error_two]
+            
+
+            total_errors[0] += np.abs(error_zero)
+            total_errors[1] += np.abs(error_one)
+            total_errors[2] += np.abs(error_two)
+
+            output = [len(spikes[0]),len(spikes[1]),len(spikes[2])]
+            outputs[digit].append(output)
+
+            # spike_trajectories[i].append(len(out_spikes))
+            nodes[0].neuron.spike_times=[]
+            nodes[1].neuron.spike_times=[]
+            nodes[2].neuron.spike_times=[]
+
+            # s = time.perf_counter()
+            # offsets = {}
+            for n,node in enumerate(nodes):
+
+                # spike refractory dendrite
+                # lst = node.dendrite_list[2:]
+                # lst.insert(0,node.dendrite_list[0])
+
+                # for dend in lst:
+                    # step = errors[n]*np.mean(dend.s)*.0001
+                    # dend.offset_flux += step
+
+                for l,layer in enumerate(node.dendrites):
+                    for g,group in enumerate(layer):
+                        for d,dend in enumerate(group):
+                            step = errors[n]*np.mean(dend.s)*.0001+(2-l)*.001
+                            flux = np.mean(dend.phi_r) + dend.offset_flux
+                            if flux > 0.5 or flux < -0.5:
+                                step = -step
+                            dend.offset_flux += step
+                            # if g==0 and d ==0: print("learning rate =", .0001+(2-l)*.001)
+                    # offsets[dend.name] = dend.offset_flux
+
+            # f = time.perf_counter()
+            # print("Update time: ", f-s)
 
 
-            error = expect[digit] - output
-            errors.append(np.abs(error))
+            print(f"Sample = {sample} \n Digit = {digit}\n  Spikes = {output} \n  Error = {errors} \n  prediction = {np.argmax(output)}")
 
-            offsets = {}
-            for dend in MNIST_node.dendrite_list:
-                if 'ref' not in dend.name:
-                    step = error*np.mean(dend.s)*.0001
-                    dend.offset_flux += step
-                    offsets[dend.name] = dend.offset_flux
+            if np.argmax(output) == digit:
+                samples_passed+=1
 
-        if errors[0]<5 and errors[1]<5 and errors[2]<5:
-            samples_passed+=1
+    print(f"samples passed: {samples_passed}/30")
 
-        if sample%10==0:
-            print(" sample: ",sample)
-            print("  ",outputs)
-
-
-    print(f"samples passed: {samples_passed}/100")
-
-    if samples_passed > 70:
+    if samples_passed > 20:
         print("converged!")
-        print("weights = ",weights)
-        print("offsets = ",offsets)
-        print(offsets)
+
         picklit(
-            offsets,
-            "results/MNIST/",
+            nodes,
+            "results/MNIST_WTA/",
             f"converged_in_{run}"
             )
         picklit(
             weights,
-            "results/MNIST/",
+            "results/MNIST_WTA/",
             f"init_weights"
             )
         break

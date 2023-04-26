@@ -1,13 +1,13 @@
 import numpy as np
 
-from sim_soens.soen_utilities import (
+from .soen_utilities import (
     get_jj_params, 
     dend_load_arrays_thresholds_saturations, 
     physical_constants, 
     index_finder
 )
-from sim_soens.soen_time_stepper import run_soen_sim
-from sim_soens.soen_plotting import (
+from .soen_time_stepper import run_soen_sim
+from .soen_plotting import (
     plot_dendrite, 
     plot_synapse, 
     plot_neuron, 
@@ -669,7 +669,7 @@ class network():
         network._next_uid += 1
         self.unique_label = 'net{}'.format(self.uid)
         self.new_way=False
-        self.null_synapses=False
+        self.null_synapses=True
         self.nodes=[]
         self.dt = 0.1
         self.tf = 250

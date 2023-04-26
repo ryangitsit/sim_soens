@@ -201,7 +201,7 @@ def plot_letters(letters):
 
         axs[j].set_xticks([])
         axs[j].set_yticks([])
-        axs[j].set_title(name)
+        axs[j].set_title(name,fontsize=18)
         axs[j].imshow(
             pixels,
             interpolation='nearest',
