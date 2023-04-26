@@ -145,7 +145,9 @@ def main():
 
     np.random.seed(10)
 
-    def train_9pixel_classifier(letters,all_spikes,learning_rate,inhibition,elasticity):
+    def train_9pixel_classifier(
+            letters,all_spikes,learning_rate,inhibition,elasticity,int_val
+            ):
         weights = [
             [[.5,.5,.5]],
             [[.3,.3,.3],[.3,.3,.3],[.3,.3,.3]]
@@ -173,7 +175,7 @@ def main():
         node_n.neuron.add_output(node_z.synapse_list[-1])
         node_n.neuron.add_output(node_v.synapse_list[-1])
 
-        node_z.plot_structure()
+        # node_z.plot_structure()
         names = list(letters.keys())
 
         nodes = [node_z,node_v,node_n]
@@ -327,11 +329,12 @@ def main():
             # accs.append(acc)
             print(f"Run {run} accuracy = {acc}%")
 
-            # offsets = [offsets_z,offsets_v,offsets_n]
-            # early_converge = test_noise_set(letters,offsets)
-            # if early_converge == 1:
-            #     print("Early Converge")
-            #     break
+            if int_val == True:
+                offsets = [offsets_z,offsets_v,offsets_n]
+                early_converge = test_noise_set(letters,offsets)
+                if early_converge == 1:
+                    print("Early Converge")
+                    break
 
             if success == 10:
                 converged += 1
@@ -423,7 +426,7 @@ def main():
                 spikes = array_to_rows(net.spikes,3)
 
                 outputs = [len(spikes[0]),len(spikes[1]),len(spikes[2])]
-                print(i,outputs)
+                # print(i,outputs)
 
                 # if j==0:
                 #     for node in nodes:
@@ -435,7 +438,7 @@ def main():
                 for node in nodes:
                     node.neuron.spike_times=[]
 
-            print(f"{name} --> accuracy = {100*correct/len(pixel_list)}%")
+            print(f"test {name} --> accuracy = {100*correct/len(pixel_list)}%")
 
             if correct==10: corrects+=1
         if corrects == 3:
@@ -557,99 +560,115 @@ def main():
         # plot_letter(pixels)
         all_spikes.append(make_spikes(pixels,20))
 
-    elasticity = False
-    offsets, preds, accs, trajects = train_9pixel_classifier(
-        noise_set,
-        all_spikes,
-        learning_rate,
-        inhibition,
-        elasticity
-        )
+    elasticity = True
+    int_val = True
+    els = [True,False,None]
+    vals = [True,False]
 
-    regimes = ['Elastic', 'Inelastic', 'Unbounded']
-    if elasticity == True:
-        regime = regimes[0]
-    elif elasticity == False:
-        regime = regimes[1]
-    else:
-        regime = regimes[2]
+    for el in els:
+        for val in vals:
+            elasticity = el
+            int_val = val
+            offsets, preds, accs, trajects = train_9pixel_classifier(
+                noise_set,
+                all_spikes,
+                learning_rate,
+                inhibition,
+                elasticity,
+                int_val
+                )
 
-    path = "results/pixels_WTA_full/"
-    picklit(
-        preds,
-        path,
-        f"{regime}_predictions"
-        )
-    picklit(
-        accs,
-        path,
-        f"{regime}_accs"
-        )
-    picklit(
-        trajects,
-        path,
-        f"{regime}_trajects"
-        )
+            regimes = ['Elastic', 'Inelastic', 'Unbounded']
+            if elasticity == True:
+                regime = regimes[0]
+            elif elasticity == False:
+                regime = regimes[1]
+            else:
+                regime = regimes[2]
 
-    plt.figure(figsize=(8,4))
-    for i,p in enumerate(preds):
-        plt.plot(p/np.arange(1,len(p)+1,1),label=names[i])
-    plt.legend()
-    plt.title(f"Class Predictions for {regime} Noisy 9-Pixel Classifier",fontsize=16)
-    plt.xlabel("Cycles Over All Samples",fontsize=14)
-    plt.ylabel("Percent Predicted",fontsize=14)
-    plt.subplots_adjust(bottom=.15)
-    plt.savefig(path+regime+'_pred_plot')
-    plt.show()
+            if int_val == True:
+                converge_type = 'Intermittent'
+            else:
+                converge_type = 'Update'
 
-    plt.figure(figsize=(8,4))
-    plt.plot(accs)
-    plt.title(f"Learning Accuracy for {regime} Noisy 9-Pixel Classifier",fontsize=16)
-    plt.xlabel("Total Iterations",fontsize=14)
-    plt.ylabel("Percent Accuracy",fontsize=14)
-    plt.subplots_adjust(bottom=.15)
-    plt.savefig(path+regime+'_accs_plot')
-    plt.show()
+            path = "results/pixels_WTA_icons/"
+            picklit(
+                preds,
+                path,
+                f"{regime}_{converge_type}_predictions"
+                )
+            picklit(
+                accs,
+                path,
+                f"{regime}_{converge_type}_accs"
+                )
+            picklit(
+                trajects,
+                path,
+                f"{regime}_{converge_type}_trajects"
+                )
+
+            plt.figure(figsize=(8,4))
+            for i,p in enumerate(preds):
+                plt.plot(p/np.arange(1,len(p)+1,1),label=names[i])
+            plt.legend()
+            plt.title(f"Class Predictions for {regime} Noisy 9-Pixel Classifier",fontsize=16)
+            plt.xlabel("Cycles Over All Samples",fontsize=14)
+            plt.ylabel("Percent Predicted",fontsize=14)
+            plt.subplots_adjust(bottom=.15)
+            plt.savefig(path+regime+converge_type+'_pred_plot')
+            plt.close()
+
+            plt.figure(figsize=(8,4))
+            plt.plot(accs)
+            plt.title(f"Learning Accuracy for {regime} Noisy 9-Pixel Classifier",fontsize=16)
+            plt.xlabel("Total Iterations",fontsize=14)
+            plt.ylabel("Percent Accuracy",fontsize=14)
+            plt.subplots_adjust(bottom=.15)
+            plt.savefig(path+regime+converge_type+'_accs_plot')
+            plt.close()
 
 
-    plt.style.use('seaborn-v0_8-muted')
-    colors = plt.rcParams["axes.prop_cycle"].by_key()["color"]
+            plt.style.use('seaborn-v0_8-muted')
+            colors = plt.rcParams["axes.prop_cycle"].by_key()["color"]
 
-    for i,traject in enumerate(trajects):
-        plt.figure(figsize=(8,4))
-        count1=0
-        count2=0
-        for name,offset in reversed(traject.items()):
-            if 'soma' in name:
-                name = 'soma'
-                # plt.plot(offset,color=colors[i],label=name,linewidth=4)
-                plt.plot(offset,color=colors[0],label=name,linewidth=4)
-            elif 'lay1' in name:
-                col = colors[1]
+            for i,traject in enumerate(trajects):
+                plt.figure(figsize=(8,4))
+                count1=0
+                count2=0
+                for name,offset in reversed(traject.items()):
+                    if 'soma' in name:
+                        name = 'soma'
+                        # plt.plot(offset,color=colors[i],label=name,linewidth=4)
+                        plt.plot(offset,color=colors[0],label=name,linewidth=4)
+                    elif 'lay1' in name:
+                        col = colors[1]
 
-                if count1 == 0:
-                    plt.plot(offset,'--',color=col,linewidth=2,label='Layer 1')
-                else:
-                    # plt.plot(offset,color=colors[0],label=name,linewidth=3)
-                    plt.plot(offset,'--',color=col,linewidth=2)
-                count1+=1
+                        if count1 == 0:
+                            plt.plot(offset,'--',color=col,linewidth=2,label='Layer 1')
+                        else:
+                            # plt.plot(offset,color=colors[0],label=name,linewidth=3)
+                            plt.plot(offset,'--',color=col,linewidth=2)
+                        count1+=1
 
-            elif 'lay2' in name:
-                col = colors[2]
-                if count2 == 0:
-                    plt.plot(offset,':',color=col,label='Layer 2',linewidth=1)
-                else:
-                    plt.plot(offset,':',color=col,linewidth=1)
-                # plt.plot(offset,color=colors[4],label=name)
-                count2+=1
+                    elif 'lay2' in name:
+                        col = colors[2]
+                        if count2 == 0:
+                            plt.plot(offset,':',color=col,label='Layer 2',linewidth=1)
+                        else:
+                            plt.plot(offset,':',color=col,linewidth=1)
+                        # plt.plot(offset,color=colors[4],label=name)
+                        count2+=1
 
-        plt.title(f"Noisy 9-Pixel Classifier {regime} Weight Convergence - {names[i]}",fontsize=16)
-        plt.xlabel("Total Iterations",fontsize=14)
-        plt.ylabel("Flux Offset",fontsize=14)
-        plt.subplots_adjust(bottom=.15)
-        plt.legend()
-        plt.savefig(path+regime+f'_offsets_{names[i]}_plot')
-        plt.show()
+                plt.title(f"Noisy 9-Pixel Classifier {regime} {converge_type} Convergence - {names[i]}",fontsize=16)
+                plt.xlabel("Total Iterations",fontsize=14)
+                plt.ylabel("Flux Offset",fontsize=14)
+                plt.subplots_adjust(bottom=.15)
+                plt.legend()
+                plt.savefig(path+regime+converge_type+f'_offsets_{names[i]}_plot')
+                plt.close()
+            test_noise_set(noise_set,offsets)
+    
 
     # correct_offsets = [correct_z,correct_v,correct_n] # partial noise, no bounce
 
@@ -658,7 +677,7 @@ def main():
     # correct_offsets = offsets 
     # test_on_noise(correct_offsets)
 
-    test_noise_set(noise_set,offsets)
+    # test_noise_set(noise_set,offsets)
 
 if __name__=='__main__':
     main()

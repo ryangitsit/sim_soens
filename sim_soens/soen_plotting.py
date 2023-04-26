@@ -151,7 +151,7 @@ def activity_plot(
                 axs[ii].set_xticks([])
             if ii == 0:
                 plt.legend()
-        label_size = np.min([10+2*len(neurons),18])
+        label_size = np.min([10+2*len(neurons),14])
         plt.xlabel("Simulation Time (ns)",fontsize=label_size)
         axs[int(np.floor(len(neurons)/2))].set_ylabel(
             "Signal (Ic)",
@@ -164,13 +164,14 @@ def activity_plot(
         # plt.subplots_adjust(bottom=.25)
         if title:
             title_size=np.min([10+2*len(neurons)+2,20])
+            title_size = 16
             if subtitles:
                 fig.suptitle(title,fontsize=title_size) 
             else:
                 axs[0].set_title(title,fontsize=title_size)
         if subtitles:
             for i,sub in enumerate(subtitles):
-                axs[i].set_title(sub,fontsize=16)
+                axs[i].set_title(sub,fontsize=14)
 
     else:
         signal = neurons[0].dendrites[0][0][0].s
@@ -233,10 +234,10 @@ def activity_plot(
                     )
                 
         plt.plot(net.t,signal,  color='#1f77b4',linewidth=4)
-        plt.xlabel("Simulation Time (ns)",fontsize=18)
-        plt.ylabel("Signal (Ic)",fontsize=18)
+        plt.xlabel("Simulation Time (ns)",fontsize=14)
+        plt.ylabel("Signal (Ic)",fontsize=14)
         plt.subplots_adjust(bottom=.25)
-        plt.title(title,fontsize=20)
+        plt.title(title,fontsize=18)
     if legend==True:
         if legend_out==True:
             plt.legend(loc='center left', bbox_to_anchor=(1, 1.2))
