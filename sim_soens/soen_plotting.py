@@ -153,13 +153,14 @@ def activity_plot(
                 plt.legend()
         label_size = np.min([10+2*len(neurons),14])
         plt.xlabel("Simulation Time (ns)",fontsize=label_size)
-        axs[int(np.floor(len(neurons)/2))].set_ylabel(
+        print(int(np.floor((len(neurons)-1)/2)))
+        axs[int(np.floor((len(neurons)-1)/2))].set_ylabel(
             "Signal (Ic)",
             fontsize=label_size
             )
             #, labelpad=20)
 
-        axs[int(np.floor(len(neurons)/2))].yaxis.set_label_coords(-.05,1)
+        axs[int(np.floor(len(neurons)/2))].yaxis.set_label_coords(-1.05,1)
         # fig.set_ylabel("ylabel")
         # plt.subplots_adjust(bottom=.25)
         if title:
