@@ -1,6 +1,9 @@
 import numpy as np
 import matplotlib.pyplot as plt
-import time
+
+# Import writer class from csv module
+from csv import writer
+
 import sys
 sys.path.append('../sim_soens')
 sys.path.append('../')
@@ -11,7 +14,7 @@ from sim_soens.super_node import SuperNode
 from sim_soens.super_functions import *
 from sim_soens.soen_sim import network, dendrite, HardwareInTheLoop, synapse
 
-
+import time
 np.random.seed(10)
 print(np.random.randint(0, 100, 10))
 
@@ -96,7 +99,7 @@ for run in range(10000):
         outputs = [[] for i in range(3)]
         for digit in range(3):
             
-            # s0 = time.perf_counter()
+            s = time.perf_counter()
             input = SuperInput(type="defined",channels=784,defined_spikes=dataset[digit][sample])
             
             for node in nodes:
@@ -144,38 +147,54 @@ for run in range(10000):
                 for l,layer in enumerate(node.dendrites):
                     for g,group in enumerate(layer):
                         for d,dend in enumerate(group):
-                            step = errors[n]*np.mean(dend.s)*.0001+(2-l)*.001
-                            flux = np.mean(dend.phi_r) + dend.offset_flux
+                            step = errors[n]*np.mean(dend.s)*.0001 #+(2-l)*.001
+                            flux = np.mean(dend.phi_r) + step #dend.offset_flux
                             if flux > 0.5 or flux < -0.5:
                                 step = -step
                             dend.offset_flux += step
                             # if g==0 and d ==0: print("learning rate =", .0001+(2-l)*.001)
                     # offsets[dend.name] = dend.offset_flux
 
-            # f = time.perf_counter()
+            f = time.perf_counter()
             # print("Update time: ", f-s)
 
 
             print(f"Sample = {sample} \n Digit = {digit}\n  Spikes = {output} \n  Error = {errors} \n  prediction = {np.argmax(output)}")
+
+            # List that we want to add as a new row
+            List = [sample,digit,output,errors,np.argmax(output),f-s]
+            
+            # Open our existing CSV file in append mode
+            # Create a file object for this file
+            with open('MNIST_ongoing.csv', 'a') as f_object:
+            
+                writer_object = writer(f_object)
+            
+                writer_object.writerow(List)
+
+                f_object.close()
+
 
             if np.argmax(output) == digit:
                 samples_passed+=1
 
     print(f"samples passed: {samples_passed}/30")
 
-    if samples_passed > 20:
-        print("converged!")
-
-        picklit(
-            nodes,
-            "results/MNIST_WTA/",
-            f"converged_in_{run}"
-            )
+    picklit(
+        nodes,
+        "results/MNIST_WTA/",
+        f"nodes_at_{run}"
+        )
+    
+    if run == 0:
         picklit(
             weights,
             "results/MNIST_WTA/",
             f"init_weights"
             )
+        
+    if samples_passed == 30:
+        print("converged!")
         break
 
     # if total_error<25:
