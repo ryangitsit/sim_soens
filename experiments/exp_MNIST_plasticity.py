@@ -132,6 +132,18 @@ for run in range(10000):
             nodes[1].neuron.spike_times=[]
             nodes[2].neuron.spike_times=[]
 
+            nodes[0].neuron.spike_indices=[]
+            nodes[1].neuron.spike_indices=[]
+            nodes[2].neuron.spike_indices=[]
+
+            nodes[0].neuron.electroluminescence_cumulative_vec=[]
+            nodes[1].neuron.electroluminescence_cumulative_vec=[]
+            nodes[2].neuron.electroluminescence_cumulative_vec=[]
+
+            nodes[0].neuron.time_params=[]
+            nodes[1].neuron.time_params=[]
+            nodes[2].neuron.time_params=[]
+
             # s = time.perf_counter()
             # offsets = {}
             for n,node in enumerate(nodes):
@@ -152,6 +164,9 @@ for run in range(10000):
                             if flux > 0.5 or flux < -0.5:
                                 step = -step
                             dend.offset_flux += step
+                            dend.s = []
+                            dend.phi_r = []
+
                             # if g==0 and d ==0: print("learning rate =", .0001+(2-l)*.001)
                     # offsets[dend.name] = dend.offset_flux
 
@@ -166,7 +181,7 @@ for run in range(10000):
             
             # Open our existing CSV file in append mode
             # Create a file object for this file
-            with open('MNIST_ongoing.csv', 'a') as f_object:
+            with open('MNIST_ongoing_lite.csv', 'a') as f_object:
             
                 writer_object = writer(f_object)
             
@@ -182,14 +197,14 @@ for run in range(10000):
 
     picklit(
         nodes,
-        "results/MNIST_WTA/",
+        "results/MNIST_WTA_lite/",
         f"nodes_at_{run}"
         )
     
     if run == 0:
         picklit(
             weights,
-            "results/MNIST_WTA/",
+            "results/MNIST_WTA_lite/",
             f"init_weights"
             )
         
