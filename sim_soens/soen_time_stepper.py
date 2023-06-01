@@ -63,10 +63,27 @@ def run_soen_sim(net):
 
         # run the simulation one time step at a time
         if net.backend == 'julia':
-            # from julia import Main
-            # Main.include("julia_net_stepper.jl")
+            from julia import Main as jl
+            jl.include("julia_stepper.jl")
+            # jl.counter(10)
+
+            for node in net.nodes:
+                node.dend_dict = {}
+                for i,dend in enumerate(node.dendrite_list):
+                    node.dend_dict[dend.name] = dend
+
+            jul_net = jl.stepper(net,tau_vec,d_tau)
+            
+            for node in net.nodes:
+                for i,dend in enumerate(node.dendrite_list):
+                    dend.s = jul_net[node.name][i].s
+                    dend.phi_r = jul_net[node.name][i].phir
+                    # print(sum(jul_net[node.name][i].s))
+
+            # print(struct)
+
             # net = Main.julia_step(net,tau_vec,d_tau)
-            pass
+            # pass
         else:
             net = net_step(net,tau_vec,d_tau)
 
