@@ -73,11 +73,11 @@ node_two  = SuperNode(name='node_two',weights=weights,tau_di=5)
 
 nodes=[node_zero,node_one,node_two]
 
-inhibition = -1
-for node in nodes:
+inhibition = [-1.2,-.5,-1.2]
+for i,node in enumerate(nodes):
     syn_soma = synapse(name=f'{node.name}_somatic_synapse')
     node.synapse_list.append(syn_soma)
-    node.neuron.dend_soma.add_input(syn_soma,connection_strength=inhibition)
+    node.neuron.dend_soma.add_input(syn_soma,connection_strength=inhibition[i])
     for other_node in nodes:
         if other_node.name != node.name:
             node.neuron.add_output(other_node.synapse_list[-1])
@@ -181,7 +181,7 @@ for run in range(10000):
             
             # Open our existing CSV file in append mode
             # Create a file object for this file
-            with open('MNIST_ongoing_lite.csv', 'a') as f_object:
+            with open('MNIST_ongoing_inhibit.csv', 'a') as f_object:
             
                 writer_object = writer(f_object)
             
@@ -197,14 +197,14 @@ for run in range(10000):
 
     picklit(
         nodes,
-        "results/MNIST_WTA_lite/",
+        "results/MNIST_WTA_inhibit/",
         f"nodes_at_{run}"
         )
     
     if run == 0:
         picklit(
             weights,
-            "results/MNIST_WTA_lite/",
+            "results/MNIST_WTA_inhibit/",
             f"init_weights"
             )
         
