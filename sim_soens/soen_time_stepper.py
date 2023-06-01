@@ -14,12 +14,12 @@ from sim_soens.soen_initialize import (
     dendrite_data_attachment
 )
 
-from sim_soens.soen_utilities import dend_load_rate_array
+# from sim_soens.soen_utilities import dend_load_rate_array
 
 
-load_string = 'default_ri'
+# load_string = 'default_ri'
 
-ib__list, phi_r__array, i_di__array, r_fq__array, _, _ = dend_load_rate_array(load_string)
+# ib__list, phi_r__array, i_di__array, r_fq__array, _, _ = dend_load_rate_array(load_string)
 
 
 np.random.seed(10)
@@ -338,14 +338,14 @@ def dendrite_updater(dend_obj,time_index,present_time,d_tau,HW=None):
         dend_obj.bias_dynamics.append(new_bias)
 
     # find appropriate rate array indices
-    # lst = dend_obj.phi_r__vec[:] # old way
-    lst = np.asarray(phi_r__array[dend_obj._ind__ib])[:] # new way
+    lst = dend_obj.phi_r__vec[:] # old way
+    # lst = np.asarray(phi_r__array[dend_obj._ind__ib])[:] # new way
 
     val = dend_obj.phi_r[time_index+1] 
     _ind__phi_r = closest_index(lst,val)
 
-    # i_di__vec = np.asarray(dend_obj.i_di__subarray[_ind__phi_r]) # old way
-    i_di__vec = np.asarray(np.asarray(i_di__array[dend_obj._ind__ib],dtype=object)[_ind__phi_r]) # new way
+    i_di__vec = np.asarray(dend_obj.i_di__subarray[_ind__phi_r]) # old way
+    # i_di__vec = np.asarray(np.asarray(i_di__array[dend_obj._ind__ib],dtype=object)[_ind__phi_r]) # new way
 
     if dend_obj.pri == True:
         lst = i_di__vec[:]
@@ -360,8 +360,8 @@ def dendrite_updater(dend_obj,time_index,present_time,d_tau,HW=None):
         val = dend_obj.s[time_index]
         _ind__s = closest_index(lst,val)
         
-    # r_fq = dend_obj.r_fq__subarray[_ind__phi_r][_ind__s] # old way 
-    r_fq = np.asarray(r_fq__array[dend_obj._ind__ib],dtype=object)[_ind__phi_r][_ind__s] # new way
+    r_fq = dend_obj.r_fq__subarray[_ind__phi_r][_ind__s] # old way 
+    # r_fq = np.asarray(r_fq__array[dend_obj._ind__ib],dtype=object)[_ind__phi_r][_ind__s] # new way
         
     # get alpha 
     # skip this if/else

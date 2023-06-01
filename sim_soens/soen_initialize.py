@@ -195,10 +195,10 @@ def rate_array_attachment(dend_obj):
     else:  
         _ind__ib = ( np.abs( ib__vec[:] - dend_obj.bias_current ) ).argmin()
 
-    dend_obj._ind__ib = _ind__ib ## new
-    # dend_obj.phi_r__vec = np.asarray(phi_r__array[_ind__ib])
-    # dend_obj.i_di__subarray = np.asarray(i_di__array[_ind__ib],dtype=object)
-    # dend_obj.r_fq__subarray = np.asarray(r_fq__array[_ind__ib],dtype=object) 
+    # dend_obj._ind__ib = _ind__ib ## new
+    dend_obj.phi_r__vec = np.asarray(phi_r__array[_ind__ib])
+    dend_obj.i_di__subarray = np.asarray(i_di__array[_ind__ib],dtype=object)
+    dend_obj.r_fq__subarray = np.asarray(r_fq__array[_ind__ib],dtype=object) 
 
     return
 

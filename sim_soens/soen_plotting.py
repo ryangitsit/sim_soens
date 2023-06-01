@@ -49,7 +49,8 @@ def raster_plot(
 def activity_plot(
         neurons,net,phir=False,dend=True,title=None,input=None,weighting=True,
         docstring=False,lay=100000,spikes=True, path=None,SPD=False,ref=False,
-        legend_out=False,size=(12,4), y_range=None,subtitles=None,legend=True
+        legend_out=False,size=(12,4), y_range=None,subtitles=None,legend=True,
+        legend_all=False
         ):
     '''
     Plots signal activity for a given neuron or network of neurons
@@ -149,7 +150,9 @@ def activity_plot(
                     )
             if ii != len(neurons)-1:
                 axs[ii].set_xticks([])
-            if ii == 0:
+            if legend_all == True:
+                axs[ii].legend(loc=1)
+            elif ii == 0:
                 plt.legend()
         label_size = np.min([10+2*len(neurons),14])
         plt.xlabel("Simulation Time (ns)",fontsize=label_size)

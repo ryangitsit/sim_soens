@@ -361,8 +361,8 @@ def rollover():
     neurs = {}
     nodes = []
     
-    for i in range(10):
-        syn_struct = [[[[i*.5+.5]]]]
+    for i in range(5):
+        syn_struct = [[[[.5+i*.2]]]]
         neurs[str(i)] = NeuralZoo(type="custom",synaptic_structure=syn_struct,s_th=100)
         neurs[str(i)].synapses[0][0][0][0].add_input(input.signals[0])
         nodes.append(neurs[str(i)])
@@ -374,7 +374,7 @@ def rollover():
 
     net = network(sim=True,dt=.1,tf=300,nodes=nodes)
     activity_plot(nodes,net,title="Rollover Effects for Increasing Synaptic Coupling Strength",input=input,
-                 phir=True,SPD=False,dend=True,ref=False,spikes=False,size=(8,12),legend_out=True)
+                 phir=True,SPD=False,dend=True,ref=False,spikes=False,size=(8,12),legend=False)
     
 
     # plt.legend(loc='center left', bbox_to_anchor=(1, 0.5))
@@ -403,7 +403,7 @@ def rollover():
     # mono_point.plot_neuron_activity(net,title="Monosynaptic Point Neuron",input=input,phir=True,SPD=False,dend=True,ref=False)
 
 
-# rollover()
+rollover()
 
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -473,4 +473,4 @@ def integration():
     # print(mono_point.neuron.__dict__.keys())
     # mono_point.plot_neuron_activity(net,title="Monosynaptic Point Neuron",input=input,phir=True,SPD=False,dend=True,ref=True)
 
-integration()
+# integration()
