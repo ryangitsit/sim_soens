@@ -314,7 +314,7 @@ def arbor_activity(
                 if 'soma' in dend.name:
                     s_factor=1
                     plot = plt.plot(
-                        x, y,
+                        x[:min(len(x),len(y))],y[:min(len(x),len(y))],
                         label=dend.name[18:],linewidth=lw,color=colors[0]
                         )
                     if spikes==True:

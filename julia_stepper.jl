@@ -10,13 +10,34 @@ mutable struct WildCard
     params::Dict{Any, Any}
 end
 
-mutable struct Dendrite
+abstract type AbstractDendrite end
+
+mutable struct ArborDendrite <: AbstractDendrite
     name      :: String
     s         :: Vector
     phir      :: Vector
     inputs    :: Dict
     synputs   :: Dict
-    synspikes :: Dict
+end
+
+
+mutable struct RefractoryDendrite <: AbstractDendrite
+    name      :: String
+    s         :: Vector
+    phir      :: Vector
+    inputs    :: Dict
+    synputs   :: Dict
+end
+
+
+mutable struct SomaticDendrite <: AbstractDendrite
+    name      :: String
+    s         :: Vector
+    phir      :: Vector
+    inputs    :: Dict
+    synputs   :: Dict
+    spiked    :: Int
+    threshold :: Float64
 end
 
 mutable struct Synapse
@@ -68,7 +89,14 @@ function make_nodes(node,T,conversion)
             # synspikes[synput[1]] = spike_times.+1
         end
 
-        new_dend = Dendrite(dend.name,zeros(T),zeros(T),inputs,synputs,synspikes)
+        if occursin("soma",dend.name)
+            new_dend = SomaticDendrite(dend.name,zeros(T),zeros(T),inputs,synputs,0,dend.s_th)
+        elseif occursin("ref",dend.name)
+            new_dend = RefractoryDendrite(dend.name,zeros(T),zeros(T),inputs,synputs)
+        else
+            new_dend = ArborDendrite(dend.name,zeros(T),zeros(T),inputs,synputs)
+        end
+            
         # push!(dendrites,new_dend)
         dendrites[dend.name] = new_dend
     end
@@ -166,24 +194,37 @@ function SPD_response(conversion)
     return [0;phi_rise;phi_fall]
 end
 
-function dend_update(py_dend,node,dend,t_idx,t_now,d_tau)
-    soma = 0
-    update = true
-
-    # if occursin("soma", dend.name) # rewrite as unique method
-    #     if dend.threshold_flag == true
-    #         update = false
-    #     end
-    # end
-
-    # skipping update skip
+function dend_update(py_dend,node,dend::ArborDendrite,t_idx,t_now,d_tau)
     dend = dend_inputs(node,dend,t_idx)
     dend = dend_synputs(node,dend,t_idx)
     dend = dend_signal(py_dend,dend,t_idx,d_tau)
-
-    return soma
-
+    return dend
 end
+
+function dend_update(py_dend,node,dend::RefractoryDendrite,t_idx,t_now,d_tau)
+    dend = dend_inputs(node,dend,t_idx)
+    dend = dend_synputs(node,dend,t_idx)
+    dend = dend_signal(py_dend,dend,t_idx,d_tau)
+    return dend
+end
+
+function dend_update(py_dend,node,dend::SomaticDendrite,t_idx,t_now,d_tau)
+    if t_idx - dend.spiked < 100 && dend.s[t_idx] >= dend.threshold
+        spike(dend,t_idx)
+    else
+        dend = dend_inputs(node,dend,t_idx)
+        dend = dend_synputs(node,dend,t_idx)
+        dend = dend_signal(py_dend,dend,t_idx,d_tau)
+    end
+    return dend
+end
+
+function spike(dend,t_idx) ## add spike to syn_ref
+    dend.spiked = t_idx
+    dend.s[t_idx:length(dend.s)] .= 0
+    return dend
+end
+
 
 function dend_inputs(node,dend,t_idx)
     update = 0
