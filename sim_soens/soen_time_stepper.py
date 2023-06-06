@@ -73,17 +73,18 @@ def run_soen_sim(net):
                     node.dend_dict[dend.name] = dend
 
             jul_net = jl.stepper(net,tau_vec,d_tau)
-            
+            print("\n\n----------------------------------------------------")
             for node in net.nodes:
                 for i,dend in enumerate(node.dendrite_list):
-                    dend.s = jul_net[node.name][i].s
-                    dend.phi_r = jul_net[node.name][i].phir
+                    dend.s     = jul_net[node.name]["dendrites"][dend.name].s[:-1]
+                    dend.phi_r = jul_net[node.name]["dendrites"][dend.name].phir
                     # print(sum(jul_net[node.name][i].s))
 
             # print(struct)
 
             # net = Main.julia_step(net,tau_vec,d_tau)
-            # pass
+            
+
         else:
             net = net_step(net,tau_vec,d_tau)
 
@@ -275,7 +276,7 @@ def dendrite_updater(dend_obj,time_index,present_time,d_tau,HW=None):
         # print(syn_obj)
         # find most recent spike time for this synapse
         _st_ind = np.where( present_time > syn_obj.spike_times_converted[:] )[0]
-        
+
         if len(_st_ind) > 0:
             
             _st_ind = int(_st_ind[-1])

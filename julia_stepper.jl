@@ -10,12 +10,19 @@ mutable struct WildCard
     params::Dict{Any, Any}
 end
 
-mutable struct dendrite
+mutable struct Dendrite
+    name      :: String
+    s         :: Vector
+    phir      :: Vector
+    inputs    :: Dict
+    synputs   :: Dict
+    synspikes :: Dict
+end
+
+mutable struct Synapse
     name::String
-    s::Vector
-    phir::Vector
-    inputs::Dict
-    synputs::Dict
+    spike_times::Array
+    phi_spd::Array
 end
 
 function make_struct(obj,names,vals)
@@ -32,63 +39,100 @@ function make_struct(obj,names,vals)
     return obj_struct
 end
 
-function make_dendrites(dends)
-    dendrites = []
-    for dend in dends
+function make_nodes(node,T,conversion)
+
+    node_dict = Dict()
+
+    dendrites = Dict()
+    synapses = Dict()
+
+    for syn in node.synapse_list
+        # spike_times = Int.(syn.input_signal.spike_times.*conversion)
+        spike_times = [floor(Int,x) for x in syn.input_signal.spike_times.*conversion]
+        synapses[syn.name] = Synapse(syn.name,spike_times.+1,zeros(T))
+        # @show syn.name
+        # @show syn.input_signal.spike_times
+    end
+
+    for dend in node.dendrite_list
         inputs = Dict()
         for input in dend.dendritic_connection_strengths
             inputs[input[1]] = input[2]
         end
-        synputs = Dict()
+        synputs   = Dict()
+        synspikes = Dict()
+
         for synput in dend.synaptic_connection_strengths
+            # spike_times = Int.(node.synapse_list[1].input_signal.spike_times.*conversion)
             synputs[synput[1]] = synput[2]
+            # synspikes[synput[1]] = spike_times.+1
         end
-        push!(dendrites,dendrite(dend.name,zeros(length(dend.s)),zeros(length(dend.s)),inputs,synputs))
+
+        new_dend = Dendrite(dend.name,zeros(T),zeros(T),inputs,synputs,synspikes)
+        # push!(dendrites,new_dend)
+        dendrites[dend.name] = new_dend
     end
-    return dendrites
+
+    node_dict["synapses"] = synapses
+    node_dict["dendrites"] = dendrites
+
+    return node_dict
 end
 
 function stepper(net,tau_vec,d_tau)
+
+    """
+    Plan:
+     - Go over all nodes in network
+        - create structs for synapses
+        - create structs for dendrites
+        - creat information table for connectivity
+        - update in downstream direction
+        - return dataframe of signals and fluxes
+            - update py objects with new info
+        - win
+    """
+
+    T = length(tau_vec)
+    conversion = last(tau_vec)/(T/net.dt)
+    @show conversion*400
+    # @show tau_vec
+    # T = 3
+
+    # set up julia structs
     net_dict = Dict()
     py_dict = Dict()
     for node in net.nodes
         py_dict[node.name] = node
-        net_dict[node.name] = make_dendrites(node.dendrite_list)
+        net_dict[node.name] = make_nodes(node,T+1,conversion)
     end
 
     
 
     # @show net_dict
 
-    T = length(tau_vec)-1
+    
     ops=0
     dend_ops = 0
     @show T
-    ### pythonic
-    # for t_idx in 1:T
-    #     for node in net.nodes
-    #         for dend in node.dendrite_list
-    #             dend_ops += dend_update(dend,t_idx,tau_vec[t_idx+1],d_tau)
-    #             ops+=1
-    #         end
-    #     end
-    #     # count+=1
-    # end
-
-    ### julianic
     # T = 2
+
     for t_idx in 1:T
-        for node in net_dict
+        for (node_name,node) in net_dict
             # @show node
-            for dend in node[2]
-                # @show dend.name
-                py_dend = py_dict[node[1]].dend_dict[dend.name]
-                dend = dend_update(py_dend,dend,t_idx,tau_vec[t_idx+1],d_tau)
-                # dend_ops += dend_update(dend,t_idx,tau_vec[t_idx+1],d_tau)
+
+            for (name,syn) in node["synapses"]
+                synapse_input_update(syn,t_idx,T,conversion)
+            end
+
+            for (name,dend) in node["dendrites"]
+                py_dend = py_dict[node_name].dend_dict[name]
+                dend = dend_update(py_dend,node,dend,t_idx,tau_vec[t_idx],d_tau)
+                # dend_ops += 1
                 # ops+=1
             end
         end
-        # count+=1
+        # count+=1 
     end
 
     # @show dend_ops
@@ -96,7 +140,33 @@ function stepper(net,tau_vec,d_tau)
     return net_dict
 end
 
-function dend_update(py_dend,dend,t_idx,t_now,d_tau)
+function synapse_input_update(syn,t,T,conversion)
+    duration = floor(Int,1500*conversion)
+    if t in syn.spike_times
+        @show t
+        until = min(t+duration,T)
+        syn.phi_spd[t:until-1] = max.(syn.phi_spd[t:until-1],SPD_response(conversion)[1:until-t])
+    end
+    return syn
+end
+
+function SPD_response(conversion)
+    phi_peak = 0.5
+    tau_rise = 0.02*conversion
+    tau_fall = 50*conversion #50
+    hotspot = 3*conversion
+    coeff = phi_peak*(1-tau_rise/tau_fall)
+    # duration = 500
+    duration = floor(Int,1500*conversion)
+    e = ℯ
+
+    phi_rise = [coeff * (1-e^(-t/tau_rise)) for t in 1:hotspot]
+    phi_fall = [coeff * (1-e^(-hotspot/tau_rise))*e^(-(t-hotspot)/tau_fall) for t in hotspot+1:duration-1]
+
+    return [0;phi_rise;phi_fall]
+end
+
+function dend_update(py_dend,node,dend,t_idx,t_now,d_tau)
     soma = 0
     update = true
 
@@ -106,20 +176,23 @@ function dend_update(py_dend,dend,t_idx,t_now,d_tau)
     #     end
     # end
 
-    if update == true
-        dend = dend_inputs(dend,t_idx)
-        dend = dend_synputs(dend,t_idx)
-        dend = dend_signal(py_dend,dend,t_idx,d_tau)
-    end
-
+    # skipping update skip
+    dend = dend_inputs(node,dend,t_idx)
+    dend = dend_synputs(node,dend,t_idx)
+    dend = dend_signal(py_dend,dend,t_idx,d_tau)
 
     return soma
+
 end
 
-function dend_inputs(dend,t_idx)
+function dend_inputs(node,dend,t_idx)
     update = 0
+    # @show collect(keys(node[1]))
     for input in dend.inputs
-        update += t_idx*input[2] # dend.s[t_idx]*input[2] + t_idx
+        # @show input
+        # @show node[2][input[1]].name
+        # @show node[2][input[1]].s[t_idx]
+        update += node["dendrites"][input[1]].s[t_idx]*input[2]
     end
     # @show update
     # push!(dend.phir,update)
@@ -128,10 +201,15 @@ function dend_inputs(dend,t_idx)
 end
 
 
-function dend_synputs(dend,t_idx)
+function dend_synputs(node,dend,t_idx)
     update = 0
     for synput in dend.synputs
-        update += t_idx*synput[2] # dend.s[t_idx]*input[2] + t_idx
+        if occursin("refraction",synput[1]) == 0
+            # @show synput
+            # @show node["synapses"][synput[1]] #.name
+            update += node["synapses"][synput[1]].phi_spd[t_idx]*synput[2] # dend.s[t_idx]*input[2] + t_idx
+            # @show update
+        end
     end
     # @show update
     # push!(dend.phir,update)
@@ -142,7 +220,7 @@ end
 function dend_signal(py_dend,dend,t_idx,d_tau)
 
     lst = py_dend.phi_r__vec
-    val = dend.phir[t_idx+1] 
+    val = dend.phir[t_idx] 
     _ind__phi_r = closest_index(lst,val)
 
     i_di__vec = py_dend.i_di__subarray[_ind__phi_r]

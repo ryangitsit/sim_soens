@@ -343,12 +343,12 @@ def arbor_activity(
                             #     )
                 else:
                     plot = plt.plot(
-                        x,y,label=dend.name[18:],linewidth=lw,
+                        x[:min(len(x),len(y))],y[:min(len(x),len(y))],label=dend.name[18:],linewidth=lw,
                         color=colors[(dend.branch+1)%len(colors)]
                         )
                 color = plot[0].get_color()
                 if phir==True:
-                    plt.plot(x,y2,'--',color=color)
+                    plt.plot(x[:min(len(x),len(y2))],y2[:min(len(x),len(y2))],'--',color=color)
                 count+=1
             groups.append(np.mean(g))
         x_ticks.append(net.tf*i*1.1+.5*net.tf)
