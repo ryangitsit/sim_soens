@@ -196,10 +196,20 @@ def rate_array_attachment(dend_obj):
         _ind__ib = ( np.abs( ib__vec[:] - dend_obj.bias_current ) ).argmin()
 
     # dend_obj._ind__ib = _ind__ib ## new
-    dend_obj.phi_r__vec = np.asarray(phi_r__array[_ind__ib])
+    dend_obj.phi_r__vec     = np.asarray(phi_r__array[_ind__ib])
     dend_obj.i_di__subarray = np.asarray(i_di__array[_ind__ib],dtype=object)
-    dend_obj.r_fq__subarray = np.asarray(r_fq__array[_ind__ib],dtype=object) 
+    dend_obj.r_fq__subarray = np.asarray(r_fq__array[_ind__ib],dtype=object)
+    # if "soma" in dend_obj.name:
+        # print("phi ",dend_obj.phi_r__vec,"--phi\n\n")
+        # for i in range(len(dend_obj.i_di__subarray)):
+            # print("i_di ",sum(dend_obj.i_di__subarray[i]))#,"--i_di\n\n")
+        # print(dend_obj.r_fq__subarray[10][10])
+        # for r in dend_obj.r_fq__subarray:
+        #     print("r_fq ",r[50])#,"--r_fq\n\n")
 
+        # print(dend_obj.name,"phi",dend_obj.phi_r__vec[200].shape)
+        # print(dend_obj.name,"i_di",dend_obj.i_di__subarray[0].shape)
+        # print(dend_obj.name,"r_fq",dend_obj.r_fq__subarray[402].shape)
     return
 
 def synapse_initialization(dend_obj,tau_vec,t_tau_conversion):

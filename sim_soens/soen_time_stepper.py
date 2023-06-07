@@ -63,23 +63,34 @@ def run_soen_sim(net):
 
         # run the simulation one time step at a time
         if net.backend == 'julia':
+            start = time.perf_counter()
+
             from julia import Main as jl
+            jl.include("py_to_jul.jl")
             jl.include("julia_stepper.jl")
-            # jl.counter(10)
 
             for node in net.nodes:
                 node.dend_dict = {}
                 for i,dend in enumerate(node.dendrite_list):
                     node.dend_dict[dend.name] = dend
-            # print(node.neuron.dend_soma.dendritic_inputs[f"{node.name}__dend_refraction"].__dict__.keys())
             node.synapse_list.append(node.neuron.dend__ref.synaptic_inputs[f"{node.name}__syn_refraction"])
+            
+            jul_net = jl.obj_to_structs(net)
+            finish = time.perf_counter()
+            print(f"Julia setup time: {finish-start}")
 
-            jul_net = jl.stepper(net,tau_vec,d_tau)
+
+            start = time.perf_counter()
+            jul_net = jl.stepper(jul_net)
+            finish = time.perf_counter()
+            print(f"Julia stepper time: {finish-start}")
+
+
             print("\n\n----------------------------------------------------")
             for node in net.nodes:
                 for i,dend in enumerate(node.dendrite_list):
-                    dend.s     = jul_net[node.name]["dendrites"][dend.name].s[:-1]
-                    dend.phi_r = jul_net[node.name]["dendrites"][dend.name].phir
+                    dend.s     = jul_net["nodes"][node.name]["dendrites"][dend.name].s[:-1]
+                    dend.phi_r = jul_net["nodes"][node.name]["dendrites"][dend.name].phir[:-1]
                     # print(sum(jul_net[node.name][i].s))
 
             # print(struct)
@@ -88,7 +99,10 @@ def run_soen_sim(net):
             
 
         else:
+            start = time.perf_counter()
             net = net_step(net,tau_vec,d_tau)
+            finish = time.perf_counter()
+            print(f"Py stepper time: {finish-start}")
 
         # attach results to dendrite objects
         for node in net.nodes:
@@ -294,7 +308,7 @@ def dendrite_updater(dend_obj,time_index,present_time,d_tau,HW=None):
                                             _dt_spk)
 
                     # to avoid going too low when a new spike comes in
-                    if _st_ind - syn_obj._st_ind_last == 1: 
+                    if _st_ind - syn_obj._st_ind_last == 1:
                         _phi_spd = np.max([_phi_spd,syn_obj.phi_spd[time_index]])
                         syn_obj._phi_spd_memory = _phi_spd
                     if _phi_spd < syn_obj._phi_spd_memory:
