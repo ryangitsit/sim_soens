@@ -12,6 +12,13 @@ end
 
 abstract type AbstractDendrite end
 
+mutable struct Synapse
+    name::String
+    spike_times::Array
+    phi_spd::Array
+end
+
+
 mutable struct ArborDendrite <: AbstractDendrite
     name      :: String
     s         :: Vector
@@ -29,7 +36,6 @@ mutable struct RefractoryDendrite <: AbstractDendrite
     synputs   :: Dict
 end
 
-
 mutable struct SomaticDendrite <: AbstractDendrite
     name      :: String
     s         :: Vector
@@ -38,13 +44,10 @@ mutable struct SomaticDendrite <: AbstractDendrite
     synputs   :: Dict
     spiked    :: Int
     threshold :: Float64
+    abs_ref   :: Float64
+    syn_ref   :: Synapse
 end
 
-mutable struct Synapse
-    name::String
-    spike_times::Array
-    phi_spd::Array
-end
 
 function make_struct(obj,names,vals)
     params = Dict()
@@ -69,8 +72,15 @@ function make_nodes(node,T,conversion)
 
     for syn in node.synapse_list
         # spike_times = Int.(syn.input_signal.spike_times.*conversion)
-        spike_times = [floor(Int,x) for x in syn.input_signal.spike_times.*conversion]
-        synapses[syn.name] = Synapse(syn.name,spike_times.+1,zeros(T))
+        if occursin("ref",syn.name)
+            spike_times = []
+            syn_ref = Synapse(syn.name,spike_times.+1,zeros(T))
+            @show syn_ref.name
+            synapses[syn.name] = syn_ref
+        else
+            spike_times = [floor(Int,x) for x in syn.input_signal.spike_times.*conversion]
+            synapses[syn.name] = Synapse(syn.name,spike_times.+1,zeros(T))
+        end
         # @show syn.name
         # @show syn.input_signal.spike_times
     end
@@ -81,7 +91,6 @@ function make_nodes(node,T,conversion)
             inputs[input[1]] = input[2]
         end
         synputs   = Dict()
-        synspikes = Dict()
 
         for synput in dend.synaptic_connection_strengths
             # spike_times = Int.(node.synapse_list[1].input_signal.spike_times.*conversion)
@@ -90,9 +99,21 @@ function make_nodes(node,T,conversion)
         end
 
         if occursin("soma",dend.name)
-            new_dend = SomaticDendrite(dend.name,zeros(T),zeros(T),inputs,synputs,0,dend.s_th)
+            new_dend = SomaticDendrite( 
+                dend.name,                       # name      :: String
+                zeros(T),                        # s         :: Vector
+                zeros(T),                        # phir      :: Vector
+                inputs,                          # inputs    :: Dict
+                synputs,                         # synputs   :: Dict
+                0,                               # spiked    :: Int
+                dend.s_th,                       # threshold :: Float64
+                dend.absolute_refractory_period, # abs_ref   :: Float64
+                synapses["rand_neuron_77132__syn_refraction"] # struct
+                )
+
         elseif occursin("ref",dend.name)
             new_dend = RefractoryDendrite(dend.name,zeros(T),zeros(T),inputs,synputs)
+
         else
             new_dend = ArborDendrite(dend.name,zeros(T),zeros(T),inputs,synputs)
         end
@@ -122,10 +143,9 @@ function stepper(net,tau_vec,d_tau)
     """
 
     T = length(tau_vec)
+
     conversion = last(tau_vec)/(T/net.dt)
-    @show conversion*400
-    # @show tau_vec
-    # T = 3
+
 
     # set up julia structs
     net_dict = Dict()
@@ -143,7 +163,7 @@ function stepper(net,tau_vec,d_tau)
     ops=0
     dend_ops = 0
     @show T
-    # T = 2
+    
 
     for t_idx in 1:T
         for (node_name,node) in net_dict
@@ -209,8 +229,8 @@ function dend_update(py_dend,node,dend::RefractoryDendrite,t_idx,t_now,d_tau)
 end
 
 function dend_update(py_dend,node,dend::SomaticDendrite,t_idx,t_now,d_tau)
-    if t_idx - dend.spiked < 100 && dend.s[t_idx] >= dend.threshold
-        spike(dend,t_idx)
+    if t_idx - dend.spiked > dend.abs_ref && dend.s[t_idx] >= dend.threshold
+        dend, syn_ref = spike(dend,t_idx,dend.syn_ref)
     else
         dend = dend_inputs(node,dend,t_idx)
         dend = dend_synputs(node,dend,t_idx)
@@ -219,16 +239,18 @@ function dend_update(py_dend,node,dend::SomaticDendrite,t_idx,t_now,d_tau)
     return dend
 end
 
-function spike(dend,t_idx) ## add spike to syn_ref
+function spike(dend,t_idx,syn_ref) ## add spike to syn_ref
     dend.spiked = t_idx
     dend.s[t_idx:length(dend.s)] .= 0
-    return dend
+    push!(syn_ref.spike_times,t_idx+1)
+    return dend, syn_ref
 end
 
 
 function dend_inputs(node,dend,t_idx)
     update = 0
     # @show collect(keys(node[1]))
+    # @show dend.name
     for input in dend.inputs
         # @show input
         # @show node[2][input[1]].name
@@ -244,8 +266,10 @@ end
 
 function dend_synputs(node,dend,t_idx)
     update = 0
+    # @show dend.name
     for synput in dend.synputs
-        if occursin("refraction",synput[1]) == 0
+        # @show synput
+        if 1==1 #occursin("refraction",synput[1]) == 0
             # @show synput
             # @show node["synapses"][synput[1]] #.name
             update += node["synapses"][synput[1]].phi_spd[t_idx]*synput[2] # dend.s[t_idx]*input[2] + t_idx

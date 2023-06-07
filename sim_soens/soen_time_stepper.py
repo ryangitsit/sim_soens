@@ -71,6 +71,8 @@ def run_soen_sim(net):
                 node.dend_dict = {}
                 for i,dend in enumerate(node.dendrite_list):
                     node.dend_dict[dend.name] = dend
+            # print(node.neuron.dend_soma.dendritic_inputs[f"{node.name}__dend_refraction"].__dict__.keys())
+            node.synapse_list.append(node.neuron.dend__ref.synaptic_inputs[f"{node.name}__syn_refraction"])
 
             jul_net = jl.stepper(net,tau_vec,d_tau)
             print("\n\n----------------------------------------------------")
