@@ -89,9 +89,14 @@ def run_soen_sim(net):
             print("\n\n----------------------------------------------------")
             for node in net.nodes:
                 for i,dend in enumerate(node.dendrite_list):
-                    dend.s     = jul_net["nodes"][node.name]["dendrites"][dend.name].s[:-1]
-                    dend.phi_r = jul_net["nodes"][node.name]["dendrites"][dend.name].phir[:-1]
-                    # print(sum(jul_net[node.name][i].s))
+                    jul_dend = jul_net["nodes"][node.name]["dendrites"][dend.name]
+                    dend.s     = jul_dend.s[:-1]
+                    dend.phi_r = jul_dend.phir[:-1]
+                    if "soma" in dend.name:
+                        spike_times = (jul_dend.out_spikes-1)* net.dt * t_tau_conversion
+                        dend.spike_times        = spike_times
+                        node.neuron.spike_times = spike_times
+                    # print(sum(jul_net[node.name][i].s))/net.dt
 
             # print(struct)
 
@@ -108,7 +113,8 @@ def run_soen_sim(net):
         for node in net.nodes:
             for dend in node.dendrite_list:
                 dendrite_data_attachment(dend,net)
-        
+        print(t_tau_conversion)
+        print("Outspikes: ",node.neuron.spike_times)
     # formerly, there were unique sim methods for each element
     else:
         print('''
@@ -131,7 +137,8 @@ def net_step(net,tau_vec,d_tau):
             - send spikes to downstream neuron in the form of new input
     '''   
 
-
+    print(len(tau_vec))
+    print(tau_vec)
     if "hardware" in net.__dict__.keys():
         print("Hardware in the loop.")
         HW = net.hardware

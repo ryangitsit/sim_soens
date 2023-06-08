@@ -17,9 +17,18 @@ mutable struct ArborDendrite <: AbstractDendrite
     synputs   :: Dict
     alpha     :: Float64
     beta      :: Float64
-    phi_vec   :: Vector
-    s_array   :: Array
-    r_array   :: Array
+
+    phi_vec   :: Vector{Float64}
+    s_array   :: Vector{Vector{Float64}}
+    r_array   :: Vector{Vector{Float64}}
+
+    # phi_vec   :: Vector
+    # s_array   :: Array
+    # r_array   :: Array
+
+    phi_min   :: Float64
+    phi_max   :: Float64
+    phi_len   :: Int64
 end
 
 
@@ -31,27 +40,46 @@ mutable struct RefractoryDendrite <: AbstractDendrite
     synputs   :: Dict
     alpha     :: Float64
     beta      :: Float64
-    phi_vec   :: Vector
-    s_array   :: Array
-    r_array   :: Array
+
+    phi_vec   :: Vector{Float64}
+    s_array   :: Vector{Vector{Float64}}
+    r_array   :: Vector{Vector{Float64}}
+
+    # phi_vec   :: Vector
+    # s_array   :: Array
+    # r_array   :: Array
+
+    phi_min   :: Float64
+    phi_max   :: Float64
+    phi_len   :: Int64
 end
 
 mutable struct SomaticDendrite <: AbstractDendrite
-    name      :: String
-    s         :: Vector
-    phir      :: Vector
-    inputs    :: Dict
-    synputs   :: Dict
-    alpha     :: Float64
-    beta      :: Float64
-    phi_vec   :: Vector
-    s_array   :: Array
-    r_array   :: Array
-
-    spiked    :: Int
-    threshold :: Float64
-    abs_ref   :: Float64
-    syn_ref   :: Synapse
+    name       :: String
+    s          :: Vector
+    phir       :: Vector
+    inputs     :: Dict
+    synputs    :: Dict
+    alpha      :: Float64
+    beta       :: Float64
+ 
+    phi_vec    :: Vector{Float64}
+    s_array    :: Vector{Vector{Float64}}
+    r_array    :: Vector{Vector{Float64}}
+ 
+    # phi_vec    :: Vector
+    # s_array    :: Array
+    # r_array    :: Array
+ 
+    phi_min    :: Float64
+    phi_max    :: Float64
+    phi_len    :: Int64
+ 
+    last_spike :: Int64
+    out_spikes :: Vector
+    threshold  :: Float64
+    abs_ref    :: Float64
+    syn_ref    :: Synapse
 end
 
 
@@ -69,7 +97,18 @@ function make_struct(obj,names,vals)
     return obj_struct
 end
 
-function make_nodes(node,T,conversion)
+function obj_to_vect(obj)
+    vect = Vector{Float64}[]
+    for arr in obj
+        push!(vect,convert(Vector{Float64},arr))
+    end
+    return vect
+end
+    
+
+
+
+function make_nodes(node,T,conversion,dt)
 
     node_dict = Dict()
 
@@ -100,7 +139,15 @@ function make_nodes(node,T,conversion)
             # synspikes[synput[1]] = spike_times.+1
         end
 
+        phi_vec = dend.phi_r__vec
+        s_array = obj_to_vect(dend.i_di__subarray)
+        r_array = obj_to_vect(dend.r_fq__subarray)
+        # phi_vec = dend.phi_r__vec
+        # s_array = dend.i_di__subarray
+        # r_array = dend.r_fq__subarray
+
         if occursin("soma",dend.name)
+            @show dend.absolute_refractory_period
             new_dend = SomaticDendrite( 
                 dend.name,                       # name      :: String
                 zeros(T),                        # s         :: Vector
@@ -109,12 +156,16 @@ function make_nodes(node,T,conversion)
                 synputs,                         # synputs   :: Dict
                 dend.alpha,
                 dend.beta,
-                dend.phi_r__vec,
-                dend.i_di__subarray,
-                dend.r_fq__subarray,
-                0,                               # spiked    :: Int
+                phi_vec,
+                s_array,
+                r_array,
+                findmin(phi_vec)[1],
+                findmax(phi_vec)[1],
+                length(phi_vec),
+                0,                               # last spike
+                Int64[],                         # spiked    :: Int
                 dend.s_th,                       # threshold :: Float64
-                dend.absolute_refractory_period, # abs_ref   :: Float64
+                dend.absolute_refractory_period/dt, # abs_ref   :: Float64
                 synapses["rand_neuron_77132__syn_refraction"], # struct
                 )
 
@@ -127,9 +178,12 @@ function make_nodes(node,T,conversion)
                 synputs,
                 dend.alpha,
                 dend.beta,
-                dend.phi_r__vec,
-                dend.i_di__subarray,
-                dend.r_fq__subarray,
+                phi_vec,
+                s_array,
+                r_array,
+                findmin(phi_vec)[1],
+                findmax(phi_vec)[1],
+                length(phi_vec),
                 )
 
         else
@@ -141,9 +195,12 @@ function make_nodes(node,T,conversion)
                 synputs,
                 dend.alpha,
                 dend.beta,
-                dend.phi_r__vec,
-                dend.i_di__subarray,
-                dend.r_fq__subarray,
+                phi_vec,
+                s_array,
+                r_array,
+                findmin(phi_vec)[1],
+                findmax(phi_vec)[1],
+                length(phi_vec),
                 )
         end
             
@@ -158,21 +215,25 @@ function make_nodes(node,T,conversion)
 end
 
 function obj_to_structs(net)
+
+    net_dict  = Dict()
+    node_dict = Dict()
+    
     tau_vec = net.time_params["tau_vec"]
     T = length(tau_vec)
     conversion = last(tau_vec)/(T/net.dt)
 
-    net_dict  = Dict()
-    node_dict = Dict()
-    for node in net.nodes
-        node_dict[node.name] = make_nodes(node,T+1,conversion)
-    end
     net_dict["nodes"] = node_dict
     net_dict["dt"] = net.dt
     net_dict["tau_vec"] = tau_vec
     net_dict["d_tau"] = net.time_params["d_tau"]
     net_dict["conversion"] = conversion
     net_dict["T"] = T
+
+    for node in net.nodes
+        node_dict[node.name] = make_nodes(node,T+1,conversion,net_dict["dt"])
+    end
+
     return net_dict
 
 end

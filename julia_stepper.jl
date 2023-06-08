@@ -75,36 +75,37 @@ function SPD_response(conversion)
     return [0;phi_rise;phi_fall]
 end
 
-function dend_update(node,dend::ArborDendrite,t_idx,t_now,d_tau)
+function dend_update(node::Dict,dend::ArborDendrite,t_idx::Int,t_now,d_tau::Float64)
     dend_inputs(node,dend,t_idx)
     dend_synputs(node,dend,t_idx)
-    dend_signal(dend,t_idx,d_tau)
+    dend_signal(dend,t_idx,d_tau::Float64)
 end
 
-function dend_update(node,dend::RefractoryDendrite,t_idx,t_now,d_tau)
-    dend_inputs(node,dend,t_idx)
+function dend_update(node::Dict,dend::RefractoryDendrite,t_idx::Int,t_now,d_tau::Float64)
+    # dend_inputs(node,dend,t_idx)
     dend_synputs(node,dend,t_idx)
-    dend_signal(dend,t_idx,d_tau)
+    dend_signal(dend,t_idx,d_tau::Float64)
 end
 
-function dend_update(node,dend::SomaticDendrite,t_idx,t_now,d_tau)
-    if t_idx - dend.spiked > dend.abs_ref && dend.s[t_idx] >= dend.threshold
+function dend_update(node::Dict,dend::SomaticDendrite,t_idx::Int,t_now,d_tau::Float64)
+    if dend.s[t_idx] >= dend.threshold && t_idx .- dend.last_spike > dend.abs_ref
         spike(dend,t_idx,dend.syn_ref)
     else
         dend_inputs(node,dend,t_idx)
         dend_synputs(node,dend,t_idx)
-        dend_signal(dend,t_idx,d_tau)
+        dend_signal(dend,t_idx,d_tau::Float64)
     end
 end
 
-function spike(dend,t_idx,syn_ref) ## add spike to syn_ref
-    dend.spiked = t_idx
+function spike(dend::SomaticDendrite,t_idx::Int,syn_ref::Synapse) ## add spike to syn_ref
+    dend.last_spike = t_idx
+    push!(dend.out_spikes,t_idx)
     dend.s[t_idx:length(dend.s)] .= 0
     push!(syn_ref.spike_times,t_idx+1)
 end
 
 
-function dend_inputs(node,dend,t_idx)
+function dend_inputs(node::Dict,dend::AbstractDendrite,t_idx)
     update = 0
     for input in dend.inputs
         update += node["dendrites"][input[1]].s[t_idx]*input[2]
@@ -113,32 +114,44 @@ function dend_inputs(node,dend,t_idx)
 end
 
 
-function dend_synputs(node,dend,t_idx)
+function dend_synputs(node::Dict,dend::AbstractDendrite,t_idx::Int)
     update = 0
-
     for synput in dend.synputs
         update += node["synapses"][synput[1]].phi_spd[t_idx]*synput[2] # dend.s[t_idx]*input[2] + t_idx
     end
     dend.phir[t_idx+1] += update
 end
 
-function dend_signal(dend,t_idx,d_tau)
+function dend_signal(dend::AbstractDendrite,t_idx::Int,d_tau::Float64)
 
-    lst = dend.phi_vec
-    val = dend.phir[t_idx]
-    _ind__phi_r = closest_index(lst,val)
+    # lst = dend.phi_vec
+    # val = dend.phir[t_idx]
 
-    s_vec = dend.s_array[_ind__phi_r]
+    # ind_phi = closest_index(lst,val)
+    ind_phi = index_approxer(
+        dend.phir[t_idx],
+        dend.phi_max,
+        dend.phi_min,
+        dend.phi_len
+        )
 
-    lst = s_vec
-    val = dend.s[t_idx]
-    _ind__s = closest_index(lst,val)
 
-    r_fq = dend.r_array[_ind__phi_r][_ind__s]
+    s_vec = dend.s_array[ind_phi]
+
+    ind_s = closest_index(s_vec,dend.s[t_idx])
+    # ind_s = index_approxer(dend.s[t_idx],first(s_vec),last(s_vec),length(s_vec))
+
+    r_fq = dend.r_array[ind_phi][ind_s]
     dend.s[t_idx+1] = dend.s[t_idx]*(1 - d_tau*dend.alpha/dend.beta) + (d_tau/dend.beta)*r_fq
     
 end
 
 function closest_index(lst,val)
     return findmin(abs.(lst.-val))[2] #indexing!
+end
+
+function index_approxer(val::Float64,maxval::Float64,minval::Float64,lenlst::Int)
+    range = maxval-minval
+    ind = floor(Int,((val+range/2)/range)*lenlst)%lenlst+1
+    return ind
 end

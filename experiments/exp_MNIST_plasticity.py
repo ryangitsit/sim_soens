@@ -109,7 +109,7 @@ for run in range(10000):
             # f0 = time.perf_counter()
             # print("Input time: ", f0-s0)
 
-            net = network(sim=True,dt=.1,tf=500,nodes=nodes,timer=False)
+            net = network(sim=True,dt=.1,tf=500,nodes=nodes,timer=False,backend_julia)
 
             spikes = array_to_rows(net.spikes,3)
 
@@ -181,7 +181,7 @@ for run in range(10000):
             
             # Open our existing CSV file in append mode
             # Create a file object for this file
-            with open('MNIST_ongoing_inhibit.csv', 'a') as f_object:
+            with open('MNIST_ongoing_jul.csv', 'a') as f_object:
             
                 writer_object = writer(f_object)
             
@@ -197,14 +197,14 @@ for run in range(10000):
 
     picklit(
         nodes,
-        "results/MNIST_WTA_inhibit/",
+        "results/MNIST_WTA_jul/",
         f"nodes_at_{run}"
         )
     
     if run == 0:
         picklit(
             weights,
-            "results/MNIST_WTA_inhibit/",
+            "results/MNIST_WTA_jul/",
             f"init_weights"
             )
         
