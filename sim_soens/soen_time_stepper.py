@@ -45,7 +45,8 @@ def run_soen_sim(net):
         tau_vec = time_vec*t_tau_conversion
         d_tau = net.time_params['dt']*t_tau_conversion
         net.time_params.update({'tau_vec': tau_vec, 'd_tau': d_tau})
-        
+
+        start = time.perf_counter()
         # interate through all network nodes and initialize all related elements
         for node in net.nodes:
             # print("Initializing neuron: ", neuron.name)
@@ -60,9 +61,11 @@ def run_soen_sim(net):
 
             output_synapse_initialization(node.neuron,tau_vec,t_tau_conversion)
             transmitter_initialization(node.neuron,t_tau_conversion)
-
+        finish = time.perf_counter()
+        print(f"Initialization procedure run time: {finish-start}")
         # run the simulation one time step at a time
         if net.backend == 'julia':
+            
             start = time.perf_counter()
 
             from julia import Main as jl
@@ -73,8 +76,8 @@ def run_soen_sim(net):
                 node.dend_dict = {}
                 for i,dend in enumerate(node.dendrite_list):
                     node.dend_dict[dend.name] = dend
-            node.synapse_list.append(node.neuron.dend__ref.synaptic_inputs[f"{node.name}__syn_refraction"])
-            
+                node.synapse_list.append(node.neuron.dend__ref.synaptic_inputs[f"{node.name}__syn_refraction"])
+                # print(node.neuron.dend__ref.synaptic_inputs[f"{node.name}__syn_refraction"].name)
             jul_net = jl.obj_to_structs(net)
             finish = time.perf_counter()
             print(f"Julia setup time: {finish-start}")
@@ -114,7 +117,7 @@ def run_soen_sim(net):
             for dend in node.dendrite_list:
                 dendrite_data_attachment(dend,net)
         print(t_tau_conversion)
-        print("Outspikes: ",node.neuron.spike_times)
+        # print("Outspikes: ",node.neuron.spike_times)
     # formerly, there were unique sim methods for each element
     else:
         print('''

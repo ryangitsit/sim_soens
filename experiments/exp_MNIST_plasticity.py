@@ -109,7 +109,7 @@ for run in range(10000):
             # f0 = time.perf_counter()
             # print("Input time: ", f0-s0)
 
-            net = network(sim=True,dt=.1,tf=500,nodes=nodes,timer=False,backend_julia)
+            net = network(sim=True,dt=.1,tf=500,nodes=nodes,timer=False,backend='julia')
 
             spikes = array_to_rows(net.spikes,3)
 
