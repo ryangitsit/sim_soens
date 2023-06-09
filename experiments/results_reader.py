@@ -6,7 +6,7 @@ import sys
 sys.path.append('../sim_soens')
 sys.path.append('../')
 from sim_soens.super_functions import *
-df = pd.read_csv('MNIST_ongoing_lite.csv',names=['sample','digit','spikes','error','prediction','time'])
+df = pd.read_csv('MNIST_ongoing_inhibit.csv',names=['sample','digit','spikes','error','prediction','time'])
 
 # # print(df.to_string())   
 # # spikes = np.array(np.array(df["spikes"][11]))
@@ -78,7 +78,7 @@ def by_run_performance(df):
     return by_run
 
 def load_nodes(run):
-    nodes = picklin("results\MNIST_WTA_lite",f"nodes_at_{run}")
+    nodes = picklin("results\MNIST_WTA_inhibit",f"nodes_at_{run}")
     print("Loaded nodes:")
     for node in nodes:
         print(" ",node.name)
