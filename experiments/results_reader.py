@@ -6,7 +6,7 @@ import sys
 sys.path.append('../sim_soens')
 sys.path.append('../')
 from sim_soens.super_functions import *
-df = pd.read_csv('MNIST_ongoing_lite.csv',names=['sample','digit','spikes','error','prediction','time'])
+df = pd.read_csv('MNIST_ongoing_inhibit.csv',names=['sample','digit','spikes','error','prediction','time'])
 
 # # print(df.to_string())   
 # # spikes = np.array(np.array(df["spikes"][11]))
@@ -63,19 +63,20 @@ def ongoing_performance(df):
     return percents, procents
 
 
-def by_run_performance(df):
-    by_run = []
-    runs = 0
-    run_wins = 0
-    for index, row in df.iterrows():
+# def by_run_performance(df):
+#     by_run = []
+#     run_wins = 0
+#     for index, row in df.iterrows():
 
-        if df["digit"][index] == df["prediction"][index]: run_wins+=1
-
-        if df["sample"][index] == 9 and df["digit"][index] == 2:
-            runs += 1
-            by_run.append(run_wins/30)
-            run_wins = 0
-    return by_run
+#         if df["digit"][index] == df["prediction"][index]: run_wins+=1
+#         run = 0
+#         if int(df["digit"][index]) == 2:
+#             run+=1
+#             if run == 9:
+#                 by_run.append(run_wins/30)
+#                 run = 0
+#                 run_wins = 0
+#     return by_run
 
 def load_nodes(run):
     nodes = picklin("results\MNIST_WTA_lite",f"nodes_at_{run}")

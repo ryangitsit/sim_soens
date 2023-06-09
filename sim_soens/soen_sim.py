@@ -533,7 +533,7 @@ class neuron():
         
         # automatically normalizes refractory strength
         if auto:
-            print("AUTO!!!")
+            # print("AUTO!!!")
             d_params_ri = dend_load_arrays_thresholds_saturations('default_ri')
             d_params_rtti = dend_load_arrays_thresholds_saturations('default_rtti')
             if self.loops_present == 'ri':

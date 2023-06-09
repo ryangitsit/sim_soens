@@ -61,12 +61,14 @@ def run_soen_sim(net):
 
             output_synapse_initialization(node.neuron,tau_vec,t_tau_conversion)
             transmitter_initialization(node.neuron,t_tau_conversion)
+
         finish = time.perf_counter()
-        print(f"Initialization procedure run time: {finish-start}")
+        # print(f"Initialization procedure run time: {finish-start}")
+        net.init_time = finish-start
         # run the simulation one time step at a time
         if net.backend == 'julia':
             
-            start = time.perf_counter()
+            # start = time.perf_counter()
 
             from julia import Main as jl
             jl.include("py_to_jul.jl")
@@ -79,17 +81,16 @@ def run_soen_sim(net):
                 node.synapse_list.append(node.neuron.dend__ref.synaptic_inputs[f"{node.name}__syn_refraction"])
                 # print(node.neuron.dend__ref.synaptic_inputs[f"{node.name}__syn_refraction"].name)
             jul_net = jl.obj_to_structs(net)
-            finish = time.perf_counter()
-            print(f"Julia setup time: {finish-start}")
+            # finish = time.perf_counter()
+            # print(f"Julia setup time: {finish-start}")
 
 
             start = time.perf_counter()
             jul_net = jl.stepper(jul_net)
             finish = time.perf_counter()
-            print(f"Julia stepper time: {finish-start}")
-
-
-            print("\n\n----------------------------------------------------")
+            # print(f"Julia stepper time: {finish-start}")
+            net.run_time = finish-start
+            # start = time.perf_counter()
             for node in net.nodes:
                 for i,dend in enumerate(node.dendrite_list):
                     jul_dend = jul_net["nodes"][node.name]["dendrites"][dend.name]
@@ -100,23 +101,20 @@ def run_soen_sim(net):
                         dend.spike_times        = spike_times
                         node.neuron.spike_times = spike_times
                     # print(sum(jul_net[node.name][i].s))/net.dt
-
-            # print(struct)
-
-            # net = Main.julia_step(net,tau_vec,d_tau)
-            
-
+            # finish = time.perf_counter()
+            # print(f"jul-to-py re-attachment time: {finish-start}")
+            # print("\n\n----------------------------------------------------")
         else:
             start = time.perf_counter()
             net = net_step(net,tau_vec,d_tau)
             finish = time.perf_counter()
-            print(f"Py stepper time: {finish-start}")
-
+            # print(f"Py stepper time: {finish-start}")
+            net.run_time = finish-start
         # attach results to dendrite objects
         for node in net.nodes:
             for dend in node.dendrite_list:
                 dendrite_data_attachment(dend,net)
-        print(t_tau_conversion)
+        # print(t_tau_conversion)
         # print("Outspikes: ",node.neuron.spike_times)
     # formerly, there were unique sim methods for each element
     else:
@@ -139,9 +137,6 @@ def net_step(net,tau_vec,d_tau):
             - add spikes to neuron
             - send spikes to downstream neuron in the form of new input
     '''   
-
-    print(len(tau_vec))
-    print(tau_vec)
     if "hardware" in net.__dict__.keys():
         print("Hardware in the loop.")
         HW = net.hardware
