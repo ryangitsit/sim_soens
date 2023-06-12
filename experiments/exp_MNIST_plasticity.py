@@ -18,204 +18,224 @@ import time
 np.random.seed(10)
 print(np.random.randint(0, 100, 10))
 
+def main():
+    def make_dataset(digits,samples,slowdown,duration):
+        dataset = [[] for _ in range(digits)]
+        fig, axs = plt.subplots(digits,samples,figsize=(36,12))
+        for i in range(digits):
+            for j in range(samples):
+                input_MNIST = SuperInput(
+                    type='MNIST',
+                    index=i,
+                    sample=j,
+                    slow_down=slowdown,
+                    duration=duration
+                    )
+                spikes = input_MNIST.spike_arrays
+                dataset[i].append([spikes[0],spikes[1]])
 
-def make_dataset(digits,samples,slowdown,duration):
-    dataset = [[] for _ in range(digits)]
-    fig, axs = plt.subplots(digits,samples,figsize=(36,12))
-    for i in range(digits):
-        for j in range(samples):
-            input_MNIST = SuperInput(
-                type='MNIST',
-                index=i,
-                sample=j,
-                slow_down=slowdown,
-                duration=duration
-                )
-            spikes = input_MNIST.spike_arrays
-            dataset[i].append([spikes[0],spikes[1]])
-
-            axs[i][j].plot(spikes[1],spikes[0],'.k',ms=.5)
-            axs[i][j].set_xticks([])
-            axs[i][j].set_yticks([])
-    picklit(
-        dataset,
-        "datasets/MNIST/",
-        f"duration={duration}_slowdown={slowdown}"
-        )
-    plt.show()
-    
-#     dataset = np.array(dataset)
-#     plt.plot(dataset[0][2][1],dataset[0][2][0],'.k')# ,ms=.5)
-#     plt.show()
-
-
-
-# make_dataset(10,100,100,5000)
-
-dataset = picklin("datasets/MNIST/","duration=5000_slowdown=100")
-# plt.plot(dataset[0][2][1],dataset[0][2][0],'.k')# ,ms=.5)
-# plt.show()
-# raster_plot(dataset[0][2])
-
-
-
-np.random.seed(10)
-f_idx = 28
-lay_2 = [np.random.rand(f_idx)*21/28 for _ in range(f_idx)]
-weights = [
-    [np.random.rand(f_idx)],
-    lay_2
-]
-
-node_zero = SuperNode(name='node_zero',weights=weights,tau_di=5)
-node_one  = SuperNode(name='node_one',weights=weights,tau_di=5)
-node_two  = SuperNode(name='node_two',weights=weights,tau_di=5)
-
-nodes=[node_zero,node_one,node_two]
-
-inhibition = [-1.2,-.5,-1.2]
-for i,node in enumerate(nodes):
-    syn_soma = synapse(name=f'{node.name}_somatic_synapse')
-    node.synapse_list.append(syn_soma)
-    node.neuron.dend_soma.add_input(syn_soma,connection_strength=inhibition[i])
-    for other_node in nodes:
-        if other_node.name != node.name:
-            node.neuron.add_output(other_node.synapse_list[-1])
-
-
-desired = [
-    [30,0,0],
-    [0,30,0],
-    [0,0,30],
-]
-
-for run in range(10000):
-    # if run%10==0: 
-    print("Run: ",run)
-    samples_passed=0
-    for sample in range(10):
-        
-        total_errors = [[] for i in range(3)]
-        outputs = [[] for i in range(3)]
-        for digit in range(3):
-            
-            s = time.perf_counter()
-            input = SuperInput(type="defined",channels=784,defined_spikes=dataset[digit][sample])
-            
-            for node in nodes:
-                for i,channel in enumerate(input.signals):
-                    node.synapse_list[i].add_input(channel)
-                # node.one_to_one(input)
-            # f0 = time.perf_counter()
-            # print("Input time: ", f0-s0)
-
-            net = network(sim=True,dt=.1,tf=500,nodes=nodes,timer=False)
-
-            spikes = array_to_rows(net.spikes,3)
-
-            error_zero = desired[0][digit] - len(spikes[0])
-            error_one  = desired[1][digit] - len(spikes[1])
-            error_two  = desired[2][digit] - len(spikes[2])
-            
-            errors = [error_zero,error_one,error_two]
-            
-
-            total_errors[0] += np.abs(error_zero)
-            total_errors[1] += np.abs(error_one)
-            total_errors[2] += np.abs(error_two)
-
-            output = [len(spikes[0]),len(spikes[1]),len(spikes[2])]
-            outputs[digit].append(output)
-
-            # spike_trajectories[i].append(len(out_spikes))
-            nodes[0].neuron.spike_times=[]
-            nodes[1].neuron.spike_times=[]
-            nodes[2].neuron.spike_times=[]
-
-            nodes[0].neuron.spike_indices=[]
-            nodes[1].neuron.spike_indices=[]
-            nodes[2].neuron.spike_indices=[]
-
-            nodes[0].neuron.electroluminescence_cumulative_vec=[]
-            nodes[1].neuron.electroluminescence_cumulative_vec=[]
-            nodes[2].neuron.electroluminescence_cumulative_vec=[]
-
-            nodes[0].neuron.time_params=[]
-            nodes[1].neuron.time_params=[]
-            nodes[2].neuron.time_params=[]
-
-            # s = time.perf_counter()
-            # offsets = {}
-            for n,node in enumerate(nodes):
-
-                # spike refractory dendrite
-                # lst = node.dendrite_list[2:]
-                # lst.insert(0,node.dendrite_list[0])
-
-                # for dend in lst:
-                    # step = errors[n]*np.mean(dend.s)*.0001
-                    # dend.offset_flux += step
-
-                for l,layer in enumerate(node.dendrites):
-                    for g,group in enumerate(layer):
-                        for d,dend in enumerate(group):
-                            step = errors[n]*np.mean(dend.s)*.0001 #+(2-l)*.001
-                            flux = np.mean(dend.phi_r) + step #dend.offset_flux
-                            if flux > 0.5 or flux < -0.5:
-                                step = -step
-                            dend.offset_flux += step
-                            dend.s = []
-                            dend.phi_r = []
-
-                            # if g==0 and d ==0: print("learning rate =", .0001+(2-l)*.001)
-                    # offsets[dend.name] = dend.offset_flux
-
-            f = time.perf_counter()
-            # print("Update time: ", f-s)
-
-
-            print(f"Sample = {sample} \n Digit = {digit}\n  Spikes = {output} \n  Error = {errors} \n  prediction = {np.argmax(output)}")
-
-            # List that we want to add as a new row
-            List = [sample,digit,output,errors,np.argmax(output),f-s]
-            
-            # Open our existing CSV file in append mode
-            # Create a file object for this file
-            with open('MNIST_ongoing_inhibit.csv', 'a') as f_object:
-            
-                writer_object = writer(f_object)
-            
-                writer_object.writerow(List)
-
-                f_object.close()
-
-
-            if np.argmax(output) == digit:
-                samples_passed+=1
-
-    print(f"samples passed: {samples_passed}/30")
-
-    picklit(
-        nodes,
-        "results/MNIST_WTA_inhibit/",
-        f"nodes_at_{run}"
-        )
-    
-    if run == 0:
+                axs[i][j].plot(spikes[1],spikes[0],'.k',ms=.5)
+                axs[i][j].set_xticks([])
+                axs[i][j].set_yticks([])
         picklit(
-            weights,
-            "results/MNIST_WTA_inhibit/",
-            f"init_weights"
+            dataset,
+            "datasets/MNIST/",
+            f"duration={duration}_slowdown={slowdown}"
             )
+        plt.show()
         
-    if samples_passed == 30:
-        print("converged!")
-        break
+    #     dataset = np.array(dataset)
+    #     plt.plot(dataset[0][2][1],dataset[0][2][0],'.k')# ,ms=.5)
+    #     plt.show()
 
-    # if total_error<25:
-    #     break
+
+
+    # make_dataset(10,100,100,5000)
+
+    dataset = picklin("datasets/MNIST/","duration=5000_slowdown=100")
+    # plt.plot(dataset[0][2][1],dataset[0][2][0],'.k')# ,ms=.5)
+    # plt.show()
+    # raster_plot(dataset[0][2])
+
+
+
+    def new_nodes():
+        np.random.seed(10)
+        f_idx = 28
+        lay_2 = [np.random.rand(f_idx)*21/28 for _ in range(f_idx)]
+        weights = [
+            [np.random.rand(f_idx)],
+            lay_2
+        ]
+
+        node_zero = SuperNode(name='node_zero',weights=weights,tau_di=5)
+        node_one  = SuperNode(name='node_one',weights=weights,tau_di=5)
+        node_two  = SuperNode(name='node_two',weights=weights,tau_di=5)
+
+        nodes=[node_zero,node_one,node_two]
+
+        inhibition = [-1.2,-.5,-1.2]
+        for i,node in enumerate(nodes):
+            syn_soma = synapse(name=f'{node.name}_somatic_synapse')
+            node.synapse_list.append(syn_soma)
+            node.neuron.dend_soma.add_input(syn_soma,connection_strength=inhibition[i])
+            for other_node in nodes:
+                if other_node.name != node.name:
+                    node.neuron.add_output(other_node.synapse_list[-1])
+
+
+    def load_nodes(name, run):
+        nodes = picklin(f"results\{name}",f"nodes_at_{run}")
+        print("Loaded nodes:")
+        for node in nodes:
+            print(" ",node.name)
+        return nodes
+
+    def run_experiment(nodes, name, start, csv_name):
+        desired = [
+            [30,0,0],
+            [0,30,0],
+            [0,0,30],
+        ]
+
+        for run in range(start,10000):
+            # if run%10==0: 
+            print("Run: ",run)
+            samples_passed=0
+            for sample in range(10):
+                
+                total_errors = [[] for i in range(3)]
+                outputs = [[] for i in range(3)]
+                for digit in range(3):
+                    
+                    s = time.perf_counter()
+                    input = SuperInput(type="defined",channels=784,defined_spikes=dataset[digit][sample])
+                    
+                    for node in nodes:
+                        for i,channel in enumerate(input.signals):
+                            node.synapse_list[i].add_input(channel)
+                        # node.one_to_one(input)
+                    # f0 = time.perf_counter()
+                    # print("Input time: ", f0-s0)
+
+                    net = network(sim=True,dt=.1,tf=500,nodes=nodes,timer=False)
+
+                    spikes = array_to_rows(net.spikes,3)
+
+                    error_zero = desired[0][digit] - len(spikes[0])
+                    error_one  = desired[1][digit] - len(spikes[1])
+                    error_two  = desired[2][digit] - len(spikes[2])
+                    
+                    errors = [error_zero,error_one,error_two]
+                    
+
+                    total_errors[0] += np.abs(error_zero)
+                    total_errors[1] += np.abs(error_one)
+                    total_errors[2] += np.abs(error_two)
+
+                    output = [len(spikes[0]),len(spikes[1]),len(spikes[2])]
+                    outputs[digit].append(output)
+
+                    # spike_trajectories[i].append(len(out_spikes))
+                    nodes[0].neuron.spike_times=[]
+                    nodes[1].neuron.spike_times=[]
+                    nodes[2].neuron.spike_times=[]
+
+                    nodes[0].neuron.spike_indices=[]
+                    nodes[1].neuron.spike_indices=[]
+                    nodes[2].neuron.spike_indices=[]
+
+                    nodes[0].neuron.electroluminescence_cumulative_vec=[]
+                    nodes[1].neuron.electroluminescence_cumulative_vec=[]
+                    nodes[2].neuron.electroluminescence_cumulative_vec=[]
+
+                    nodes[0].neuron.time_params=[]
+                    nodes[1].neuron.time_params=[]
+                    nodes[2].neuron.time_params=[]
+
+                    # s = time.perf_counter()
+                    # offsets = {}
+                    for n,node in enumerate(nodes):
+
+                        # spike refractory dendrite
+                        # lst = node.dendrite_list[2:]
+                        # lst.insert(0,node.dendrite_list[0])
+
+                        # for dend in lst:
+                            # step = errors[n]*np.mean(dend.s)*.0001
+                            # dend.offset_flux += step
+
+                        for l,layer in enumerate(node.dendrites):
+                            for g,group in enumerate(layer):
+                                for d,dend in enumerate(group):
+                                    step = errors[n]*np.mean(dend.s)*.0001 #+(2-l)*.001
+                                    flux = np.mean(dend.phi_r) + step #dend.offset_flux
+                                    if flux > 0.5 or flux < -0.5:
+                                        step = -step
+                                    dend.offset_flux += step
+                                    dend.s = []
+                                    dend.phi_r = []
+
+                                    # if g==0 and d ==0: print("learning rate =", .0001+(2-l)*.001)
+                            # offsets[dend.name] = dend.offset_flux
+
+                    f = time.perf_counter()
+                    # print("Update time: ", f-s)
+
+
+                    print(f"Sample = {sample} \n Digit = {digit}\n  Spikes = {output} \n  Error = {errors} \n  prediction = {np.argmax(output)}")
+
+                    # List that we want to add as a new row
+                    List = [sample,digit,output,errors,np.argmax(output),f-s]
+                    
+                    # Open our existing CSV file in append mode
+                    # Create a file object for this file
+                    with open(f'{csv_name}.csv', 'a') as f_object:
+                    
+                        writer_object = writer(f_object)
+                    
+                        writer_object.writerow(List)
+
+                        f_object.close()
+
+
+                    if np.argmax(output) == digit:
+                        samples_passed+=1
+
+            print(f"samples passed: {samples_passed}/30")
+
+            picklit(
+                nodes,
+                f"results/{name}/",
+                f"nodes_at_{run}"
+                )
             
+            # if run == 0:
+            #     picklit(
+            #         weights,
+            #         "results/MNIST_WTA_inhibit/",
+            #         f"init_weights"
+            #         )
+                
+            if samples_passed == 30:
+                print("converged!")
+                break
+
+            # if total_error<25:
+            #     break
+                    
 
 
-# MNIST_node.plot_neuron_activity(net,dend=False,phir=True,ref=True)
-# MNIST_node.plot_arbor_activity(net,size=(36,14))
+        # MNIST_node.plot_neuron_activity(net,dend=False,phir=True,ref=True)
+        # MNIST_node.plot_arbor_activity(net,size=(36,14))
+    
+    name = "MNIST_WTA_inhibit"
+    run  = 42
+    start = 43
+    csv_name = 'MNIST_ongoing_inhibit'
+
+    nodes = load_nodes(name, run)
+    run_experiment(nodes, name, start, csv_name)
+
+if __name__=='__main__':
+    main()

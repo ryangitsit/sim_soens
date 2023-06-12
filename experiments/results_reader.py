@@ -85,8 +85,8 @@ def load_nodes(run):
     return nodes
 
 
-percents, procents = ongoing_performance(df)
-# by_run = by_run_performance(df)
+# percents, procents = ongoing_performance(df)
+by_run = by_run_performance(df)
 
 # nodes = load_nodes(1)
 
@@ -98,9 +98,9 @@ plt.figure(figsize=(8,4))
 plt.title("MNIST Classification Performance")
 plt.xlabel("Performance Measure Starting Point")
 plt.ylabel("Classification Accuracy on Remaining Iterations")
-plt.plot(percents, linewidth = 4,label='total')
-plt.plot(procents, label=['0','1','2'])
-# plt.plot(by_run)
+# plt.plot(percents, linewidth = 4,label='total')
+# plt.plot(procents, label=['0','1','2'])
+plt.plot(by_run)
 # plt.ylim(0,1)
 plt.legend()
 plt.show()
