@@ -115,14 +115,14 @@ function make_synapses(node,T,conversion,dt)
             synapses[syn.name] = syn_ref
             
         else
-            spike_times = [floor(Int,x) for x in syn.input_signal.spike_times.*conversion]
+            spike_times = [floor(Int,x) for x in syn.input_signal.spike_times./dt]#.*conversion]
             synapses[syn.name] = Synapse(syn.name,spike_times.+1,zeros(T))
         end
     end
     return synapses
 end
 
-function  make_dendrites(node,T,conversion,dt,synapses)
+function  make_dendrites(node,T,conversion,dt,synapses,arr_list)
     dendrites = Dict()
     for dend in node.dendrite_list
         inputs = Dict()
@@ -137,9 +137,14 @@ function  make_dendrites(node,T,conversion,dt,synapses)
             # synspikes[synput[1]] = spike_times.+1
         end
 
-        phi_vec = dend.phi_r__vec
-        s_array = obj_to_vect(dend.i_di__subarray)
-        r_array = obj_to_vect(dend.r_fq__subarray)
+        # phi_vec = dend.phi_r__vec
+        # s_array = obj_to_vect(dend.i_di__subarray)
+        # r_array = obj_to_vect(dend.r_fq__subarray)
+
+        phi_vec = arr_list[1]
+        s_array = obj_to_vect(arr_list[2])
+        r_array = obj_to_vect(arr_list[3])
+
         # phi_vec = dend.phi_r__vec
         # s_array = dend.i_di__subarray
         # r_array = dend.r_fq__subarray
@@ -149,11 +154,11 @@ function  make_dendrites(node,T,conversion,dt,synapses)
             # @show collect(keys(synapses))
             # @show dend.absolute_refractory_period
             new_dend = SomaticDendrite( 
-                dend.name,                       # name      :: String
-                zeros(T),                        # s         :: Vector
-                zeros(T),                        # phir      :: Vector
-                inputs,                          # inputs    :: Dict
-                synputs,                         # synputs   :: Dict
+                dend.name,                              # name      :: String
+                zeros(T),                               # s         :: Vector
+                zeros(T),                               # phir      :: Vector
+                inputs,                                 # inputs    :: Dict
+                synputs,                                # synputs   :: Dict
                 dend.alpha,
                 dend.beta,
                 phi_vec,
@@ -162,10 +167,10 @@ function  make_dendrites(node,T,conversion,dt,synapses)
                 findmin(phi_vec)[1],
                 findmax(phi_vec)[1],
                 length(phi_vec),
-                0,                               # last spike
-                Int64[],                         # spiked    :: Int
-                dend.s_th,                       # threshold :: Float64
-                dend.absolute_refractory_period/dt, # abs_ref   :: Float64
+                0,                                      # last spike
+                Int64[],                                # spiked    :: Int
+                dend.s_th,                              # threshold :: Float64
+                dend.absolute_refractory_period*conversion/dt,     # abs_ref   :: Float64
                 synapses[node.name*"__syn_refraction"], # struct
                 )
                 
@@ -210,11 +215,11 @@ function  make_dendrites(node,T,conversion,dt,synapses)
     return dendrites
 end
 
-function make_nodes(node,T,conversion,dt)
+function make_nodes(node,T,conversion,dt,arr_list)
 
     node_dict = Dict()
     node_dict["synapses"]  = make_synapses(node,T,conversion,dt)
-    node_dict["dendrites"] = make_dendrites(node,T,conversion,dt,node_dict["synapses"])
+    node_dict["dendrites"] = make_dendrites(node,T,conversion,dt,node_dict["synapses"],arr_list)
 
     return node_dict
 end
@@ -224,6 +229,8 @@ function obj_to_structs(net)
     net_dict  = Dict()
     node_dict = Dict()
     
+    arr_list = [net.phi_vec, net.s_array, net.r_array]
+
     tau_vec = net.time_params["tau_vec"]
     T = length(tau_vec)
     conversion = last(tau_vec)/(T/net.dt)
@@ -236,7 +243,13 @@ function obj_to_structs(net)
     net_dict["T"] = T
 
     for node in net.nodes
-        node_dict[node.name] = make_nodes(node,T+1,conversion,net_dict["dt"])
+        node_dict[node.name] = make_nodes(
+            node,
+            T+1,
+            conversion,
+            net_dict["dt"],
+            arr_list
+            )
     end
 
     return net_dict

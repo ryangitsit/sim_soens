@@ -429,7 +429,7 @@ class neuron():
         self.Ic__refraction =  100
         self.beta_c__refraction =  0.3
         if self.loops_present__refraction == 'ri':
-            self.ib_ref = 1.7    
+            self.ib_ref = self.ib #1.7    
         elif self.loops_present__refraction == 'rtti':
             self.ib_ref = 3.1 
         self.tau_ref= 50
@@ -574,6 +574,7 @@ class neuron():
 
             # ( phi_th_minus + delta/100 ) / s_max              
             dend_ref_cs = -delta/_s_max_refractory 
+            # print(self.name," --> ", dend_ref_cs)
                 
         self.dend_soma.add_input(
             self.dend__ref,

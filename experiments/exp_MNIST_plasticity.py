@@ -58,7 +58,7 @@ dataset = picklin("datasets/MNIST/","duration=5000_slowdown=100")
 # raster_plot(dataset[0][2])
 
 
-
+start = time.perf_counter()
 np.random.seed(10)
 f_idx = 28
 lay_2 = [np.random.rand(f_idx)*21/28 for _ in range(f_idx)]
@@ -82,13 +82,17 @@ for i,node in enumerate(nodes):
         if other_node.name != node.name:
             node.neuron.add_output(other_node.synapse_list[-1])
 
+finish = time.perf_counter()
+print("Time to make neurons: ", finish-start)
 
 desired = [
     [30,0,0],
     [0,30,0],
     [0,0,30],
 ]
-
+backend = 'julia'
+name = backend
+print(backend)
 for run in range(10000):
     # if run%10==0: 
     print("Run: ",run)
@@ -99,7 +103,7 @@ for run in range(10000):
         outputs = [[] for i in range(3)]
         for digit in range(3):
             
-            s = time.perf_counter()
+            start = time.perf_counter()
             input = SuperInput(type="defined",channels=784,defined_spikes=dataset[digit][sample])
             
             for node in nodes:
@@ -109,7 +113,7 @@ for run in range(10000):
             # f0 = time.perf_counter()
             # print("Input time: ", f0-s0)
 
-            net = network(sim=True,dt=.1,tf=500,nodes=nodes,timer=False,backend='julia')
+            net = network(sim=True,dt=.1,tf=500,nodes=nodes,timer=False,backend=backend)
 
             spikes = array_to_rows(net.spikes,3)
 
@@ -144,7 +148,7 @@ for run in range(10000):
             nodes[1].neuron.time_params=[]
             nodes[2].neuron.time_params=[]
 
-            # s = time.perf_counter()
+            s = time.perf_counter()
             # offsets = {}
             for n,node in enumerate(nodes):
 
@@ -171,17 +175,17 @@ for run in range(10000):
                     # offsets[dend.name] = dend.offset_flux
 
             f = time.perf_counter()
-            # print("Update time: ", f-s)
-
+            print("Update time: ", f-s)
+            print("Total runtime", f-start)
 
             print(f"Sample = {sample} \n Digit = {digit}\n  Spikes = {output} \n  Error = {errors} \n  prediction = {np.argmax(output)}")
 
             # List that we want to add as a new row
-            List = [sample,digit,output,errors,np.argmax(output),f-s]
+            List = [sample,digit,output,errors,np.argmax(output),f-start]
             
             # Open our existing CSV file in append mode
             # Create a file object for this file
-            with open('MNIST_ongoing_jul.csv', 'a') as f_object:
+            with open(f'MNIST_ongoing_{name}.csv', 'a') as f_object:
             
                 writer_object = writer(f_object)
             
@@ -197,14 +201,14 @@ for run in range(10000):
 
     picklit(
         nodes,
-        "results/MNIST_WTA_jul/",
+        f"results/MNIST_WTA_{name}/",
         f"nodes_at_{run}"
         )
     
     if run == 0:
         picklit(
             weights,
-            "results/MNIST_WTA_jul/",
+            f"results/MNIST_WTA_{name}/",
             f"init_weights"
             )
         

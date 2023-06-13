@@ -8,7 +8,7 @@ from sim_soens.soen_utilities import (
 )
 
 
-d_params_ri = dend_load_arrays_thresholds_saturations('default_ri')
+d_params_ri   = dend_load_arrays_thresholds_saturations('default_ri')
 d_params_rtti = dend_load_arrays_thresholds_saturations('default_rtti')
 ib__vec__ri = np.asarray(d_params_ri['ib__list'][:])
 ib__vec__rtti = np.asarray(d_params_rtti['ib__list'][:])
@@ -190,8 +190,8 @@ def rate_array_attachment(dend_obj):
         # print("slide pri")
         _ind__ib = ( np.abs( ib__vec[:] - dend_obj.phi_p ) ).argmin()
 
-    elif dend_obj.loops_present == 'ri':
-        _ind__ib = -1
+    # elif dend_obj.loops_present == 'ri':
+    #     _ind__ib = -1
     else:  
         _ind__ib = ( np.abs( ib__vec[:] - dend_obj.bias_current ) ).argmin()
 
@@ -375,3 +375,51 @@ def dendritic_drive__piecewise_linear(time_vec,pwl):
     input_signal__dd[t2_ind:] = pwl[-1][1]*np.ones([len(time_vec)-t2_ind])
     
     return input_signal__dd
+
+
+
+################################################################################
+###                             Simplified Init                              ###
+################################################################################
+
+
+# def get_arrays(loops_present):
+#     # check that timestep is sufficiently small:
+#     if loops_present == 'ri':
+#         ib_list = d_params_ri["ib__list"]
+#         r_fq_array = d_params_ri["r_fq__array"]
+
+#     elif loops_present == 'rtti':
+#         ib_list = d_params_rtti["ib__list"]
+#         r_fq_array = d_params_rtti["r_fq__array"]
+#     elif loops_present == 'pri':
+#         ib_list = d_params_rtti["ib__list"]
+#         r_fq_array = d_params_rtti["r_fq__array"]
+
+#     return ib_list, r_fq_array
+
+# def dend_init(dend,T):
+
+
+def make_subarrays(ib,loops_present):
+    # load_string = f'default_{loops_present}'
+        
+    # ib__list, phi_r__array, i_di__array, r_fq__array, _, _ = dend_load_rate_array(load_string) 
+    # ib__vec = np.asarray(ib__list)
+    if loops_present == 'ri':
+        d_params = dend_load_arrays_thresholds_saturations('default_ri')
+    elif loops_present == 'rtti':
+        d_params = dend_load_arrays_thresholds_saturations('default_rtti')
+
+    # elif dend_obj.loops_present == 'ri':
+    #     _ind__ib = -1
+    # else:  
+    #     _ind__ib = ( np.abs( d_params["ib__vec"][:] - ib ) ).argmin()
+
+    ib_idx = ( np.abs( np.asarray(d_params["ib__list"])[:] - ib ) ).argmin()
+
+    phi_vec = np.asarray(d_params["phi_r__array"][ib_idx])
+    s_array = np.asarray(d_params["i_di__array"][ib_idx],dtype=object)
+    r_array = np.asarray(d_params["r_fq__array"][ib_idx],dtype=object)
+
+    return phi_vec, s_array, r_array
