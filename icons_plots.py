@@ -361,8 +361,8 @@ def rollover():
     neurs = {}
     nodes = []
     
-    for i in range(5):
-        syn_struct = [[[[.5+i*.2]]]]
+    for i in range(10):
+        syn_struct = [[[[1.5+i*.2]]]]
         neurs[str(i)] = NeuralZoo(type="custom",synaptic_structure=syn_struct,s_th=100)
         neurs[str(i)].synapses[0][0][0][0].add_input(input.signals[0])
         nodes.append(neurs[str(i)])

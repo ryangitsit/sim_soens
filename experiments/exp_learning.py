@@ -22,7 +22,9 @@ def main():
     '''
 
     def make_letters():
-
+        '''
+        returns list of letters in pixel-array form
+        '''
         # non-noisy nine-pixel letters
         letters = {
             'z': [1,1,0,
@@ -41,7 +43,9 @@ def main():
         return letters
 
     def make_spikes(letter,spike_time):
-
+        '''
+        Converts pixel array into spikes (indices and times)
+        '''
         # convert to indices of nine-channel input
         idx = np.where(np.array(letter)==1)[0]
 
@@ -52,6 +56,9 @@ def main():
         return spikes
 
     def one_pixel_noise(letter):
+        '''
+        Shuffles one random pixel of pixel-array
+        '''
         noise_idx = np.random.randint(0,len(letter))
         if letter[noise_idx] == 1:
             letter[noise_idx] = 0
@@ -60,6 +67,9 @@ def main():
         return letter
 
     def make_noise_set(letters):
+        '''
+        Makes the full noisy pixel dataset (30 pixel arrays in total)
+        '''
         noise_set = {}
         for k,v in letters.items():
             noise_set[k] = [v]
@@ -80,6 +90,9 @@ def main():
 
 
     def plot_letter(letter,name=None):
+        '''
+        plots pixels!
+        '''
         import matplotlib.cm as cm
         arrays = [[] for i in range(3)]
         count = 0
@@ -109,6 +122,9 @@ def main():
     # print(noise_set)
 
     def plot_noise_set(noise_set):
+        '''
+        plots fully noisy pixel dataset
+        '''
         fig, axs = plt.subplots(3, 10,figsize=(14,4))
         
         import matplotlib.cm as cm
@@ -148,15 +164,20 @@ def main():
     def train_9pixel_classifier(
             letters,all_spikes,learning_rate,inhibition,elasticity,int_val
             ):
+        '''Trains 3-Neuron WTA Network on Full Noisy 9-Pixel Dataset'''
+
+        # moderate weight initialization (handpicked for dataset)
         weights = [
             [[.5,.5,.5]],
             [[.3,.3,.3],[.3,.3,.3],[.3,.3,.3]]
         ]
 
+        # make a node to associate with each class
         node_z = SuperNode(weights=weights)
         node_v = SuperNode(weights=weights)
         node_n = SuperNode(weights=weights)
 
+        # add extra synapse on soma for each node and wire w/ mutual inhibition
         syn_z = synapse(name='somatic_synapse_z')
         node_z.synapse_list.append(syn_z)
         node_z.neuron.dend_soma.add_input(syn_z,connection_strength=inhibition)
@@ -178,43 +199,64 @@ def main():
         # node_z.plot_structure()
         names = list(letters.keys())
 
+        # make a list of these nodes
         nodes = [node_z,node_v,node_n]
+
+        # initialize dictionaries for tracking updates made to all dendrites 
+        # for each node
         trajects = [{},{},{}]
+
+        # populate dicts with dendrite names as keys initialize value-lists
         for ii,node in enumerate(nodes):
             count = 0
             for dend in node.dendrite_list:
                 if 'ref' not in dend.name:
                     trajects[ii][dend.name] = [0]
-        expect_z = [5,0,0]
+        
+        # set spiking expectation for each node according to each input
+        expect_z = [5,0,0] # z-node should spike 5 times for z input, 0 otherwise
         expect_v = [0,5,0]
         expect_n = [0,0,5]
         expects = [expect_z,expect_v,expect_n]
         # spike_trajectories = [[] for i in range(len(names))]
+
+        # init some tracking vars
         accs = []
         preds = [[0],[0],[0]]
         p_count = 0
         running   = 0
         run_count = 0
+
+        # train for some max number of epochs over whole dataset
         for run in range(100):
-            # if run%10==0: print(f"\nRun {run}:")
+
+            # init run-specific tracking vars
             total_error_z = 0
             total_error_v = 0
             total_error_n = 0
             converged     = 0
             success = 0
+
+            # iterate over each class
             for j in range(len(letters[list(letters.keys())[0]])):
                 predictions = []
+
+                # iterate over all samples in that class
                 for i,(name,pixels_list) in enumerate(letters.items()):
 
+                    # create spikes of that class
                     defined_spikes = make_spikes(pixels_list[j],20)
                     # plot_letter(letters[name][j])
 
+                    # create input object with those spikes
                     input = SuperInput(type='defined',defined_spikes=defined_spikes)
 
+                    # feed to all nodes
                     node_z.one_to_one(input)
                     node_v.one_to_one(input)
                     node_n.one_to_one(input)
 
+                    # run network
                     net = network(
                         sim=True,
                         dt=.1,
@@ -222,31 +264,38 @@ def main():
                         nodes=[node_z,node_v,node_n]
                         )
                     
+                    # take output spikes
                     spikes = array_to_rows(net.spikes,3)
 
+                    # measure error for each node relative to expectation
                     error_z = expects[0][i] - len(spikes[0])
                     error_v = expects[1][i] - len(spikes[1])
                     error_n = expects[2][i] - len(spikes[2])
                     
+                    # take note of outputs
                     outputs = [len(spikes[0]),len(spikes[1]),len(spikes[2])]
 
+                    # record prediction (node with max output)
                     predictions.append(np.argmax(outputs))
 
+                    # track predictions
                     for pred in preds:
                         pred.append(pred[p_count])
                     p_count+=1
                     preds[np.argmax(outputs)][p_count] += 1
 
+                    # check if correct
                     if np.argmax(outputs) == j:
                         running += 1
                     run_count +=1
                     accs.append(np.round(running/run_count,2)*100)
 
+                    # increment total error for each node
                     total_error_z+=np.abs(error_z)
                     total_error_v+=np.abs(error_v)
                     total_error_n+=np.abs(error_n)
 
-
+                    # reset spike times
                     # spike_trajectories[i].append(len(out_spikes))
                     node_z.neuron.spike_times=[]
                     node_v.neuron.spike_times=[]
@@ -256,22 +305,32 @@ def main():
                     # total_change_v = 0
                     # total_change_n = 0
 
+                    # init flux_offset dicts for each node
                     offsets_z = {}
                     offsets_v = {}
                     offsets_n = {}
                     
+                    # track total change to each node
                     total_changes = np.zeros((3))
 
+                    # iterate over all dendrites
                     for ii in range(len(node_z.dendrite_list)):
+
+                        # no updates to refracatory dendrites
                         if 'ref' not in node_z.dendrite_list[ii].name:
+
+                            # address dendrite of each node in parallel
                             dend_z = node_z.dendrite_list[ii] 
                             dend_v = node_v.dendrite_list[ii]
                             dend_n = node_n.dendrite_list[ii]
 
+                            # calculate update
                             step_z = (np.mean(dend_z.s))*error_z*learning_rate
                             step_v = (np.mean(dend_v.s))*error_v*learning_rate
                             step_n = (np.mean(dend_n.s))*error_n*learning_rate
 
+                            # calculate mean flux + offsets
+                            # *** check that flux not for all trials
                             flux_z = np.mean(dend_z.phi_r) + dend_z.offset_flux
                             flux_v = np.mean(dend_v.phi_r) + dend_v.offset_flux
                             flux_n = np.mean(dend_n.phi_r) + dend_n.offset_flux
@@ -279,34 +338,46 @@ def main():
                             fluxes = [flux_z,flux_v,flux_n]
                             steps = [step_z,step_v,step_n]
 
+                            # elastic regime
+                            # if update would push offset to rollover regime,
+                            # reverse sign of update
                             if elasticity == True:
                                 for iii,flux in enumerate(fluxes):
                                     if flux > 0.5 or flux < -0.5:
                                         steps[iii] = -steps[iii]
                                     else:
                                         steps[iii] = steps[iii]
+
+                            # inelastic regime
+                            # if update would push offset to rollover regime,
+                            # update = 0
                             elif elasticity == False:
                                 for iii,flux in enumerate(fluxes):
                                     if flux > 0.5 or flux < -0.5:
                                         steps[iii] = 0
 
-                                    
+                            # apply above derived updates
                             dend_z.offset_flux += steps[0]
                             dend_v.offset_flux += steps[1]
                             dend_n.offset_flux += steps[2]
 
+                            # increment total changes
                             total_changes[0]+=step_z
                             total_changes[1]+=step_v
                             total_changes[2]+=step_n
 
+                            # ***second update incrementation?
+                            # this means eta = 0.02 officially
                             dend_z.offset_flux += step_z
                             dend_v.offset_flux += step_v
                             dend_n.offset_flux += step_n
 
+                            # record offsets of each dendrite
                             offsets_z[dend_z.name] = dend_z.offset_flux
                             offsets_v[dend_v.name] = dend_v.offset_flux
                             offsets_n[dend_n.name] = dend_n.offset_flux
 
+                            # track offset trajectories for each dendrite
                             trajects[0][dend_z.name].append(dend_z.offset_flux)
                             trajects[1][dend_v.name].append(dend_v.offset_flux)
                             trajects[2][dend_n.name].append(dend_n.offset_flux)
@@ -320,15 +391,20 @@ def main():
                 # node_v.plot_arbor_activity(net,phir=True)
                 # node_n.plot_arbor_activity(net,phir=True)
                 # print(predictions)
-                
+
+                # check if each class sample was predicted correctly
                 if predictions == [0,1,2]:
                     # print("Correct!",predictions)
                     success += 1
             
+            # print run accuracy
             acc = np.round(success/10,2)*100
             # accs.append(acc)
             print(f"Run {run} accuracy = {acc}%")
 
+            # if intermittent validation is true
+            # test performance on whole dataset without making updates
+            # if accuracy is 100% on all three class, converge early!
             if int_val == True:
                 offsets = [offsets_z,offsets_v,offsets_n]
                 early_converge = test_noise_set(letters,offsets)
@@ -336,6 +412,7 @@ def main():
                     print("Early Converge")
                     break
 
+            # if epoch accuracy 100%, converge!
             if success == 10:
                 converged += 1
                 if converged >= 1:
@@ -350,6 +427,8 @@ def main():
                 # node_z.plot_arbor_activity(net)
 
                 break
+
+        # record offsets (trained effective weights for correct classification)
         offsets = [offsets_z,offsets_v,offsets_n]
 
         return offsets, preds, accs, trajects
@@ -438,7 +517,7 @@ def main():
                 for node in nodes:
                     node.neuron.spike_times=[]
 
-            print(f"test {name} --> accuracy = {100*correct/len(pixel_list)}%")
+            print(f"  test {name} --> accuracy = {100*correct/len(pixel_list)}%")
 
             if correct==10: corrects+=1
         if corrects == 3:
@@ -562,21 +641,14 @@ def main():
 
     elasticity = True
     int_val = True
-    els = [True,False,None]
+    els = [None,False,True]
     vals = [True,False]
 
     for el in els:
         for val in vals:
+
             elasticity = el
             int_val = val
-            offsets, preds, accs, trajects = train_9pixel_classifier(
-                noise_set,
-                all_spikes,
-                learning_rate,
-                inhibition,
-                elasticity,
-                int_val
-                )
 
             regimes = ['Elastic', 'Inelastic', 'Unbounded']
             if elasticity == True:
@@ -591,7 +663,19 @@ def main():
             else:
                 converge_type = 'Update'
 
-            path = "results/pixels_WTA_icons/"
+            print(f"Regime = {regime}, Converge = {converge_type}")
+
+            offsets, preds, accs, trajects = train_9pixel_classifier(
+                noise_set,
+                all_spikes,
+                learning_rate,
+                inhibition,
+                elasticity,
+                int_val
+                )
+
+
+            path = "results/pixels_WTA_icons_RERUN/"
             picklit(
                 preds,
                 path,

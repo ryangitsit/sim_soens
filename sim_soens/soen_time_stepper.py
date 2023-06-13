@@ -342,6 +342,14 @@ def dendrite_updater(dend_obj,time_index,present_time,d_tau,HW=None):
     # lst = np.asarray(phi_r__array[dend_obj._ind__ib])[:] # new way
 
     val = dend_obj.phi_r[time_index+1] 
+
+    if val > np.max(dend_obj.phi_r__vec[:]):
+        # print("High roll")
+        val = val - np.max(dend_obj.phi_r__vec[:])
+    elif val < np.min(dend_obj.phi_r__vec[:]):
+        # print("Low roll")
+        val = val - np.min(dend_obj.phi_r__vec[:])
+
     _ind__phi_r = closest_index(lst,val)
 
     i_di__vec = np.asarray(dend_obj.i_di__subarray[_ind__phi_r]) # old way
