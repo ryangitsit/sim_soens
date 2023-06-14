@@ -144,7 +144,7 @@ function dend_signal(dend::AbstractDendrite,t_idx::Int,d_tau::Float64)
 
     # lst = dend.phi_vec
     # val = dend.phir[t_idx+1]
-    ind_phi = closest_index(dend.phi_vec,dend.phir[t_idx+1])
+    ind_phi = closest_index(dend.phi_vec,dend.phir[t_idx+1]) # +1 or not?
     # ind_phi = index_approxer(
     #     dend.phir[t_idx+1],
     #     dend.phi_max,
