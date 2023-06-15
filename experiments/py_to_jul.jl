@@ -2,7 +2,15 @@ using PyCall
 
 abstract type AbstractDendrite end
 
-mutable struct Synapse
+abstract type AbstractSynapse end
+
+mutable struct Synapse <: AbstractSynapse
+    name::String
+    spike_times::Array
+    phi_spd::Array
+end
+
+mutable struct RefractorySynapse <: AbstractSynapse
     name::String
     spike_times::Array
     phi_spd::Array
@@ -21,6 +29,9 @@ mutable struct ArborDendrite <: AbstractDendrite
     phi_vec   :: Vector{Float64}
     s_array   :: Vector{Vector{Float64}}
     r_array   :: Vector{Vector{Float64}}
+
+    ind_phi  :: Vector{Int64}
+    ind_s    :: Vector{Int64}
 
     # phi_vec   :: Vector
     # s_array   :: Array
@@ -45,6 +56,9 @@ mutable struct RefractoryDendrite <: AbstractDendrite
     s_array   :: Vector{Vector{Float64}}
     r_array   :: Vector{Vector{Float64}}
 
+    ind_phi  :: Vector{Int64}
+    ind_s    :: Vector{Int64}
+
     # phi_vec   :: Vector
     # s_array   :: Array
     # r_array   :: Array
@@ -67,9 +81,8 @@ mutable struct SomaticDendrite <: AbstractDendrite
     s_array    :: Vector{Vector{Float64}}
     r_array    :: Vector{Vector{Float64}}
  
-    # phi_vec    :: Vector
-    # s_array    :: Array
-    # r_array    :: Array
+    ind_phi  :: Vector{Int64}
+    ind_s    :: Vector{Int64}
  
     phi_min    :: Float64
     phi_max    :: Float64
@@ -164,13 +177,15 @@ function  make_dendrites(node,T,conversion,dt,synapses,arr_list)
                 phi_vec,
                 s_array,
                 r_array,
+                Int64[],
+                Int64[],
                 findmin(phi_vec)[1],
                 findmax(phi_vec)[1],
                 length(phi_vec),
                 0,                                      # last spike
                 Int64[],                                # spiked    :: Int
                 dend.s_th,                              # threshold :: Float64
-                dend.absolute_refractory_period*conversion/dt,     # abs_ref   :: Float64
+                dend.absolute_refractory_period, #*conversion,     # abs_ref   :: Float64
                 synapses[node.name*"__syn_refraction"], # struct
                 )
                 
@@ -186,6 +201,8 @@ function  make_dendrites(node,T,conversion,dt,synapses,arr_list)
                 phi_vec,
                 s_array,
                 r_array,
+                Int64[],
+                Int64[],
                 findmin(phi_vec)[1],
                 findmax(phi_vec)[1],
                 length(phi_vec),
@@ -203,6 +220,8 @@ function  make_dendrites(node,T,conversion,dt,synapses,arr_list)
                 phi_vec,
                 s_array,
                 r_array,
+                Int64[],
+                Int64[],
                 findmin(phi_vec)[1],
                 findmax(phi_vec)[1],
                 length(phi_vec),
@@ -233,25 +252,25 @@ function obj_to_structs(net)
 
     tau_vec = net.time_params["tau_vec"]
     T = length(tau_vec)
-    conversion = last(tau_vec)/(T/net.dt)
-
+    # conversion = last(tau_vec)/(T/net.dt)
+    
     net_dict["nodes"] = node_dict
     net_dict["dt"] = net.dt
     net_dict["tau_vec"] = tau_vec
     net_dict["d_tau"] = net.time_params["d_tau"]
-    net_dict["conversion"] = conversion
+    net_dict["conversion"] = net.time_params["t_tau_conversion"] # conversion
     net_dict["T"] = T
 
     for node in net.nodes
         node_dict[node.name] = make_nodes(
             node,
-            T+1,
-            conversion,
+            T,
+            net_dict["conversion"], #conversion,
             net_dict["dt"],
             arr_list
             )
     end
-
+    @show net_dict["conversion"]
     return net_dict
 
 end

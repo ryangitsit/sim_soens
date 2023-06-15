@@ -41,6 +41,7 @@ def run_soen_sim(net):
             'time_vec': time_vec, 
             't_tau_conversion': 1e-9/net.jj_params['tau_0']
             }
+        print("pyversion = ", net.time_params["t_tau_conversion"])
         t_tau_conversion = net.time_params['t_tau_conversion']
         tau_vec = time_vec*t_tau_conversion
         d_tau = net.time_params['dt']*t_tau_conversion
@@ -103,8 +104,13 @@ def run_soen_sim(net):
             for node in net.nodes:
                 for i,dend in enumerate(node.dendrite_list):
                     jul_dend = jul_net["nodes"][node.name]["dendrites"][dend.name]
-                    dend.s     = jul_dend.s[:-1]
-                    dend.phi_r = jul_dend.phir[:-1]
+                    dend.s     = jul_dend.s #[:-1]
+                    dend.phi_r = jul_dend.phir #[:-1]
+
+                    dend.ind_phi = jul_dend.ind_phi #[:-1]
+                    dend.ind_s = jul_dend.ind_s #[:-1]
+                    dend.phi_vec = jul_dend.phi_vec #[:-1]
+
                     if "soma" in dend.name:
                         spike_times = (jul_dend.out_spikes-1)* net.dt * t_tau_conversion
                         dend.spike_times        = spike_times
@@ -129,19 +135,19 @@ def run_soen_sim(net):
 
                 for dend in node.dendrite_list:
                     # print(" Initializing dendrite: ", dend.name)
-
+                    dend.ind_phi = []  # temp
+                    dend.ind_s = [] # temp
+                    dend.spk_print = True # temp
 
 
                     dendrite_drive_construct(dend,tau_vec,t_tau_conversion,d_tau)
-
-
-
 
                     rate_array_attachment(dend)
                     synapse_initialization(dend,tau_vec,t_tau_conversion)
 
                 output_synapse_initialization(node.neuron,tau_vec,t_tau_conversion)
                 transmitter_initialization(node.neuron,t_tau_conversion)
+
             finish = time.perf_counter()
             print(f"Initialization procedure run time: {finish-start}")
             net.init_time = finish-start
@@ -155,7 +161,9 @@ def run_soen_sim(net):
             # attach results to dendrite objects
             for node in net.nodes:
                 for dend in node.dendrite_list:
+                    dend.phi_vec = dend.phi_r__vec[:]
                     dendrite_data_attachment(dend,net)
+            
         # print(t_tau_conversion)
         # print("Outspikes: ",node.neuron.spike_times)
     # formerly, there were unique sim methods for each element
@@ -189,6 +197,7 @@ def net_step(net,tau_vec,d_tau):
         HW=None
     if net.timer==True:
         _t0 = time.time()
+    # print(tau_vec)
     for ii in range(len(tau_vec)-1):
 
         if net.hardware:
@@ -348,6 +357,16 @@ def dendrite_updater(dend_obj,time_index,present_time,d_tau,HW=None):
                 syn_obj.spd_duration_converted  # spike within a relevant duration                
                 ):
                     _dt_spk = present_time - syn_obj.spike_times_converted[_st_ind]
+                    
+                    if dend_obj.spk_print==True:
+                        print(dend_obj.name)
+                        print("peak = ",syn_obj.phi_peak, )
+                        print("rise = ",syn_obj.tau_rise_converted,)
+                        print("fall = ",syn_obj.tau_fall_converted,)
+                        print("hs = ",syn_obj.hotspot_duration_converted, )
+                        print("spk = ",_dt_spk)
+                        dend_obj.spk_print=False
+
                     _phi_spd = spd_response(syn_obj.phi_peak, 
                                             syn_obj.tau_rise_converted,
                                             syn_obj.tau_fall_converted,
@@ -441,6 +460,9 @@ def dendrite_updater(dend_obj,time_index,present_time,d_tau,HW=None):
         val = dend_obj.s[time_index]
         _ind__s = closest_index(lst,val)
         
+    dend_obj.ind_phi.append(_ind__phi_r) # temp
+    dend_obj.ind_s.append(_ind__s) # temp
+
     r_fq = dend_obj.r_fq__subarray[_ind__phi_r][_ind__s] # old way 
     # r_fq = np.asarray(r_fq__array[dend_obj._ind__ib],dtype=object)[_ind__phi_r][_ind__s] # new way
         
@@ -499,7 +521,7 @@ def closest_index(lst,val):
     return (np.abs(lst-val)).argmin()
 
 def spd_response(phi_peak,tau_rise,tau_fall,hotspot_duration,t):
-        
+
     if t <= hotspot_duration:
         phi = phi_peak * ( 
             1 - tau_rise/tau_fall 
@@ -517,6 +539,7 @@ def spd_static_response(phi_peak,tau_rise,tau_fall,hotspot_duration,t):
     '''
     Rewrite time stepper to reference one static spd response by time offeset
     '''
+    print(hotspot_duration)
     if t <= hotspot_duration:
         phi = phi_peak * (
             1 - tau_rise/tau_fall

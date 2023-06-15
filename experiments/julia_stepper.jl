@@ -12,7 +12,7 @@ function stepper(net_dict)
         - win
     """
     # net_dict["T"] = 10
-    for t_idx in 1:net_dict["T"]
+    for t_idx in 1:net_dict["T"]-1
         for (node_name,node) in net_dict["nodes"]
             # @show node
             for (name,syn) in node["synapses"]
@@ -40,33 +40,44 @@ function stepper(net_dict)
 end
 
 
-function synapse_input_update(syn,t,T,conversion,tau_vec)
+function synapse_input_update(syn::AbstractSynapse,t,T,conversion,tau_vec)
     duration = 1500 #floor(Int,1500*conversion)
+    if occursin("ref",syn.name)
+        hotspot = 2
+    else
+        hotspot = 3
+    end
     if t in syn.spike_times
         # t = tau_vec[spk]
         until = min(t+duration,T)
-        syn.phi_spd[t:until-2] = max.(syn.phi_spd[t:until-2],SPD_response(conversion)[1:until-t-1])
+        syn.phi_spd[t:until-2] = max.(syn.phi_spd[t:until-2],SPD_response(conversion,hotspot)[1:until-t-1])
     end
     return syn
 end
 
 
-function SPD_response(conversion)
+function SPD_response(conversion,hs)
+    """
+    Move to before time stepper
+    """
+    conversion = conversion * .01 #.0155
     phi_peak = 0.5
     tau_rise = 0.02 *conversion
-    tau_fall = 50   *conversion #50
-    hotspot  = 3    *conversion
+    tau_fall = 65   *conversion #50
+    hotspot  = hs*.02    *conversion #- 22.925
+    # @show phi_peak 
+    # @show tau_rise 
+    # @show tau_fall 
+    # @show hotspot  
     coeff = phi_peak*(1-tau_rise/tau_fall)
     
     # duration = 500
-    duration = floor(Int,1500*conversion)
-    e = ℯ
-    # e = 2.71
+    duration = floor(Int,8*50*conversion)
 
-    phi_rise = [coeff * (1-e^(-t/tau_rise)) for t in 1:hotspot]
-    phi_fall = [coeff * (1-e^(-hotspot/tau_rise))*e^(-(t-hotspot)/tau_fall) for t in hotspot+1:duration-1]
+    phi_rise = [coeff * (1-exp(-t/tau_rise)) for t in 1:hotspot]
+    phi_fall = [coeff * (1-exp(-hotspot/tau_rise))*exp(-(t-hotspot)/tau_fall) for t in hotspot+1:duration-1]
 
-    return [0;phi_rise;phi_fall]
+    return [0;phi_rise;phi_fall] #.-.0575
 end
 
 
@@ -88,6 +99,7 @@ function dend_update(node::Dict,dend::SomaticDendrite,t_idx::Int,t_now,d_tau::Fl
     # if dend.s[t_idx] >= dend.threshold && t_idx .- dend.last_spike > dend.abs_ref
     #     spike(dend,t_idx,dend.syn_ref)
     if dend.s[t_idx] >= dend.threshold
+        # @show t_idx
         if isempty(dend.out_spikes) != true
             if t_idx .- last(dend.out_spikes) > dend.abs_ref
                 spike(dend,t_idx,dend.syn_ref)
@@ -96,10 +108,24 @@ function dend_update(node::Dict,dend::SomaticDendrite,t_idx::Int,t_now,d_tau::Fl
             spike(dend,t_idx,dend.syn_ref)
         end 
     else
-        dend_inputs(node,dend,t_idx)
-        dend_synputs(node,dend,t_idx)
-        dend_signal(dend,t_idx,d_tau::Float64)
+        # if neuron has spiked, check if abs_ref cleared
+        if isempty(dend.out_spikes) != true 
+            # @show t_idx, t_idx .- last(dend.out_spikes)
+            if t_idx .- last(dend.out_spikes) > dend.abs_ref
+                # @show t_idx
+                dend_inputs(node,dend,t_idx)
+                dend_synputs(node,dend,t_idx)
+                dend_signal(dend,t_idx,d_tau::Float64)
+            end
+        # else update
+        else
+            # @show t_idx
+            dend_inputs(node,dend,t_idx)
+            dend_synputs(node,dend,t_idx)
+            dend_signal(dend,t_idx,d_tau::Float64)
+        end
     end
+
 end
 
 
@@ -130,15 +156,16 @@ function dend_synputs(node::Dict,dend::AbstractDendrite,t_idx::Int)
     update = 0
     for synput in dend.synputs
 
-        if t_idx == 10
-            print("synapse: ",synput[1],"  --  ",synput[2],"\n")
-            # print(node["synapses"][synput[1]].phi_spd[t_idx]*synput[2])
-        end
+        # if t_idx == 10
+        #     print("synapse: ",synput[1],"  --  ",synput[2],"\n")
+        #     # print(node["synapses"][synput[1]].phi_spd[t_idx]*synput[2])
+        # end
 
         update += node["synapses"][synput[1]].phi_spd[t_idx]*synput[2] # dend.s[t_idx]*input[2] + t_idx
     end
     dend.phir[t_idx+1] += update
 end
+
 
 function dend_signal(dend::AbstractDendrite,t_idx::Int,d_tau::Float64)
 
@@ -157,14 +184,19 @@ function dend_signal(dend::AbstractDendrite,t_idx::Int,d_tau::Float64)
     ind_s = closest_index(s_vec,dend.s[t_idx])
     # ind_s = index_approxer(dend.s[t_idx],first(s_vec),last(s_vec),length(s_vec))
 
+    push!(dend.ind_phi,ind_phi)
+    push!(dend.ind_s,ind_s)
+
     r_fq = dend.r_array[ind_phi][ind_s]
     dend.s[t_idx+1] = dend.s[t_idx]*(1 - d_tau*dend.alpha/dend.beta) + (d_tau/dend.beta)*r_fq
     
 end
 
+
 function closest_index(lst,val)
     return findmin(abs.(lst.-val))[2] #indexing!
 end
+
 
 function index_approxer(val::Float64,maxval::Float64,minval::Float64,lenlst::Int)
     range = maxval-minval
