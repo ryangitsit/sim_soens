@@ -92,7 +92,8 @@ mutable struct SomaticDendrite <: AbstractDendrite
     out_spikes :: Vector
     threshold  :: Float64
     abs_ref    :: Float64
-    syn_ref    :: Synapse
+    syn_ref    :: AbstractSynapse
+    syn_outs   :: Array
 end
 
 
@@ -124,7 +125,7 @@ function make_synapses(node,T,conversion,dt)
     for syn in node.synapse_list
         if occursin("ref",syn.name)
             spike_times = []
-            syn_ref = Synapse(syn.name,spike_times.+1,zeros(T))
+            syn_ref = RefractorySynapse(syn.name,spike_times.+1,zeros(T))
             synapses[syn.name] = syn_ref
             
         else
@@ -187,6 +188,7 @@ function  make_dendrites(node,T,conversion,dt,synapses,arr_list)
                 dend.s_th,                              # threshold :: Float64
                 dend.absolute_refractory_period, #*conversion,     # abs_ref   :: Float64
                 synapses[node.name*"__syn_refraction"], # struct
+                dend.syn_outs
                 )
                 
         elseif occursin("ref",dend.name)

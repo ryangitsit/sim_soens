@@ -620,6 +620,7 @@ class neuron():
         
         # prepare for output synapses
         self.synaptic_outputs = dict()
+        self.dend_soma.syn_outs= []
 
         neuron.neurons[self.name] = self
         return    
@@ -635,8 +636,10 @@ class neuron():
             # print(self.name, "-->", connection_object.name)
             self.synaptic_outputs[name] = synapse.synapses[name]
             synapse.synapses[name].add_input(self)
+            self.dend_soma.append(name)
         else: 
-            raise ValueError('[soen_sim] a neuron can only output to a synapse')     
+            raise ValueError('[soen_sim] a neuron can only output to a synapse')    
+        
         return
     
     def run_sim(self, **kwargs):

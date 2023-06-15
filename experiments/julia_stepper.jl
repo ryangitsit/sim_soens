@@ -40,14 +40,21 @@ function stepper(net_dict)
 end
 
 
-function synapse_input_update(syn::AbstractSynapse,t,T,conversion,tau_vec)
-    duration = 1500 #floor(Int,1500*conversion)
-    if occursin("ref",syn.name)
-        hotspot = 2
-    else
-        hotspot = 3
-    end
+function synapse_input_update(syn::Synapse,t,T,conversion,tau_vec)
     if t in syn.spike_times
+        duration = 1500
+        hotspot = 3
+        # t = tau_vec[spk]
+        until = min(t+duration,T)
+        syn.phi_spd[t:until-2] = max.(syn.phi_spd[t:until-2],SPD_response(conversion,hotspot)[1:until-t-1])
+    end
+    return syn
+end
+
+function synapse_input_update(syn::RefractorySynapse,t,T,conversion,tau_vec)
+    if t in syn.spike_times
+        duration = 1500
+        hotspot = 2 
         # t = tau_vec[spk]
         until = min(t+duration,T)
         syn.phi_spd[t:until-2] = max.(syn.phi_spd[t:until-2],SPD_response(conversion,hotspot)[1:until-t-1])
@@ -129,7 +136,7 @@ function dend_update(node::Dict,dend::SomaticDendrite,t_idx::Int,t_now,d_tau::Fl
 end
 
 
-function spike(dend::SomaticDendrite,t_idx::Int,syn_ref::Synapse) ## add spike to syn_ref
+function spike(dend::SomaticDendrite,t_idx::Int,syn_ref::AbstractSynapse) ## add spike to syn_ref
     dend.last_spike = t_idx
     push!(dend.out_spikes,t_idx)
     dend.s[t_idx+1:length(dend.s)] .= 0
@@ -183,9 +190,6 @@ function dend_signal(dend::AbstractDendrite,t_idx::Int,d_tau::Float64)
 
     ind_s = closest_index(s_vec,dend.s[t_idx])
     # ind_s = index_approxer(dend.s[t_idx],first(s_vec),last(s_vec),length(s_vec))
-
-    push!(dend.ind_phi,ind_phi)
-    push!(dend.ind_s,ind_s)
 
     r_fq = dend.r_array[ind_phi][ind_s]
     dend.s[t_idx+1] = dend.s[t_idx]*(1 - d_tau*dend.alpha/dend.beta) + (d_tau/dend.beta)*r_fq

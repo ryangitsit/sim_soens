@@ -358,14 +358,14 @@ def dendrite_updater(dend_obj,time_index,present_time,d_tau,HW=None):
                 ):
                     _dt_spk = present_time - syn_obj.spike_times_converted[_st_ind]
                     
-                    if dend_obj.spk_print==True:
-                        print(dend_obj.name)
-                        print("peak = ",syn_obj.phi_peak, )
-                        print("rise = ",syn_obj.tau_rise_converted,)
-                        print("fall = ",syn_obj.tau_fall_converted,)
-                        print("hs = ",syn_obj.hotspot_duration_converted, )
-                        print("spk = ",_dt_spk)
-                        dend_obj.spk_print=False
+                    # if dend_obj.spk_print==True:
+                    #     print(dend_obj.name)
+                    #     print("peak = ",syn_obj.phi_peak, )
+                    #     print("rise = ",syn_obj.tau_rise_converted,)
+                    #     print("fall = ",syn_obj.tau_fall_converted,)
+                    #     print("hs = ",syn_obj.hotspot_duration_converted, )
+                    #     print("spk = ",_dt_spk)
+                    #     dend_obj.spk_print=False
 
                     _phi_spd = spd_response(syn_obj.phi_peak, 
                                             syn_obj.tau_rise_converted,
