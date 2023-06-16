@@ -326,7 +326,8 @@ class SuperNode():
          - len(synapse_list) == input.channels (required)
         '''
         for i,S in enumerate(self.synapse_list):
-            S.add_input(input.signals[i])
+            if 'ref' not in S.name:
+                S.add_input(input.signals[i])
 
     def custom_input(self,input,synapse_indices):
         '''

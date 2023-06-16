@@ -78,9 +78,11 @@ for i,node in enumerate(nodes):
     syn_soma = synapse(name=f'{node.name}_somatic_synapse')
     node.synapse_list.append(syn_soma)
     node.neuron.dend_soma.add_input(syn_soma,connection_strength=inhibition[i])
+for i,node in enumerate(nodes):
     for other_node in nodes:
         if other_node.name != node.name:
             node.neuron.add_output(other_node.synapse_list[-1])
+            print(other_node.synapse_list[-1].name)
 
 finish = time.perf_counter()
 print("Time to make neurons: ", finish-start)
@@ -93,6 +95,10 @@ desired = [
 backend = 'julia'
 name = backend
 print(backend)
+
+run_times = []
+init_times = []
+
 for run in range(10000):
     # if run%10==0: 
     print("Run: ",run)
@@ -104,17 +110,18 @@ for run in range(10000):
         for digit in range(3):
             
             start = time.perf_counter()
-            input = SuperInput(type="defined",channels=784,defined_spikes=dataset[digit][sample])
+            input_ = SuperInput(type="defined",channels=784,defined_spikes=dataset[digit][sample])
             
             for node in nodes:
-                for i,channel in enumerate(input.signals):
+                for i,channel in enumerate(input_.signals):
                     node.synapse_list[i].add_input(channel)
                 # node.one_to_one(input)
-            # f0 = time.perf_counter()
-            # print("Input time: ", f0-s0)
+            f0 = time.perf_counter()
+            # print("Input time: ", f0-start)
 
-            net = network(sim=True,dt=.1,tf=500,nodes=nodes,timer=False,backend=backend)
-
+            net = network(sim=True,dt=.1,tf=500,nodes=nodes,backend=backend,print_times=True)
+            run_times.append(net.run_time)
+            init_times.append(net.init_time)
             spikes = array_to_rows(net.spikes,3)
 
             error_zero = desired[0][digit] - len(spikes[0])
@@ -150,38 +157,39 @@ for run in range(10000):
 
             s = time.perf_counter()
             # offsets = {}
-            for n,node in enumerate(nodes):
+            if run%10 != 0 and run!=0:
+                for n,node in enumerate(nodes):
 
-                # spike refractory dendrite
-                # lst = node.dendrite_list[2:]
-                # lst.insert(0,node.dendrite_list[0])
+                    # spike refractory dendrite
+                    # lst = node.dendrite_list[2:]
+                    # lst.insert(0,node.dendrite_list[0])
 
-                # for dend in lst:
-                    # step = errors[n]*np.mean(dend.s)*.0001
-                    # dend.offset_flux += step
+                    # for dend in lst:
+                        # step = errors[n]*np.mean(dend.s)*.0001
+                        # dend.offset_flux += step
 
-                for l,layer in enumerate(node.dendrites):
-                    for g,group in enumerate(layer):
-                        for d,dend in enumerate(group):
-                            step = errors[n]*np.mean(dend.s)*.0001 #+(2-l)*.001
-                            flux = np.mean(dend.phi_r) + step #dend.offset_flux
-                            if flux > 0.5 or flux < -0.5:
-                                step = -step
-                            dend.offset_flux += step
-                            dend.s = []
-                            dend.phi_r = []
+                    for l,layer in enumerate(node.dendrites):
+                        for g,group in enumerate(layer):
+                            for d,dend in enumerate(group):
+                                step = errors[n]*np.mean(dend.s)*.0001 #+(2-l)*.001
+                                flux = np.mean(dend.phi_r) + step #dend.offset_flux
+                                if flux > 0.5 or flux < -0.5:
+                                    step = -step
+                                dend.offset_flux += step
+                                dend.s = []
+                                dend.phi_r = []
 
-                            # if g==0 and d ==0: print("learning rate =", .0001+(2-l)*.001)
-                    # offsets[dend.name] = dend.offset_flux
+                                # if g==0 and d ==0: print("learning rate =", .0001+(2-l)*.001)
+                        # offsets[dend.name] = dend.offset_flux
 
             f = time.perf_counter()
-            print("Update time: ", f-s)
-            print("Total runtime", f-start)
+            # print("Update time: ", f-s)
+            # print("Total runtime", f-start)
 
-            print(f"Sample = {sample} \n Digit = {digit}\n  Spikes = {output} \n  Error = {errors} \n  prediction = {np.argmax(output)}")
-
+            # print(f"Sample = {sample} \n Digit = {digit}\n  Spikes = {output} \n  Error = {errors} \n  prediction = {np.argmax(output)}")
+            print(f"  {sample}  -  [{digit} -> {np.argmax(output)}]  --  {f-start} ")
             # List that we want to add as a new row
-            List = [sample,digit,output,errors,np.argmax(output),f-start]
+            List = [sample,digit,output,errors,np.argmax(output),f-start,net.init_time,net.run_time]
             
             # Open our existing CSV file in append mode
             # Create a file object for this file
@@ -193,11 +201,12 @@ for run in range(10000):
 
                 f_object.close()
 
-
+            del(net)
+            del(input_)
             if np.argmax(output) == digit:
                 samples_passed+=1
 
-    print(f"samples passed: {samples_passed}/30")
+    print(f"samples passed: {samples_passed}/30\n\n")
 
     picklit(
         nodes,
@@ -213,7 +222,7 @@ for run in range(10000):
             )
         
     if samples_passed == 30:
-        print("converged!")
+        print("converged!\n\n")
         break
 
     # if total_error<25:

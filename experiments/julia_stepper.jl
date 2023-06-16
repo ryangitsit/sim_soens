@@ -1,4 +1,8 @@
-function stepper(net_dict)
+# module NewMain end
+# using REPL
+# REPL.activate(NewMain)
+
+function stepper(net_dict::Dict{Any,Any})
 
     """
     Plan:
@@ -21,7 +25,6 @@ function stepper(net_dict)
                     t_idx,
                     net_dict["T"],
                     net_dict["conversion"],
-                    net_dict["tau_vec"],
                     )
             end
 
@@ -30,9 +33,18 @@ function stepper(net_dict)
                     node,
                     dend,
                     t_idx,
-                    net_dict["tau_vec"][t_idx],
                     net_dict["d_tau"]
                     )
+            end
+            if node["dendrites"][node["soma"]].spiked == 1
+                for (syn_name,spks) in node["outputs"]
+                    for (node_name,node) in net_dict["nodes"]
+                        if occursin(node_name,syn_name)
+                            push!(net_dict["nodes"][node_name]["synapses"][syn_name].spike_times,t_idx+15)
+                        end
+                    end
+                end
+                node["dendrites"][node["soma"]].spiked = 0
             end
         end
     end
@@ -40,30 +52,30 @@ function stepper(net_dict)
 end
 
 
-function synapse_input_update(syn::Synapse,t,T,conversion,tau_vec)
+function synapse_input_update(syn::Synapse,t::Int64,T::Int64,conversion::Float64)
     if t in syn.spike_times
         duration = 1500
         hotspot = 3
-        # t = tau_vec[spk]
         until = min(t+duration,T)
-        syn.phi_spd[t:until-2] = max.(syn.phi_spd[t:until-2],SPD_response(conversion,hotspot)[1:until-t-1])
+        syn.phi_spd[t:until] = max.(syn.phi_spd[t:until],SPD_response(conversion,hotspot)[1:until-t+1])
     end
     return syn
 end
 
-function synapse_input_update(syn::RefractorySynapse,t,T,conversion,tau_vec)
+
+function synapse_input_update(syn::RefractorySynapse,t::Int64,T::Int64,conversion::Float64)
     if t in syn.spike_times
         duration = 1500
         hotspot = 2 
         # t = tau_vec[spk]
         until = min(t+duration,T)
-        syn.phi_spd[t:until-2] = max.(syn.phi_spd[t:until-2],SPD_response(conversion,hotspot)[1:until-t-1])
+        syn.phi_spd[t:until] = max.(syn.phi_spd[t:until],SPD_response(conversion,hotspot)[1:until-t+1])
     end
     return syn
 end
 
 
-function SPD_response(conversion,hs)
+function SPD_response(conversion::Float64,hs::Int64)
     """
     Move to before time stepper
     """
@@ -88,21 +100,21 @@ function SPD_response(conversion,hs)
 end
 
 
-function dend_update(node::Dict,dend::ArborDendrite,t_idx::Int,t_now,d_tau::Float64)
+function dend_update(node::Dict,dend::ArborDendrite,t_idx::Int,d_tau::Float64)
     dend_inputs(node,dend,t_idx)
     dend_synputs(node,dend,t_idx)
     dend_signal(dend,t_idx,d_tau::Float64)
 end
 
 
-function dend_update(node::Dict,dend::RefractoryDendrite,t_idx::Int,t_now,d_tau::Float64)
+function dend_update(node::Dict,dend::RefractoryDendrite,t_idx::Int,d_tau::Float64)
     # dend_inputs(node,dend,t_idx)
     dend_synputs(node,dend,t_idx)
     dend_signal(dend,t_idx,d_tau::Float64)
 end
 
 
-function dend_update(node::Dict,dend::SomaticDendrite,t_idx::Int,t_now,d_tau::Float64)
+function dend_update(node::Dict,dend::SomaticDendrite,t_idx::Int,d_tau::Float64)
     # if dend.s[t_idx] >= dend.threshold && t_idx .- dend.last_spike > dend.abs_ref
     #     spike(dend,t_idx,dend.syn_ref)
     if dend.s[t_idx] >= dend.threshold
@@ -137,22 +149,20 @@ end
 
 
 function spike(dend::SomaticDendrite,t_idx::Int,syn_ref::AbstractSynapse) ## add spike to syn_ref
-    dend.last_spike = t_idx
+    dend.spiked = 1
     push!(dend.out_spikes,t_idx)
     dend.s[t_idx+1:length(dend.s)] .= 0
     push!(syn_ref.spike_times,t_idx+1)
+    for (name,syn) in dend.syn_outs
+        dend.syn_outs[name]+=1
+    end
+
 end
 
 
-function dend_inputs(node::Dict,dend::AbstractDendrite,t_idx)
+function dend_inputs(node::Dict,dend::AbstractDendrite,t_idx::Int64)
     update = 0
     for input in dend.inputs
-
-        # if t_idx == 10
-        #     print("dend: ",dend.name,"\n   dendin = ",input[1],"  --  ",input[2],"\n")
-        #     # print(node["synapses"][synput[1]].phi_spd[t_idx]*synput[2])
-        # end
-
         update += node["dendrites"][input[1]].s[t_idx]*input[2]
     end
     dend.phir[t_idx+1] += update
@@ -162,12 +172,6 @@ end
 function dend_synputs(node::Dict,dend::AbstractDendrite,t_idx::Int)
     update = 0
     for synput in dend.synputs
-
-        # if t_idx == 10
-        #     print("synapse: ",synput[1],"  --  ",synput[2],"\n")
-        #     # print(node["synapses"][synput[1]].phi_spd[t_idx]*synput[2])
-        # end
-
         update += node["synapses"][synput[1]].phi_spd[t_idx]*synput[2] # dend.s[t_idx]*input[2] + t_idx
     end
     dend.phir[t_idx+1] += update
@@ -177,10 +181,21 @@ end
 function dend_signal(dend::AbstractDendrite,t_idx::Int,d_tau::Float64)
 
     # lst = dend.phi_vec
-    # val = dend.phir[t_idx+1]
-    ind_phi = closest_index(dend.phi_vec,dend.phir[t_idx+1]) # +1 or not?
+    val = dend.phir[t_idx+1]
+
+    if val > dend.phi_max
+        # print("High roll")
+        val = val - dend.phi_max
+    elseif val < dend.phi_min
+        # print("Low roll")
+        val = val - dend.phi_min
+    end
+
+    ind_phi = closest_index(dend.phi_vec,val)
+    # ind_phi = closest_index(dend.phi_vec,dend.phir[t_idx+1]) # +1 or not?
+
     # ind_phi = index_approxer(
-    #     dend.phir[t_idx+1],
+    #     val,
     #     dend.phi_max,
     #     dend.phi_min,
     #     dend.phi_len
@@ -203,7 +218,24 @@ end
 
 
 function index_approxer(val::Float64,maxval::Float64,minval::Float64,lenlst::Int)
-    range = maxval-minval
-    ind = floor(Int,((val+range/2)/range)*lenlst)%lenlst+1
+    range = maxval-minval::Float64
+    ratio = abs(minval-val)/range::Float64
+    ind = ratio*lenlst
+    # ind = floor(Int,((val+range/2)/range)*lenlst)%lenlst+1
+    ind = ceil(Int,ind) #%lenlst +1
     return ind
+end
+
+
+function clear_all(strct)
+    strct = nothing
+    return strct
+end
+
+function unbindvariables()
+    for name in names(Main)
+        if !isconst(Main, name)
+            Main.eval(:($name = nothing))
+        end
+    end
 end

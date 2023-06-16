@@ -620,7 +620,7 @@ class neuron():
         
         # prepare for output synapses
         self.synaptic_outputs = dict()
-        self.dend_soma.syn_outs= []
+        self.dend_soma.syn_outs = {}
 
         neuron.neurons[self.name] = self
         return    
@@ -636,7 +636,7 @@ class neuron():
             # print(self.name, "-->", connection_object.name)
             self.synaptic_outputs[name] = synapse.synapses[name]
             synapse.synapses[name].add_input(self)
-            self.dend_soma.append(name)
+            self.dend_soma.syn_outs[name] = 0
         else: 
             raise ValueError('[soen_sim] a neuron can only output to a synapse')    
         
@@ -681,6 +681,7 @@ class network():
         self.timer=False
         self.backend = 'python'
         self.name = 'unnamed_network__{}'.format(self.unique_label)
+        self.print_times = False
 
         self.__dict__.update(kwargs)
         

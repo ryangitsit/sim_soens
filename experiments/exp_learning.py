@@ -1,6 +1,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 import sys
+from csv import writer
 sys.path.append('../sim_soens')
 sys.path.append('../')
 
@@ -141,37 +142,98 @@ def main():
         # plt.subplots_adjust(left=-1.8)
         # plt.subplots_adjust(bottom=.15)
         plt.show()
-    plot_noise_set(noise_set)
+    # plot_noise_set(noise_set)
 
     np.random.seed(10)
 
     def train_9pixel_classifier(
-            letters,all_spikes,learning_rate,inhibition,elasticity,int_val
+            letters,
+            all_spikes,
+            learning_rate,
+            inhibition,
+            elasticity,
+            int_val,
+            ib,
+            tau,
+            beta,
+            s_th,
+            eta
             ):
         weights = [
             [[.5,.5,.5]],
             [[.3,.3,.3],[.3,.3,.3],[.3,.3,.3]]
         ]
 
-        node_z = SuperNode(weights=weights)
-        node_v = SuperNode(weights=weights)
-        node_n = SuperNode(weights=weights)
+        learning_rate=eta
+        node_z = SuperNode(
+            name='node_z',
+            weights=weights,
+            ib=ib,
+            ib_n=ib,
+            ib_di=ib,
+            tau=tau,
+            tau_ni=tau,
+            tau_di=tau,
+            beta=2*np.pi*10**beta,
+            beta_ni=2*np.pi*10**beta,
+            beta_di=2*np.pi*10**beta,
+            s_th=s_th,
+            )
 
-        syn_z = synapse(name='somatic_synapse_z')
+        node_v = SuperNode(
+            name='node_v',
+            weights=weights,
+            ib=ib,
+            ib_n=ib,
+            ib_di=ib,
+            tau=tau,
+            tau_ni=tau,
+            tau_di=tau,
+            beta=2*np.pi*10**beta,
+            beta_ni=2*np.pi*10**beta,
+            beta_di=2*np.pi*10**beta,
+            s_th=s_th,
+            )
+        
+        node_n = SuperNode(
+            name='node_n',
+            weights=weights,
+            ib=ib,
+            ib_n=ib,
+            ib_di=ib,
+            tau=tau,
+            tau_ni=tau,
+            tau_di=tau,
+            beta=2*np.pi*10**beta,
+            beta_ni=2*np.pi*10**beta,
+            beta_di=2*np.pi*10**beta,
+            s_th=s_th,
+            )
+
+        syn_z = synapse(name=node_z.name+'_somatic_synapse_z')
         node_z.synapse_list.append(syn_z)
         node_z.neuron.dend_soma.add_input(syn_z,connection_strength=inhibition)
+        # node_z.neuron.add_output(node_v.synapse_list[-1])
+        # node_z.neuron.add_output(node_n.synapse_list[-1])
+
+        syn_v = synapse(name=node_v.name+'_somatic_synapse_v')
+        node_v.synapse_list.append(syn_v)
+        node_v.neuron.dend_soma.add_input(syn_v,connection_strength=inhibition)
+        # node_v.neuron.add_output(node_z.synapse_list[-1])
+        # node_v.neuron.add_output(node_n.synapse_list[-1])
+
+        syn_n = synapse(name=node_n.name+'_somatic_synapse_n')
+        node_n.synapse_list.append(syn_n)
+        node_n.neuron.dend_soma.add_input(syn_n,connection_strength=inhibition)
+        # node_n.neuron.add_output(node_z.synapse_list[-1])
+        # node_n.neuron.add_output(node_v.synapse_list[-1])
+
         node_z.neuron.add_output(node_v.synapse_list[-1])
         node_z.neuron.add_output(node_n.synapse_list[-1])
 
-        syn_v = synapse(name='somatic_synapse_v')
-        node_v.synapse_list.append(syn_v)
-        node_v.neuron.dend_soma.add_input(syn_v,connection_strength=inhibition)
         node_v.neuron.add_output(node_z.synapse_list[-1])
         node_v.neuron.add_output(node_n.synapse_list[-1])
 
-        syn_n = synapse(name='somatic_synapse_n')
-        node_n.synapse_list.append(syn_n)
-        node_n.neuron.dend_soma.add_input(syn_n,connection_strength=inhibition)
         node_n.neuron.add_output(node_z.synapse_list[-1])
         node_n.neuron.add_output(node_v.synapse_list[-1])
 
@@ -179,6 +241,9 @@ def main():
         names = list(letters.keys())
 
         nodes = [node_z,node_v,node_n]
+        run_times = []
+        init_times = []
+
         trajects = [{},{},{}]
         for ii,node in enumerate(nodes):
             count = 0
@@ -195,7 +260,7 @@ def main():
         p_count = 0
         running   = 0
         run_count = 0
-        for run in range(100):
+        for run in range(25):
             # if run%10==0: print(f"\nRun {run}:")
             total_error_z = 0
             total_error_v = 0
@@ -209,18 +274,26 @@ def main():
                     defined_spikes = make_spikes(pixels_list[j],20)
                     # plot_letter(letters[name][j])
 
-                    input = SuperInput(type='defined',defined_spikes=defined_spikes)
+                    input_ = SuperInput(type='defined',defined_spikes=defined_spikes)
 
-                    node_z.one_to_one(input)
-                    node_v.one_to_one(input)
-                    node_n.one_to_one(input)
+
+                    # print(len(input_.signals))
+                    # for ind,syn in enumerate(node_z.synapse_list):
+                    #     print(ind,syn.name)
+
+                    node_z.one_to_one(input_)
+                    node_v.one_to_one(input_)
+                    node_n.one_to_one(input_)
 
                     net = network(
                         sim=True,
                         dt=.1,
                         tf=100,
-                        nodes=[node_z,node_v,node_n]
+                        nodes=[node_z,node_v,node_n],
+                        backend='julia'
                         )
+                    run_times.append(net.run_time)
+                    init_times.append(net.init_time)
                     
                     spikes = array_to_rows(net.spikes,3)
 
@@ -232,10 +305,10 @@ def main():
 
                     predictions.append(np.argmax(outputs))
 
-                    for pred in preds:
-                        pred.append(pred[p_count])
-                    p_count+=1
-                    preds[np.argmax(outputs)][p_count] += 1
+                    # for pred in preds:
+                    #     pred.append(pred[p_count])
+                    # p_count+=1
+                    # preds[np.argmax(outputs)][p_count] += 1
 
                     if np.argmax(outputs) == j:
                         running += 1
@@ -291,9 +364,9 @@ def main():
                                         steps[iii] = 0
 
                                     
-                            dend_z.offset_flux += steps[0]
-                            dend_v.offset_flux += steps[1]
-                            dend_n.offset_flux += steps[2]
+                            # dend_z.offset_flux += steps[0]
+                            # dend_v.offset_flux += steps[1]
+                            # dend_n.offset_flux += steps[2]
 
                             total_changes[0]+=step_z
                             total_changes[1]+=step_v
@@ -311,15 +384,9 @@ def main():
                             trajects[1][dend_v.name].append(dend_v.offset_flux)
                             trajects[2][dend_n.name].append(dend_n.offset_flux)
 
-                    # if run%10==0:
-                    #     print(f"  {names[i]}_{j}")
-                    #     for iii,s in enumerate(spikes):
-                    #         print(f"   {np.around(s,2)} --> {total_changes[iii]}")
-                            
-                # node_z.plot_arbor_activity(net,phir=True)
-                # node_v.plot_arbor_activity(net,phir=True)
-                # node_n.plot_arbor_activity(net,phir=True)
-                # print(predictions)
+
+                    del(input_)
+                    del(net)
                 
                 if predictions == [0,1,2]:
                     # print("Correct!",predictions)
@@ -327,26 +394,33 @@ def main():
             
             acc = np.round(success/10,2)*100
             # accs.append(acc)
-            print(f"Run {run} accuracy = {acc}%")
+            print(f"  Run {run} accuracy = {acc}%")
+            # if run % 10 == 0:
+            #     plt.style.use('seaborn-v0_8-muted')
+            #     plt.figure(figsize=(12,6))  
+            #     plt.plot(run_times ,label="run time")
+            #     plt.plot(init_times,label="init time")
+            #     plt.legend()
+            #     plt.show()
 
             if int_val == True:
                 offsets = [offsets_z,offsets_v,offsets_n]
                 early_converge = test_noise_set(letters,offsets)
                 if early_converge == 1:
-                    print("Early Converge")
+                    print("  Early Converge!")
                     break
 
             if success == 10:
                 converged += 1
                 if converged >= 1:
-                    print(f"Converged! (in {run} runs)")
+                    print(f"  Converged! (in {run} runs)")
                     # print(" ",names[i],"spikes = ",len(out_spikes)," error = ",
                     # error,out_spikes,total_change)
                     print([total_error_z,total_error_z,total_error_z])
                     print(spikes)
-                    print(" z offset =",offsets_z)
-                    print(" v offset =",offsets_v)
-                    print(" n offset =",offsets_n)
+                    # print(" z offset =",offsets_z)
+                    # print(" v offset =",offsets_v)
+                    # print(" n offset =",offsets_n)
                 # node_z.plot_arbor_activity(net)
 
                 break
@@ -420,7 +494,8 @@ def main():
                     sim=True,
                     dt=.1,
                     tf=100,
-                    nodes=[node_z,node_v,node_n]
+                    nodes=[node_z,node_v,node_n],
+                    backend='julia'
                     )
                 
                 spikes = array_to_rows(net.spikes,3)
@@ -438,7 +513,7 @@ def main():
                 for node in nodes:
                     node.neuron.spike_times=[]
 
-            print(f"test {name} --> accuracy = {100*correct/len(pixel_list)}%")
+            # print(f"test {name} --> accuracy = {100*correct/len(pixel_list)}%")
 
             if correct==10: corrects+=1
         if corrects == 3:
@@ -448,112 +523,19 @@ def main():
 
 
 
-
-    # partial noise, no bounce
-    correct_z = {
-        'rand_neuron_77132_soma'             : -0.17018820352206204, 
-        'rand_neuron_77132_lay1_branch0_den0': -0.1005137433783909, 
-        'rand_neuron_77132_lay1_branch0_den1': -0.15793987522376604, 
-        'rand_neuron_77132_lay1_branch0_den2': -0.09882142011047565, 
-        'rand_neuron_77132_lay2_branch0_den0': -0.03885238533504326, 
-        'rand_neuron_77132_lay2_branch0_den1': 0.1779857429759991, 
-        'rand_neuron_77132_lay2_branch0_den2': -0.5318486717211699, 
-        'rand_neuron_77132_lay2_branch1_den0': -0.5951666245254208, 
-        'rand_neuron_77132_lay2_branch1_den1': 0.22541383358572367, 
-        'rand_neuron_77132_lay2_branch1_den2': -0.5951666245254208, 
-        'rand_neuron_77132_lay2_branch2_den0': -0.5366149403665759, 
-        'rand_neuron_77132_lay2_branch2_den1': -0.03885238533504326, 
-        'rand_neuron_77132_lay2_branch2_den2': 0.1779857429759991
-                }
-
-    correct_v = {
-        'rand_neuron_77132_soma'             : 0.044736378133675835, 
-        'rand_neuron_77132_lay1_branch0_den0': 0.0982066950642038, 
-        'rand_neuron_77132_lay1_branch0_den1': -0.0023132695052485467, 
-        'rand_neuron_77132_lay1_branch0_den2': -0.08514403864197762, 
-        'rand_neuron_77132_lay2_branch0_den0': 0.10824719509768488, 
-        'rand_neuron_77132_lay2_branch0_den1': -0.24870807367155753, 
-        'rand_neuron_77132_lay2_branch0_den2': 0.2661981451385887, 
-        'rand_neuron_77132_lay2_branch1_den0': 0.023510432122448473, 
-        'rand_neuron_77132_lay2_branch1_den1': -0.17347386222102582, 
-        'rand_neuron_77132_lay2_branch1_den2': 0.023510432122448473, 
-        'rand_neuron_77132_lay2_branch2_den0': -0.20381303305920312, 
-        'rand_neuron_77132_lay2_branch2_den1': 0.10824719509768488, 
-        'rand_neuron_77132_lay2_branch2_den2': -0.24870807367155753
-                }
-
-    correct_n = {
-        'rand_neuron_77132_soma'             : 0.04693267924276726, 
-        'rand_neuron_77132_lay1_branch0_den0': -0.08684334793735499, 
-        'rand_neuron_77132_lay1_branch0_den1': -0.006008094102381742, 
-        'rand_neuron_77132_lay1_branch0_den2': 0.09389567597814484, 
-        'rand_neuron_77132_lay2_branch0_den0': -0.2533917538265178, 
-        'rand_neuron_77132_lay2_branch0_den1': 0.09256149661966233, 
-        'rand_neuron_77132_lay2_branch0_den2': -0.20536055171250206, 
-        'rand_neuron_77132_lay2_branch1_den0': 0.022896546042728123, 
-        'rand_neuron_77132_lay2_branch1_den1': -0.18109626627015565, 
-        'rand_neuron_77132_lay2_branch1_den2': 0.022896546042728123, 
-        'rand_neuron_77132_lay2_branch2_den0': 0.26382593975165725, 
-        'rand_neuron_77132_lay2_branch2_den1': -0.2533917538265178, 
-        'rand_neuron_77132_lay2_branch2_den2': 0.09256149661966233
-                }
-
-
-
-
-    # mutual inhibtion noise set offsets with bounce
-    z_offset = {
-        'rand_neuron_77132_soma': 0.2650382370927349, 
-        'rand_neuron_77132_lay1_branch0_den0': -0.093861435157056, 
-        'rand_neuron_77132_lay1_branch0_den1': -0.03323869108980681, 
-        'rand_neuron_77132_lay1_branch0_den2': -0.14638246822187134, 
-        'rand_neuron_77132_lay2_branch0_den0': 0.2526671461080392, 
-        'rand_neuron_77132_lay2_branch0_den1': 0.16823237330860874, 
-        'rand_neuron_77132_lay2_branch0_den2': -0.20733871542361854, 
-        'rand_neuron_77132_lay2_branch1_den0': -0.34928537180482944, 
-        'rand_neuron_77132_lay2_branch1_den1': 0.1924460141126753, 
-        'rand_neuron_77132_lay2_branch1_den2': -0.34538475046402284, 
-        'rand_neuron_77132_lay2_branch2_den0': -0.2027569303236612, 
-        'rand_neuron_77132_lay2_branch2_den1': 0.20031476560183542, 
-        'rand_neuron_77132_lay2_branch2_den2': 0.17045227184262535
-        }
-    v_offset = {
-        'rand_neuron_32432_soma': 0.09882751347073629, 
-        'rand_neuron_32432_lay1_branch0_den0': 0.05884059880021676, 
-        'rand_neuron_32432_lay1_branch0_den1': -0.04098210452862971, 
-        'rand_neuron_32432_lay1_branch0_den2': -0.15156209001231472, 
-        'rand_neuron_32432_lay2_branch0_den0': 0.16624696205213663, 
-        'rand_neuron_32432_lay2_branch0_den1': -0.34521914413377364, 
-        'rand_neuron_32432_lay2_branch0_den2': 0.15733325541624782, 
-        'rand_neuron_32432_lay2_branch1_den0': 0.1572538642045978, 
-        'rand_neuron_32432_lay2_branch1_den1': -0.1971534847182594, 
-        'rand_neuron_32432_lay2_branch1_den2': 0.15729722432569274, 
-        'rand_neuron_32432_lay2_branch2_den0': -0.30450876081723155, 
-        'rand_neuron_32432_lay2_branch2_den1': 0.15593982278258978, 
-        'rand_neuron_32432_lay2_branch2_den2': -0.34908548286225927
-        }
-    n_offset = {
-        'rand_neuron_55497_soma': 0.21393537762054354, 
-        'rand_neuron_55497_lay1_branch0_den0': -0.18721420415198847, 
-        'rand_neuron_55497_lay1_branch0_den1': -0.25145395389347136, 
-        'rand_neuron_55497_lay1_branch0_den2': -0.0006933217927859708, 
-        'rand_neuron_55497_lay2_branch0_den0': -0.3492164440342981, 
-        'rand_neuron_55497_lay2_branch0_den1': 0.15837445973964892, 
-        'rand_neuron_55497_lay2_branch0_den2': -0.35568954978217576, 
-        'rand_neuron_55497_lay2_branch1_den0': 0.15767025397709697, 
-        'rand_neuron_55497_lay2_branch1_den1': -0.3476209075643123, 
-        'rand_neuron_55497_lay2_branch1_den2': 0.15648896076476415, 
-        'rand_neuron_55497_lay2_branch2_den0': 0.1662113645470249, 
-        'rand_neuron_55497_lay2_branch2_den1': -0.34766398420577305, 
-        'rand_neuron_55497_lay2_branch2_den2': -0.17686624342045137
-        }
-
-
     np.random.seed(10)
     learning_rate=.01
     inhibition=-1
     letters = make_letters()
     names = list(letters.keys())
+
+    sweep_params = {
+        "ib":  np.arange(1.4,2.05,.1),
+        "tau": np.arange(50,550,100),
+        "beta": np.arange(2,4,.5),
+        "s_th": np.arange(.4,.61,.1),
+        "eta": np.arange(.005,0.031,.005)
+    }
 
     all_spikes = []
     for name,pixels in letters.items():
@@ -563,111 +545,150 @@ def main():
     elasticity = True
     int_val = True
     els = [True,False,None]
-    vals = [True,False]
+    vals = [False]
 
     for el in els:
         for val in vals:
-            elasticity = el
-            int_val = val
-            offsets, preds, accs, trajects = train_9pixel_classifier(
-                noise_set,
-                all_spikes,
-                learning_rate,
-                inhibition,
-                elasticity,
-                int_val
-                )
 
-            regimes = ['Elastic', 'Inelastic', 'Unbounded']
-            if elasticity == True:
-                regime = regimes[0]
-            elif elasticity == False:
-                regime = regimes[1]
-            else:
-                regime = regimes[2]
+            for ib in sweep_params["ib"]:
+                for tau in sweep_params["tau"]:
+                    for beta in sweep_params["beta"]:
+                        for s_th in sweep_params["s_th"]:
+                            for eta in sweep_params["eta"]:
+                    
 
-            if int_val == True:
-                converge_type = 'Intermittent'
-            else:
-                converge_type = 'Update'
+                                elasticity = el
+                                int_val = val
 
-            path = "results/pixels_WTA_icons/"
-            picklit(
-                preds,
-                path,
-                f"{regime}_{converge_type}_predictions"
-                )
-            picklit(
-                accs,
-                path,
-                f"{regime}_{converge_type}_accs"
-                )
-            picklit(
-                trajects,
-                path,
-                f"{regime}_{converge_type}_trajects"
-                )
+                                regimes = ['Elastic', 'Inelastic', 'Unbounded']
+                                if elasticity == True:
+                                    regime = regimes[0]
+                                elif elasticity == False:
+                                    regime = regimes[1]
+                                else:
+                                    regime = regimes[2]
 
-            plt.figure(figsize=(8,4))
-            for i,p in enumerate(preds):
-                plt.plot(p/np.arange(1,len(p)+1,1),label=names[i])
-            plt.legend()
-            plt.title(f"Class Predictions for {regime} Noisy 9-Pixel Classifier",fontsize=16)
-            plt.xlabel("Cycles Over All Samples",fontsize=14)
-            plt.ylabel("Percent Predicted",fontsize=14)
-            plt.subplots_adjust(bottom=.15)
-            plt.savefig(path+regime+converge_type+'_pred_plot')
-            plt.close()
+                                if int_val == True:
+                                    converge_type = 'Intermittent'
+                                else:
+                                    converge_type = 'Update'
 
-            plt.figure(figsize=(8,4))
-            plt.plot(accs)
-            plt.title(f"Learning Accuracy for {regime} Noisy 9-Pixel Classifier",fontsize=16)
-            plt.xlabel("Total Iterations",fontsize=14)
-            plt.ylabel("Percent Accuracy",fontsize=14)
-            plt.subplots_adjust(bottom=.15)
-            plt.savefig(path+regime+converge_type+'_accs_plot')
-            plt.close()
+                                path = "results/pixels_WTA_julia_sweep/"
+                                sub_name = f"{regime}_{converge_type}_{ib}_{tau}_{beta}_{s_th}_{eta}"
+
+                                print(sub_name)
+
+                                offsets, preds, accs, trajects = train_9pixel_classifier(
+                                    noise_set,
+                                    all_spikes,
+                                    learning_rate,
+                                    inhibition,
+                                    elasticity,
+                                    int_val,
+                                    ib,
+                                    tau,
+                                    beta,
+                                    s_th,
+                                    eta
+                                    )
+
+                                # picklit(
+                                #     preds,
+                                #     path,
+                                #     f"{regime}_{converge_type}_predictions"
+                                #     )
+                                # picklit(
+                                #     accs,
+                                #     path,
+                                #     f"{regime}_{converge_type}_accs"
+                                #     )
+
+                                picklit(
+                                    trajects,
+                                    path,
+                                    f"{sub_name}_trajects"
+                                    )
+
+                                # plt.figure(figsize=(8,4))
+                                # for i,p in enumerate(preds):
+                                #     plt.plot(p/np.arange(1,len(p)+1,1),label=names[i])
+                                # plt.legend()
+                                # plt.title(f"Class Predictions for {regime} Noisy 9-Pixel Classifier",fontsize=16)
+                                # plt.xlabel("Cycles Over All Samples",fontsize=14)
+                                # plt.ylabel("Percent Predicted",fontsize=14)
+                                # plt.subplots_adjust(bottom=.15)
+                                # plt.savefig(path+regime+converge_type+'_pred_plot')
+                                # plt.close()
+
+                                # plt.figure(figsize=(8,4))
+                                # plt.plot(accs)
+                                # plt.title(f"Learning Accuracy for {regime} Noisy 9-Pixel Classifier",fontsize=16)
+                                # plt.xlabel("Total Iterations",fontsize=14)
+                                # plt.ylabel("Percent Accuracy",fontsize=14)
+                                # plt.subplots_adjust(bottom=.15)
+                                # plt.savefig(path+regime+converge_type+'_accs_plot')
+                                # plt.close()
 
 
-            plt.style.use('seaborn-v0_8-muted')
-            colors = plt.rcParams["axes.prop_cycle"].by_key()["color"]
+                                plt.style.use('seaborn-v0_8-muted')
+                                colors = plt.rcParams["axes.prop_cycle"].by_key()["color"]
 
-            for i,traject in enumerate(trajects):
-                plt.figure(figsize=(8,4))
-                count1=0
-                count2=0
-                for name,offset in reversed(traject.items()):
-                    if 'soma' in name:
-                        name = 'soma'
-                        # plt.plot(offset,color=colors[i],label=name,linewidth=4)
-                        plt.plot(offset,color=colors[0],label=name,linewidth=4)
-                    elif 'lay1' in name:
-                        col = colors[1]
+                                for i,traject in enumerate(trajects):
+                                    plt.figure(figsize=(8,4))
+                                    count1=0
+                                    count2=0
+                                    for name,offset in reversed(traject.items()):
+                                        if 'soma' in name:
+                                            name = 'soma'
+                                            converge_length = len(offset)
+                                            # plt.plot(offset,color=colors[i],label=name,linewidth=4)
+                                            plt.plot(offset,color=colors[0],label=name,linewidth=4)
+                                        elif 'lay1' in name:
+                                            col = colors[1]
 
-                        if count1 == 0:
-                            plt.plot(offset,'--',color=col,linewidth=2,label='Layer 1')
-                        else:
-                            # plt.plot(offset,color=colors[0],label=name,linewidth=3)
-                            plt.plot(offset,'--',color=col,linewidth=2)
-                        count1+=1
+                                            if count1 == 0:
+                                                plt.plot(offset,'--',color=col,linewidth=2,label='Layer 1')
+                                            else:
+                                                # plt.plot(offset,color=colors[0],label=name,linewidth=3)
+                                                plt.plot(offset,'--',color=col,linewidth=2)
+                                            count1+=1
 
-                    elif 'lay2' in name:
-                        col = colors[2]
-                        if count2 == 0:
-                            plt.plot(offset,':',color=col,label='Layer 2',linewidth=1)
-                        else:
-                            plt.plot(offset,':',color=col,linewidth=1)
-                        # plt.plot(offset,color=colors[4],label=name)
-                        count2+=1
+                                        elif 'lay2' in name:
+                                            col = colors[2]
+                                            if count2 == 0:
+                                                plt.plot(offset,':',color=col,label='Layer 2',linewidth=1)
+                                            else:
+                                                plt.plot(offset,':',color=col,linewidth=1)
+                                            # plt.plot(offset,color=colors[4],label=name)
+                                            count2+=1
 
-                plt.title(f"Noisy 9-Pixel Classifier {regime} {converge_type} Convergence - {names[i]}",fontsize=16)
-                plt.xlabel("Total Iterations",fontsize=14)
-                plt.ylabel("Flux Offset",fontsize=14)
-                plt.subplots_adjust(bottom=.15)
-                plt.legend()
-                plt.savefig(path+regime+converge_type+f'_offsets_{names[i]}_plot')
-                plt.close()
-            test_noise_set(noise_set,offsets)
+                                    plt.title(f"Noisy 9-Pixel Classifier {regime} {converge_type} Convergence - {names[i]}",fontsize=16)
+                                    plt.xlabel("Total Iterations",fontsize=14)
+                                    plt.ylabel("Flux Offset",fontsize=14)
+                                    plt.subplots_adjust(bottom=.15)
+                                    plt.legend()
+                                    plt.savefig(path+regime+converge_type+f'_offsets_{names[i]}_plot')
+                                    plt.close()
+
+                                List = [
+                                    regime,
+                                    converge_type,
+                                    ib,
+                                    tau,
+                                    beta,
+                                    s_th,
+                                    eta,
+                                    converge_length
+                                ]
+                                with open(f'results/pixels_julia.csv', 'a') as f_object:
+                                
+                                    writer_object = writer(f_object)
+                                
+                                    writer_object.writerow(List)
+
+                                    f_object.close()
+
+                                test_noise_set(noise_set,offsets)
     
 
     # correct_offsets = [correct_z,correct_v,correct_n] # partial noise, no bounce
@@ -687,6 +708,128 @@ if __name__=='__main__':
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    # # partial noise, no bounce
+    # correct_z = {
+    #     'rand_neuron_77132_soma'             : -0.17018820352206204, 
+    #     'rand_neuron_77132_lay1_branch0_den0': -0.1005137433783909, 
+    #     'rand_neuron_77132_lay1_branch0_den1': -0.15793987522376604, 
+    #     'rand_neuron_77132_lay1_branch0_den2': -0.09882142011047565, 
+    #     'rand_neuron_77132_lay2_branch0_den0': -0.03885238533504326, 
+    #     'rand_neuron_77132_lay2_branch0_den1': 0.1779857429759991, 
+    #     'rand_neuron_77132_lay2_branch0_den2': -0.5318486717211699, 
+    #     'rand_neuron_77132_lay2_branch1_den0': -0.5951666245254208, 
+    #     'rand_neuron_77132_lay2_branch1_den1': 0.22541383358572367, 
+    #     'rand_neuron_77132_lay2_branch1_den2': -0.5951666245254208, 
+    #     'rand_neuron_77132_lay2_branch2_den0': -0.5366149403665759, 
+    #     'rand_neuron_77132_lay2_branch2_den1': -0.03885238533504326, 
+    #     'rand_neuron_77132_lay2_branch2_den2': 0.1779857429759991
+    #             }
+
+    # correct_v = {
+    #     'rand_neuron_77132_soma'             : 0.044736378133675835, 
+    #     'rand_neuron_77132_lay1_branch0_den0': 0.0982066950642038, 
+    #     'rand_neuron_77132_lay1_branch0_den1': -0.0023132695052485467, 
+    #     'rand_neuron_77132_lay1_branch0_den2': -0.08514403864197762, 
+    #     'rand_neuron_77132_lay2_branch0_den0': 0.10824719509768488, 
+    #     'rand_neuron_77132_lay2_branch0_den1': -0.24870807367155753, 
+    #     'rand_neuron_77132_lay2_branch0_den2': 0.2661981451385887, 
+    #     'rand_neuron_77132_lay2_branch1_den0': 0.023510432122448473, 
+    #     'rand_neuron_77132_lay2_branch1_den1': -0.17347386222102582, 
+    #     'rand_neuron_77132_lay2_branch1_den2': 0.023510432122448473, 
+    #     'rand_neuron_77132_lay2_branch2_den0': -0.20381303305920312, 
+    #     'rand_neuron_77132_lay2_branch2_den1': 0.10824719509768488, 
+    #     'rand_neuron_77132_lay2_branch2_den2': -0.24870807367155753
+    #             }
+
+    # correct_n = {
+    #     'rand_neuron_77132_soma'             : 0.04693267924276726, 
+    #     'rand_neuron_77132_lay1_branch0_den0': -0.08684334793735499, 
+    #     'rand_neuron_77132_lay1_branch0_den1': -0.006008094102381742, 
+    #     'rand_neuron_77132_lay1_branch0_den2': 0.09389567597814484, 
+    #     'rand_neuron_77132_lay2_branch0_den0': -0.2533917538265178, 
+    #     'rand_neuron_77132_lay2_branch0_den1': 0.09256149661966233, 
+    #     'rand_neuron_77132_lay2_branch0_den2': -0.20536055171250206, 
+    #     'rand_neuron_77132_lay2_branch1_den0': 0.022896546042728123, 
+    #     'rand_neuron_77132_lay2_branch1_den1': -0.18109626627015565, 
+    #     'rand_neuron_77132_lay2_branch1_den2': 0.022896546042728123, 
+    #     'rand_neuron_77132_lay2_branch2_den0': 0.26382593975165725, 
+    #     'rand_neuron_77132_lay2_branch2_den1': -0.2533917538265178, 
+    #     'rand_neuron_77132_lay2_branch2_den2': 0.09256149661966233
+    #             }
+
+
+
+
+    # # mutual inhibtion noise set offsets with bounce
+    # z_offset = {
+    #     'rand_neuron_77132_soma': 0.2650382370927349, 
+    #     'rand_neuron_77132_lay1_branch0_den0': -0.093861435157056, 
+    #     'rand_neuron_77132_lay1_branch0_den1': -0.03323869108980681, 
+    #     'rand_neuron_77132_lay1_branch0_den2': -0.14638246822187134, 
+    #     'rand_neuron_77132_lay2_branch0_den0': 0.2526671461080392, 
+    #     'rand_neuron_77132_lay2_branch0_den1': 0.16823237330860874, 
+    #     'rand_neuron_77132_lay2_branch0_den2': -0.20733871542361854, 
+    #     'rand_neuron_77132_lay2_branch1_den0': -0.34928537180482944, 
+    #     'rand_neuron_77132_lay2_branch1_den1': 0.1924460141126753, 
+    #     'rand_neuron_77132_lay2_branch1_den2': -0.34538475046402284, 
+    #     'rand_neuron_77132_lay2_branch2_den0': -0.2027569303236612, 
+    #     'rand_neuron_77132_lay2_branch2_den1': 0.20031476560183542, 
+    #     'rand_neuron_77132_lay2_branch2_den2': 0.17045227184262535
+    #     }
+    # v_offset = {
+    #     'rand_neuron_32432_soma': 0.09882751347073629, 
+    #     'rand_neuron_32432_lay1_branch0_den0': 0.05884059880021676, 
+    #     'rand_neuron_32432_lay1_branch0_den1': -0.04098210452862971, 
+    #     'rand_neuron_32432_lay1_branch0_den2': -0.15156209001231472, 
+    #     'rand_neuron_32432_lay2_branch0_den0': 0.16624696205213663, 
+    #     'rand_neuron_32432_lay2_branch0_den1': -0.34521914413377364, 
+    #     'rand_neuron_32432_lay2_branch0_den2': 0.15733325541624782, 
+    #     'rand_neuron_32432_lay2_branch1_den0': 0.1572538642045978, 
+    #     'rand_neuron_32432_lay2_branch1_den1': -0.1971534847182594, 
+    #     'rand_neuron_32432_lay2_branch1_den2': 0.15729722432569274, 
+    #     'rand_neuron_32432_lay2_branch2_den0': -0.30450876081723155, 
+    #     'rand_neuron_32432_lay2_branch2_den1': 0.15593982278258978, 
+    #     'rand_neuron_32432_lay2_branch2_den2': -0.34908548286225927
+    #     }
+    # n_offset = {
+    #     'rand_neuron_55497_soma': 0.21393537762054354, 
+    #     'rand_neuron_55497_lay1_branch0_den0': -0.18721420415198847, 
+    #     'rand_neuron_55497_lay1_branch0_den1': -0.25145395389347136, 
+    #     'rand_neuron_55497_lay1_branch0_den2': -0.0006933217927859708, 
+    #     'rand_neuron_55497_lay2_branch0_den0': -0.3492164440342981, 
+    #     'rand_neuron_55497_lay2_branch0_den1': 0.15837445973964892, 
+    #     'rand_neuron_55497_lay2_branch0_den2': -0.35568954978217576, 
+    #     'rand_neuron_55497_lay2_branch1_den0': 0.15767025397709697, 
+    #     'rand_neuron_55497_lay2_branch1_den1': -0.3476209075643123, 
+    #     'rand_neuron_55497_lay2_branch1_den2': 0.15648896076476415, 
+    #     'rand_neuron_55497_lay2_branch2_den0': 0.1662113645470249, 
+    #     'rand_neuron_55497_lay2_branch2_den1': -0.34766398420577305, 
+    #     'rand_neuron_55497_lay2_branch2_den2': -0.17686624342045137
+    #     }
 
 
 

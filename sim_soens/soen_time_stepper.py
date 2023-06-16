@@ -41,7 +41,7 @@ def run_soen_sim(net):
             'time_vec': time_vec, 
             't_tau_conversion': 1e-9/net.jj_params['tau_0']
             }
-        print("pyversion = ", net.time_params["t_tau_conversion"])
+        # print("pyversion = ", net.time_params["t_tau_conversion"])
         t_tau_conversion = net.time_params['t_tau_conversion']
         tau_vec = time_vec*t_tau_conversion
         d_tau = net.time_params['dt']*t_tau_conversion
@@ -49,12 +49,12 @@ def run_soen_sim(net):
 
         # run the simulation one time step at a time
         if net.backend == 'julia':
-
+             
             from sim_soens.soen_initialize import make_subarrays
-
+            
+            # if net.print_times: print("----------------------------------------------------\n\n")
             start = time.perf_counter()
             # interate through all network nodes and initialize all related elements
-            print(net.nodes[0].neuron.ib)
             net.phi_vec, net.s_array, net.r_array = make_subarrays(net.nodes[0].neuron.ib,'ri')
             for node in net.nodes:
                 # print("Initializing neuron: ", neuron.name)
@@ -72,7 +72,7 @@ def run_soen_sim(net):
                 output_synapse_initialization(node.neuron,tau_vec,t_tau_conversion)
                 transmitter_initialization(node.neuron,t_tau_conversion)
             finish = time.perf_counter()
-            print(f"Initialization procedure run time: {finish-start}")
+            # if net.print_times: print(f"Initialization procedure run time: {finish-start}")
             net.init_time = finish-start
 
 
@@ -87,16 +87,16 @@ def run_soen_sim(net):
                 for i,dend in enumerate(node.dendrite_list):
                     node.dend_dict[dend.name] = dend
                 node.synapse_list.append(node.neuron.dend__ref.synaptic_inputs[f"{node.name}__syn_refraction"])
-                # print(node.neuron.dend__ref.synaptic_inputs[f"{node.name}__syn_refraction"].name)
+                # # if net.print_times: print(node.neuron.dend__ref.synaptic_inputs[f"{node.name}__syn_refraction"].name)
             jul_net = jl.obj_to_structs(net)
             finish = time.perf_counter()
-            print(f"Julia setup time: {finish-start}")
+            # if net.print_times: print(f"Julia setup time: {finish-start}")
 
 
             start = time.perf_counter()
             jul_net = jl.stepper(jul_net)
             finish = time.perf_counter()
-            print(f"Julia stepper time: {finish-start}")
+            # if net.print_times: print(f"Julia stepper time: {finish-start}")
             net.run_time = finish-start
 
 
@@ -115,26 +115,34 @@ def run_soen_sim(net):
                         spike_times = (jul_dend.out_spikes-1)* net.dt * t_tau_conversion
                         dend.spike_times        = spike_times
                         node.neuron.spike_times = spike_times
-                    # print(sum(jul_net[node.name][i].s))/net.dt
+                    # # if net.print_times: print(sum(jul_net[node.name][i].s))/net.dt
                 for i,syn in enumerate(node.synapse_list):
                     jul_syn = jul_net["nodes"][node.name]["synapses"][syn.name]
                     syn.phi_spd = jul_syn.phi_spd
             finish = time.perf_counter()
 
 
-            print(f"jul-to-py re-attachment time: {finish-start}")
-            print("\n\n----------------------------------------------------")
+            # if net.print_times: print(f"jul-to-py re-attachment time: {finish-start}")
+            # if net.print_times: print("\n\n----------------------------------------------------")
+
+            # jl.include("julia_clearing.jl")
+            jul_net = jl.clear_all(jul_net)
+            jl.unbindvariables()
+
+            # jl.workspace()
+            # jl.gc()
+
         else:
 
             start = time.perf_counter()
             # interate through all network nodes and initialize all related elements
             for node in net.nodes:
-                # print("Initializing neuron: ", neuron.name)
+                # # if net.print_times: print("Initializing neuron: ", neuron.name)
                 node.neuron.time_params = net.time_params
                 node.neuron.dend_soma.threshold_flag = False
 
                 for dend in node.dendrite_list:
-                    # print(" Initializing dendrite: ", dend.name)
+                    # # if net.print_times: print(" Initializing dendrite: ", dend.name)
                     dend.ind_phi = []  # temp
                     dend.ind_s = [] # temp
                     dend.spk_print = True # temp
@@ -149,13 +157,13 @@ def run_soen_sim(net):
                 transmitter_initialization(node.neuron,t_tau_conversion)
 
             finish = time.perf_counter()
-            print(f"Initialization procedure run time: {finish-start}")
+            # if net.print_times: print(f"Initialization procedure run time: {finish-start}")
             net.init_time = finish-start
 
             start = time.perf_counter()
             net = net_step(net,tau_vec,d_tau)
             finish = time.perf_counter()
-            print(f"Py stepper time: {finish-start}")
+            # if net.print_times: print(f"Py stepper time: {finish-start}")
             net.run_time = finish-start
 
             # attach results to dendrite objects
@@ -442,6 +450,14 @@ def dendrite_updater(dend_obj,time_index,present_time,d_tau,HW=None):
     # lst = np.asarray(phi_r__array[dend_obj._ind__ib])[:] # new way
 
     val = dend_obj.phi_r[time_index+1] 
+
+    if val > np.max(dend_obj.phi_r__vec[:]):
+        # print("High roll")
+        val = val - np.max(dend_obj.phi_r__vec[:])
+    elif val < np.min(dend_obj.phi_r__vec[:]):
+        # print("Low roll")
+        val = val - np.min(dend_obj.phi_r__vec[:])
+
     _ind__phi_r = closest_index(lst,val)
 
     i_di__vec = np.asarray(dend_obj.i_di__subarray[_ind__phi_r]) # old way
