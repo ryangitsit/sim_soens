@@ -422,4 +422,19 @@ def make_subarrays(ib,loops_present):
     s_array = np.asarray(d_params["i_di__array"][ib_idx],dtype=object)
     r_array = np.asarray(d_params["r_fq__array"][ib_idx],dtype=object)
 
+    # phi_vec = np.asarray(d_params["phi_r__array"][ib_idx][::10])
+
+    # s_array = []
+    # for i,s_vec in enumerate(d_params["i_di__array"][ib_idx]):
+    #     if i%10==0:
+    #         s_array.append(s_vec[::10])
+    # s_array = np.asarray(s_array,dtype=object)
+
+    # r_array = []
+    # for i,r_vec in enumerate(d_params["r_fq__array"][ib_idx]):
+    #     if i%10==0:
+    #         r_array.append(r_vec[::10])
+    # r_array = np.asarray(r_array,dtype=object)
+
+
     return phi_vec, s_array, r_array

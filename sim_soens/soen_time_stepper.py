@@ -82,11 +82,11 @@ def run_soen_sim(net):
             jl.include("py_to_jul.jl")
             jl.include("julia_stepper.jl")
 
-            for node in net.nodes:
-                node.dend_dict = {}
-                for i,dend in enumerate(node.dendrite_list):
-                    node.dend_dict[dend.name] = dend
-                node.synapse_list.append(node.neuron.dend__ref.synaptic_inputs[f"{node.name}__syn_refraction"])
+            # for node in net.nodes:
+            #     node.dend_dict = {}
+            #     for i,dend in enumerate(node.dendrite_list):
+            #         node.dend_dict[dend.name] = dend
+                # node.synapse_list.append(node.neuron.dend__ref.synaptic_inputs[f"{node.name}__syn_refraction"])
                 # # if net.print_times: print(node.neuron.dend__ref.synaptic_inputs[f"{node.name}__syn_refraction"].name)
             jul_net = jl.obj_to_structs(net)
             finish = time.perf_counter()

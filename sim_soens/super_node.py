@@ -278,6 +278,9 @@ class SuperNode():
         else:
             self.synaptic_layer()
 
+        # self.synapse_list.append(self.neuron.dend__ref.synaptic_inputs[f"{self.name}__syn_refraction"])
+        self.refractory_synapse = self.neuron.dend__ref.synaptic_inputs[f"{self.name}__syn_refraction"]
+
 
     def __copy__(self):
         copy_object = SuperNode()

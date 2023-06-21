@@ -110,16 +110,25 @@ function make_synapses(node::PyObject,T::Int64,dt::Float64)
     synapses = Dict()
 
     for syn in node.synapse_list
-        if occursin("ref",syn.name)
-            spike_times = []
-            syn_ref = RefractorySynapse(syn.name,spike_times.+1,zeros(T))
-            synapses[syn.name] = syn_ref
+        spike_times = [floor(Int,x) for x in syn.input_signal.spike_times./dt]
+        synapses[syn.name] = Synapse(syn.name,spike_times.+1,zeros(T))
+
+        # if occursin("ref",syn.name)
+        #     spike_times = []
+        #     syn_ref = RefractorySynapse(syn.name,spike_times.+1,zeros(T))
+        #     synapses[syn.name] = syn_ref
             
-        else
-            spike_times = [floor(Int,x) for x in syn.input_signal.spike_times./dt]
-            synapses[syn.name] = Synapse(syn.name,spike_times.+1,zeros(T))
-        end
+        # else
+        #     spike_times = [floor(Int,x) for x in syn.input_signal.spike_times./dt]
+        #     synapses[syn.name] = Synapse(syn.name,spike_times.+1,zeros(T))
+        # end
     end
+    
+    syn = node.refractory_synapse
+    spike_times = []
+    syn_ref = RefractorySynapse(syn.name,spike_times.+1,zeros(T))
+    synapses[syn.name] = syn_ref
+
     return synapses
 end
 

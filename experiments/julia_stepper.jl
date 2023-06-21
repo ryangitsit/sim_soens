@@ -191,8 +191,8 @@ function dend_signal(dend::AbstractDendrite,t_idx::Int,d_tau::Float64)
         val = val - dend.phi_min
     end
 
-    ind_phi = closest_index(dend.phi_vec,val)
-    # ind_phi = closest_index(dend.phi_vec,dend.phir[t_idx+1]) # +1 or not?
+    # ind_phi = closest_index(dend.phi_vec,val)
+    ind_phi = closest_index(dend.phi_vec,dend.phir[t_idx+1]) # +1 or not?
 
     # ind_phi = index_approxer(
     #     val,
@@ -204,9 +204,22 @@ function dend_signal(dend::AbstractDendrite,t_idx::Int,d_tau::Float64)
     s_vec = dend.s_array[ind_phi]
 
     ind_s = closest_index(s_vec,dend.s[t_idx])
+    # @show ind_phi
+    # @show s_vec
+    # ind_s = index_approxer(
+    #     dend.s[t_idx],
+    #     first(s_vec),
+    #     last(s_vec),
+    #     length(s_vec)
+    #     )
+
     # ind_s = index_approxer(dend.s[t_idx],first(s_vec),last(s_vec),length(s_vec))
 
     r_fq = dend.r_array[ind_phi][ind_s]
+    # @show ind_phi,ind_s, r_fq
+    # if occursin("soma",dend.name) #&& t_idx%10==0
+    #     @show ind_phi,ind_s, r_fq
+    # end
     dend.s[t_idx+1] = dend.s[t_idx]*(1 - d_tau*dend.alpha/dend.beta) + (d_tau/dend.beta)*r_fq
     
 end
@@ -218,12 +231,21 @@ end
 
 
 function index_approxer(val::Float64,maxval::Float64,minval::Float64,lenlst::Int)
-    range = maxval-minval::Float64
-    ratio = abs(minval-val)/range::Float64
-    ind = ratio*lenlst
-    # ind = floor(Int,((val+range/2)/range)*lenlst)%lenlst+1
-    ind = ceil(Int,ind) #%lenlst +1
-    return ind
+    if maxval == 0 && minval == 0
+        return 1
+    else
+        range = abs(maxval-minval)::Float64
+        ratio = abs(minval-val)/range::Float64
+        ind = ratio*lenlst
+        # ind = floor(Int,((val+range/2)/range)*lenlst)%lenlst+1
+        # @show val
+        # @show maxval
+        # @show minval
+        # @show range
+        # @show ratio
+        ind = min(floor(Int,ind)+1,lenlst-1) #%lenlst +1
+        return ind + 1
+    end
 end
 
 

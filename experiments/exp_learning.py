@@ -530,7 +530,7 @@ def main():
     names = list(letters.keys())
 
     sweep_params = {
-        "ib":  np.arange(1.4,2.05,.1),
+        "ib":  np.arange(1.7,2.05,.1),
         "tau": np.arange(50,550,100),
         "beta": np.arange(2,4,.5),
         "s_th": np.arange(.4,.61,.1),

@@ -57,35 +57,47 @@ dataset = picklin("datasets/MNIST/","duration=5000_slowdown=100")
 # plt.show()
 # raster_plot(dataset[0][2])
 
+new_nodes = False
+saved_run = 72
 
-start = time.perf_counter()
-np.random.seed(10)
-f_idx = 28
-lay_2 = [np.random.rand(f_idx)*21/28 for _ in range(f_idx)]
-weights = [
-    [np.random.rand(f_idx)],
-    lay_2
-]
+if new_nodes == True:
+    saved_run = 0
+    start = time.perf_counter()
+    np.random.seed(10)
+    f_idx = 28
+    lay_2 = [np.random.rand(f_idx)*21/28 for _ in range(f_idx)]
+    weights = [
+        [np.random.rand(f_idx)],
+        lay_2
+    ]
 
-node_zero = SuperNode(name='node_zero',weights=weights,tau_di=5)
-node_one  = SuperNode(name='node_one',weights=weights,tau_di=5)
-node_two  = SuperNode(name='node_two',weights=weights,tau_di=5)
+    node_zero = SuperNode(name='node_zero',weights=weights,tau_di=5)
+    node_one  = SuperNode(name='node_one',weights=weights,tau_di=5)
+    node_two  = SuperNode(name='node_two',weights=weights,tau_di=5)
 
-nodes=[node_zero,node_one,node_two]
+    nodes=[node_zero,node_one,node_two]
 
-inhibition = [-1.2,-.5,-1.2]
-for i,node in enumerate(nodes):
-    syn_soma = synapse(name=f'{node.name}_somatic_synapse')
-    node.synapse_list.append(syn_soma)
-    node.neuron.dend_soma.add_input(syn_soma,connection_strength=inhibition[i])
-for i,node in enumerate(nodes):
-    for other_node in nodes:
-        if other_node.name != node.name:
-            node.neuron.add_output(other_node.synapse_list[-1])
-            print(other_node.synapse_list[-1].name)
+    inhibition = [-1.2,-.5,-1.2]
+    for i,node in enumerate(nodes):
+        syn_soma = synapse(name=f'{node.name}_somatic_synapse')
+        node.synapse_list.append(syn_soma)
+        node.neuron.dend_soma.add_input(syn_soma,connection_strength=inhibition[i])
+    for i,node in enumerate(nodes):
+        for other_node in nodes:
+            if other_node.name != node.name:
+                node.neuron.add_output(other_node.synapse_list[-1])
+                print(other_node.synapse_list[-1].name)
 
-finish = time.perf_counter()
-print("Time to make neurons: ", finish-start)
+    finish = time.perf_counter()
+    print("Time to make neurons: ", finish-start)
+
+else:
+    nodes = picklin("results\MNIST_WTA_julia",f"nodes_at_{saved_run}")
+    for node in nodes:
+        node.refractory_synapse = node.synapse_list[-1]
+        del node.synapse_list[786:]
+        del node.dend_dict
+    
 
 desired = [
     [30,0,0],
@@ -99,7 +111,7 @@ print(backend)
 run_times = []
 init_times = []
 
-for run in range(10000):
+for run in range(saved_run+1,10000):
     # if run%10==0: 
     print("Run: ",run)
     samples_passed=0
@@ -187,7 +199,7 @@ for run in range(10000):
             # print("Total runtime", f-start)
 
             # print(f"Sample = {sample} \n Digit = {digit}\n  Spikes = {output} \n  Error = {errors} \n  prediction = {np.argmax(output)}")
-            print(f"  {sample}  -  [{digit} -> {np.argmax(output)}]  --  {f-start} ")
+            print(f"  {sample}  -  [{digit} -> {np.argmax(output)}]  -  {np.round(f-start,1)}  -  {output} ")
             # List that we want to add as a new row
             List = [sample,digit,output,errors,np.argmax(output),f-start,net.init_time,net.run_time]
             
