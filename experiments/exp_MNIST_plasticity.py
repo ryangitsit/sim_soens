@@ -58,7 +58,7 @@ dataset = picklin("datasets/MNIST/","duration=5000_slowdown=100")
 # raster_plot(dataset[0][2])
 
 new_nodes = False
-saved_run = 72
+saved_run = 97
 
 if new_nodes == True:
     saved_run = 0
@@ -96,7 +96,7 @@ else:
     for node in nodes:
         node.refractory_synapse = node.synapse_list[-1]
         del node.synapse_list[786:]
-        del node.dend_dict
+        # del node.dend_dict
     
 
 desired = [

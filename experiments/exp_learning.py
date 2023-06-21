@@ -10,6 +10,7 @@ from sim_soens.super_input import SuperInput
 from sim_soens.super_node import SuperNode
 from sim_soens.super_functions import *
 from sim_soens.soen_sim import network, dendrite, HardwareInTheLoop, synapse
+from sim_soens.argparse import setup_argument_parser
 
 print(np.random.randint(0, 100, 10))
 np.random.seed(None)
@@ -104,9 +105,9 @@ def main():
             )
         plt.show()
 
-    letters = make_letters()
+    # letters = make_letters()
     # print(letters)
-    noise_set = make_noise_set(letters)
+    # noise_set = make_noise_set(letters)
     # print(noise_set)
 
     def plot_noise_set(noise_set):
@@ -148,7 +149,7 @@ def main():
 
     def train_9pixel_classifier(
             letters,
-            all_spikes,
+            # all_spikes,
             learning_rate,
             inhibition,
             elasticity,
@@ -529,166 +530,174 @@ def main():
     letters = make_letters()
     names = list(letters.keys())
 
-    sweep_params = {
-        "ib":  np.arange(1.7,2.05,.1),
-        "tau": np.arange(50,550,100),
-        "beta": np.arange(2,4,.5),
-        "s_th": np.arange(.4,.61,.1),
-        "eta": np.arange(.005,0.031,.005)
-    }
+    noise_set = make_noise_set(letters)
 
-    all_spikes = []
-    for name,pixels in letters.items():
-        # plot_letter(pixels)
-        all_spikes.append(make_spikes(pixels,20))
+    # sweep_params = {
+    #     "ib":  np.arange(1.7,2.05,.1),
+    #     "tau": np.arange(50,550,100),
+    #     "beta": np.arange(2,4,.5),
+    #     "s_th": np.arange(.4,.61,.1),
+    #     "eta": np.arange(.005,0.031,.005)
+    # }
+    config = setup_argument_parser()
+    # all_spikes = []
+    # for name,pixels in letters.items():
+    #     # plot_letter(pixels)
+    #     all_spikes.append(make_spikes(pixels,20))
 
-    elasticity = True
-    int_val = True
-    els = [True,False,None]
-    vals = [False]
+    # elasticity = True
+    # int_val = True
+    # els = [True,False,None]
+    # vals = [True,False]
 
-    for el in els:
-        for val in vals:
+    # for el in els:
+    #     for val in vals:
 
-            for ib in sweep_params["ib"]:
-                for tau in sweep_params["tau"]:
-                    for beta in sweep_params["beta"]:
-                        for s_th in sweep_params["s_th"]:
-                            for eta in sweep_params["eta"]:
+    #         for ib in sweep_params["ib"]:
+    #             for tau in sweep_params["tau"]:
+    #                 for beta in sweep_params["beta"]:
+    #                     for s_th in sweep_params["s_th"]:
+    #                         for eta in sweep_params["eta"]:
                     
 
-                                elasticity = el
-                                int_val = val
 
-                                regimes = ['Elastic', 'Inelastic', 'Unbounded']
-                                if elasticity == True:
-                                    regime = regimes[0]
-                                elif elasticity == False:
-                                    regime = regimes[1]
-                                else:
-                                    regime = regimes[2]
+    ib = config.ib 
+    tau = config.tau
+    beta = config.beta
+    s_th = config.s_th
+    eta = config.eta
+    elasticity = config.elast
+    int_val  = config.valid
 
-                                if int_val == True:
-                                    converge_type = 'Intermittent'
-                                else:
-                                    converge_type = 'Update'
+    regimes = ['Elastic', 'Inelastic', 'Unbounded']
+    if elasticity == "True":
+        regime = regimes[0]
+    elif elasticity == "False":
+        regime = regimes[1]
+    else:
+        regime = regimes[2]
 
-                                path = "results/pixels_WTA_julia_sweep/"
-                                sub_name = f"{regime}_{converge_type}_{ib}_{tau}_{beta}_{s_th}_{eta}"
+    if int_val == "True":
+        converge_type = 'Intermittent'
+    else:
+        converge_type = 'Update'
 
-                                print(sub_name)
+    path = "results/pixels_WTA_julia_sweep/"
+    sub_name = f"{regime}_{converge_type}_{ib}_{tau}_{beta}_{s_th}_{eta}"
 
-                                offsets, preds, accs, trajects = train_9pixel_classifier(
-                                    noise_set,
-                                    all_spikes,
-                                    learning_rate,
-                                    inhibition,
-                                    elasticity,
-                                    int_val,
-                                    ib,
-                                    tau,
-                                    beta,
-                                    s_th,
-                                    eta
-                                    )
+    print(sub_name)
 
-                                # picklit(
-                                #     preds,
-                                #     path,
-                                #     f"{regime}_{converge_type}_predictions"
-                                #     )
-                                # picklit(
-                                #     accs,
-                                #     path,
-                                #     f"{regime}_{converge_type}_accs"
-                                #     )
+    offsets, preds, accs, trajects = train_9pixel_classifier(
+        noise_set,
+        # all_spikes,
+        learning_rate,
+        inhibition,
+        elasticity,
+        int_val,
+        ib,
+        tau,
+        beta,
+        s_th,
+        eta
+        )
 
-                                picklit(
-                                    trajects,
-                                    path,
-                                    f"{sub_name}_trajects"
-                                    )
+    # picklit(
+    #     preds,
+    #     path,
+    #     f"{regime}_{converge_type}_predictions"
+    #     )
+    # picklit(
+    #     accs,
+    #     path,
+    #     f"{regime}_{converge_type}_accs"
+    #     )
 
-                                # plt.figure(figsize=(8,4))
-                                # for i,p in enumerate(preds):
-                                #     plt.plot(p/np.arange(1,len(p)+1,1),label=names[i])
-                                # plt.legend()
-                                # plt.title(f"Class Predictions for {regime} Noisy 9-Pixel Classifier",fontsize=16)
-                                # plt.xlabel("Cycles Over All Samples",fontsize=14)
-                                # plt.ylabel("Percent Predicted",fontsize=14)
-                                # plt.subplots_adjust(bottom=.15)
-                                # plt.savefig(path+regime+converge_type+'_pred_plot')
-                                # plt.close()
+    picklit(
+        trajects,
+        path,
+        f"{sub_name}_trajects"
+        )
 
-                                # plt.figure(figsize=(8,4))
-                                # plt.plot(accs)
-                                # plt.title(f"Learning Accuracy for {regime} Noisy 9-Pixel Classifier",fontsize=16)
-                                # plt.xlabel("Total Iterations",fontsize=14)
-                                # plt.ylabel("Percent Accuracy",fontsize=14)
-                                # plt.subplots_adjust(bottom=.15)
-                                # plt.savefig(path+regime+converge_type+'_accs_plot')
-                                # plt.close()
+    # plt.figure(figsize=(8,4))
+    # for i,p in enumerate(preds):
+    #     plt.plot(p/np.arange(1,len(p)+1,1),label=names[i])
+    # plt.legend()
+    # plt.title(f"Class Predictions for {regime} Noisy 9-Pixel Classifier",fontsize=16)
+    # plt.xlabel("Cycles Over All Samples",fontsize=14)
+    # plt.ylabel("Percent Predicted",fontsize=14)
+    # plt.subplots_adjust(bottom=.15)
+    # plt.savefig(path+regime+converge_type+'_pred_plot')
+    # plt.close()
+
+    # plt.figure(figsize=(8,4))
+    # plt.plot(accs)
+    # plt.title(f"Learning Accuracy for {regime} Noisy 9-Pixel Classifier",fontsize=16)
+    # plt.xlabel("Total Iterations",fontsize=14)
+    # plt.ylabel("Percent Accuracy",fontsize=14)
+    # plt.subplots_adjust(bottom=.15)
+    # plt.savefig(path+regime+converge_type+'_accs_plot')
+    # plt.close()
 
 
-                                plt.style.use('seaborn-v0_8-muted')
-                                colors = plt.rcParams["axes.prop_cycle"].by_key()["color"]
+    plt.style.use('seaborn-v0_8-muted')
+    colors = plt.rcParams["axes.prop_cycle"].by_key()["color"]
 
-                                for i,traject in enumerate(trajects):
-                                    plt.figure(figsize=(8,4))
-                                    count1=0
-                                    count2=0
-                                    for name,offset in reversed(traject.items()):
-                                        if 'soma' in name:
-                                            name = 'soma'
-                                            converge_length = len(offset)
-                                            # plt.plot(offset,color=colors[i],label=name,linewidth=4)
-                                            plt.plot(offset,color=colors[0],label=name,linewidth=4)
-                                        elif 'lay1' in name:
-                                            col = colors[1]
+    for i,traject in enumerate(trajects):
+        plt.figure(figsize=(8,4))
+        count1=0
+        count2=0
+        for name,offset in reversed(traject.items()):
+            if 'soma' in name:
+                name = 'soma'
+                converge_length = len(offset)
+                # plt.plot(offset,color=colors[i],label=name,linewidth=4)
+                plt.plot(offset,color=colors[0],label=name,linewidth=4)
+            elif 'lay1' in name:
+                col = colors[1]
 
-                                            if count1 == 0:
-                                                plt.plot(offset,'--',color=col,linewidth=2,label='Layer 1')
-                                            else:
-                                                # plt.plot(offset,color=colors[0],label=name,linewidth=3)
-                                                plt.plot(offset,'--',color=col,linewidth=2)
-                                            count1+=1
+                if count1 == 0:
+                    plt.plot(offset,'--',color=col,linewidth=2,label='Layer 1')
+                else:
+                    # plt.plot(offset,color=colors[0],label=name,linewidth=3)
+                    plt.plot(offset,'--',color=col,linewidth=2)
+                count1+=1
 
-                                        elif 'lay2' in name:
-                                            col = colors[2]
-                                            if count2 == 0:
-                                                plt.plot(offset,':',color=col,label='Layer 2',linewidth=1)
-                                            else:
-                                                plt.plot(offset,':',color=col,linewidth=1)
-                                            # plt.plot(offset,color=colors[4],label=name)
-                                            count2+=1
+            elif 'lay2' in name:
+                col = colors[2]
+                if count2 == 0:
+                    plt.plot(offset,':',color=col,label='Layer 2',linewidth=1)
+                else:
+                    plt.plot(offset,':',color=col,linewidth=1)
+                # plt.plot(offset,color=colors[4],label=name)
+                count2+=1
 
-                                    plt.title(f"Noisy 9-Pixel Classifier {regime} {converge_type} Convergence - {names[i]}",fontsize=16)
-                                    plt.xlabel("Total Iterations",fontsize=14)
-                                    plt.ylabel("Flux Offset",fontsize=14)
-                                    plt.subplots_adjust(bottom=.15)
-                                    plt.legend()
-                                    plt.savefig(path+regime+converge_type+f'_offsets_{names[i]}_plot')
-                                    plt.close()
+        plt.title(f"Noisy 9-Pixel Classifier {regime} {converge_type} Convergence - {names[i]}",fontsize=16)
+        plt.xlabel("Total Iterations",fontsize=14)
+        plt.ylabel("Flux Offset",fontsize=14)
+        plt.subplots_adjust(bottom=.15)
+        plt.legend()
+        plt.savefig(path+regime+converge_type+f'_offsets_{names[i]}_plot')
+        plt.close()
 
-                                List = [
-                                    regime,
-                                    converge_type,
-                                    ib,
-                                    tau,
-                                    beta,
-                                    s_th,
-                                    eta,
-                                    converge_length
-                                ]
-                                with open(f'results/pixels_julia.csv', 'a') as f_object:
-                                
-                                    writer_object = writer(f_object)
-                                
-                                    writer_object.writerow(List)
+    List = [
+        regime,
+        converge_type,
+        ib,
+        tau,
+        beta,
+        s_th,
+        eta,
+        converge_length
+    ]
+    with open(f'results/pixels_julia.csv', 'a') as f_object:
+    
+        writer_object = writer(f_object)
+    
+        writer_object.writerow(List)
 
-                                    f_object.close()
+        f_object.close()
 
-                                test_noise_set(noise_set,offsets)
+    test_noise_set(noise_set,offsets)
     
 
     # correct_offsets = [correct_z,correct_v,correct_n] # partial noise, no bounce
