@@ -58,7 +58,7 @@ dataset = picklin("datasets/MNIST/","duration=5000_slowdown=100")
 # raster_plot(dataset[0][2])
 
 new_nodes = False
-saved_run = 97
+saved_run = 122
 
 if new_nodes == True:
     saved_run = 0

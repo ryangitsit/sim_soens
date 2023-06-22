@@ -164,6 +164,16 @@ def main():
             [[.5,.5,.5]],
             [[.3,.3,.3],[.3,.3,.3],[.3,.3,.3]]
         ]
+        # weights2 = [
+        #     [np.rand.random()],
+        #     [[.3,.3,.3],[.3,.3,.3],[.3,.3,.3]]
+        # ]
+        # c=1
+        # weights = [
+        #         [np.random.rand(3)*c],
+        #         [np.random.rand(3)*c,np.random.rand(3)*c,np.random.rand(3)*c]
+        #         ]
+        # print(weights)
 
         learning_rate=eta
         node_z = SuperNode(
@@ -291,7 +301,7 @@ def main():
                         dt=.1,
                         tf=100,
                         nodes=[node_z,node_v,node_n],
-                        backend='julia'
+                        backend='python'
                         )
                     run_times.append(net.run_time)
                     init_times.append(net.init_time)
@@ -303,6 +313,8 @@ def main():
                     error_n = expects[2][i] - len(spikes[2])
                     
                     outputs = [len(spikes[0]),len(spikes[1]),len(spikes[2])]
+
+                    # print(f"{j} -- {name} -- {outputs}")
 
                     predictions.append(np.argmax(outputs))
 

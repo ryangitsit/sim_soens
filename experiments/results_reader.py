@@ -93,7 +93,7 @@ def load_nodes(run):
     return nodes
 
 def node_analysis(span):
-    # nodes = load_nodes(72)
+    nodes = load_nodes(1)
     # save_one = 0
     # for node in nodes:
     #     for s, syn in enumerate(node.synapse_list):
@@ -107,8 +107,8 @@ def node_analysis(span):
     # del nodes[0].synapse_list[786:]
     # for syn in nodes[0].synapse_list:
     #     print(syn.name)
-    nodes = load_nodes(72)
-    nodes[0].plot_neuron_activity()
+    # nodes = load_nodes(72)
+    # nodes[0].plot_neuron_activity()
 
     plt.style.use('seaborn-v0_8-muted')
     plt.figure(figsize=(8,4))
@@ -144,27 +144,27 @@ def node_analysis(span):
     plt.legend()
     plt.show()
 
-node_analysis([0,98])
+# node_analysis([0,98])
 # print(nodes[0].params["params"]["params"]["dend_dict"].keys())
 # print(len(nodes[0].offset_flux[1]))
 
 
 
 # percents, procents = ongoing_performance(df)
-# by_run, digs = by_run_performance(df)
+by_run, digs = by_run_performance(df)
 
-# plt.style.use('seaborn-v0_8-muted')
-# plt.figure(figsize=(8,4))
-# plt.title("MNIST Classification Performance")
-# plt.xlabel("Performance Measure Starting Point")
-# plt.ylabel("Classification Accuracy on Remaining Iterations")
-# # plt.plot(percents, linewidth = 4,label='total')
-# # plt.plot(procents, label=['0','1','2'])
-# plt.plot(by_run, linewidth = 4, label="Total")
-# plt.plot(np.transpose(digs), '--', label=['0','1','2'])
-# plt.ylim(0,1)
-# plt.legend()
-# plt.show()
+plt.style.use('seaborn-v0_8-muted')
+plt.figure(figsize=(8,4))
+plt.title("MNIST Classification Performance")
+plt.xlabel("Performance Measure Starting Point")
+plt.ylabel("Classification Accuracy on Remaining Iterations")
+# plt.plot(percents, linewidth = 4,label='total')
+# plt.plot(procents, label=['0','1','2'])
+plt.plot(by_run, linewidth = 4, label="Total")
+plt.plot(np.transpose(digs), '--', label=['0','1','2'])
+plt.ylim(0,1)
+plt.legend()
+plt.show()
 
 
 plt.plot(df["run_time"])
