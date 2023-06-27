@@ -123,7 +123,7 @@ function make_synapses(node::PyObject,T::Int64,dt::Float64)
         #     synapses[syn.name] = Synapse(syn.name,spike_times.+1,zeros(T))
         # end
     end
-    
+
     syn = node.refractory_synapse
     spike_times = []
     syn_ref = RefractorySynapse(syn.name,spike_times.+1,zeros(T))
@@ -138,7 +138,8 @@ function  make_dendrites(
     synapses,
     phi_vec::Vector{Float64},
     s_array::Vector{Vector{Float64}},
-    r_array::Vector{Vector{Float64}}
+    r_array::Vector{Vector{Float64}},
+    dt::Float64
     )
     dendrites = Dict{String,AbstractDendrite}() #Dict()
 
@@ -179,7 +180,7 @@ function  make_dendrites(
                 0,                                      # last spike
                 Int64[],                                # spiked    :: Int
                 dend.s_th,                              # threshold :: Float64
-                dend.absolute_refractory_period, #*conversion,     # abs_ref   :: Float64
+                dend.absolute_refractory_period/(dt), #*conversion,     # abs_ref   :: Float64
                 synapses[node.name*"__syn_refraction"], # struct
                 dend.syn_outs,
                 dend.offset_flux
@@ -243,7 +244,7 @@ function make_nodes(
 
     node_dict = Dict{String,Any}()
     node_dict["synapses"]  = make_synapses(node,T,dt)
-    node_dict["dendrites"] = make_dendrites(node,T,node_dict["synapses"],p,s,r)
+    node_dict["dendrites"] = make_dendrites(node,T,node_dict["synapses"],p,s,r,dt)
     node_dict["outputs"] = node.neuron.dend_soma.syn_outs
     node_dict["soma"] = node.neuron.dend_soma.name
 

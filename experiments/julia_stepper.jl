@@ -40,7 +40,7 @@ function stepper(net_dict::Dict{Any,Any})
                 for (syn_name,spks) in node["outputs"]
                     for (node_name,node) in net_dict["nodes"]
                         if occursin(node_name,syn_name)
-                            push!(net_dict["nodes"][node_name]["synapses"][syn_name].spike_times,t_idx+15)
+                            push!(net_dict["nodes"][node_name]["synapses"][syn_name].spike_times,t_idx+100)
                         end
                     end
                 end
@@ -135,6 +135,9 @@ function dend_update(node::Dict,dend::SomaticDendrite,t_idx::Int,d_tau::Float64)
                 dend_inputs(node,dend,t_idx)
                 dend_synputs(node,dend,t_idx)
                 dend_signal(dend,t_idx,d_tau::Float64)
+            else
+                dend_inputs(node,dend,t_idx)
+                dend_synputs(node,dend,t_idx)
             end
         # else update
         else
@@ -151,7 +154,7 @@ end
 function spike(dend::SomaticDendrite,t_idx::Int,syn_ref::AbstractSynapse) ## add spike to syn_ref
     dend.spiked = 1
     push!(dend.out_spikes,t_idx)
-    dend.s[t_idx+1:length(dend.s)] .= 0
+    # dend.s[t_idx+1:length(dend.s)] .= 0
     push!(syn_ref.spike_times,t_idx+1)
     for (name,syn) in dend.syn_outs
         dend.syn_outs[name]+=1
@@ -163,6 +166,9 @@ end
 function dend_inputs(node::Dict,dend::AbstractDendrite,t_idx::Int64)
     update = 0
     for input in dend.inputs
+        # if t_idx == 250
+        #     @show dend.name, input 
+        # end
         update += node["dendrites"][input[1]].s[t_idx]*input[2]
     end
     dend.phir[t_idx+1] += update
@@ -171,10 +177,13 @@ end
 
 function dend_synputs(node::Dict,dend::AbstractDendrite,t_idx::Int)
     update = 0
-    for synput in dend.synputs
-        update += node["synapses"][synput[1]].phi_spd[t_idx]*synput[2] # dend.s[t_idx]*input[2] + t_idx
+    for synput in dend.synputs 
+        # if t_idx == 250
+        #     @show dend.name, synput 
+        # end
+        dend.phir[t_idx+1] += node["synapses"][synput[1]].phi_spd[t_idx]*synput[2] # dend.s[t_idx]*input[2] + t_idx
     end
-    dend.phir[t_idx+1] += update
+    # dend.phir[t_idx+1] += update
 end
 
 
