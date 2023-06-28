@@ -279,11 +279,12 @@ def spike(neuron,ii,tau_vec):
             while len(photon_delay_tau_vec) > 0:
                 
                 for synapse_name in syn_out:
+                    # print(photon_delay_tau_vec[0]/779.5556478344771)
                     syn_out[synapse_name].photon_delay_times__temp.append(
                         photon_delay_tau_vec[0]
                         )
                     photon_delay_tau_vec = np.delete(photon_delay_tau_vec, 0)
-                    
+                # print(syn_out[synapse_name].photon_delay_times__temp)
             for synapse_name in syn_out:
                 lst = tau_vec[ii+1]
                 val = tau_vec[ii+1] + np.min(
@@ -335,14 +336,15 @@ def dendrite_updater(dend_obj,time_index,present_time,d_tau,HW=None):
                         
     # directly applied flux
     dend_obj.phi_r[time_index+1] = dend_obj.phi_r_external__vec[time_index+1]
-
+    
     # applied flux from dendrites
     for dendrite_key in dend_obj.dendritic_inputs:
         dend_obj.phi_r[time_index+1] += (
             dend_obj.dendritic_inputs[dendrite_key].s[time_index] * 
             dend_obj.dendritic_connection_strengths[dendrite_key]
             )  
-
+        # if hasattr(dend_obj, 'is_soma') and time_index == 250:
+        #     print(dendrite_key,dend_obj.dendritic_connection_strengths[dendrite_key])
 
     # self-feedback
     dend_obj.phi_r[time_index+1] += (
@@ -507,7 +509,7 @@ def output_synapse_updater(neuron_object,time_index,present_time):
         _st_ind = np.where( present_time > syn_out.spike_times_converted[:] )[0]
         
         if len(_st_ind) > 0:
-            
+            # print(synapse_key)
             _st_ind = int(_st_ind[-1])
             if ( syn_out.spike_times_converted[_st_ind] <= present_time 
                 and (present_time - syn_out.spike_times_converted[_st_ind]) < 

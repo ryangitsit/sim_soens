@@ -20,6 +20,13 @@ print(np.random.randint(0, 100, 10))
 
 
 def make_dataset(digits,samples,slowdown,duration):
+    '''
+    Creates rate coded spiking MNIST dataset
+        - digits   = number of classes (different handwritten digits)
+        - samples  = number of examples from each class
+        - slowdown = factor by which to reduce rate encoding
+        - duration = how long each sample should be (nanoseconds)
+    '''
     dataset = [[] for _ in range(digits)]
     fig, axs = plt.subplots(digits,samples,figsize=(36,12))
     for i in range(digits):
@@ -37,43 +44,50 @@ def make_dataset(digits,samples,slowdown,duration):
             axs[i][j].plot(spikes[1],spikes[0],'.k',ms=.5)
             axs[i][j].set_xticks([])
             axs[i][j].set_yticks([])
+    # saves dataset
     picklit(
         dataset,
         "datasets/MNIST/",
         f"duration={duration}_slowdown={slowdown}"
         )
+    # plots dataset
     plt.show()
     
-#     dataset = np.array(dataset)
-#     plt.plot(dataset[0][2][1],dataset[0][2][0],'.k')# ,ms=.5)
-#     plt.show()
-
-
 
 # make_dataset(10,100,100,5000)
 
+# call in previously generated dataset
 dataset = picklin("datasets/MNIST/","duration=5000_slowdown=100")
-# plt.plot(dataset[0][2][1],dataset[0][2][0],'.k')# ,ms=.5)
-# plt.show()
-# raster_plot(dataset[0][2])
 
+
+# generate new nodes for a new experiment
 new_nodes = False
+
+# use old saved nodes, already partially trained
 saved_run = 181
 
 if new_nodes == True:
     saved_run = 0
     start = time.perf_counter()
     np.random.seed(10)
+
+    # branching factor
     f_idx = 28
-    lay_2 = [np.random.rand(f_idx)*21/28 for _ in range(f_idx)]
+
+    # create random weights for each layer
+    layer_1 = [np.random.rand(f_idx)]
+    layer_2 = [np.random.rand(f_idx)*21/28 for _ in range(f_idx)]
+
+    # place them in a weight structure (defines structure and weighing of a neuron)
     weights = [
-        [np.random.rand(f_idx)],
-        lay_2
+        layer_1,
+        layer_2
     ]
 
-    node_zero = SuperNode(name='node_zero',weights=weights,tau_di=5)
-    node_one  = SuperNode(name='node_one',weights=weights,tau_di=5)
-    node_two  = SuperNode(name='node_two',weights=weights,tau_di=5)
+    # initialize a neuron of each class with this structure
+    node_zero = SuperNode(name='node_zero',weights=weights, tau_di=5)
+    node_one  = SuperNode(name='node_one',weights=weights,  tau_di=5)
+    node_two  = SuperNode(name='node_two',weights=weights,  tau_di=5)
 
     nodes=[node_zero,node_one,node_two]
 
@@ -100,9 +114,9 @@ else:
     
 
 desired = [
-    [30,0,0],
-    [0,30,0],
-    [0,0,30],
+    [5,0,0],
+    [0,5,0],
+    [0,0,5],
 ]
 backend = 'julia'
 name = backend

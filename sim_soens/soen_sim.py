@@ -433,8 +433,8 @@ class neuron():
         elif self.loops_present__refraction == 'rtti':
             self.ib_ref = 3.1 
         self.tau_ref= 50
-        dend_ref_cs = 'auto'
-        auto = True
+        dend_ref_cs = 'auto' #*** 'auto' or int
+        auto = True #*** True
         self.second_ref=False
 
         ### synapse to receiving dendrite ###
@@ -578,7 +578,7 @@ class neuron():
                 
         self.dend_soma.add_input(
             self.dend__ref,
-            connection_strength = dend_ref_cs
+            connection_strength =  dend_ref_cs #*.000005
             )
 
 

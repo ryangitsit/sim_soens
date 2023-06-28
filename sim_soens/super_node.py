@@ -440,7 +440,7 @@ class SuperNode():
         from sim_soens.soen_plotting import structure
         structure(self)
 
-    def plot_neuron_activity(self,net,**kwargs):
+    def plot_neuron_activity(self,**kwargs):
         '''
         Plots signal activity for a given neuron
             - net        -> network within which neurons were simulated
@@ -457,4 +457,4 @@ class SuperNode():
             
         '''
         from sim_soens.soen_plotting import activity_plot
-        activity_plot([self],net,**kwargs)
+        activity_plot([self],**kwargs)

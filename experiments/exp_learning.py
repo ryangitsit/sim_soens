@@ -269,7 +269,7 @@ def main():
         accs = []
 
         # iterate over total dataset for some amount of runs (epochs)
-        for run in range(1):
+        for run in range(25):
 
             # start with no error for each node
             total_error_z = 0
@@ -309,9 +309,17 @@ def main():
                         nodes=[node_z,node_v,node_n],
                         backend=backend
                         )
+
+                    # print(node_z.synapse_list[-1].name)
+                    # plt.plot(node_z.synapse_list[-1].phi_spd,label='node_z synapse')
+                    # plt.plot(node_n.neuron.dend_soma.s,label='node_n soma')
+                    # plt.plot(node_v.neuron.dend_soma.s,label='node_v soma')
+                    # plt.title(node_z.synapse_list[-1].name)
+                    # plt.legend()
+                    # plt.show()
                     
-                    node_z.plot_arbor_activity(net,phir=True) # for visualizing
-                    node_z.plot_neuron_activity(net=net,phir=True,ref=True,dend=False,spikes=False)
+                    # node_z.plot_arbor_activity(net,phir=True) # for visualizing
+                    # node_z.plot_neuron_activity(net=net,phir=True,ref=True,dend=False,spikes=False)
 
                     # run time tracking
                     run_times.append(net.run_time)
@@ -328,7 +336,7 @@ def main():
                     # output spikes for each nodes
                     outputs = [len(spikes[0]),len(spikes[1]),len(spikes[2])]
 
-                    print(f"{j} -- {name} -- {outputs}") # for watching in real-time
+                    # print(f"{j} -- {name} -- {outputs}") # for watching in real-time
 
                     # tracking predictions for each trial
                     predictions.append(np.argmax(outputs))
@@ -621,7 +629,7 @@ def main():
         s_th,
         eta,
         backend=backend,
-        mutual_inhibition=True
+        mutual_inhibition=False
         )
 
 

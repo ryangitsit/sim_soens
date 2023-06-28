@@ -37,7 +37,7 @@ def dendrite_drive_construct(dend_obj,tau_vec,t_tau_conversion,d_tau):
         dend_obj.absolute_refractory_period_converted = arp * t_tau_conversion
         
     # normalize inputs
-    if dend_obj.normalize_input_connection_strengths:        
+    if dend_obj.normalize_input_connection_strengths:       
         J_ij_e__init = 0 # excitatory
         J_ij_i__init = 0 # inhibitory
         J_ij_e = dend_obj.total_excitatory_input_connection_strength

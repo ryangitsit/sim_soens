@@ -7,7 +7,7 @@ FOR %%a IN (1.8,2.0) DO (
                 FOR %%e IN (0.01,0.015,0.02) DO (
                     FOR %%f IN ("True", "False", "None") DO (
                         FOR %%g IN ("True", "False") DO (
-                            python ./exp_learning.py --exp_name "testing" --backend "python" --ib %%a  --tau %%b  --beta %%c  --s_th %%d --eta  %%e  --elast %%f  --valid %%g
+                            python ./exp_learning.py --exp_name "py_testing" --backend "python" --ib %%a  --tau %%b  --beta %%c  --s_th %%d --eta  %%e  --elast %%f  --valid %%g
                         )
                     )
                 )

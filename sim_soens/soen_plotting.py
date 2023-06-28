@@ -47,11 +47,13 @@ def raster_plot(
 
 
 def activity_plot(
-        neurons,net,phir=False,dend=True,title=None,input=None,weighting=True,
+        neurons,net=None,phir=False,dend=True,title=None,input=None,weighting=True,
         docstring=False,lay=100000,spikes=True, path=None,SPD=False,ref=False,
         legend_out=False,size=(12,4), y_range=None,subtitles=None,legend=True,
         legend_all=False
         ):
+    
+    
     '''
     Plots signal activity for a given neuron or network of neurons
      - syntax     -> NeuralZoo.plot_neuron_activity(net,spikes=True,input=input)
@@ -73,6 +75,11 @@ def activity_plot(
     if docstring == True:
         print(activity_plot.__doc__)
 
+    if net == None:
+        time_vec = np.arange(0,len(neurons[0].dendrites[0][0][0].s),1) 
+    else:
+        time_vec = net.t
+
     if len(neurons) > 1:
         fig, axs = plt.subplots(len(neurons), 1,figsize=(size))
         for ii,n in enumerate(neurons): 
@@ -82,7 +89,7 @@ def activity_plot(
             signal = n.dendrites[0][0][0].s
             refractory = n.neuron.dend__ref.s
             phi_r = n.dendrites[0][0][0].phi_r
-            axs[ii].plot(net.t,signal,  label='soma signal', linewidth=4)
+            axs[ii].plot(time_vec,signal,  label='soma signal', linewidth=4)
 
             if phir==True:
                 from sim_soens.soen_functions import phi_thresholds
@@ -94,7 +101,7 @@ def activity_plot(
                 if any(ele < 0 for ele in phi_r):
                     axs[ii].axhline(y = phi_ths[0], color = 'purple', 
                                     linestyle = '--',linewidth=.5)
-                axs[ii].plot(net.t,phi_r,  label=r'$\phi_r$ (soma)')
+                axs[ii].plot(time_vec,phi_r,  label=r'$\phi_r$ (soma)')
 
             if dend:
                 for i,layer in enumerate(n.dendrites):
@@ -110,17 +117,17 @@ def activity_plot(
                                     else:
                                         dend_s = dendrite.s
                                     axs[ii].plot(
-                                        net.t,dend_s,'--', 
+                                        time_vec,dend_s,'--', 
                                         label='w*dendrite_'+str([i,j,k])
                                         )
                                 if SPD==True:
                                     for spd in dendrite.synaptic_inputs:
                                         axs[ii].plot(
-                                            net.t,
+                                            time_vec,
                                             dendrite.synaptic_inputs[spd].phi_spd,
                                             label="SPD"
                                             )
-            axs[ii].plot(net.t,signal, color='#1f77b4',linewidth=4)
+            axs[ii].plot(time_vec,signal, color='#1f77b4',linewidth=4)
 
             if input:
                 axs[ii].plot(
@@ -129,7 +136,7 @@ def activity_plot(
                     )
            
             if ref==True:
-                axs[ii].plot(net.t,refractory,':',color = 'r',
+                axs[ii].plot(time_vec,refractory,':',color = 'r',
                              label='refractory signal')
 
             ## add input/output spikes
@@ -184,7 +191,7 @@ def activity_plot(
 
         
         plt.figure(figsize=size)
-        plt.plot(net.t,signal,  label='soma signal', linewidth=4)
+        plt.plot(time_vec,signal,  label='soma signal', linewidth=4)
 
         if phir:
             from sim_soens.soen_functions import phi_thresholds
@@ -194,7 +201,7 @@ def activity_plot(
             if any(ele < 0 for ele in phi_r):
                 plt.axhline(y = phi_ths[0], color = 'purple', linestyle = '--',
                             linewidth=.5)
-            plt.plot(net.t,phi_r,  label=r'$\phi_r$ (soma)')
+            plt.plot(time_vec,phi_r,  label=r'$\phi_r$ (soma)')
 
         if dend:
             for i,layer in enumerate(neurons[0].dendrites):
@@ -210,19 +217,19 @@ def activity_plot(
                                 else:
                                     dend_s = dendrite.s
                                 plt.plot(
-                                    net.t,dend_s,'--', 
+                                    time_vec,dend_s,'--', 
                                     label=f'w*dend.{i}.{j}.{k}'
                                     )
                             if SPD==True:
                                 for spd in dendrite.synaptic_inputs:
                                     plt.plot(
-                                        net.t,
+                                        time_vec,
                                         dendrite.synaptic_inputs[spd].phi_spd,
                                         label="SPD"
                                         )
 
         if ref==True:
-            plt.plot(net.t,refractory,':',color='r',label='refractory signal')
+            plt.plot(time_vec,refractory,':',color='r',label='refractory signal')
 
         ## add input/output spikes
         if spikes==True:
@@ -237,7 +244,7 @@ def activity_plot(
                     'xr', markersize=5, label='input event'
                     )
                 
-        plt.plot(net.t,signal,  color='#1f77b4',linewidth=4)
+        plt.plot(time_vec,signal,  color='#1f77b4',linewidth=4)
         plt.xlabel("Simulation Time (ns)",fontsize=14)
         plt.ylabel("Signal (Ic)",fontsize=14)
         plt.subplots_adjust(bottom=.25)
