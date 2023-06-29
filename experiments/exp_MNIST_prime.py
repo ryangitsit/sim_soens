@@ -3,7 +3,8 @@ import matplotlib.pyplot as plt
 
 # Import writer class from csv module
 from csv import writer
-
+import os
+import glob
 import sys
 sys.path.append('../sim_soens')
 sys.path.append('../')
@@ -17,7 +18,7 @@ import time
 
 def main():
     np.random.seed(10)
-    print(np.random.randint(0, 100, 10))
+    # print(np.random.randint(0, 100, 10))
 
 
     def make_dataset(digits,samples,slowdown,duration):
@@ -65,22 +66,34 @@ def main():
         '''
 
         # importing os module
-        import os
         place = path+name+'nodes/'
         if os.path.exists(place) == True:
+            print("Loading nodes...")
+            files = glob.glob(place+'*')
+            latest = max(files, key=os.path.getctime)
+            # print("latest",latest)
+            file_name = latest[len(place):len(latest)-len('.pickle')]
+            print("file name: ",file_name)
+            nodes = picklin(place,file_name)
+
             new_nodes = False
 
-            entries = []
-            for entry in os.listdir(place):
-                if os.path.isfile(os.path.join(place, entry)):
-                    print(entry)
-                    entries.append(entry)
-            nodes = picklin(place,entries[-1][:len(entries[-1])-len('.pickle')])
+            # entries = []
+            # for entry in os.listdir(place):
+            #     if os.path.isfile(os.path.join(place, entry)):
+            #         # print(entry)
+            #         entries.append(entry)
+            # print(entries[-1])
+
+            # nodes = picklin(place,entries[-1][:len(entries[-1])-len('.pickle')])
+
+
         else:
             new_nodes=True
 
 
         if new_nodes == True:
+            print("Making new nodes...")
             saved_run = 0
             start = time.perf_counter()
             np.random.seed(10)
@@ -102,7 +115,7 @@ def main():
             ]
 
             # internal node parameters
-            mutual_inhibition = False
+            mutual_inhibition = True
             ib      = 1.8
             tau     = 50
             beta    = 2*np.pi*10**2
@@ -129,7 +142,7 @@ def main():
             nodes=[node_zero,node_one,node_two]
 
             if mutual_inhibition == True:
-                inhibition = [-1.2,-.5,-1.2]
+                inhibition = [-.3,-.3,-.3]
                 for i,node in enumerate(nodes):
                     syn_soma = synapse(name=f'{node.name}_somatic_synapse')
                     node.synapse_list.append(syn_soma)
@@ -164,9 +177,9 @@ def main():
         Trains nodes on MNIST dataset
         '''
         desired = [
-            [10,0,0],
-            [0,10,0],
-            [0,0,10],
+            [5,0,0],
+            [0,5,0],
+            [0,0,5],
         ]
         backend = 'julia'
         print(backend)
@@ -208,7 +221,7 @@ def main():
                     for i,channel in enumerate(input_.signals):
                         node.synapse_list[i].add_input(channel)
 
-                f0 = time.perf_counter()
+                # f0 = time.perf_counter()
                 # print("Input time: ", f0-start)
 
                 # run the network
@@ -221,7 +234,47 @@ def main():
                     print_times=True
                     )
                 
-                # nodes[0].plot_neuron_activity(net=net,phir=True,spikes=False,ref=True,legend=False)
+                # save one set of plots for all nodes for each digit of sample 0
+                if sample == 0:
+                    try:
+                        os.makedirs(path+name+'plots/')    
+                    except FileExistsError:
+                        pass
+                    for n,node in enumerate(nodes):
+                        lays = [[] for _ in range(len(node.dendrites))]
+                        phays = [[] for _ in range(len(node.dendrites))]
+                        for l,layer in enumerate(node.dendrites):
+                            for g,group in enumerate(layer):
+                                for d,dend in enumerate(group):
+                                    lays[l].append(dend.s)
+                                    phays[l].append(dend.phi_r)
+                        plt.style.use('seaborn-v0_8-muted')
+                        colors = plt.rcParams["axes.prop_cycle"].by_key()["color"]
+                        plt.figure(figsize=(8,4))
+                        for l,lay in enumerate(lays):
+                            if l == 0:
+                                lw = 4
+                            else:
+                                lw = 2
+                            plt.plot(
+                                np.mean(lay,axis=0),
+                                linewidth=lw,
+                                color=colors[l],
+                                label=f'Layer {l} Mean Signal'
+                                )
+                            plt.plot(
+                                np.mean(phays[l],axis=0),
+                                '--',
+                                linewidth=.5,
+                                color=colors[l],
+                                # label=f'Layer {l} Mean Flux'
+                                )
+                        plt.legend(loc='upper right')
+                        plt.title(f'Node {n} - Digit {digit} - Run {run}')
+                        plt.savefig(path+name+f'plots/node_{n}_digit_{digit}_run_{run}.png')
+                        plt.close()
+
+                
 
                 # keep track of run time costs
                 # run_times.append(net.run_time)
@@ -258,44 +311,50 @@ def main():
 
                 s = time.perf_counter()
                 
+                offset_sums = [0,0,0]
+
+                # on all but every tenth run, make updates according to algorithm 1 with elasticity
                 if run%10 != 0:
                     # print("Updating")
                     for n,node in enumerate(nodes):
-
-                        # spike refractory dendrite
-                        # lst = node.dendrite_list[2:]
-                        # lst.insert(0,node.dendrite_list[0])
-
-                        # for dend in lst:
-                            # step = errors[n]*np.mean(dend.s)*.0001
-                            # dend.offset_flux += step
-
                         for l,layer in enumerate(node.dendrites):
                             for g,group in enumerate(layer):
                                 for d,dend in enumerate(group):
                                     if 'ref' not in dend.name and 'soma' not in dend.name:
-                                        step = errors[n]*np.mean(dend.s)*.001 #+(2-l)*.001
+                                        step = errors[n]*np.mean(dend.s)*.005 #+(2-l)*.001
                                         flux = np.mean(dend.phi_r) + step #dend.offset_flux
                                         if flux > 0.5 or flux < -0.5:
                                             step = -step
+                                        # print(dend.name,step)
                                         dend.offset_flux += step
+                                        offset_sums[n] += dend.offset_flux
                                     dend.s = []
                                     dend.phi_r = []
+                # on the tenth run test, but don't update -- save full nodes with data
                 else:
                     # print("Skipping Update")
-                    for node in nodes:
-                        for dend in node.dendrite_list:
-                            dend.s = []
-                            dend.phi_r = []
+                    if sample == 0:
+                        # save the nodes!
+                        picklit(
+                            nodes,
+                            f"{path}{name}/nodes/",
+                            f"full_0_{digit}_nodes_at_{run}"
+                            )
+                        for node in nodes:
+                            for dend in node.dendrite_list:
+                                dend.s = []
+                                dend.phi_r = []
 
                 f = time.perf_counter()
                 # print("Update time: ", f-s)
                 # print("Total runtime", f-start)
+                for o,offset in enumerate(offset_sums):
+                    offset_sums[o] = np.round(offset,2)
 
-                print(f"  {sample}  -  [{digit} -> {np.argmax(output)}]  -  {np.round(f-start,1)}  -  {output} ")
+                print(f"  {sample}  -  [{digit} -> {np.argmax(output)}]  -  {np.round(f-start,1)}  -  {output} - {offset_sums} ")
 
                 # CSV data
-                List = [sample,digit,output,errors,np.argmax(output),f-start,net.init_time,net.run_time]
+                List = [sample,digit,output,errors,np.argmax(output),f-start,net.init_time,net.run_time,offset_sums]
                 with open(f'{path}{name}/learning_logger.csv', 'a') as f_object:
                     writer_object = writer(f_object)
                     writer_object.writerow(List)
@@ -322,18 +381,26 @@ def main():
         # if all samples passed, task complete!
         if samples_passed == 30:
             print("converged!\n\n")
+            picklit(
+                nodes,
+                f"{path}{name}/nodes/",
+                f"CONVERGED_at_{run}"
+                )
 
     from sim_soens.argparse import setup_argument_parser
     config = setup_argument_parser()
 
     # call in previously generated dataset
     path    = 'results/MNIST/'
-    name    = 'julia_noninhibit/'
+    name    = 'julia_inhibit_solver/'
     dataset = picklin("datasets/MNIST/","duration=5000_slowdown=100")
     # new_nodes=True
 
+    # load_start = time.perf_counter()
     nodes = get_nodes(path,name)
-    nodes = picklin(path+name+'nodes/',f"init_nodes")
+    # load_finish = time.perf_counter()
+    # print("Load time: ", load_finish-load_start)
+
     train_MNIST_neurons(nodes,dataset,0,path,name,config.run)
 
 if __name__=='__main__':

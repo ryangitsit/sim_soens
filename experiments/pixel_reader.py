@@ -87,5 +87,5 @@ def pixel_hist(backend,under):
     plt.show()
 
 backend = 'jul'
-under = 242
+under = 196
 pixel_hist(backend,under)

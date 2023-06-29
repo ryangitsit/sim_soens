@@ -5,7 +5,6 @@ import sys
 sys.path.append('../sim_soens')
 sys.path.append('../')
 from sim_soens.super_functions import *
-df = pd.read_csv('MNIST_ongoing_julia.csv',names=['sample','digit','spikes','error','prediction','time','init_time','run_time'])
 
 # # print(df.to_string())   
 # # spikes = np.array(np.array(df["spikes"][11]))
@@ -74,7 +73,7 @@ def by_run_performance(df):
             dig_runs[df["digit"][index]]+=1
 
 
-        if index%30 == 0:
+        if (index+1)%30 == 0:
             by_run.append(run_wins/30)
 
             for i,dig in enumerate(dig_runs):
@@ -147,7 +146,15 @@ def node_analysis(span):
 # print(nodes[0].params["params"]["params"]["dend_dict"].keys())
 # print(len(nodes[0].offset_flux[1]))
 
+# df = pd.read_csv(
+#     'MNIST_ongoing_julia.csv',
+#     names=['sample','digit','spikes','error','prediction','time','init_time','run_time']
+#     )
 
+df = pd.read_csv(
+    'results\MNIST\julia_inhibit\learning_logger.csv',
+    names=['sample','digit','spikes','error','prediction','time','init_time','run_time','offsets']
+    )
 
 # percents, procents = ongoing_performance(df)
 by_run, digs = by_run_performance(df)
