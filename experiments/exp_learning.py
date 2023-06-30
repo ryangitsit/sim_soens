@@ -25,7 +25,7 @@ def main():
 
     def make_letters():
         '''
-        Returns clean nine-pixel array dictionary
+        returns list of letters in pixel-array form
         '''
         # non-noisy nine-pixel letters
         letters = {
@@ -252,12 +252,6 @@ def main():
         init_times = []
 
         # track offset trajectories with key,val=dend,[offsets] for each node
-        trajects = [{},{},{}]
-        for ii,node in enumerate(nodes):
-            count = 0
-            for dend in node.dendrite_list:
-                if 'ref' not in dend.name:
-                    trajects[ii][dend.name] = [0]
 
         # define expected spiking output for each node according to each input class            
         expect_z = [5,0,0]
@@ -272,6 +266,7 @@ def main():
         for run in range(25):
 
             # start with no error for each node
+
             total_error_z = 0
             total_error_v = 0
             total_error_n = 0
@@ -281,6 +276,7 @@ def main():
             success = 0
 
             # itereate over ten noisy samples
+
             for j in range(len(letters[list(letters.keys())[0]])):
 
                 # track predictions
@@ -290,6 +286,7 @@ def main():
                 for i,(name,pixels_list) in enumerate(letters.items()):
 
                     # make spikes from pixel arrays for the j-th sample of each class
+
                     defined_spikes = make_spikes(pixels_list[j],20)
                     # plot_letter(letters[name][j]) # for visualizing
 
@@ -302,6 +299,7 @@ def main():
                     node_n.one_to_one(input_)
 
                     # run network of nodes
+
                     net = network(
                         sim=True,
                         dt=.1,
@@ -329,10 +327,11 @@ def main():
                     spikes = array_to_rows(net.spikes,3)
 
                     # error for each node
+
                     error_z = expects[0][i] - len(spikes[0])
                     error_v = expects[1][i] - len(spikes[1])
                     error_n = expects[2][i] - len(spikes[2])
-                    
+
                     # output spikes for each nodes
                     outputs = [len(spikes[0]),len(spikes[1]),len(spikes[2])]
 
@@ -343,10 +342,10 @@ def main():
 
 
                     # tracking absolute error for each node
+
                     total_error_z+=np.abs(error_z)
                     total_error_v+=np.abs(error_v)
                     total_error_n+=np.abs(error_n)
-
 
                     # reset node information
                     nodes[0].neuron.spike_times=[]
@@ -364,9 +363,10 @@ def main():
                     nodes[0].neuron.time_params=[]
                     nodes[1].neuron.time_params=[]
                     nodes[2].neuron.time_params=[]
-                    
 
+                   
                     # init offset dicts
+
                     offsets_z = {}
                     offsets_v = {}
                     offsets_n = {}
@@ -375,10 +375,14 @@ def main():
                     total_changes = np.zeros((3))
 
                     # itereate overall all dendrites
+
                     for ii in range(len(node_z.dendrite_list)):
+
+                        # no updates to refracatory dendrites
                         if 'ref' not in node_z.dendrite_list[ii].name:
 
                             # parallel for all nodes
+
                             dend_z = node_z.dendrite_list[ii] 
                             dend_v = node_v.dendrite_list[ii]
                             dend_n = node_n.dendrite_list[ii]
@@ -398,7 +402,6 @@ def main():
                             fluxes = [flux_z,flux_v,flux_n]
                             steps = [step_z,step_v,step_n]
 
-
                             # Ammendments to algorithm 1
 
                             # Bounce step backwards if rollover value (phi=0.5) would be exceeded
@@ -409,7 +412,7 @@ def main():
                                         steps[iii] = -steps[iii]
                                     else:
                                         steps[iii] = steps[iii]
-                            
+        
                             # Cancel update if rollover value would be exceed
                             elif elasticity == "False":
                                 if run == 0 and ii == 0 and j ==0 and i == 0: print("elasticity = false")
@@ -450,11 +453,9 @@ def main():
                     del(input_)
                     del(net)
                 
-
                 if predictions == [0,1,2]:
                     # print("Correct!",predictions)
                     success += 1
-            
 
             acc = np.round(success/10,2)*100
             accs.append(acc)
@@ -483,6 +484,7 @@ def main():
                     # print(spikes)
                 break
         # return offsets for repeatability
+
         offsets = [offsets_z,offsets_v,offsets_n]
 
         return offsets, accs, trajects
@@ -571,8 +573,9 @@ def main():
                     for dend in node.dendrite_list:
                         dend.s = []
                         dend.phi_r = []
-
+                        
             # print(f"test {name} --> accuracy = {100*correct/len(pixel_list)}%")
+
 
             if correct==10: corrects+=1
         if corrects == 3:
@@ -586,7 +589,6 @@ def main():
     letters = make_letters()
     names = list(letters.keys())
     noise_set = make_noise_set(letters)
-
 
     config = setup_argument_parser()
 

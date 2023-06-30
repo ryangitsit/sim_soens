@@ -175,6 +175,7 @@ by_run, digs = by_run_performance(df)
 print(np.ceil(np.array(by_run)*30))
 plt.style.use('seaborn-v0_8-muted')
 plt.figure(figsize=(8,4))
+
 plt.title("MNIST Training Classification Performance",fontsize=16)
 plt.xlabel("Epoch",fontsize=14)
 plt.ylabel("Accuracy",fontsize=14)
