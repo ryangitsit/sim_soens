@@ -253,11 +253,11 @@ def main():
 
         # track offset trajectories with key,val=dend,[offsets] for each node
         trajects = [{},{},{}]
-        for ii,node in enumerate(nodes):
-            count = 0
-            for dend in node.dendrite_list:
-                if 'ref' not in dend.name:
-                    trajects[ii][dend.name] = [0]
+        # for ii,node in enumerate(nodes):
+        #     count = 0
+        #     for dend in node.dendrite_list:
+        #         if 'ref' not in dend.name:
+        #             trajects[ii][dend.name] = [0]
 
         # define expected spiking output for each node according to each input class            
         expect_z = [5,0,0]
@@ -267,6 +267,8 @@ def main():
 
         # tracking tools
         accs = []
+
+        trial_counter = 0
 
         # iterate over total dataset for some amount of runs (epochs)
         for run in range(25):
@@ -313,7 +315,7 @@ def main():
                         nodes=[node_z,node_v,node_n],
                         backend=backend
                         )
-
+                    trial_counter+=1
                     # print(node_z.synapse_list[-1].name)
                     # plt.plot(node_z.synapse_list[-1].phi_spd,label='node_z synapse')
                     # plt.plot(node_n.neuron.dend_soma.s,label='node_n soma')
@@ -446,9 +448,9 @@ def main():
                             offsets_n[dend_n.name] = dend_n.offset_flux
 
                             # append them to trajectories of each dendrite for each node
-                            trajects[0][dend_z.name].append(dend_z.offset_flux)
-                            trajects[1][dend_v.name].append(dend_v.offset_flux)
-                            trajects[2][dend_n.name].append(dend_n.offset_flux)
+                            # trajects[0][dend_z.name].append(dend_z.offset_flux)
+                            # trajects[1][dend_v.name].append(dend_v.offset_flux)
+                            # trajects[2][dend_n.name].append(dend_n.offset_flux)
 
                         # clear old info
                         for dend in dends:
@@ -493,7 +495,7 @@ def main():
 
         offsets = [offsets_z,offsets_v,offsets_n]
 
-        return offsets, accs, trajects
+        return offsets, accs, trajects, trial_counter
 
 
     def test_noise_set(noise_set,offsets,W,mutual_inhibition,backend):
@@ -626,7 +628,7 @@ def main():
 
     print(sub_name)
 
-    offsets, accs, trajects = train_9pixel_classifier(
+    offsets, accs, trajects, conv_time = train_9pixel_classifier(
         noise_set,
         inhibition,
         elasticity,
@@ -701,7 +703,7 @@ def main():
     #     plt.legend()
     #     plt.savefig(path+sub_name+f'_offsets_{names[i]}_plot.png')
     #     plt.close()
-    converge_length = len(trajects[list(trajects[0].keys())[0]][0])
+
     List = [
         regime,
         converge_type,
@@ -710,7 +712,7 @@ def main():
         beta,
         s_th,
         eta,
-        converge_length,
+        conv_time,
     ]
     with open(path+'pixels.csv', 'a') as f_object:
     

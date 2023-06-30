@@ -108,7 +108,7 @@ def by_run_performance(df,decider):
 experiments = ['julia_inhibit_solver','MNIST_inelast','MNIST_unbounded','MNIST_eta']#,'MNIST_full']
 # experiment = 'MNIST_inelast'
 
-until = 100
+until = 13
 
 for i,exp in enumerate(experiments):
     df = pd.read_csv(
@@ -118,7 +118,7 @@ for i,exp in enumerate(experiments):
 
     # percents, procents = ongoing_performance(df)
     by_run, digs = by_run_performance(df,'winner')
-    # print(np.ceil(np.array(by_run)*30)[:until], exp)
+    print(np.ceil(np.array(by_run)*30)[:until], exp)
     plt.style.use('seaborn-v0_8-muted')
     plt.figure(figsize=(8,4))
 
@@ -138,4 +138,4 @@ for i,exp in enumerate(experiments):
     # plt.plot(df["run_time"])
     # plt.show()
 
-    print("Average runtime = ",np.mean(df["run_time"]))
+    # print("Average runtime = ",np.mean(df["run_time"]))

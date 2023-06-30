@@ -47,14 +47,14 @@ def pixel_hist(backend,under):
 
     convs = []
     for index, row in df.iterrows():
-        if df["convergence"][index] < under: # and index < 70:
+        if df["convergence"][index] < under and df["ib"][index]==1.8: # and index < 70:
 
             for n in names[:-1]: 
                 converge_dict[f"{n}_"+str(df[n][index])] += 1
             convs.append(row["convergence"])
     print(np.mean(convs))
     # print(converge_dict)
-
+    print(converge_dict)
     keys = list(converge_dict.keys())
     keys[0] = keys[0][7:]
     keys[1] = keys[1][7:]
@@ -87,5 +87,5 @@ def pixel_hist(backend,under):
     plt.show()
 
 backend = 'jul'
-under = 197
+under = 238
 pixel_hist(backend,under)
