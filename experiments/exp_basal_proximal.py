@@ -112,7 +112,7 @@ def main():
 
 
         ### create and run network ###
-        net = network(sim=True,dt=.1,tf=500,nodes=[n1,n2])
+        net = network(sim=True,dt=.1,tf=500,nodes=[n1,n2],backend='julia')
 
         return net, n1, n2
 

@@ -429,12 +429,12 @@ class neuron():
         self.Ic__refraction =  100
         self.beta_c__refraction =  0.3
         if self.loops_present__refraction == 'ri':
-            self.ib_ref = 1.7    
+            self.ib_ref = self.ib #1.7    
         elif self.loops_present__refraction == 'rtti':
             self.ib_ref = 3.1 
         self.tau_ref= 50
-        dend_ref_cs = 'auto'
-        auto = True
+        dend_ref_cs = 'auto' #*** 'auto' or int
+        auto = True #*** True
         self.second_ref=False
 
         ### synapse to receiving dendrite ###
@@ -533,6 +533,7 @@ class neuron():
         
         # automatically normalizes refractory strength
         if auto:
+            # print("AUTO!!!")
             d_params_ri = dend_load_arrays_thresholds_saturations('default_ri')
             d_params_rtti = dend_load_arrays_thresholds_saturations('default_rtti')
             if self.loops_present == 'ri':
@@ -573,10 +574,11 @@ class neuron():
 
             # ( phi_th_minus + delta/100 ) / s_max              
             dend_ref_cs = -delta/_s_max_refractory 
+            # print(self.name," --> ", dend_ref_cs)
                 
         self.dend_soma.add_input(
             self.dend__ref,
-            connection_strength = dend_ref_cs
+            connection_strength =  dend_ref_cs #*.000005
             )
 
 
@@ -618,6 +620,7 @@ class neuron():
         
         # prepare for output synapses
         self.synaptic_outputs = dict()
+        self.dend_soma.syn_outs = {}
 
         neuron.neurons[self.name] = self
         return    
@@ -633,8 +636,10 @@ class neuron():
             # print(self.name, "-->", connection_object.name)
             self.synaptic_outputs[name] = synapse.synapses[name]
             synapse.synapses[name].add_input(self)
+            self.dend_soma.syn_outs[name] = 0
         else: 
-            raise ValueError('[soen_sim] a neuron can only output to a synapse')     
+            raise ValueError('[soen_sim] a neuron can only output to a synapse')    
+        
         return
     
     def run_sim(self, **kwargs):
@@ -676,6 +681,7 @@ class network():
         self.timer=False
         self.backend = 'python'
         self.name = 'unnamed_network__{}'.format(self.unique_label)
+        self.print_times = False
 
         self.__dict__.update(kwargs)
         

@@ -278,6 +278,9 @@ class SuperNode():
         else:
             self.synaptic_layer()
 
+        # self.synapse_list.append(self.neuron.dend__ref.synaptic_inputs[f"{self.name}__syn_refraction"])
+        self.refractory_synapse = self.neuron.dend__ref.synaptic_inputs[f"{self.name}__syn_refraction"]
+
 
     def __copy__(self):
         copy_object = SuperNode()
@@ -326,7 +329,8 @@ class SuperNode():
          - len(synapse_list) == input.channels (required)
         '''
         for i,S in enumerate(self.synapse_list):
-            S.add_input(input.signals[i])
+            if 'ref' not in S.name:
+                S.add_input(input.signals[i])
 
     def custom_input(self,input,synapse_indices):
         '''
@@ -436,7 +440,7 @@ class SuperNode():
         from sim_soens.soen_plotting import structure
         structure(self)
 
-    def plot_neuron_activity(self,net,**kwargs):
+    def plot_neuron_activity(self,**kwargs):
         '''
         Plots signal activity for a given neuron
             - net        -> network within which neurons were simulated
@@ -453,4 +457,4 @@ class SuperNode():
             
         '''
         from sim_soens.soen_plotting import activity_plot
-        activity_plot([self],net,**kwargs)
+        activity_plot([self],**kwargs)
