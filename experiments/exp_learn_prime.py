@@ -25,7 +25,7 @@ def main():
 
     def make_letters():
         '''
-        Returns clean nine-pixel array dictionary
+        returns list of letters in pixel-array form
         '''
         # non-noisy nine-pixel letters
         letters = {
@@ -224,7 +224,7 @@ def main():
         
         # Add an extra synapse to each soma that takes (inhibitory) output from all other nodes
         if mutual_inhibition == True:
-            inhibition=-.3
+            inhibition = -0.33
             syn_z = synapse(name=node_z.name+'_somatic_synapse_z')
             node_z.synapse_list.append(syn_z)
             node_z.neuron.dend_soma.add_input(syn_z,connection_strength=inhibition)
@@ -239,17 +239,12 @@ def main():
 
             node_z.neuron.add_output(node_v.synapse_list[-1])
             node_z.neuron.add_output(node_n.synapse_list[-1])
+
             node_v.neuron.add_output(node_z.synapse_list[-1])
             node_v.neuron.add_output(node_n.synapse_list[-1])
+
             node_n.neuron.add_output(node_z.synapse_list[-1])
             node_n.neuron.add_output(node_v.synapse_list[-1])
-
-            # print(node_z.name, ' --> ', node_v.synapse_list[-1].name)
-            # print(node_z.name, ' --> ', node_n.synapse_list[-1].name)
-            # print(node_v.name, ' --> ', node_z.synapse_list[-1].name)
-            # print(node_v.name, ' --> ', node_n.synapse_list[-1].name)
-            # print(node_n.name, ' --> ', node_z.synapse_list[-1].name)
-            # print(node_n.name, ' --> ', node_v.synapse_list[-1].name)
 
 
         # make a list of all nodes
@@ -278,6 +273,7 @@ def main():
         for run in range(25):
 
             # start with no error for each node
+
             total_error_z = 0
             total_error_v = 0
             total_error_n = 0
@@ -287,6 +283,7 @@ def main():
             success = 0
 
             # itereate over ten noisy samples
+
             for j in range(len(letters[list(letters.keys())[0]])):
 
                 # track predictions
@@ -296,6 +293,7 @@ def main():
                 for i,(name,pixels_list) in enumerate(letters.items()):
 
                     # make spikes from pixel arrays for the j-th sample of each class
+
                     defined_spikes = make_spikes(pixels_list[j],20)
                     # plot_letter(letters[name][j]) # for visualizing
 
@@ -308,6 +306,7 @@ def main():
                     node_n.one_to_one(input_)
 
                     # run network of nodes
+
                     net = network(
                         sim=True,
                         dt=.1,
@@ -315,6 +314,14 @@ def main():
                         nodes=[node_z,node_v,node_n],
                         backend=backend
                         )
+
+                    # print(node_z.synapse_list[-1].name)
+                    # plt.plot(node_z.synapse_list[-1].phi_spd,label='node_z synapse')
+                    # plt.plot(node_n.neuron.dend_soma.s,label='node_n soma')
+                    # plt.plot(node_v.neuron.dend_soma.s,label='node_v soma')
+                    # plt.title(node_z.synapse_list[-1].name)
+                    # plt.legend()
+                    # plt.show()
                     
                     # node_z.plot_arbor_activity(net,phir=True) # for visualizing
                     # node_z.plot_neuron_activity(net=net,phir=True,ref=True,dend=False,spikes=False)
@@ -327,47 +334,25 @@ def main():
                     spikes = array_to_rows(net.spikes,3)
 
                     # error for each node
+
                     error_z = expects[0][i] - len(spikes[0])
                     error_v = expects[1][i] - len(spikes[1])
                     error_n = expects[2][i] - len(spikes[2])
-                    
+
                     # output spikes for each nodes
                     outputs = [len(spikes[0]),len(spikes[1]),len(spikes[2])]
 
-                    print(f"{j} -- {name} -- {outputs}") # for watching in real-time
-
-                    color_dict = {
-                        node_z.neuron.dend_soma.name:'r',
-                        node_v.neuron.dend_soma.name:'b',
-                        node_n.neuron.dend_soma.name:'g',
-                        node_z.synapse_list[-1].name:'r',
-                        node_v.synapse_list[-1].name:'b',
-                        node_n.synapse_list[-1].name:'g',
-                    }
-                    fig, axs = plt.subplots(3, 1,figsize=(8,8))
-                    for counter, node in enumerate(nodes):
-                        for k,v in node.neuron.synaptic_outputs.items():
-                            # print(node.name,' -- > ',k,v.name,v.name)
-                            print(node.name,' <-- ',node.neuron.dend_soma.synaptic_connection_strengths)
-                        axs[counter].plot(node.neuron.dend_soma.s,linewidth=2,label=node.neuron.dend_soma.name,color=color_dict[node.neuron.dend_soma.name])
-                        for other_nodes in nodes:
-                            if other_nodes.name != node.name:
-                                axs[counter].plot(other_nodes.synapse_list[-1].phi_spd,'--',label=other_nodes.synapse_list[-1].name,color=color_dict[other_nodes.synapse_list[-1].name])
-                        # axs[counter].title(node.neuron.dend_soma.name)
-                        axs[counter].legend(loc='upper right')
-                    plt.show()
-                    print('--------------')
-
+                    # print(f"{j} -- {name} -- {outputs}") # for watching in real-time
 
                     # tracking predictions for each trial
                     predictions.append(np.argmax(outputs))
 
 
                     # tracking absolute error for each node
+
                     total_error_z+=np.abs(error_z)
                     total_error_v+=np.abs(error_v)
                     total_error_n+=np.abs(error_n)
-
 
                     # reset node information
                     nodes[0].neuron.spike_times=[]
@@ -385,9 +370,10 @@ def main():
                     nodes[0].neuron.time_params=[]
                     nodes[1].neuron.time_params=[]
                     nodes[2].neuron.time_params=[]
-                    
 
+                   
                     # init offset dicts
+
                     offsets_z = {}
                     offsets_v = {}
                     offsets_n = {}
@@ -396,10 +382,14 @@ def main():
                     total_changes = np.zeros((3))
 
                     # itereate overall all dendrites
+
                     for ii in range(len(node_z.dendrite_list)):
+
+                        # no updates to refracatory dendrites
                         if 'ref' not in node_z.dendrite_list[ii].name:
 
                             # parallel for all nodes
+
                             dend_z = node_z.dendrite_list[ii] 
                             dend_v = node_v.dendrite_list[ii]
                             dend_n = node_n.dendrite_list[ii]
@@ -419,7 +409,6 @@ def main():
                             fluxes = [flux_z,flux_v,flux_n]
                             steps = [step_z,step_v,step_n]
 
-
                             # Ammendments to algorithm 1
 
                             # Bounce step backwards if rollover value (phi=0.5) would be exceeded
@@ -430,7 +419,7 @@ def main():
                                         steps[iii] = -steps[iii]
                                     else:
                                         steps[iii] = steps[iii]
-                            
+        
                             # Cancel update if rollover value would be exceed
                             elif elasticity == "False":
                                 if run == 0 and ii == 0 and j ==0 and i == 0: print("elasticity = false")
@@ -471,11 +460,9 @@ def main():
                     del(input_)
                     del(net)
                 
-
                 if predictions == [0,1,2]:
                     # print("Correct!",predictions)
                     success += 1
-            
 
             acc = np.round(success/10,2)*100
             accs.append(acc)
@@ -504,6 +491,7 @@ def main():
                     # print(spikes)
                 break
         # return offsets for repeatability
+
         offsets = [offsets_z,offsets_v,offsets_n]
 
         return offsets, accs, trajects
@@ -523,6 +511,7 @@ def main():
         node_n = SuperNode(weights=weights_n)
 
         if mutual_inhibition == True:
+            inhibition = -0.33
             syn_z = synapse(name='somatic_synapse_z')
             node_z.synapse_list.append(syn_z)
             node_z.neuron.dend_soma.add_input(syn_z,connection_strength=inhibition)
@@ -576,6 +565,35 @@ def main():
                     backend=backend
                     )
                 
+                # color_dict = {
+                #     node_z.neuron.dend_soma.name:'r',
+                #     node_v.neuron.dend_soma.name:'b',
+                #     node_n.neuron.dend_soma.name:'g',
+                #     node_z.synapse_list[-1].name:'r',
+                #     node_v.synapse_list[-1].name:'b',
+                #     node_n.synapse_list[-1].name:'g',
+                # }
+                # fig, axs = plt.subplots(3, 1,figsize=(8,8))
+                # for counter, node in enumerate(nodes):
+                #     for k,v in node.neuron.synaptic_outputs.items():
+                #         # print(node.name,' -- > ',k,v.name,v.name)
+                #         print(node.name,' <-- ',node.neuron.dend_soma.synaptic_connection_strengths)
+                #     axs[counter].plot(node.neuron.dend_soma.s,linewidth=2,label=node.neuron.dend_soma.name,color=color_dict[node.neuron.dend_soma.name])
+                #     for other_nodes in nodes:
+                #         if other_nodes.name != node.name:
+
+                #             axs[counter].plot(
+                #                 other_nodes.synapse_list[-1].phi_spd,
+                #                 '--',
+                #                 label=other_nodes.synapse_list[-1].name,
+                #                 color=color_dict[other_nodes.synapse_list[-1].name]
+                #                 )
+                            
+                #     # axs[counter].title(node.neuron.dend_soma.name)
+                #     axs[counter].legend(loc='upper right')
+                # plt.show()
+                # print('--------------')
+
                 spikes = array_to_rows(net.spikes,3)
 
                 outputs = [len(spikes[0]),len(spikes[1]),len(spikes[2])]
@@ -592,8 +610,9 @@ def main():
                     for dend in node.dendrite_list:
                         dend.s = []
                         dend.phi_r = []
-
+                        
             # print(f"test {name} --> accuracy = {100*correct/len(pixel_list)}%")
+
 
             if correct==10: corrects+=1
         if corrects == 3:
@@ -608,7 +627,6 @@ def main():
     names = list(letters.keys())
     noise_set = make_noise_set(letters)
 
-
     config = setup_argument_parser()
 
     ib         = config.ib 
@@ -618,7 +636,7 @@ def main():
     eta        = config.eta
     elasticity = config.elast
     int_val    = config.valid
-    inhibition = config.inhibit
+    inhibition = -0.33
     backend    = config.backend
 
     regimes = ['Elastic', 'Inelastic', 'Unbounded']
@@ -654,17 +672,17 @@ def main():
         )
 
 
-    picklit(
-        accs,
-        path,
-        f"{sub_name}_accs"
-        )
+    # picklit(
+    #     accs,
+    #     path,
+    #     f"{sub_name}_accs"
+    #     )
 
-    picklit(
-        trajects,
-        path,
-        f"{sub_name}_trajects"
-        )
+    # picklit(
+    #     trajects,
+    #     path,
+    #     f"{sub_name}_trajects"
+    #     )
 
     # plt.figure(figsize=(8,4))
     # plt.plot(accs)
@@ -714,9 +732,7 @@ def main():
     #     plt.legend()
     #     plt.savefig(path+sub_name+f'_offsets_{names[i]}_plot.png')
     #     plt.close()
-
-    
-    converge_length = len(trajects[list(trajects.keys()[0])][0])
+    converge_length = len(trajects[list(trajects[0].keys())[0]][0])
     List = [
         regime,
         converge_type,

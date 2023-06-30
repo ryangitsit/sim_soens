@@ -78,15 +78,6 @@ def main():
 
             new_nodes = False
 
-            # entries = []
-            # for entry in os.listdir(place):
-            #     if os.path.isfile(os.path.join(place, entry)):
-            #         # print(entry)
-            #         entries.append(entry)
-            # print(entries[-1])
-
-            # nodes = picklin(place,entries[-1][:len(entries[-1])-len('.pickle')])
-
 
         else:
             new_nodes=True
@@ -162,14 +153,6 @@ def main():
                 f"{path}{name}/nodes/",
                 f"init_nodes"
                 )
-            
-
-        # else:
-        #     nodes = picklin("results\MNIST_WTA_julia",f"nodes_at_{saved_run}")
-        #     for node in nodes:
-        #         node.refractory_synapse = node.synapse_list[-1]
-        #         del node.synapse_list[786:]
-                # del node.dend_dict
         return nodes
     
     def train_MNIST_neurons(nodes,dataset,path,name,run):
@@ -333,7 +316,7 @@ def main():
                 # on the tenth run test, but don't update -- save full nodes with data
                 else:
                     # print("Skipping Update")
-                    if sample == 0 and run%10 == 0:
+                    if sample == 0 and run%50 == 0:
                         # save the nodes!
                         picklit(
                             nodes,
@@ -365,7 +348,12 @@ def main():
                 del(input_)
 
                 # check if sample was passed (correct prediction)
-                if np.argmax(output) == digit:
+                # if np.argmax(output) == digit:
+                #     samples_passed+=1
+
+                # allow no ties
+                sub = np.array(output) - output[digit] 
+                if sum(n > 0 for n in sub) == 0 and sum(n == 0 for n in sub) == 1:
                     samples_passed+=1
 
         # samples passed out of total epoch

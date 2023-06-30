@@ -162,6 +162,12 @@ def main():
             [0,5,0],
             [0,0,5],
         ]
+        if config.digits > 3:
+            desired = []
+            for idx in range(config.digits):
+                desired.append([0 for _ in range(config.digits)])
+                desired[idx][idx] = 5
+
         backend = 'julia'
         print(backend)
 
@@ -264,15 +270,15 @@ def main():
                 # check spiking output
                 spikes = array_to_rows(net.spikes,config.digits)
 
-                # define error by difference of desired with actual spiking
+                # define error by difference of desired with actual spiking for each node
                 errors = []
-                for dig in range(config.digits):
-                    errors.append(desired[0][digit] - len(spikes[0]))
+                for nd in range(config.digits):
+                    errors.append(desired[nd][digit] - len(spikes[nd]))
 
                 # output spike totals from each class
                 output = []
-                for dig in range(config.digits):
-                    output.append(len(spikes[dig]))
+                for nd in range(config.digits):
+                    output.append(len(spikes[nd]))
 
                 # track outputs associated with each class
                 outputs[digit].append(output)
@@ -338,7 +344,7 @@ def main():
                 # on the tenth run test, but don't update -- save full nodes with data
                 else:
                     # print("Skipping Update")
-                    if sample == 0 and config.run%10 == 0:
+                    if sample == 0 and config.run%50 == 0:
                         # save the nodes!
                         picklit(
                             nodes,
@@ -370,7 +376,12 @@ def main():
                 del(input_)
 
                 # check if sample was passed (correct prediction)
-                if np.argmax(output) == digit:
+                # if np.argmax(output) == digit:
+                #     samples_passed+=1
+
+                # allow no ties
+                sub = np.array(output) - output[digit] 
+                if sum(n > 0 for n in sub) == 0 and sum(n == 0 for n in sub) == 1:
                     samples_passed+=1
 
         # samples passed out of total epoch

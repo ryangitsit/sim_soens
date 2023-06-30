@@ -701,7 +701,7 @@ def main():
     #     plt.legend()
     #     plt.savefig(path+sub_name+f'_offsets_{names[i]}_plot.png')
     #     plt.close()
-    converge_length = len(trajects[list(trajects.keys()[0])][0])
+    converge_length = len(trajects[list(trajects[0].keys())[0]][0])
     List = [
         regime,
         converge_type,
