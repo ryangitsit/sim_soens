@@ -666,55 +666,57 @@ def main():
         f"{sub_name}_trajects"
         )
 
-    plt.figure(figsize=(8,4))
-    plt.plot(accs)
-    plt.title(f"Learning Accuracy for {regime} Noisy 9-Pixel Classifier",fontsize=16)
-    plt.xlabel("Total Iterations",fontsize=14)
-    plt.ylabel("Percent Accuracy",fontsize=14)
-    plt.subplots_adjust(bottom=.15)
-    plt.savefig(path+sub_name+'_accs_plot.png')
-    plt.close()
+    # plt.figure(figsize=(8,4))
+    # plt.plot(accs)
+    # plt.title(f"Learning Accuracy for {regime} Noisy 9-Pixel Classifier",fontsize=16)
+    # plt.xlabel("Total Iterations",fontsize=14)
+    # plt.ylabel("Percent Accuracy",fontsize=14)
+    # plt.subplots_adjust(bottom=.15)
+    # plt.savefig(path+sub_name+'_accs_plot.png')
+    # plt.close()
 
-    plt.style.use('seaborn-v0_8-muted')
-    colors = plt.rcParams["axes.prop_cycle"].by_key()["color"]
+    # plt.style.use('seaborn-v0_8-muted')
+    # colors = plt.rcParams["axes.prop_cycle"].by_key()["color"]
 
-    for i,traject in enumerate(trajects):
-        plt.figure(figsize=(8,4))
-        count1=0
-        count2=0
-        for name,offset in reversed(traject.items()):
-            if 'soma' in name:
-                name = 'soma'
-                converge_length = len(offset)
-                # plt.plot(offset,color=colors[i],label=name,linewidth=4)
-                plt.plot(offset,color=colors[0],label=name,linewidth=4)
-            elif 'lay1' in name:
-                col = colors[1]
+    # for i,traject in enumerate(trajects):
+    #     plt.figure(figsize=(8,4))
+    #     count1=0
+    #     count2=0
+    #     for name,offset in reversed(traject.items()):
+    #         if 'soma' in name:
+    #             name = 'soma'
+    #             converge_length = len(offset)
+    #             # plt.plot(offset,color=colors[i],label=name,linewidth=4)
+    #             plt.plot(offset,color=colors[0],label=name,linewidth=4)
+    #         elif 'lay1' in name:
+    #             col = colors[1]
 
-                if count1 == 0:
-                    plt.plot(offset,'--',color=col,linewidth=2,label='Layer 1')
-                else:
-                    # plt.plot(offset,color=colors[0],label=name,linewidth=3)
-                    plt.plot(offset,'--',color=col,linewidth=2)
-                count1+=1
+    #             if count1 == 0:
+    #                 plt.plot(offset,'--',color=col,linewidth=2,label='Layer 1')
+    #             else:
+    #                 # plt.plot(offset,color=colors[0],label=name,linewidth=3)
+    #                 plt.plot(offset,'--',color=col,linewidth=2)
+    #             count1+=1
 
-            elif 'lay2' in name:
-                col = colors[2]
-                if count2 == 0:
-                    plt.plot(offset,':',color=col,label='Layer 2',linewidth=1)
-                else:
-                    plt.plot(offset,':',color=col,linewidth=1)
-                # plt.plot(offset,color=colors[4],label=name)
-                count2+=1
+    #         elif 'lay2' in name:
+    #             col = colors[2]
+    #             if count2 == 0:
+    #                 plt.plot(offset,':',color=col,label='Layer 2',linewidth=1)
+    #             else:
+    #                 plt.plot(offset,':',color=col,linewidth=1)
+    #             # plt.plot(offset,color=colors[4],label=name)
+    #             count2+=1
 
-        plt.title(f"Noisy 9-Pixel Classifier {regime} {converge_type} Convergence - {names[i]}",fontsize=16)
-        plt.xlabel("Total Iterations",fontsize=14)
-        plt.ylabel("Flux Offset",fontsize=14)
-        plt.subplots_adjust(bottom=.15)
-        plt.legend()
-        plt.savefig(path+sub_name+f'_offsets_{names[i]}_plot.png')
-        plt.close()
+    #     plt.title(f"Noisy 9-Pixel Classifier {regime} {converge_type} Convergence - {names[i]}",fontsize=16)
+    #     plt.xlabel("Total Iterations",fontsize=14)
+    #     plt.ylabel("Flux Offset",fontsize=14)
+    #     plt.subplots_adjust(bottom=.15)
+    #     plt.legend()
+    #     plt.savefig(path+sub_name+f'_offsets_{names[i]}_plot.png')
+    #     plt.close()
 
+    
+    converge_length = len(trajects[list(trajects.keys()[0])][0])
     List = [
         regime,
         converge_type,

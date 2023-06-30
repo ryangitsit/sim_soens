@@ -31,10 +31,16 @@ def allow_ties(df,index):
         return True
     else:
         return False
-
-# print(np.array(df["spikes"][11]) - np.array(df["spikes"])[df["digit"][11]]) 
-
-
+    
+def no_ties(df,index):
+    spike_str = df["spikes"][index][1:-1]
+    spikes = np.fromstring(spike_str, dtype=int, sep=',')
+    digit = int(df["digit"][index])
+    sub = spikes - spikes[digit] 
+    if sum(n > 0 for n in sub) == 0 and sum(n == 0 for n in sub) == 1:
+        return True
+    else:
+        return False
 
 def ongoing_performance(df):
     percents = []
@@ -53,6 +59,7 @@ def ongoing_performance(df):
                 totals[df["digit"][index]] += 1
                 if df["digit"][index] == df["prediction"][index]:
                 # if allow_ties(df,index) == True:
+                # if no_ties(df,index) == True:
                     count+=1
                     counts[df["digit"][index]] += 1
 
@@ -68,7 +75,9 @@ def by_run_performance(df):
     run_wins = 0
     for index, row in df.iterrows():
 
-        if df["digit"][index] == df["prediction"][index]:
+        # if df["digit"][index] == df["prediction"][index]:
+        # if allow_ties(df,index) == True:
+        if no_ties(df,index) == True:
             run_wins+=1
             dig_runs[df["digit"][index]]+=1
 
@@ -152,26 +161,32 @@ def node_analysis(span):
 #     )
 
 df = pd.read_csv(
-    'results\MNIST\julia_inhibit\learning_logger.csv',
+    'results\MNIST\julia_inhibit_solver\learning_logger.csv',
     names=['sample','digit','spikes','error','prediction','time','init_time','run_time','offsets']
     )
 
+# df = df.iloc[0:330]
+
+# print(np.sum(df['run_time'])/(60*60))
+# print(.76*30)
+
 # percents, procents = ongoing_performance(df)
 by_run, digs = by_run_performance(df)
-
+print(np.ceil(np.array(by_run)*30))
 plt.style.use('seaborn-v0_8-muted')
 plt.figure(figsize=(8,4))
-plt.title("MNIST Classification Performance")
-plt.xlabel("Performance Measure Starting Point")
-plt.ylabel("Classification Accuracy on Remaining Iterations")
+plt.title("MNIST Training Classification Performance",fontsize=16)
+plt.xlabel("Epoch",fontsize=14)
+plt.ylabel("Accuracy",fontsize=14)
 # plt.plot(percents, linewidth = 4,label='total')
 # plt.plot(procents, label=['0','1','2'])
 plt.plot(by_run, linewidth = 4, label="Total")
 plt.plot(np.transpose(digs), '--', label=['0','1','2'])
-plt.ylim(0,1)
+plt.ylim(0,1.025)
+
 plt.legend()
 plt.show()
 
 
-plt.plot(df["run_time"])
-plt.show()
+# plt.plot(df["run_time"])
+# plt.show()

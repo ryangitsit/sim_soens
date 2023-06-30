@@ -78,15 +78,6 @@ def main():
 
             new_nodes = False
 
-            # entries = []
-            # for entry in os.listdir(place):
-            #     if os.path.isfile(os.path.join(place, entry)):
-            #         # print(entry)
-            #         entries.append(entry)
-            # print(entries[-1])
-
-            # nodes = picklin(place,entries[-1][:len(entries[-1])-len('.pickle')])
-
 
         else:
             new_nodes=True
@@ -135,18 +126,16 @@ def main():
             
 
             # initialize a neuron of each class with this structure
-            node_zero = SuperNode(name='node_zero',weights=weights,**params)
-            node_one  = SuperNode(name='node_one',weights=weights, **params)
-            node_two  = SuperNode(name='node_two',weights=weights, **params)
-
-            nodes=[node_zero,node_one,node_two]
+            nodes = []
+            for node in range(config.digits):
+                nodes.append(SuperNode(name=f'node_{node}',weights=weights,**params))
 
             if mutual_inhibition == True:
-                inhibition = [-.3,-.3,-.3]
+                inhibition = -(1/config.digits)
                 for i,node in enumerate(nodes):
                     syn_soma = synapse(name=f'{node.name}_somatic_synapse')
                     node.synapse_list.append(syn_soma)
-                    node.neuron.dend_soma.add_input(syn_soma,connection_strength=inhibition[i])
+                    node.neuron.dend_soma.add_input(syn_soma,connection_strength=inhibition)
                 for i,node in enumerate(nodes):
                     for other_node in nodes:
                         if other_node.name != node.name:
@@ -162,17 +151,9 @@ def main():
                 f"{path}{name}/nodes/",
                 f"init_nodes"
                 )
-            
-
-        # else:
-        #     nodes = picklin("results\MNIST_WTA_julia",f"nodes_at_{saved_run}")
-        #     for node in nodes:
-        #         node.refractory_synapse = node.synapse_list[-1]
-        #         del node.synapse_list[786:]
-                # del node.dend_dict
         return nodes
     
-    def train_MNIST_neurons(nodes,dataset,path,name,run):
+    def train_MNIST_neurons(nodes,dataset,path,name,run,digits,samples):
         '''
         Trains nodes on MNIST dataset
         '''
@@ -196,16 +177,16 @@ def main():
         samples_passed=0
 
         # itereate over each sample
-        for sample in range(10):
+        for sample in range(samples):
             
             # count errors for this sample
             # total_errors = [[] for i in range(3)]
 
             # track outputs for this sample
-            outputs = [[] for i in range(3)]
+            outputs = [[] for i in range(digits)]
 
             # iterate over each digit-class
-            for digit in range(3):
+            for digit in range(digits):
                 
                 start = time.perf_counter()
 
@@ -281,23 +262,17 @@ def main():
                 # init_times.append(net.init_time)
 
                 # check spiking output
-                spikes = array_to_rows(net.spikes,3)
+                spikes = array_to_rows(net.spikes,digits)
 
                 # define error by difference of desired with actual spiking
-                error_zero = desired[0][digit] - len(spikes[0])
-                error_one  = desired[1][digit] - len(spikes[1])
-                error_two  = desired[2][digit] - len(spikes[2])
-                
-                # collect errors
-                errors = [error_zero,error_one,error_two]
-                
-                # track error for each class
-                # total_errors[0] += np.abs(error_zero)
-                # total_errors[1] += np.abs(error_one)
-                # total_errors[2] += np.abs(error_two)
+                errors = []
+                for dig in range(digits):
+                    errors.append(desired[0][digit] - len(spikes[0]))
 
                 # output spike totals from each class
-                output = [len(spikes[0]),len(spikes[1]),len(spikes[2])]
+                output = []
+                for dig in range(digits):
+                    output.append(len(spikes[dig]))
 
                 # track outputs associated with each class
                 outputs[digit].append(output)
@@ -311,7 +286,7 @@ def main():
 
                 s = time.perf_counter()
                 
-                offset_sums = [0,0,0]
+                offset_sums = [0 for _ in range(digits)]
 
                 # on all but every tenth run, make updates according to algorithm 1 with elasticity
                 if run%10 != 0:
@@ -369,7 +344,7 @@ def main():
                     samples_passed+=1
 
         # samples passed out of total epoch
-        print(f"samples passed: {samples_passed}/30\n\n")
+        print(f"samples passed: {samples_passed}/{digits*samples}\n\n")
 
         # save the nodes!
         picklit(
@@ -379,7 +354,7 @@ def main():
             )
         
         # if all samples passed, task complete!
-        if samples_passed == 30:
+        if samples_passed == digits*samples:
             print("converged!\n\n")
             picklit(
                 nodes,
@@ -392,16 +367,16 @@ def main():
 
     # call in previously generated dataset
     path    = 'results/MNIST/'
-    name    = 'julia_inhibit_solver/'
+    name    = config.name+'/'
     dataset = picklin("datasets/MNIST/","duration=5000_slowdown=100")
     # new_nodes=True
 
     # load_start = time.perf_counter()
-    nodes = get_nodes(path,name)
+    nodes = get_nodes(path,name,config)
     # load_finish = time.perf_counter()
     # print("Load time: ", load_finish-load_start)
 
-    train_MNIST_neurons(nodes,dataset,path,name,config.run)
+    train_MNIST_neurons(nodes,dataset,path,name,config.run,config.digits,config.samples)
 
 if __name__=='__main__':
     main()
