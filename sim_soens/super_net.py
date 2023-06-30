@@ -151,7 +151,8 @@ class PointReservoir:
         ]
         
         for i in range(self.N):
-            neuron = NeuralZoo(type='custom',name=f'res_neuron_{i}',synaptic_structure=syn_struct,seed=self.run*1000+i,**params) # name=f'res_neuron_{i}',
+            # neuron = NeuralZoo(type='custom',name=f'res_neuron_{i}',synaptic_structure=syn_struct,seed=self.run*1000+i,**params) # name=f'res_neuron_{i}',
+            neuron = SuperNode(name=f'res_neuron_{i}',synaptic_structure=syn_struct,seed=self.run*1000+i,**params)
             # neuron.synaptic_layer()
             self.neurons.append(neuron)
 
@@ -251,8 +252,8 @@ class PointReservoir:
 
 
 
-    def run_network(self,prune_synapses=True):
-        self.net = network(dt=self.dt,tf=self.tf,nodes=self.neurons,new_way=False)
+    def run_network(self,prune_synapses=True,backend='Python'):
+        self.net = network(dt=self.dt,tf=self.tf,nodes=self.neurons,new_way=False,backend=backend)
         self.net.null_synapses = prune_synapses
         print("running network")
         self.net.simulate()
@@ -361,8 +362,9 @@ class SuperNet:
         nx.draw_circular(G, with_labels=True)
         plt.show()
 
-    def run_network(self):
-        self.net = network(dt=self.dt,tf=self.tf,nodes=self.nodes)
+    def run_network(self,backend='python'):
+        print(f"Running {backend} network")
+        self.net = network(dt=self.dt,tf=self.tf,nodes=self.nodes,backend=backend)
         self.net.null_synapses = True
         print("\nrunning network")
         self.net.simulate()

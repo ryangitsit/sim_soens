@@ -136,7 +136,7 @@ function dend_update(node::Dict,dend::SomaticDendrite,t_idx::Int,d_tau::Float64)
                 dend_synputs(node,dend,t_idx)
                 dend_signal(dend,t_idx,d_tau::Float64)
             else
-                dend_inputs(node,dend,t_idx)
+                # dend_inputs(node,dend,t_idx)
                 dend_synputs(node,dend,t_idx)
             end
         # else update
@@ -166,23 +166,29 @@ end
 function dend_inputs(node::Dict,dend::AbstractDendrite,t_idx::Int64)
     update = 0
     for input in dend.inputs
-        # if t_idx == 250
-        #     @show dend.name, input 
+        # if t_idx > 195 && t_idx < 205
+        #     @show input, node["dendrites"][input[1]].phir[t_idx], node["dendrites"][input[1]].s[t_idx]*input[2]
         # end
         update += node["dendrites"][input[1]].s[t_idx]*input[2]
     end
     dend.phir[t_idx+1] += update
+    # if t_idx > 195 && t_idx < 205
+    #     println("---------------------------------------------------------------------")
+    # end
 end
 
 
 function dend_synputs(node::Dict,dend::AbstractDendrite,t_idx::Int)
     update = 0
     for synput in dend.synputs 
-        # if t_idx == 250
-        #     @show dend.name, synput 
+        # if t_idx > 195 && t_idx < 205
+        #     @show dend.name, synput, node["synapses"][synput[1]].phi_spd[t_idx]
         # end
         dend.phir[t_idx+1] += node["synapses"][synput[1]].phi_spd[t_idx]*synput[2] # dend.s[t_idx]*input[2] + t_idx
     end
+    # if t_idx > 195 && t_idx < 205
+    #     println("---------------------------------------------------------------------")
+    # end
     # dend.phir[t_idx+1] += update
 end
 

@@ -375,7 +375,7 @@ def main():
         picklit(
             nodes,
             f"{path}{name}/nodes/",
-            f"nodes_at_{run}"
+            f"eternal_nodes"
             )
         
         # if all samples passed, task complete!

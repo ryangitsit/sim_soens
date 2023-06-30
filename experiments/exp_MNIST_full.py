@@ -153,7 +153,7 @@ def main():
                 )
         return nodes
     
-    def train_MNIST_neurons(nodes,dataset,path,name,run,digits,samples):
+    def train_MNIST_neurons(nodes,dataset,path,name,config):
         '''
         Trains nodes on MNIST dataset
         '''
@@ -171,22 +171,22 @@ def main():
 
         # itereate over some number of epochs
         # for run in range(next_run,1):
-        print("Run: ",run)
+        print("Run: ",config.run)
 
         # initialize epoch success count
         samples_passed=0
 
         # itereate over each sample
-        for sample in range(samples):
+        for sample in range(config.samples):
             
             # count errors for this sample
             # total_errors = [[] for i in range(3)]
 
             # track outputs for this sample
-            outputs = [[] for i in range(digits)]
+            outputs = [[] for i in range(config.digits)]
 
             # iterate over each digit-class
-            for digit in range(digits):
+            for digit in range(config.digits):
                 
                 start = time.perf_counter()
 
@@ -216,7 +216,7 @@ def main():
                     )
                 
                 # save one set of plots for all nodes for each digit of sample 0
-                if sample == 0 and run%10==0:
+                if sample == 0 and config.run%10==0:
                     try:
                         os.makedirs(path+name+'plots/')    
                     except FileExistsError:
@@ -251,8 +251,8 @@ def main():
                                 # label=f'Layer {l} Mean Flux'
                                 )
                         plt.legend(loc='upper right')
-                        plt.title(f'Node {n} - Digit {digit} - Run {run}')
-                        plt.savefig(path+name+f'plots/node_{n}_digit_{digit}_run_{run}.png')
+                        plt.title(f'Node {n} - Digit {digit} - Run {config.run}')
+                        plt.savefig(path+name+f'plots/node_{n}_digit_{digit}_run_{config.run}.png')
                         plt.close()
 
                 
@@ -262,16 +262,16 @@ def main():
                 # init_times.append(net.init_time)
 
                 # check spiking output
-                spikes = array_to_rows(net.spikes,digits)
+                spikes = array_to_rows(net.spikes,config.digits)
 
                 # define error by difference of desired with actual spiking
                 errors = []
-                for dig in range(digits):
+                for dig in range(config.digits):
                     errors.append(desired[0][digit] - len(spikes[0]))
 
                 # output spike totals from each class
                 output = []
-                for dig in range(digits):
+                for dig in range(config.digits):
                     output.append(len(spikes[dig]))
 
                 # track outputs associated with each class
@@ -286,34 +286,64 @@ def main():
 
                 s = time.perf_counter()
                 
-                offset_sums = [0 for _ in range(digits)]
+                offset_sums = [0 for _ in range(config.digits)]
 
                 # on all but every tenth run, make updates according to algorithm 1 with elasticity
-                if run%10 != 0:
+                if config.run%10 != 0 and config.run != 0:
                     # print("Updating")
-                    for n,node in enumerate(nodes):
-                        for l,layer in enumerate(node.dendrites):
-                            for g,group in enumerate(layer):
-                                for d,dend in enumerate(group):
-                                    if 'ref' not in dend.name and 'soma' not in dend.name:
-                                        step = errors[n]*np.mean(dend.s)*.005 #+(2-l)*.001
-                                        flux = np.mean(dend.phi_r) + step #dend.offset_flux
-                                        if flux > 0.5 or flux < -0.5:
-                                            step = -step
-                                        # print(dend.name,step)
-                                        dend.offset_flux += step
-                                        offset_sums[n] += dend.offset_flux
-                                    dend.s = []
-                                    dend.phi_r = []
+                    if config.elasticity=="elastic":
+                        if sample == 0 and config.run == 0: print("elastic")
+                        for n,node in enumerate(nodes):
+                            for l,layer in enumerate(node.dendrites):
+                                for g,group in enumerate(layer):
+                                    for d,dend in enumerate(group):
+                                        if 'ref' not in dend.name and 'soma' not in dend.name:
+                                            step = errors[n]*np.mean(dend.s)*config.eta #+(2-l)*.001
+                                            flux = np.mean(dend.phi_r) + step #dend.offset_flux
+                                            if flux > 0.5 or flux < -0.5:
+                                                step = -step
+                                            dend.offset_flux += step
+                                            offset_sums[n] += dend.offset_flux
+                                        dend.s = []
+
+                    if config.elasticity=="inelastic":
+                        if sample == 0 and config.run == 0: print("inealstic")
+                        for n,node in enumerate(nodes):
+                            for l,layer in enumerate(node.dendrites):
+                                for g,group in enumerate(layer):
+                                    for d,dend in enumerate(group):
+                                        if 'ref' not in dend.name and 'soma' not in dend.name:
+                                            step = errors[n]*np.mean(dend.s)*config.eta #+(2-l)*.001
+                                            flux = np.mean(dend.phi_r) + step #dend.offset_flux
+                                            if flux > 0.5 or flux < -0.5:
+                                                step = 0
+                                            dend.offset_flux += step
+                                            offset_sums[n] += dend.offset_flux
+                                        dend.s = []
+                                        dend.phi_r = []
+
+                    if config.elasticity=="unbounded":
+                        if sample == 0 and config.run == 0: print("unbounded")
+                        for n,node in enumerate(nodes):
+                            for l,layer in enumerate(node.dendrites):
+                                for g,group in enumerate(layer):
+                                    for d,dend in enumerate(group):
+                                        if 'ref' not in dend.name and 'soma' not in dend.name:
+                                            step = errors[n]*np.mean(dend.s)*config.eta #+(2-l)*.001
+                                            dend.offset_flux += step
+                                            offset_sums[n] += dend.offset_flux
+                                        dend.s = []
+                                        dend.phi_r = []
+
                 # on the tenth run test, but don't update -- save full nodes with data
                 else:
                     # print("Skipping Update")
-                    if sample == 0 and run%10 == 0:
+                    if sample == 0 and config.run%10 == 0:
                         # save the nodes!
                         picklit(
                             nodes,
                             f"{path}{name}/full_nodes/",
-                            f"full_0_{digit}_nodes_at_{run}"
+                            f"full_0_{digit}_nodes_at_{config.run}"
                             )
                         for node in nodes:
                             for dend in node.dendrite_list:
@@ -344,22 +374,22 @@ def main():
                     samples_passed+=1
 
         # samples passed out of total epoch
-        print(f"samples passed: {samples_passed}/{digits*samples}\n\n")
+        print(f"samples passed: {samples_passed}/{config.digits*config.samples}\n\n")
 
         # save the nodes!
         picklit(
             nodes,
             f"{path}{name}/nodes/",
-            f"nodes_at_{run}"
+            f"eternal_nodes"
             )
         
         # if all samples passed, task complete!
-        if samples_passed == digits*samples:
+        if samples_passed == config.digits*config.samples:
             print("converged!\n\n")
             picklit(
                 nodes,
                 f"{path}{name}/nodes/",
-                f"CONVERGED_at_{run}"
+                f"CONVERGED_at_{config.run}"
                 )
 
     from sim_soens.argparse import setup_argument_parser
@@ -375,8 +405,8 @@ def main():
     nodes = get_nodes(path,name,config)
     # load_finish = time.perf_counter()
     # print("Load time: ", load_finish-load_start)
-
-    train_MNIST_neurons(nodes,dataset,path,name,config.run,config.digits,config.samples)
+    print(config.elasticity," -- ",config.eta," -- ",config.digits," -- ",config.samples)
+    train_MNIST_neurons(nodes,dataset,path,name,config)
 
 if __name__=='__main__':
     main()

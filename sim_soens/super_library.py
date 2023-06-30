@@ -70,6 +70,8 @@ class NeuralZoo():
 
         elif self.type == 'plastic_neuron':
                 self.plastic_neuron()
+    
+        self.refractory_synapse = self.neuron.dend__ref.synaptic_inputs[f"{self.name}__syn_refraction"]
 
 
     def custom(self):
