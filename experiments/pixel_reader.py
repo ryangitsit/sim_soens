@@ -7,7 +7,7 @@ sys.path.append('../')
 from sim_soens.super_functions import *
 
 
-def pixel_hist(backend,under):
+def pixel_hist(backend,folder,under):
     names=[
             "regime",
             "validation",
@@ -20,9 +20,11 @@ def pixel_hist(backend,under):
             ]
 
     df = pd.read_csv(
-        f'results/{backend}_testing/pixels.csv',
+        f'results/{folder}/pixels.csv',
         names=names
             )
+    
+    print(len(df["regime"]))
 
     converge_dict = {
         "regime_Elastic":0,
@@ -54,7 +56,7 @@ def pixel_hist(backend,under):
             convs.append(row["convergence"])
     print(np.mean(convs))
     # print(converge_dict)
-    print(converge_dict)
+    # print(converge_dict)
     keys = list(converge_dict.keys())
     keys[0] = keys[0][7:]
     keys[1] = keys[1][7:]
@@ -87,5 +89,7 @@ def pixel_hist(backend,under):
     plt.show()
 
 backend = 'jul'
-under = 238
-pixel_hist(backend,under)
+folder = 'jul_pixels_inh'
+# folder = 'jul_testing'
+under = 283
+pixel_hist(backend,folder,under)

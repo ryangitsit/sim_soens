@@ -59,7 +59,7 @@ def main():
     def get_nodes(
             path,
             name,
-            saved_run=None,
+            config,
             ):
         '''
         Either creates or loads nodes for training
@@ -92,18 +92,48 @@ def main():
             # branching factor
             f_idx = 28
 
-            layer_1_weighting = 1/4
-            layer_2_weighting = 3/4
+            if config.layers == 3:
+                layer_1_weighting = 1/4
+                layer_2_weighting = 3/4
 
-            # create random weights for each layer
-            layer_1 = [np.random.rand(f_idx)*layer_1_weighting]
-            layer_2 = [np.random.rand(f_idx)*layer_2_weighting for _ in range(f_idx)]
+                # create random weights for each layer
+                layer_1 = [np.random.rand(f_idx)*layer_1_weighting]
+                layer_2 = [np.random.rand(f_idx)*layer_2_weighting for _ in range(f_idx)]
 
-            # place them in a weight structure (defines structure and weighing of a neuron)
-            weights = [
-                layer_1,
-                layer_2
-            ]
+                # place them in a weight structure (defines structure and weighing of a neuron)
+                weights = [
+                    layer_1,
+                    layer_2
+                ]
+
+            elif config.layers == 2:
+                layer_1_weighting = 3/4
+
+                # create random weights for each layer
+                layer_1 = [np.random.rand(f_idx**2)*layer_1_weighting]
+                # layer_2 = [np.random.rand(f_idx)*layer_2_weighting for _ in range(f_idx)]
+
+                # place them in a weight structure (defines structure and weighing of a neuron)
+                weights = [
+                    layer_1
+                ]
+
+            elif config.layers == 4:
+                layer_1_weighting = 1/4
+                layer_2_weighting = 3/4
+
+                # create random weights for each layer
+                layer_1 = [np.random.rand(f_idx)*layer_1_weighting]
+                layer_2 = [np.random.rand(f_idx)*layer_2_weighting for _ in range(f_idx)]
+                layer_3 = [np.random.rand(1)*layer_2_weighting for _ in range(f_idx**2)]
+
+                # place them in a weight structure (defines structure and weighing of a neuron)
+                weights = [
+                    layer_1,
+                    layer_2,
+                    layer_3
+                ]
+
 
             # internal node parameters
             mutual_inhibition = True
@@ -129,6 +159,8 @@ def main():
             nodes = []
             for node in range(config.digits):
                 nodes.append(SuperNode(name=f'node_{node}',weights=weights,**params))
+
+            # nodes[0].plot_structure()
 
             if mutual_inhibition == True:
                 inhibition = -(1/config.digits)

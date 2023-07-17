@@ -20,5 +20,6 @@ def setup_argument_parser():
     parser.add_argument( "--digits",        type=int,       default = 3         )
     parser.add_argument( "--samples",       type=int,       default = 10        )
     parser.add_argument( "--elasticity",    type=str,       default = "elastic" )
+    parser.add_argument( "--layers",        type=int,       default = 3         )
 
     return parser.parse_args()

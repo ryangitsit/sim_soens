@@ -53,21 +53,25 @@ def ongoing_performance(df):
     return percents, procents
 
 
-def by_run_performance(df,decider):
+def by_run_performance(df,decider,digits,samples):
     by_run = []
-    by_dig_runs = [[] for _ in range(3)]
-    dig_runs = [0,0,0]
+    by_dig_runs = [[] for _ in range(digits)]
+
+    zrs = [0 for _ in range(digits)]
+
+    dig_runs = zrs
+    
     run_wins = 0
     if decider == 'ties':
         for index, row in df.iterrows():
             if allow_ties(df,index) == True:
                 run_wins+=1
                 dig_runs[df["digit"][index]]+=1
-            if (index+1)%30 == 0:
-                by_run.append(run_wins/30)
+            if (index+1)%(digits*samples) == 0:
+                by_run.append(run_wins/(digits*samples))
                 for i,dig in enumerate(dig_runs):
-                    by_dig_runs[i].append(dig/10)
-                dig_runs = [0,0,0]
+                    by_dig_runs[i].append(dig/samples)
+                dig_runs = [0 for _ in range(digits)]
                 run_wins = 0
 
     if decider == 'winner':
@@ -75,11 +79,11 @@ def by_run_performance(df,decider):
             if no_ties(df,index) == True:
                 run_wins+=1
                 dig_runs[df["digit"][index]]+=1
-            if (index+1)%30 == 0:
-                by_run.append(run_wins/30)
+            if (index+1)%(digits*samples) == 0:
+                by_run.append(run_wins/(digits*samples))
                 for i,dig in enumerate(dig_runs):
-                    by_dig_runs[i].append(dig/10)
-                dig_runs = [0,0,0]
+                    by_dig_runs[i].append(dig/samples)
+                dig_runs = [0 for _ in range(digits)]
                 run_wins = 0
 
     if decider == 'lucky':
@@ -87,14 +91,18 @@ def by_run_performance(df,decider):
             if df["digit"][index] == df["prediction"][index]:
                 run_wins+=1
                 dig_runs[df["digit"][index]]+=1
-            if (index+1)%30 == 0:
-                by_run.append(run_wins/30)
+            if (index+1)%(digits*samples) == 0:
+                by_run.append(run_wins/(digits*samples))
                 for i,dig in enumerate(dig_runs):
-                    by_dig_runs[i].append(dig/10)
-                dig_runs = [0,0,0]
+                    by_dig_runs[i].append(dig/samples)
+                dig_runs = [0 for _ in range(digits)]
                 run_wins = 0
 
     return by_run, by_dig_runs
+
+
+
+
 
 
 # df = pd.read_csv(
@@ -106,9 +114,8 @@ def by_run_performance(df,decider):
 
 
 experiments = ['julia_inhibit_solver','MNIST_inelast','MNIST_unbounded','MNIST_eta']#,'MNIST_full']
-# experiment = 'MNIST_inelast'
-
-until = 13
+# experiments = ['MNIST_eta','MNIST_deep','MNIST_shallow']
+until = 100000000
 
 for i,exp in enumerate(experiments):
     df = pd.read_csv(
@@ -117,8 +124,9 @@ for i,exp in enumerate(experiments):
         )
 
     # percents, procents = ongoing_performance(df)
-    by_run, digs = by_run_performance(df,'winner')
-    print(np.ceil(np.array(by_run)*30)[:until], exp)
+    by_run, digs = by_run_performance(df,'winner',3,10)
+    print(f"Experiment {exp}, {len(by_run)} epochs")
+    print(np.max(np.ceil(np.array(by_run)*30)))
     plt.style.use('seaborn-v0_8-muted')
     plt.figure(figsize=(8,4))
 
@@ -127,7 +135,7 @@ for i,exp in enumerate(experiments):
     plt.ylabel("Accuracy",fontsize=14)
     # plt.plot(percents, linewidth = 4,label='total')
     # plt.plot(procents, label=['0','1','2'])
-    plt.plot(by_run[:until], linewidth = 4, label="Total")
+    plt.plot(by_run, linewidth = 4, label="Total")
     plt.plot(np.transpose(digs)[:until], '--', label=['0','1','2'])
     plt.ylim(0,1.025)
 
@@ -135,7 +143,7 @@ for i,exp in enumerate(experiments):
     plt.show()
 
 
-    # plt.plot(df["run_time"])
-    # plt.show()
+    plt.plot(df["run_time"])
+    plt.show()
 
-    # print("Average runtime = ",np.mean(df["run_time"]))
+    print("Average runtime = ",np.mean(df["run_time"]))

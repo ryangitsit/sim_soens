@@ -206,8 +206,8 @@ function dend_signal(dend::AbstractDendrite,t_idx::Int,d_tau::Float64)
         val = val - dend.phi_min
     end
 
-    # ind_phi = closest_index(dend.phi_vec,val)
-    ind_phi = closest_index(dend.phi_vec,dend.phir[t_idx+1]) # +1 or not?
+    ind_phi = closest_index(dend.phi_vec,val)
+    # ind_phi = closest_index(dend.phi_vec,dend.phir[t_idx+1]) # +1 or not?
 
     # ind_phi = index_approxer(
     #     val,

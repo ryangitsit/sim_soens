@@ -7,7 +7,7 @@ FOR %%a IN (1.8,2.0) DO (
                 FOR %%e IN (0.01,0.015,0.02) DO (
                     FOR %%f IN ("True", "False", "None") DO (
                         FOR %%g IN ("True", "False") DO (
-                            python ./exp_learn_prime.py --exp_name "jul_pixels_inh" --backend "julia" --ib %%a  --tau %%b  --beta %%c  --s_th %%d --eta  %%e  --elast %%f  --valid %%g
+                            python ./exp_learn_prime.py --exp_name "jul_pixels_inh_prime" --backend "julia" --ib %%a  --tau %%b  --beta %%c  --s_th %%d --eta  %%e  --elast %%f  --valid %%g
                         )
                     )
                 )

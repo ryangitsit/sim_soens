@@ -96,8 +96,93 @@ def get_ordered_files(path):
 
     return ordered_files
 
-name = "inelast"
-path = f"results\\MNIST\\julia_inhibit_solver\\nodes\\"
-files = get_ordered_files(path)
-# nodes = load_nodes(10,0,'inelast')
-offset_analysis(path,files)
+
+### MNIST ###
+# name = "inelast"
+# path = f"results\\MNIST\\julia_inhibit_solver\\nodes\\"
+# files = get_ordered_files(path)
+# # nodes = load_nodes(10,0,'inelast')
+# offset_analysis(path,files)
+
+
+### Pixels ###
+def plot_offsets(trajects):
+    plt.style.use('seaborn-v0_8-muted')
+    colors = plt.rcParams["axes.prop_cycle"].by_key()["color"]
+    sub_colors = ['r','b','g']
+    sub_colors_lay2_z = ['g','g','r','r','g','r','r','g','g']
+    sub_colors_lay2_n = ['g','r','g','g','r','g','r','g','r']
+    sub_colors_lay2_v = ['r','g','r','g','r','g','g','r','g']
+    lay2_cols = [sub_colors_lay2_z,sub_colors_lay2_v,sub_colors_lay2_n]
+    names = ['Z','V','N']
+    for i,traject in enumerate(trajects):
+        if i >=  0:
+            
+            plt.figure(figsize=(8,4))
+            count1=0
+            count2=0
+            for name,offset in reversed(traject.items()):
+                if 'soma' in name:
+                    name = 'soma'
+                    converge_length = len(offset)
+                    # plt.plot(offset,color=colors[i],label=name,linewidth=4)
+                    plt.plot(offset,color=colors[0],label=name,linewidth=4)
+                elif 'lay1' in name:
+                    col = colors[3]
+                    # col = sub_colors[count1]
+
+                    if count1 == 0:
+                        # plt.plot(offset,'--',linewidth=2,label='Layer 1')
+                        plt.plot(offset,'--',color=col,linewidth=2,label='Layer 1')
+                    else:
+                        # plt.plot(offset,color=colors[0],label=name,linewidth=3)
+                        plt.plot(offset,'--',color=col,linewidth=2)
+                    count1+=1
+
+                elif 'lay2' in name:
+                    # col = colors[2]
+                    # col = sub_colors_lay2_z[count2%len(colors)]
+                    col = lay2_cols[i][count2]
+                    if count2 == 0:
+                        plt.plot(offset,':',color=col,label='Layer 2',linewidth=1)
+                    else:
+                        plt.plot(offset,':',color=col,linewidth=1)
+                    # plt.plot(offset,color=colors[4],label=name)
+                    count2+=1
+
+            # plt.title(
+            #     f"Noisy 9-Pixel Classifier {regime} {converge_type} Convergence - {names[i]}",
+            #     fontsize=16
+            #     )
+            plt.title(
+                f"Noisy 9-Pixel Classifier - {names[i]}",
+                fontsize=16
+                )
+            
+            plt.xlabel("Total Iterations",fontsize=14)
+            plt.ylabel("Flux Offset",fontsize=14)
+            plt.subplots_adjust(bottom=.15)
+            plt.legend()
+            plt.show()
+
+def get_trajects(path):
+    import os
+    file_list = os.listdir(path)
+    success = 0
+    for file in file_list:
+        if 'accs' in file and 'png' not in file:
+            acc = picklin(path,file)
+            if acc[-1] == 100:
+                success = 1
+            else:
+                success = 0
+        
+        if 'trajects' in file and success == 1:
+            plot_offsets(picklin(path,file))
+
+
+path = 'results/jul_testing/early_plots'
+get_trajects(path)
+
+
+
