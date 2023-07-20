@@ -49,7 +49,7 @@ def pixel_hist(backend,folder,under):
 
     convs = []
     for index, row in df.iterrows():
-        if df["convergence"][index] < under and df["ib"][index]==1.8: # and index < 70:
+        if df["convergence"][index] < under:# and df["ib"][index]==1.8: # and index < 70:
 
             for n in names[:-1]: 
                 converge_dict[f"{n}_"+str(df[n][index])] += 1
@@ -89,7 +89,7 @@ def pixel_hist(backend,folder,under):
     plt.show()
 
 backend = 'jul'
-folder = 'jul_pixels_inh'
+folder = 'jul_pixels_inh'#_prime'
 # folder = 'jul_testing'
-under = 283
+under = 176
 pixel_hist(backend,folder,under)

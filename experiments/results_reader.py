@@ -113,37 +113,77 @@ def by_run_performance(df,decider,digits,samples):
 
 
 
-experiments = ['julia_inhibit_solver','MNIST_inelast','MNIST_unbounded','MNIST_eta']#,'MNIST_full']
-# experiments = ['MNIST_eta','MNIST_deep','MNIST_shallow']
-until = 100000000
+# # experiments = ['julia_inhibit_solver','MNIST_inelast','MNIST_unbounded','MNIST_eta']#,'MNIST_full']
+# experiments = ['MNIST_unbounded','MNIST_deep_prime','MNIST_shallow_prime']
+# until = 100000000
 
-for i,exp in enumerate(experiments):
-    df = pd.read_csv(
-        f'results\MNIST\{exp}\learning_logger.csv',
-        names=['sample','digit','spikes','error','prediction','time','init_time','run_time','offsets']
-        )
+def plot_singles(experiments,until):
+    for i,exp in enumerate(experiments):
+        df = pd.read_csv(
+            f'results\MNIST\{exp}\learning_logger.csv',
+            names=['sample','digit','spikes','error','prediction','time','init_time','run_time','offsets']
+            )
 
-    # percents, procents = ongoing_performance(df)
-    by_run, digs = by_run_performance(df,'winner',3,10)
-    print(f"Experiment {exp}, {len(by_run)} epochs")
-    print(np.max(np.ceil(np.array(by_run)*30)))
+        # percents, procents = ongoing_performance(df)
+        by_run, digs = by_run_performance(df,'winner',3,10)
+
+        pr = np.max(np.ceil(np.array(by_run)*30))
+        print(f"Experiment {exp}, {len(by_run)} epochs, {np.round(pr*100/30,2)}% best run")
+
+
+        plt.style.use('seaborn-v0_8-muted')
+        plt.figure(figsize=(8,4))
+
+        plt.title(f"MNIST Training Classification Performance - {exp}",fontsize=16)
+        plt.xlabel("Epoch",fontsize=14)
+        plt.ylabel("Accuracy",fontsize=14)
+        plt.plot(by_run[:until], linewidth = 4, label="Total")
+        plt.plot(np.transpose(digs)[:until], '--', label=['0','1','2'])
+        plt.ylim(0,1.025)
+
+        plt.legend()
+        plt.show()
+
+
+        # plt.plot(df["run_time"])
+        # plt.show()
+
+        # print("Average runtime = ",np.mean(df["run_time"]))
+
+def plot_all(experiments,until):
     plt.style.use('seaborn-v0_8-muted')
     plt.figure(figsize=(8,4))
 
-    plt.title(f"MNIST Training Classification Performance - {exp}",fontsize=16)
+    plt.title(f"MNIST Training Classification Performance",fontsize=16)
     plt.xlabel("Epoch",fontsize=14)
     plt.ylabel("Accuracy",fontsize=14)
-    # plt.plot(percents, linewidth = 4,label='total')
-    # plt.plot(procents, label=['0','1','2'])
-    plt.plot(by_run, linewidth = 4, label="Total")
-    plt.plot(np.transpose(digs)[:until], '--', label=['0','1','2'])
-    plt.ylim(0,1.025)
+
+    for i,exp in enumerate(experiments):
+        df = pd.read_csv(
+            f'results\MNIST\{exp}\learning_logger.csv',
+            names=['sample','digit','spikes','error','prediction','time','init_time','run_time','offsets']
+            )
+
+        by_run, digs = by_run_performance(df,'winner',3,10)
+        plt.plot(by_run, linewidth = 4, label=exp)
+        # plt.plot(np.transpose(digs)[:until], '--', label=['0','1','2'])
 
     plt.legend()
     plt.show()
 
 
-    plt.plot(df["run_time"])
-    plt.show()
+experiments = [
+    # 'julia_inhibit_solver',
+    # 'MNIST_inelast',
+    # 'MNIST_unbounded',
+    'MNIST_eta',
+    # 'MNIST_deep',
+    # 'MNIST_unbounded_prime',
+    # 'MNIST_deep_prime',
+    # 'learning_decay'
+    ]
 
-    print("Average runtime = ",np.mean(df["run_time"]))
+until = 150
+
+plot_singles(experiments,until)
+plot_all(experiments,until)

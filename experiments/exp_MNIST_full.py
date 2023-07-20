@@ -445,10 +445,14 @@ def main():
     # new_nodes=True
 
     # load_start = time.perf_counter()
+
+    if config.decay == "True":
+        config.eta = 1/(1000+15*config.run)
+
     nodes = get_nodes(path,name,config)
     # load_finish = time.perf_counter()
     # print("Load time: ", load_finish-load_start)
-    print(config.elasticity," -- ",config.eta," -- ",config.digits," -- ",config.samples)
+    print(config.elasticity," -- ",config.eta," -- ",config.digits," -- ",config.samples, " -- ", config.eta)
     train_MNIST_neurons(nodes,dataset,path,name,config)
 
 if __name__=='__main__':

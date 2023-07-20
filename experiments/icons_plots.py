@@ -1,5 +1,8 @@
 import numpy as np
 import matplotlib.pyplot as plt
+import sys
+sys.path.append('../sim_soens')
+sys.path.append('../')
 
 from sim_soens.super_library import NeuralZoo
 from sim_soens.super_input import SuperInput
@@ -361,8 +364,8 @@ def rollover():
     neurs = {}
     nodes = []
     
-    for i in range(10):
-        syn_struct = [[[[1.5+i*.2]]]]
+    for i in range(8):
+        syn_struct = [[[[.5+i*.25]]]]
         neurs[str(i)] = NeuralZoo(type="custom",synaptic_structure=syn_struct,s_th=100)
         neurs[str(i)].synapses[0][0][0][0].add_input(input.signals[0])
         nodes.append(neurs[str(i)])
