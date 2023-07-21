@@ -178,12 +178,12 @@ experiments = [
     # 'MNIST_unbounded',
     'MNIST_eta',
     # 'MNIST_deep',
-    # 'MNIST_unbounded_prime',
-    # 'MNIST_deep_prime',
-    # 'learning_decay'
+    'MNIST_unbounded_prime',
+    'MNIST_deep_prime',
+    'learning_decay'
     ]
 
-until = 150
+until = 150*100
 
 plot_singles(experiments,until)
 plot_all(experiments,until)
