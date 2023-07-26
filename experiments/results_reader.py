@@ -176,11 +176,13 @@ experiments = [
     # 'julia_inhibit_solver',
     # 'MNIST_inelast',
     # 'MNIST_unbounded',
-    'MNIST_eta',
+    # 'MNIST_eta',
     # 'MNIST_deep',
     'MNIST_unbounded_prime',
     'MNIST_deep_prime',
-    'learning_decay'
+    'learning_decay',
+    'MNIST_rich',
+    'prob_update'
     ]
 
 until = 150*100

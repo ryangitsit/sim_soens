@@ -49,7 +49,7 @@ def run_soen_sim(net):
 
         # run the simulation one time step at a time
         if net.backend == 'julia':
-             
+            # print('julia')
             from sim_soens.soen_initialize import make_subarrays
             
             # if net.print_times: print("----------------------------------------------------\n\n")
@@ -133,7 +133,7 @@ def run_soen_sim(net):
             # jl.gc()
 
         else:
-
+            # print('python')
             start = time.perf_counter()
             # interate through all network nodes and initialize all related elements
             for node in net.nodes:

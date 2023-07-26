@@ -167,7 +167,8 @@ def save_fig(plt,path,name):
 def spks_to_binmatrix(N,T,spikes):
     binned = np.zeros((N,T))
     for i in range(len(spikes[0])):
-        binned[int(spikes[0][i])][int(np.floor(spikes[1][i]))] += 1
+        if spikes[1][i] < T:
+            binned[int(spikes[0][i])][int(np.floor(spikes[1][i]))] += 1
     return binned
 
 def make_letters():

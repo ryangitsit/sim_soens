@@ -197,6 +197,14 @@ class dendrite():
                 self.ib = self.ib_di
             else:
                 self.ib = self.ib
+            if "tau_di" in self.__dict__.keys():
+                self.tau = self.tau_di
+            else:
+                self.tau = self.tau
+            if "beta_di" in self.__dict__.keys():
+                self.beta = self.beta_di
+            else:
+                self.beta = self.beta
             if "dend_name" in self.__dict__.keys():
                 self.name = self.dend_name
         self.circuit_betas[-1] = self.beta_di
@@ -237,8 +245,8 @@ class dendrite():
             self.tau_di = self.tau_list[0]  
 
         # jj_params setup based on custom params
-        tau_di = self.tau_di * 1e-9
-        beta_di = self.beta_di
+        tau_di = self.tau_di * 1e-9 #*** tau?
+        beta_di = self.beta_di      #*** beta?
         Ic = self.Ic * 1e-6
         Ldi = p['Phi0']*beta_di/(2*np.pi*Ic)
         rdi = Ldi/tau_di

@@ -50,7 +50,7 @@ def activity_plot(
         neurons,net=None,phir=False,dend=True,title=None,input=None,weighting=True,
         docstring=False,lay=100000,spikes=True, path=None,SPD=False,ref=False,
         legend_out=False,size=(12,4), y_range=None,subtitles=None,legend=True,
-        legend_all=False
+        legend_all=False, S=True, phi_th=True
         ):
     
     
@@ -80,6 +80,8 @@ def activity_plot(
     else:
         time_vec = net.t
 
+    colors = plt.rcParams["axes.prop_cycle"].by_key()["color"]
+
     if len(neurons) > 1:
         fig, axs = plt.subplots(len(neurons), 1,figsize=(size))
         for ii,n in enumerate(neurons): 
@@ -92,16 +94,17 @@ def activity_plot(
             axs[ii].plot(time_vec,signal,  label='soma signal', linewidth=4)
 
             if phir==True:
-                from sim_soens.soen_functions import phi_thresholds
-                phi_ths = phi_thresholds(n.neuron)
-                axs[ii].axhline(
-                    y = phi_ths[1], color = 'purple', 
-                    linestyle = '--',linewidth=.5,label=r"$\phi_{th}$"
-                    )
-                if any(ele < 0 for ele in phi_r):
-                    axs[ii].axhline(y = phi_ths[0], color = 'purple', 
-                                    linestyle = '--',linewidth=.5)
-                axs[ii].plot(time_vec,phi_r,  label=r'$\phi_r$ (soma)')
+                if phi_th == True:
+                    from sim_soens.soen_functions import phi_thresholds
+                    phi_ths = phi_thresholds(n.neuron)
+                    axs[ii].axhline(
+                        y = phi_ths[1], color = 'purple', 
+                        linestyle = '--',linewidth=.5,label=r"$\phi_{th}$"
+                        )
+                    if any(ele < 0 for ele in phi_r):
+                        axs[ii].axhline(y = phi_ths[0], color = 'purple', 
+                                        linestyle = '--',linewidth=.5)
+                axs[ii].plot(time_vec,phi_r, color = colors[1], label=r'$\phi_r$ (soma)')
 
             if dend:
                 for i,layer in enumerate(n.dendrites):
@@ -127,7 +130,8 @@ def activity_plot(
                                             dendrite.synaptic_inputs[spd].phi_spd,
                                             label="SPD"
                                             )
-            axs[ii].plot(time_vec,signal, color='#1f77b4',linewidth=4)
+            if S == True:
+                axs[ii].plot(time_vec,signal, color='#1f77b4',linewidth=4)
 
             if input:
                 axs[ii].plot(
@@ -191,17 +195,19 @@ def activity_plot(
 
         
         plt.figure(figsize=size)
-        plt.plot(time_vec,signal,  label='soma signal', linewidth=4)
+        if S == True:
+            plt.plot(time_vec,signal,  label='soma signal', linewidth=4)
 
         if phir:
-            from sim_soens.soen_functions import phi_thresholds
-            phi_ths = phi_thresholds(neurons[0].neuron)
-            plt.axhline(y = phi_ths[1], color = 'purple', linestyle = '--',
-                        linewidth=.5,label=r"$\phi_{th}$")
-            if any(ele < 0 for ele in phi_r):
-                plt.axhline(y = phi_ths[0], color = 'purple', linestyle = '--',
-                            linewidth=.5)
-            plt.plot(time_vec,phi_r,  label=r'$\phi_r$ (soma)')
+            if phi_th == True:
+                from sim_soens.soen_functions import phi_thresholds
+                phi_ths = phi_thresholds(neurons[0].neuron)
+                plt.axhline(y = phi_ths[1], color = 'purple', linestyle = '--',
+                            linewidth=.5,label=r"$\phi_{th}$")
+                if any(ele < 0 for ele in phi_r):
+                    plt.axhline(y = phi_ths[0], color = 'purple', linestyle = '--',
+                                linewidth=.5)
+            plt.plot(time_vec,phi_r, color = colors[1],linewidth=2, label=r'$\phi_r$ (soma)')
 
         if dend:
             for i,layer in enumerate(neurons[0].dendrites):
@@ -243,8 +249,8 @@ def activity_plot(
                     input.spike_arrays[1],np.zeros(len(input.spike_arrays[1])),
                     'xr', markersize=5, label='input event'
                     )
-                
-        plt.plot(time_vec,signal,  color='#1f77b4',linewidth=4)
+        if S == True:
+            plt.plot(time_vec,signal,  color='#1f77b4',linewidth=4)
         plt.xlabel("Simulation Time (ns)",fontsize=14)
         plt.ylabel("Signal (Ic)",fontsize=14)
         plt.subplots_adjust(bottom=.25)
@@ -256,6 +262,7 @@ def activity_plot(
             plt.subplots_adjust(bottom=.15)
         else:
             plt.legend(loc=1)
+    plt.tight_layout()
     if path:
         plt.savefig(path)
     plt.show()

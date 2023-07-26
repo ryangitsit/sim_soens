@@ -12,8 +12,9 @@ from sim_soens.super_functions import *
 from sim_soens.soen_sim import network, dendrite, HardwareInTheLoop, synapse
 from sim_soens.argparse import setup_argument_parser
 
-print(np.random.randint(0, 100, 10))
 np.random.seed(None)
+print(np.random.randint(0, 100, 10))
+
 
 def main():
     '''
@@ -169,19 +170,30 @@ def main():
                 [[.5,.5,.5]],
                 [[.3,.3,.3],[.3,.3,.3],[.3,.3,.3]]
             ]
+            W = [W,W,W]
 
         # Initialize dendritic weights randomly
         elif weights == 'random':
-            W = [
+            # print('random weights')
+            W1 = [
                     [np.random.rand(3)*c],
                     [np.random.rand(3)*c,np.random.rand(3)*c,np.random.rand(3)*c]
                     ]
-            print(weights)
+            W2 = [
+                    [np.random.rand(3)*c],
+                    [np.random.rand(3)*c,np.random.rand(3)*c,np.random.rand(3)*c]
+                    ]
+            W3 = [
+                    [np.random.rand(3)*c],
+                    [np.random.rand(3)*c,np.random.rand(3)*c,np.random.rand(3)*c]
+                    ]
+            W = [W1,W2,W3]
+            # print(weights)
 
         # Create a node for each class, init with input params, name accordingly
         node_z = SuperNode(
             name='node_z',
-            weights=W,
+            weights=W[0],
             ib=ib,
             ib_n=ib,
             ib_di=ib,
@@ -195,7 +207,7 @@ def main():
             )
         node_v = SuperNode(
             name='node_v',
-            weights=W,
+            weights=W[1],
             ib=ib,
             ib_n=ib,
             ib_di=ib,
@@ -209,7 +221,7 @@ def main():
             )
         node_n = SuperNode(
             name='node_n',
-            weights=W,
+            weights=W[2],
             ib=ib,
             ib_n=ib,
             ib_di=ib,
@@ -494,7 +506,7 @@ def main():
 
         offsets = [offsets_z,offsets_v,offsets_n]
 
-        return offsets, accs, trajects, trial_counter
+        return offsets, accs, trajects, trial_counter, W
 
 
     def test_noise_set(noise_set,offsets,W,mutual_inhibition,backend):
@@ -502,9 +514,9 @@ def main():
         Tests given offset settings on entire noisy dataset without making updates
         '''
 
-        weights_z = W
-        weights_v = W
-        weights_n = W
+        weights_z = W[0]
+        weights_v = W[1]
+        weights_n = W[2]
 
         node_z = SuperNode(weights=weights_z)
         node_v = SuperNode(weights=weights_v)
@@ -620,7 +632,7 @@ def main():
             return 0
 
 
-    np.random.seed(10)
+    # np.random.seed(None)
 
     letters = make_letters()
     names = list(letters.keys())
@@ -637,7 +649,11 @@ def main():
     int_val    = config.valid
     inhibition = -0.33
     backend    = config.backend
+    weights    = config.weights
+    run        = config.run
 
+    np.random.seed(run)
+    
     regimes = ['Elastic', 'Inelastic', 'Unbounded']
     if elasticity == "True":
         regime = regimes[0]
@@ -652,11 +668,11 @@ def main():
         converge_type = 'Update'
 
     path = f"results/{config.exp_name}/"
-    sub_name = f"{regime}_{converge_type}_{ib}_{tau}_{beta}_{s_th}_{eta}"
+    sub_name = f"{regime}_{converge_type}_{ib}_{tau}_{beta}_{s_th}_{eta}_{run}"
 
     print(sub_name)
 
-    offsets, accs, trajects, conv_time = train_9pixel_classifier(
+    offsets, accs, trajects, conv_time, W = train_9pixel_classifier(
         noise_set,
         inhibition,
         elasticity,
@@ -667,7 +683,8 @@ def main():
         s_th,
         eta,
         backend=backend,
-        mutual_inhibition=True
+        mutual_inhibition=True,
+        weights=weights
         )
 
 
@@ -677,11 +694,17 @@ def main():
     #     f"{sub_name}_accs"
     #     )
 
-    # picklit(
-    #     trajects,
-    #     path,
-    #     f"{sub_name}_trajects"
-    #     )
+    picklit(
+        trajects,
+        path,
+        f"{sub_name}_trajects"
+        )
+    
+    picklit(
+        W,
+        path,
+        f"{sub_name}_weights"
+        )
 
     # plt.figure(figsize=(8,4))
     # plt.plot(accs)
@@ -741,6 +764,7 @@ def main():
         s_th,
         eta,
         conv_time,
+        run
     ]
     with open(path+'pixels.csv', 'a') as f_object:
     

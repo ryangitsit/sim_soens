@@ -15,7 +15,41 @@ import seaborn as sns
 # colors = sns.color_palette('hls', 13)
 # colors = sns.color_palette('seaborn-v0_8-muted', 13)
 
+
+
 plt.style.use('seaborn-v0_8-muted')
+# make the neuron (initialize within dynamical range)
+weights = [
+    [[1,1,1]],
+    [[1,1,1],[1,1,1],[1,1,1]]
+]
+node_z = SuperNode(weights=weights)
+node_z.plot_structure()
+# spike times in nanoseconds
+spike_times = np.arange(50,350,100) 
+
+# if type=='defined': defined_spikes argument create 1-channel input object
+input = SuperInput(type='defined', defined_spikes=spike_times)
+
+# note, any neuron or dendrite parameters can be passed into the node class init
+node = SuperNode(s_th=1) # large spiking threshold to avoid spiking for now
+
+# adding input uniformly to available synapse on node's neuron
+# in this case there is only one synapse attached to the somatic dendrite
+node.uniform_input(input)
+
+# create and simulate a (single node) network
+net = network(
+    sim   =True,            # run simulation
+    tf    =350,  # total duration (ns)
+    nodes =[node]           # nodes in network to simulate
+    )       
+
+# plot neuron activity
+title = 'Flux Received -> Signal Integrated'
+node.plot_neuron_activity(net=net,phir=True,phi_th=False,input=input,title=title,size=(6,6),S=True)
+
+
 
 # times = np.concatenate([np.arange(0,5000,250),np.arange(5000,10000,51)])
 # indices = np.zeros(len(times)).astype(int)
@@ -364,8 +398,9 @@ def rollover():
     neurs = {}
     nodes = []
     
-    for i in range(8):
-        syn_struct = [[[[.5+i*.25]]]]
+    for i in range(10):
+        # syn_struct = [[[[.5+i*.25]]]]
+        syn_struct = [[[[.5+i*.2]]]]
         neurs[str(i)] = NeuralZoo(type="custom",synaptic_structure=syn_struct,s_th=100)
         neurs[str(i)].synapses[0][0][0][0].add_input(input.signals[0])
         nodes.append(neurs[str(i)])
@@ -375,7 +410,7 @@ def rollover():
         # plt.plot(net.t,mono_point.neuron.dend__nr_ni.phi_r)
     # print(mono_point.neuron.__dict__.keys()
 
-    net = network(sim=True,dt=.1,tf=300,nodes=nodes)
+    net = network(sim=True,dt=.1,tf=300,nodes=nodes,backend='julia')
     activity_plot(nodes,net,title="Rollover Effects for Increasing Synaptic Coupling Strength",input=input,
                  phir=True,SPD=False,dend=True,ref=False,spikes=False,size=(8,12),legend=False)
     
@@ -406,7 +441,7 @@ def rollover():
     # mono_point.plot_neuron_activity(net,title="Monosynaptic Point Neuron",input=input,phir=True,SPD=False,dend=True,ref=False)
 
 
-rollover()
+# rollover()
 
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

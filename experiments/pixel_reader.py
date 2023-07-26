@@ -7,7 +7,7 @@ sys.path.append('../')
 from sim_soens.super_functions import *
 
 
-def pixel_hist(backend,folder,under):
+def pixel_hist(backend,folder,under,version):
     names=[
             "regime",
             "validation",
@@ -16,15 +16,17 @@ def pixel_hist(backend,folder,under):
             "beta",
             "s_th",
             "eta",
-            "convergence"
+            "convergence",
+            # "run"
             ]
-
+    if version == 'new': names.append("run")
     df = pd.read_csv(
         f'results/{folder}/pixels.csv',
         names=names
             )
+    print(f"Trials run: {len(df[names[0]])}")
     
-    print(len(df["regime"]))
+    # print(len(df["regime"]))
 
     converge_dict = {
         "regime_Elastic":0,
@@ -48,13 +50,17 @@ def pixel_hist(backend,folder,under):
     }
 
     convs = []
+    total = 0
     for index, row in df.iterrows():
-        if df["convergence"][index] < under and df["ib"][index]==1.8: # and index < 70:
-
-            for n in names[:-1]: 
+        if df["convergence"][index] < under and df["ib"][index]==1.8 and df["validation"][index]=="Update": # and index < 70:
+            end = 1
+            if version == "new": end = 2
+            for n in names[:-end]: 
                 converge_dict[f"{n}_"+str(df[n][index])] += 1
+            total += 1
             convs.append(row["convergence"])
-    print(np.mean(convs))
+
+    print(f"{total} total number of configurations converged under {under} with average of {np.mean(convs)}.")
     # print(converge_dict)
     # print(converge_dict)
     keys = list(converge_dict.keys())
@@ -81,15 +87,22 @@ def pixel_hist(backend,folder,under):
             colors[6%6],colors[6%6],colors[6%6],
             ]
         )
-    plt.title(f"Parameter Occurences in Sub-{int(np.floor(under/30))} Epoch Convergences - {backend} Backend")
-    plt.xlabel("Parameter")
-    plt.ylabel("Count")
+    plt.title(f"Parameter Occurences with Sub-{int(np.floor(under/30))} Epoch Convergence",fontsize=20)
+    plt.xlabel("Parameter",fontsize=18)
+    plt.ylabel("Count",fontsize=18)
     plt.xticks(rotation = 45)
     plt.tight_layout()
     plt.show()
 
 backend = 'jul'
+
+# folder = 'pixels_random'
+# version = 'new'
+
 folder = 'jul_pixels_inh_prime'
+version = 'old'
+
 # folder = 'jul_testing'
 under = 292
-pixel_hist(backend,folder,under)
+
+pixel_hist(backend,folder,under,version)
