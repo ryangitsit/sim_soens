@@ -103,6 +103,6 @@ folder = 'jul_pixels_inh_prime'
 version = 'old'
 
 # folder = 'jul_testing'
-under = 292
+under = 340
 
 pixel_hist(backend,folder,under,version)

@@ -207,7 +207,7 @@ def activity_plot(
                 if any(ele < 0 for ele in phi_r):
                     plt.axhline(y = phi_ths[0], color = 'purple', linestyle = '--',
                                 linewidth=.5)
-            plt.plot(time_vec,phi_r, color = colors[1],linewidth=2, label=r'$\phi_r$ (soma)')
+            plt.plot(time_vec,phi_r, color = colors[1],linewidth=4, label=r'$\phi_r$ (soma)')
 
         if dend:
             for i,layer in enumerate(neurons[0].dendrites):
@@ -247,7 +247,7 @@ def activity_plot(
             if input:
                 plt.plot(
                     input.spike_arrays[1],np.zeros(len(input.spike_arrays[1])),
-                    'xr', markersize=5, label='input event'
+                    'xr', markersize=8, label='input event'
                     )
         if S == True:
             plt.plot(time_vec,signal,  color='#1f77b4',linewidth=4)

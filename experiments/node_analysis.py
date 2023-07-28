@@ -178,6 +178,7 @@ def get_trajects(path):
                 success = 0
         
         if 'trajects' in file and success == 1:
+            print(file)
             plot_offsets(picklin(path,file))
 
 

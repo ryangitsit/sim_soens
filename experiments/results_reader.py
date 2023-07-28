@@ -76,15 +76,18 @@ def by_run_performance(df,decider,digits,samples):
 
     if decider == 'winner':
         for index, row in df.iterrows():
-            if no_ties(df,index) == True:
-                run_wins+=1
-                dig_runs[df["digit"][index]]+=1
-            if (index+1)%(digits*samples) == 0:
-                by_run.append(run_wins/(digits*samples))
-                for i,dig in enumerate(dig_runs):
-                    by_dig_runs[i].append(dig/samples)
-                dig_runs = [0 for _ in range(digits)]
-                run_wins = 0
+            # print(df["sample"].astype(int)[1])
+            # if df["sample"][(df["sample"]< samples)]:
+            if df["sample"].astype(int)[1] == 0:#< samples:
+                if no_ties(df,index) == True:
+                    run_wins+=1
+                    dig_runs[df["digit"][index]]+=1
+                if (index+1)%(digits*samples) == 0:
+                    by_run.append(run_wins/(digits*samples))
+                    for i,dig in enumerate(dig_runs):
+                        by_dig_runs[i].append(dig/samples)
+                    dig_runs = [0 for _ in range(digits)]
+                    run_wins = 0
 
     if decider == 'lucky':
         for index, row in df.iterrows():
@@ -125,7 +128,7 @@ def plot_singles(experiments,until):
             )
 
         # percents, procents = ongoing_performance(df)
-        by_run, digs = by_run_performance(df,'winner',3,10)
+        by_run, digs = by_run_performance(df,'winner',3,1)
 
         pr = np.max(np.ceil(np.array(by_run)*30))
         print(f"Experiment {exp}, {len(by_run)} epochs, {np.round(pr*100/30,2)}% best run")
@@ -138,15 +141,15 @@ def plot_singles(experiments,until):
         plt.xlabel("Epoch",fontsize=14)
         plt.ylabel("Accuracy",fontsize=14)
         plt.plot(by_run[:until], linewidth = 4, label="Total")
-        plt.plot(np.transpose(digs)[:until], '--', label=['0','1','2'])
+        # plt.plot(np.transpose(digs)[:until], '--', label=['0','1','2'])
         plt.ylim(0,1.025)
 
         plt.legend()
         plt.show()
 
 
-        plt.plot(df["run_time"])
-        plt.show()
+        # plt.plot(df["run_time"])
+        # plt.show()
 
         # print("Average runtime = ",np.mean(df["run_time"]))
 
@@ -176,17 +179,17 @@ experiments = [
     # 'julia_inhibit_solver',
     # 'MNIST_inelast',
     # 'MNIST_unbounded',
-    # 'MNIST_eta',
+    'MNIST_eta',
     # 'MNIST_deep',
     # 'MNIST_unbounded_prime',
-    'MNIST_deep_prime',
+    # 'MNIST_deep_prime',
     # 'learning_decay',
-    'MNIST_rich',
-    'prob_update',
-    'heidelearn'
+    # 'MNIST_rich',
+    # 'prob_update',
+    # 'heidelearn'
     ]
 
 until = 150*100
 
 plot_singles(experiments,until)
-plot_all(experiments,until)
+# plot_all(experiments,until)

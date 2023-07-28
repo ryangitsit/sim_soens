@@ -84,6 +84,45 @@ def main():
             f"digits={patterns}_samples={replicas}"
             )
         return dataset
+    
+    def plot_nodes(nodes,digit,sample,run):
+        try:
+            os.makedirs(path+name+'plots/')    
+        except FileExistsError:
+            pass
+        for n,node in enumerate(nodes):
+            lays = [[] for _ in range(len(node.dendrites))]
+            phays = [[] for _ in range(len(node.dendrites))]
+            for l,layer in enumerate(node.dendrites):
+                for g,group in enumerate(layer):
+                    for d,dend in enumerate(group):
+                        lays[l].append(dend.s)
+                        phays[l].append(dend.phi_r)
+            plt.style.use('seaborn-v0_8-muted')
+            colors = plt.rcParams["axes.prop_cycle"].by_key()["color"]
+            plt.figure(figsize=(8,4))
+            for l,lay in enumerate(lays):
+                if l == 0:
+                    lw = 4
+                else:
+                    lw = 2
+                plt.plot(
+                    np.mean(lay,axis=0),
+                    linewidth=lw,
+                    color=colors[l],
+                    label=f'Layer {l} Mean Signal'
+                    )
+                plt.plot(
+                    np.mean(phays[l],axis=0),
+                    '--',
+                    linewidth=.5,
+                    color=colors[l],
+                    # label=f'Layer {l} Mean Flux'
+                    )
+            plt.legend(loc='upper right')
+            plt.title(f'Node {n} - Digit {digit} Sample {sample} - Run {run}')
+            plt.savefig(path+name+f'plots/node_{n}_digit_{digit}_sample_{sample}_run_{run}.png')
+            plt.close()
             
 
     def get_nodes(
@@ -314,45 +353,11 @@ def main():
                     )
                 
                 # save one set of plots for all nodes for each digit of sample 0
-                if sample == 0 and config.run%10==0:
-                    try:
-                        os.makedirs(path+name+'plots/')    
-                    except FileExistsError:
-                        pass
-                    for n,node in enumerate(nodes):
-                        lays = [[] for _ in range(len(node.dendrites))]
-                        phays = [[] for _ in range(len(node.dendrites))]
-                        for l,layer in enumerate(node.dendrites):
-                            for g,group in enumerate(layer):
-                                for d,dend in enumerate(group):
-                                    lays[l].append(dend.s)
-                                    phays[l].append(dend.phi_r)
-                        plt.style.use('seaborn-v0_8-muted')
-                        colors = plt.rcParams["axes.prop_cycle"].by_key()["color"]
-                        plt.figure(figsize=(8,4))
-                        for l,lay in enumerate(lays):
-                            if l == 0:
-                                lw = 4
-                            else:
-                                lw = 2
-                            plt.plot(
-                                np.mean(lay,axis=0),
-                                linewidth=lw,
-                                color=colors[l],
-                                label=f'Layer {l} Mean Signal'
-                                )
-                            plt.plot(
-                                np.mean(phays[l],axis=0),
-                                '--',
-                                linewidth=.5,
-                                color=colors[l],
-                                # label=f'Layer {l} Mean Flux'
-                                )
-                        plt.legend(loc='upper right')
-                        plt.title(f'Node {n} - Digit {digit} - Run {config.run}')
-                        plt.savefig(path+name+f'plots/node_{n}_digit_{digit}_run_{config.run}.png')
-                        plt.close()
-
+                if config.plotting == 'sparse':
+                    if sample == 0 and config.run%10==0:
+                        plot_nodes(nodes,digit,sample,config.run)
+                elif config.plotting == 'full':
+                    plot_nodes(nodes,digit,sample,config.run)
                 
 
                 # keep track of run time costs
@@ -400,7 +405,7 @@ def main():
                                             if 'ref' not in dend.name and 'soma' not in dend.name:
                                                 step = errors[n]*np.mean(dend.s)*config.eta #+(2-l)*.001
                                                 flux = np.mean(dend.phi_r) + step #dend.offset_flux
-                                                if flux > 0.5 or flux < -0.5:
+                                                if flux > 0.5 or flux < config.low_bound:
                                                     step = -step
                                                 dend.offset_flux += step
                                                 offset_sums[n] += dend.offset_flux
@@ -415,7 +420,7 @@ def main():
                                             if 'ref' not in dend.name and 'soma' not in dend.name:
                                                 step = errors[n]*np.mean(dend.s)*config.eta #+(2-l)*.001
                                                 flux = np.mean(dend.phi_r) + step #dend.offset_flux
-                                                if flux > 0.5 or flux < -0.5:
+                                                if flux > 0.5 or flux < config.low_bound:
                                                     step = 0
                                                 dend.offset_flux += step
                                                 offset_sums[n] += dend.offset_flux
@@ -449,7 +454,7 @@ def main():
                                                 if 'ref' not in dend.name and 'soma' not in dend.name:
                                                     step = errors[n]*np.mean(dend.s)*config.eta #+(2-l)*.001
                                                     flux = np.mean(dend.phi_r) + step #dend.offset_flux
-                                                    if flux > 0.5 or flux < -0.5:
+                                                    if flux > 0.5 or flux < config.low_bound:
                                                         step = -step
                                                     dend.offset_flux += step
                                                     offset_sums[n] += dend.offset_flux
@@ -468,7 +473,7 @@ def main():
                                                 if 'ref' not in dend.name and 'soma' not in dend.name:
                                                     step = errors[n]*np.mean(dend.s)*config.eta #+(2-l)*.001
                                                     flux = np.mean(dend.phi_r) + step #dend.offset_flux
-                                                    if flux > 0.5 or flux < -0.5:
+                                                    if flux > 0.5 or flux < config.low_bound:
                                                         step = 0
                                                     dend.offset_flux += step
                                                     offset_sums[n] += dend.offset_flux
@@ -487,7 +492,7 @@ def main():
                                                 if 'ref' not in dend.name and 'soma' not in dend.name:
                                                     step = errors[n]*np.mean(dend.s)*config.eta #+(2-l)*.001
                                                     dend.offset_flux += step
-                                                    offset_sums[n] += dend.offset_flux
+                                                    offset_sums[n] += step #dend.offset_flux
                                             dend.s = []
                                             dend.phi_r = []
                                             dend_counter += 1
@@ -564,19 +569,31 @@ def main():
         dataset = picklin("datasets/MNIST/","duration=5000_slowdown=100")
     elif config.dataset=='Heidelberg':
         print("Heidelberg dataset!")
-        dataset = picklin("datasets/Heidelberg/",f"digits={config.digits}_samples={config.samples}")
+        dataset = picklin("datasets/Heidelberg/",f"digits=3_samples=10")
         # dataset = make_audio_dataset(config.digits,config.samples)
     # new_nodes=True
 
     # load_start = time.perf_counter()
 
     if config.decay == "True":
-        config.eta = 1/(1000+15*config.run)
+        config.eta = np.max([1/(500+15*config.run),0.0001])
 
     nodes = get_nodes(path,name,config)
     # load_finish = time.perf_counter()
     # print("Load time: ", load_finish-load_start)
-    print(config.name," -- ",config.elasticity," -- ",config.eta," -- ",config.digits," -- ",config.samples, " -- ", config.eta)
+    print(
+        config.name,
+        " -- ",
+        config.elasticity,
+        " -- ",
+        config.eta,
+        " -- ",
+        config.digits,
+        " -- ",
+        config.samples, 
+        " -- ", 
+        config.eta
+        )
     train_MNIST_neurons(nodes,dataset,path,name,config)
 
 if __name__=='__main__':

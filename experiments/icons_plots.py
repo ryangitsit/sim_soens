@@ -19,12 +19,12 @@ import seaborn as sns
 
 plt.style.use('seaborn-v0_8-muted')
 # make the neuron (initialize within dynamical range)
-weights = [
-    [[1,1,1]],
-    [[1,1,1],[1,1,1],[1,1,1]]
-]
-node_z = SuperNode(weights=weights)
-node_z.plot_structure()
+# weights = [
+#     [[1,1,1]],
+#     [[1,1,1],[1,1,1],[1,1,1]]
+# ]
+# node_z = SuperNode(weights=weights)
+# node_z.plot_structure()
 # spike times in nanoseconds
 spike_times = np.arange(50,350,100) 
 
@@ -46,16 +46,17 @@ net = network(
     )       
 
 # plot neuron activity
+# title = 'Synaptic Event -> Flux Received'
 title = 'Flux Received -> Signal Integrated'
-node.plot_neuron_activity(net=net,phir=True,phi_th=False,input=input,title=title,size=(6,6),S=True)
+node.plot_neuron_activity(net=net,phir=True,phi_th=False,input=input,title=title,size=(6,4),S=True)
 
 
 
-# times = np.concatenate([np.arange(0,5000,250),np.arange(5000,10000,51)])
-# indices = np.zeros(len(times)).astype(int)
-# def_spikes = [indices,times]
-# input = SuperInput(channels=1, type='defined', defined_spikes=def_spikes)
-# default_ib = default_neuron_params['ib_n']
+# # times = np.concatenate([np.arange(0,5000,250),np.arange(5000,10000,51)])
+# # indices = np.zeros(len(times)).astype(int)
+# # def_spikes = [indices,times]
+# # input = SuperInput(channels=1, type='defined', defined_spikes=def_spikes)
+# # default_ib = default_neuron_params['ib_n']
 
 # # Using custom()
 # #** put in line for synaptic refractory period
