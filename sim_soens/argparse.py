@@ -24,5 +24,7 @@ def setup_argument_parser():
     parser.add_argument( "--decay",         type=str,       default = "False"   )
     parser.add_argument( "--probabilistic", type=float,     default = 1         )
     parser.add_argument( "--weights",       type=str,       default = "preset")
+    parser.add_argument( "--dataset",       type=str,       default = "MNIST")
+    parser.add_argument( "--duration",      type=int,       default = 250       )
 
     return parser.parse_args()

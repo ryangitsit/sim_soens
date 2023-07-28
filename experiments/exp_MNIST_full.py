@@ -54,7 +54,37 @@ def main():
             )
         # plots dataset
         plt.show()
-        
+
+    def make_audio_dataset(patterns,replicas):
+        '''
+        For Heidelberg dataset only
+        '''
+        import tables
+        file_path = f"datasets/Heidelberg/shd_train/shd_train.h5"
+        fileh = tables.open_file(file_path, mode='r')
+        units = fileh.root.spikes.units
+        times = fileh.root.spikes.times
+        labels = fileh.root.labels
+        channels = np.max(np.concatenate(units))+1
+        length = np.max(np.concatenate(times))
+        classes = np.max(labels)
+
+        names = ['ZERO','ONE','TWO','THREE','FOUR','FIVE','SIX','SEVEN',
+                    'EIGHT','NINE','TEN','NULL','EINS','ZWEI','DREI','VIER',
+                    'FUNF','SECHS','SEBEN','ACHT','NEUN','ZEHN']
+        dataset = [[] for _ in range(patterns)]
+        for i in range(patterns):
+            result = np.where(np.array(labels)==i)[0]
+            for j in range(replicas):
+                dataset[i].append([units[result[j]],times[result[j]]*1000])
+
+        picklit(
+            dataset,
+            f"datasets/Heidelberg/",
+            f"digits={patterns}_samples={replicas}"
+            )
+        return dataset
+            
 
     def get_nodes(
             path,
@@ -210,19 +240,28 @@ def main():
         '''
         Trains nodes on MNIST dataset
         '''
-        desired = [
-            [3,0,0],
-            [0,3,0],
-            [0,0,3],
-        ]
-        if config.digits > 3:
+        if config.dataset=='MNIST':
+            desired = [
+                [3,0,0],
+                [0,3,0],
+                [0,0,3],
+            ]
+        elif config.dataset=='Heidelberg':
+            desired = [
+                [20,10,10],
+                [10,20,10],
+                [10,10,20],
+            ]
+        if config.digits != 3:
             desired = []
             for idx in range(config.digits):
                 desired.append([0 for _ in range(config.digits)])
-                desired[idx][idx] = 5
+            for idx in range(config.digits):
+                desired[idx][idx] = 3
+            print(desired)
 
         backend = 'julia'
-        print(backend)
+        print('Backend: ', backend)
 
         # tracks ongoing timing costs
         # run_times = []
@@ -268,7 +307,7 @@ def main():
                 net = network(
                     sim=True,
                     dt=.1,
-                    tf=250,
+                    tf=config.duration,
                     nodes=nodes,
                     backend=backend,
                     print_times=True
@@ -521,7 +560,12 @@ def main():
     # call in previously generated dataset
     path    = 'results/MNIST/'
     name    = config.name+'/'
-    dataset = picklin("datasets/MNIST/","duration=5000_slowdown=100")
+    if config.dataset=='MNIST':
+        dataset = picklin("datasets/MNIST/","duration=5000_slowdown=100")
+    elif config.dataset=='Heidelberg':
+        print("Heidelberg dataset!")
+        dataset = picklin("datasets/Heidelberg/",f"digits={config.digits}_samples={config.samples}")
+        # dataset = make_audio_dataset(config.digits,config.samples)
     # new_nodes=True
 
     # load_start = time.perf_counter()

@@ -145,8 +145,8 @@ def plot_singles(experiments,until):
         plt.show()
 
 
-        # plt.plot(df["run_time"])
-        # plt.show()
+        plt.plot(df["run_time"])
+        plt.show()
 
         # print("Average runtime = ",np.mean(df["run_time"]))
 
@@ -178,11 +178,12 @@ experiments = [
     # 'MNIST_unbounded',
     # 'MNIST_eta',
     # 'MNIST_deep',
-    'MNIST_unbounded_prime',
+    # 'MNIST_unbounded_prime',
     'MNIST_deep_prime',
-    'learning_decay',
+    # 'learning_decay',
     'MNIST_rich',
-    'prob_update'
+    'prob_update',
+    'heidelearn'
     ]
 
 until = 150*100
