@@ -13,11 +13,11 @@ from sim_soens.super_node import SuperNode
 
 import seaborn as sns
 # colors = sns.color_palette('hls', 13)
-# colors = sns.color_palette('seaborn-v0_8-muted', 13)
+# colors = sns.color_palette('seaborn-muted', 13)
 
 
 
-plt.style.use('seaborn-v0_8-muted')
+plt.style.use('seaborn-muted')
 # make the neuron (initialize within dynamical range)
 # weights = [
 #     [[1,1,1]],

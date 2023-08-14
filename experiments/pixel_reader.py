@@ -71,7 +71,7 @@ def pixel_hist(backend,folder,under,version):
     keys[3] = keys[3][11:]
     keys[4] = keys[4][11:]
 
-    plt.style.use('seaborn-v0_8-muted')
+    plt.style.use('seaborn-muted')
     colors = plt.rcParams["axes.prop_cycle"].by_key()["color"]
     plt.figure(figsize=(12,6))
     plt.bar(

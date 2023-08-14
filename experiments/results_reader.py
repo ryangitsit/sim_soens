@@ -134,7 +134,7 @@ def plot_singles(experiments,until):
         print(f"Experiment {exp}, {len(by_run)} epochs, {np.round(pr*100/30,2)}% best run")
 
 
-        plt.style.use('seaborn-v0_8-muted')
+        plt.style.use('seaborn-muted')
         plt.figure(figsize=(8,4))
 
         plt.title(f"MNIST Training Classification Performance - {exp}",fontsize=16)
@@ -154,7 +154,7 @@ def plot_singles(experiments,until):
         # print("Average runtime = ",np.mean(df["run_time"]))
 
 def plot_all(experiments,until):
-    plt.style.use('seaborn-v0_8-muted')
+    plt.style.use('seaborn-muted')
     plt.figure(figsize=(8,4))
 
     plt.title(f"MNIST Training Classification Performance",fontsize=16)

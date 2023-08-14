@@ -17,7 +17,7 @@ def load_nodes(run,digit,name):
 def mem_analysis(span):
     nodes = load_nodes(10,0,'inelast')
 
-    plt.style.use('seaborn-v0_8-muted')
+    plt.style.use('seaborn-muted')
     plt.figure(figsize=(8,4))
 
     import sys
@@ -49,7 +49,7 @@ def offset_analysis(path,files):
     # file_name = files[0][len(path):len(files[0])-len('.pickle')]
     nodes = picklin(path,files[0][:len(files[0])-len('.pickle')])
 
-    plt.style.use('seaborn-v0_8-muted')
+    plt.style.use('seaborn-muted')
     plt.figure(figsize=(8,4))
     
     import sys
@@ -107,7 +107,7 @@ def get_ordered_files(path):
 
 ### Pixels ###
 def plot_offsets(trajects):
-    plt.style.use('seaborn-v0_8-muted')
+    plt.style.use('seaborn-muted')
     colors = plt.rcParams["axes.prop_cycle"].by_key()["color"]
     sub_colors = ['r','b','g']
     sub_colors_lay2_z = ['g','g','r','r','g','r','r','g','g']

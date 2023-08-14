@@ -231,7 +231,7 @@ def main():
                                 for d,dend in enumerate(group):
                                     lays[l].append(dend.s)
                                     phays[l].append(dend.phi_r)
-                        plt.style.use('seaborn-v0_8-muted')
+                        plt.style.use('seaborn-muted')
                         colors = plt.rcParams["axes.prop_cycle"].by_key()["color"]
                         plt.figure(figsize=(8,4))
                         for l,lay in enumerate(lays):

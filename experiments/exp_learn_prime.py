@@ -715,7 +715,7 @@ def main():
     # plt.savefig(path+sub_name+'_accs_plot.png')
     # plt.close()
 
-    # plt.style.use('seaborn-v0_8-muted')
+    # plt.style.use('seaborn-muted')
     # colors = plt.rcParams["axes.prop_cycle"].by_key()["color"]
 
     # for i,traject in enumerate(trajects):
