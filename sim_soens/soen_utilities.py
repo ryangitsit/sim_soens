@@ -2,7 +2,7 @@ import numpy as np
 from matplotlib import pyplot as plt
 import pickle
 import time
-from scipy.optimize import fsolve
+# from scipy.optimize import fsolve
 import sys
 import copy
 import matplotlib as mp
