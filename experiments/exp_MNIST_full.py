@@ -392,7 +392,7 @@ def main():
                 offset_sums = [0 for _ in range(config.digits)]
 
                 # on all but every tenth run, make updates according to algorithm 1 with elasticity
-                if config.run%10 != 0 and config.run != 0:
+                if config.run%10 != 0 or config.run == 0:
 
                     if config.probabilistic == 1:
                         # print("Determined update")
