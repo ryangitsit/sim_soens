@@ -22,4 +22,4 @@ module load julia/1.9.0
 module load cuda
 conda activate /home/rmo2/envs/testenv
 
-python-jl slurm_test.py
+python-jl exp_MNIST_full.py
