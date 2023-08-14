@@ -511,31 +511,31 @@ def nmos_Ids_sat(T,W,L,mu_n,c_i,N_a,V_gs):
         I_ds_sat = 0
     return I_ds_sat, V_ds_sat
 
-def nmos_inverter_IV(N_a__vec,ri__vec,V_in__vec, params):
+# def nmos_inverter_IV(N_a__vec,ri__vec,V_in__vec, params):
 
-    V_out__array = np.zeros([len(N_a__vec),len(ri__vec),len(V_in__vec)])
+#     V_out__array = np.zeros([len(N_a__vec),len(ri__vec),len(V_in__vec)])
     
-    for mm in range(len(N_a__vec)):
-        N_a = N_a__vec[mm]
+#     for mm in range(len(N_a__vec)):
+#         N_a = N_a__vec[mm]
         
-        for nn in range(len(ri__vec)):
-            ri = ri__vec[nn]
+#         for nn in range(len(ri__vec)):
+#             ri = ri__vec[nn]
     
-            for ii in range(len(V_in__vec)):
-                V_in = V_in__vec[ii]
-                args = (params['T'],params['W'],params['L'],params['mu_n'],params['c_i'],N_a,ri,params['Vb'],V_in)
-                V_t = nmos_V_t(params['T'],N_a,params['c_i'],mp['epsilon_si'])
-                if V_in >= V_t:
-                    V_out_guess = params['Vb']
-                else:
-                    V_out_guess = 0
-                V_out = fsolve(nmos_inverter_def, V_out_guess, args)
-                V_out__array[mm,nn,ii] = V_out[0]
+#             for ii in range(len(V_in__vec)):
+#                 V_in = V_in__vec[ii]
+#                 args = (params['T'],params['W'],params['L'],params['mu_n'],params['c_i'],N_a,ri,params['Vb'],V_in)
+#                 V_t = nmos_V_t(params['T'],N_a,params['c_i'],mp['epsilon_si'])
+#                 if V_in >= V_t:
+#                     V_out_guess = params['Vb']
+#                 else:
+#                     V_out_guess = 0
+#                 V_out = fsolve(nmos_inverter_def, V_out_guess, args)
+#                 V_out__array[mm,nn,ii] = V_out[0]
         
-    # to plot, see _plotting__mosfet.py
-    # plot_nmos_inverter_IV(N_a__vec,ri__vec,V_in__vec,V_out__array,params)
+#     # to plot, see _plotting__mosfet.py
+#     # plot_nmos_inverter_IV(N_a__vec,ri__vec,V_in__vec,V_out__array,params)
         
-    return V_out__array
+#     return V_out__array
 
 def nmos_inverter_def(Vout_guess,T,W,L,mu_n,c_i,N_a,ri,V_ds,V_g):
     
