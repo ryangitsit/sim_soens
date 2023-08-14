@@ -140,7 +140,7 @@ def plot_singles(experiments,until):
         plt.title(f"MNIST Training Classification Performance - {exp}",fontsize=16)
         plt.xlabel("Epoch",fontsize=14)
         plt.ylabel("Accuracy",fontsize=14)
-        plt.plot(by_run[:until], linewidth = 4, label="Total")
+        plt.plot(by_run[:until], linewidth = 1, label="Total")
         # plt.plot(np.transpose(digs)[:until], '--', label=['0','1','2'])
         plt.ylim(0,1.025)
 
@@ -168,9 +168,10 @@ def plot_all(experiments,until):
             )
 
         by_run, digs = by_run_performance(df,'winner',3,10)
+        print(exp,' -- ', np.max(np.ceil(np.array(by_run)*30)))
         plt.plot(by_run, linewidth = 4, label=exp)
-        # plt.plot(np.transpose(digs)[:until], '--', label=['0','1','2'])
-
+        plt.plot(np.transpose(digs)[:until], '--', label=['0','1','2'])
+    plt.ylim(0,1)
     plt.legend()
     plt.show()
 
@@ -179,17 +180,22 @@ experiments = [
     # 'julia_inhibit_solver',
     # 'MNIST_inelast',
     # 'MNIST_unbounded',
-    'MNIST_eta',
+    # 'MNIST_eta',
     # 'MNIST_deep',
     # 'MNIST_unbounded_prime',
     # 'MNIST_deep_prime',
     # 'learning_decay',
     # 'MNIST_rich',
     # 'prob_update',
-    # 'heidelearn'
+    # 'heidelearn',
+    'MNIST_asymmetic',
+    # 'M_binary',
+    'MNIST_deep_prime',
+    # 'MNIST_rich',
+    # 'prob_update'
     ]
 
-until = 150*100
+until = 150*10000
 
-plot_singles(experiments,until)
-# plot_all(experiments,until)
+# plot_singles(experiments,until)
+plot_all(experiments,until)

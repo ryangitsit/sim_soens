@@ -1,0 +1,24 @@
+#!/bin/bash
+#SBATCH --job-name=MNIST_sweep
+#SBATCH --nodes=1 # Number of nodes (how many compute boxes)
+#SBATCH --ntasks=10 # Number of MPI ranks (nodes*ntasks-per-node)
+#SBATCH --ntasks-per-node=10 # How many tasks on each box (which has two socket)
+#SBATCH --ntasks-per-socket=5 # How many tasks on each socket
+#SBATCH --ntasks-per-core=1 # How many tasks on each core
+#SBATCH --cpus-per-task=1 # Number of CPUs per MPI rank 
+#SBATCH --gres=gpu:1 # Number of GPUs per
+#SBATCH --mem-per-cpu=600mb # Memory per processor
+#SBATCH --time=160:00:00 # Time limit hrs:min:sec
+#SBATCH --array=1-40 # job array with index values 1, 2, 3
+#SBATCH --output=mpi_test_%j.log # Standard output and error log
+#SBATCH --partition=gpu # Selected partition
+#SBATCH --mail-type=begin # send email when job begins
+#SBATCH --mail-type=end # send email when job ends
+#SBATCH --mail-user=rmo2@nist.gov
+
+module purge 
+module load python/3.10.9/anaconda
+module load cuda
+conda activate /home/rmo2/envs/testenv
+
+python MNIST_full.py
