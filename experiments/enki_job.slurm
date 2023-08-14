@@ -18,6 +18,7 @@
 
 module purge 
 module load python/3.10.9/anaconda
+module load julia/1.9.0
 module load cuda
 conda activate /home/rmo2/envs/testenv
 
