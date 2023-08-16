@@ -74,6 +74,9 @@ def run_soen_sim(net):
             finish = time.perf_counter()
             # if net.print_times: print(f"Initialization procedure run time: {finish-start}")
             net.init_time = finish-start
+            
+            # from super_functions import picklit
+            # picklit(net,"pickle_net","test_net")
 
 
             start = time.perf_counter()
@@ -90,13 +93,13 @@ def run_soen_sim(net):
                 # # if net.print_times: print(node.neuron.dend__ref.synaptic_inputs[f"{node.name}__syn_refraction"].name)
             jul_net = jl.obj_to_structs(net)
             finish = time.perf_counter()
-            # if net.print_times: print(f"Julia setup time: {finish-start}")
+            if net.print_times: print(f"Julia setup time: {finish-start}")
 
 
             start = time.perf_counter()
             jul_net = jl.stepper(jul_net)
             finish = time.perf_counter()
-            # if net.print_times: print(f"Julia stepper time: {finish-start}")
+            if net.print_times: print(f"Julia stepper time: {finish-start}")
             net.run_time = finish-start
 
 

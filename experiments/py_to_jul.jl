@@ -3,6 +3,8 @@
 # REPL.activate(NewMain)
 
 using PyCall
+# using julia_stepper
+# using JLD2, FileIO
 
 abstract type AbstractDendrite end
 
@@ -27,19 +29,19 @@ mutable struct ArborDendrite <: AbstractDendrite
     phir      :: Vector{Float64}
     inputs    :: Dict{String,Float64}
     synputs   :: Dict{String,Float64}
-    alpha     :: Float64
-    beta      :: Float64
+    const alpha     :: Float64
+    const beta      :: Float64
 
-    phi_vec   :: Vector{Float64}
-    s_array   :: Vector{Vector{Float64}}
-    r_array   :: Vector{Vector{Float64}}
+    const phi_vec   :: Vector{Float64}
+    const s_array   :: Vector{Vector{Float64}}
+    const r_array   :: Vector{Vector{Float64}}
 
     ind_phi  :: Vector{Int64}
     ind_s    :: Vector{Int64}
 
-    phi_min   :: Float64
-    phi_max   :: Float64
-    phi_len   :: Int64
+    const phi_min   :: Float64
+    const phi_max   :: Float64
+    const phi_len   :: Int64
 
     flux_offset::Float64
 end
@@ -51,19 +53,19 @@ mutable struct RefractoryDendrite <: AbstractDendrite
     phir      :: Vector{Float64}
     inputs    :: Dict{String,Float64}
     synputs   :: Dict{String,Float64}
-    alpha     :: Float64
-    beta      :: Float64
+    const alpha     :: Float64
+    const beta      :: Float64
 
-    phi_vec   :: Vector{Float64}
-    s_array   :: Vector{Vector{Float64}}
-    r_array   :: Vector{Vector{Float64}}
+    const phi_vec   :: Vector{Float64}
+    const s_array   :: Vector{Vector{Float64}}
+    const r_array   :: Vector{Vector{Float64}}
 
     ind_phi  :: Vector{Int64}
     ind_s    :: Vector{Int64}
 
-    phi_min   :: Float64
-    phi_max   :: Float64
-    phi_len   :: Int64
+    const phi_min   :: Float64
+    const phi_max   :: Float64
+    const phi_len   :: Int64
 
     flux_offset::Float64
 end
@@ -74,26 +76,26 @@ mutable struct SomaticDendrite <: AbstractDendrite
     phir       :: Vector{Float64}
     inputs     :: Dict{String,Float64}
     synputs    :: Dict{String,Float64}
-    alpha      :: Float64
-    beta       :: Float64
- 
-    phi_vec    :: Vector{Float64}
-    s_array    :: Vector{Vector{Float64}}
-    r_array    :: Vector{Vector{Float64}}
+    const alpha      :: Float64
+    const beta       :: Float64
+
+    const phi_vec    :: Vector{Float64}
+    const s_array    :: Vector{Vector{Float64}}
+    const r_array    :: Vector{Vector{Float64}}
  
     ind_phi    :: Vector{Int64}
     ind_s      :: Vector{Int64}
  
-    phi_min    :: Float64
-    phi_max    :: Float64
-    phi_len    :: Int64
+    const phi_min    :: Float64
+    const phi_max    :: Float64
+    const phi_len    :: Int64
  
     spiked     :: Int64
     out_spikes :: Vector{Int64}
-    threshold  :: Float64
-    abs_ref    :: Float64
-    syn_ref    :: AbstractSynapse
-    syn_outs   :: Dict{String,Int64}
+    const threshold  :: Float64
+    const abs_ref    :: Float64
+    const syn_ref    :: AbstractSynapse
+    const syn_outs   :: Dict{String,Int64}
 
     flux_offset::Float64
 end
@@ -185,7 +187,7 @@ function  make_dendrites(
                 dend.syn_outs,
                 dend.offset_flux
                 )
-                
+
         elseif occursin("ref",dend.name)
             new_dend = RefractoryDendrite(
                 dend.name,
@@ -278,7 +280,8 @@ function obj_to_structs(net::PyObject)
             r
             )
     end
-
+    # save("net_dict.jld2", "data", net_dict)
+    # load("net_dict.jld2")["data"]
     return net_dict
 
 end
