@@ -76,7 +76,7 @@ def run_soen_sim(net):
             net.init_time = finish-start
             
             # from super_functions import picklit
-            # picklit(net,"pickle_net","test_net")
+            # picklit(net,"pickle_net","test_net_2")
 
 
             start = time.perf_counter()

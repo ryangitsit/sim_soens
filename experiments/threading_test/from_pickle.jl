@@ -1,5 +1,6 @@
 using JLD2, FileIO
 using Base.Threads
+
 abstract type AbstractDendrite end
 
 abstract type AbstractSynapse end
@@ -132,7 +133,7 @@ function stepper(net_dict::Dict{String,Any})
             end
 
             dend_names = collect(keys(node["dendrites"]))
-            Threads.@threads for iter in 1:length(node["synapses"])
+            Threads.@threads for iter in 1:length(node["dendrites"])
                 dend = node["dendrites"][dend_names[iter]]
                 dend_update(
                     node,

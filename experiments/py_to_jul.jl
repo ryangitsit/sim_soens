@@ -4,7 +4,7 @@
 
 using PyCall
 # using julia_stepper
-# using JLD2, FileIO
+using JLD2, FileIO
 
 abstract type AbstractDendrite end
 
@@ -280,7 +280,7 @@ function obj_to_structs(net::PyObject)
             r
             )
     end
-    # save("net_dict.jld2", "data", net_dict)
+    save("net_dict_2.jld2", "data", net_dict)
     # load("net_dict.jld2")["data"]
     return net_dict
 
