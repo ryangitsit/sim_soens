@@ -280,8 +280,17 @@ function obj_to_structs(net::PyObject)
             r
             )
     end
-    save("net_dict_2.jld2", "data", net_dict)
+    # save("net_dict_2.jld2", "data", net_dict)
     # load("net_dict.jld2")["data"]
     return net_dict
 
+end
+
+function save_dict(net::Dict{Any,Any})
+    save("net_temp.jld2", "data", net)
+end
+
+function load_net(name)
+    net_dict = load(name)["data"]
+    return net_dict
 end

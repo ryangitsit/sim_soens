@@ -690,6 +690,7 @@ class network():
         self.backend = 'python'
         self.name = 'unnamed_network__{}'.format(self.unique_label)
         self.print_times = False
+        self.jul_threading = "False"
 
         self.__dict__.update(kwargs)
         

@@ -98,7 +98,12 @@ def main():
                     for d,dend in enumerate(group):
                         lays[l].append(dend.s)
                         phays[l].append(dend.phi_r)
-            plt.style.use('seaborn-muted')
+            # try:
+            #     plt.style.use('seaborn-muted')  
+            # except MatplotlibDeprecationWarning:
+            #     plt.style.use("seaborn-v0_8")
+
+            # plt.style.use('seaborn-muted')
             colors = plt.rcParams["axes.prop_cycle"].by_key()["color"]
             plt.figure(figsize=(8,4))
             for l,lay in enumerate(lays):
@@ -349,7 +354,8 @@ def main():
                     tf=config.duration,
                     nodes=nodes,
                     backend=backend,
-                    print_times=True
+                    print_times=True,
+                    jul_threading=config.jul_threading
                     )
                 
                 # save one set of plots for all nodes for each digit of sample 0

@@ -1,37 +1,26 @@
-using PyCall
-using Statistics
-# using CUDA
-@pyimport numpy
-# pyimport("py_back.jul_to_py") 
+# using PyCall
+# using Statistics
 
-include("py_to_threads.jl")
+include("py_to_jul.jl")
 include("thread_stepper.jl")
 # include("jul_MNIST.jl")
 # py"setup"()
 
-
-
 function load_net(name)
     net_dict = load(name)["data"]
-    @show typeof(net_dict)
+    # @show typeof(net_dict)
     return net_dict
 end
 
 function run_net(net)
-    # dend = net["nodes"]["node_0"]["dendrites"]["node_0_lay2_branch7_den10"]
-    # @show dend.name
-    # for n in fieldnames(typeof(dend))
-    #     println(n," -- ",sizeof(getfield(dend,n)))
-    # end
-
     stepper(net)
-    output = Int64[]
-    for (node_name,node) in net["nodes"]
-        # @show node_name
-        # @show (node["dendrites"][node["soma"]].out_spikes) * (net["dt"] / net["conversion"])
-        push!(output,length(node["dendrites"][node["soma"]].out_spikes))
-    end
-    @show output
+    # output = Int64[]
+    # for (node_name,node) in net["nodes"]
+    #     # @show node_name
+    #     # @show (node["dendrites"][node["soma"]].out_spikes) * (net["dt"] / net["conversion"])
+    #     push!(output,length(node["dendrites"][node["soma"]].out_spikes))
+    # end
+    # @show output
     return
 end
 
@@ -85,34 +74,12 @@ function arbor_update(net_dict,desired)
     end
 end
 
-function run_cuda()
-    name = "net_dict_2.jld2"
-    net = load_net(name)
-    @time run_net(net)
-    @time arbor_update(net,[3,0,0])
-    # run_net(net)
-    # arbor_update(net,[3,0,0])
-    # run_net(net)
-    # arbor_update(net,[3,0,0])
-    # run_net(net)
-    # arbor_update(net,[3,0,0])
-    # run_net(net)
-    # arbor_update(net,[3,0,0])
-    # run_net(net)
-    # arbor_update(net,[3,0,0])
-    # run_net(net)
-    # arbor_update(net,[3,0,0])
-    # run_net(net)
-    return
+function save_net(net::Dict{Any,Any})
+    save("net_temp.jld2", "data", net)
 end
 
-run_cuda()
-
-# save("aftr_update.jld2", "data", net)
-# items = collect(keys(net["nodes"]["node_1"]["dendrites"][net["nodes"]["node_1"]["soma"]]))
-# @show items 
-
-
-
-# save("out_dict_4threads.jld2", "data", net)
-# @time run_net(net)
+# @show Threads.nthreads()
+name = "net_temp.jld2"
+net = load_net(name)
+run_net(net)
+save_net(net)

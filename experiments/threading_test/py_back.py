@@ -1,24 +1,31 @@
-from julia import Main as jl
-import sys
-sys.path.append('../../sim_soens')
-sys.path.append('../../')
+# import subprocess
 
-from sim_soens.super_input import SuperInput
-from sim_soens.super_node import SuperNode
-from sim_soens.super_functions import *
-from sim_soens.soen_sim import network, synapse
-
-import time
+# subprocess.run(["DIR"]) 
 
 import os
-import pickle
-file = "test_net.pickle"
-file_to_read = open(file, "rb")
-net = pickle.load(file_to_read)
-file_to_read.close()
+os.system("julia --threads 4 jul_main.jl")
 
-jl.include("py_to_threads.jl")
-jl.include("thread_stepper.jl")
+# from julia import Main as jl
+# import sys
+# sys.path.append('../../sim_soens')
+# sys.path.append('../../')
+
+# from sim_soens.super_input import SuperInput
+# from sim_soens.super_node import SuperNode
+# from sim_soens.super_functions import *
+# from sim_soens.soen_sim import network, synapse
+
+# import time
+
+# import os
+# import pickle
+# file = "test_net.pickle"
+# file_to_read = open(file, "rb")
+# net = pickle.load(file_to_read)
+# file_to_read.close()
+
+# jl.include("py_to_threads.jl")
+# jl.include("thread_stepper.jl")
 
 
 def jul_to_py(jul_net,net):
@@ -85,9 +92,9 @@ def plot_nodes(nodes):
         plt.legend(loc='upper right')
         plt.show()
 
-jul_net = jl.load("aftr_update.jld2")["data"]
-nodes = jul_to_py(jul_net,net)
-plot_nodes(nodes)
+# jul_net = jl.load("aftr_update.jld2")["data"]
+# nodes = jul_to_py(jul_net,net)
+# plot_nodes(nodes)
 
 # def make_updates(net,nodes,config):
 #     # check spiking output

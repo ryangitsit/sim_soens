@@ -28,6 +28,7 @@ def setup_argument_parser():
     parser.add_argument( "--duration",      type=int,       default = 250       )
     parser.add_argument( "--low_bound",     type=float,     default = -0.5      )
     parser.add_argument( "--plotting",      type=str,       default = "sparse"  )
-    parser.add_argument( "--pickle_net",      type=str,     default = "True"    )
+    parser.add_argument( "--jul_threading", type=int,       default = 1  )
+
 
     return parser.parse_args()

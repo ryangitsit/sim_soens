@@ -76,7 +76,7 @@ def run_soen_sim(net):
             net.init_time = finish-start
             
             # from super_functions import picklit
-            # picklit(net,"pickle_net","test_net_2")
+            # picklit(net,"pickle_net","test_net_asymnm")
 
 
             start = time.perf_counter()
@@ -84,6 +84,7 @@ def run_soen_sim(net):
             from julia import Main as jl
             jl.include("py_to_jul.jl")
             jl.include("julia_stepper.jl")
+            # jl.include("jul_main.jl")
 
             # for node in net.nodes:
             #     node.dend_dict = {}
@@ -91,16 +92,41 @@ def run_soen_sim(net):
             #         node.dend_dict[dend.name] = dend
                 # node.synapse_list.append(node.neuron.dend__ref.synaptic_inputs[f"{node.name}__syn_refraction"])
                 # # if net.print_times: print(node.neuron.dend__ref.synaptic_inputs[f"{node.name}__syn_refraction"].name)
-            jul_net = jl.obj_to_structs(net)
-            finish = time.perf_counter()
-            if net.print_times: print(f"Julia setup time: {finish-start}")
+            
+            if net.jul_threading == 1:
+                jul_net = jl.obj_to_structs(net)
+                finish = time.perf_counter()
+                if net.print_times: print(f"Julia setup time: {finish-start}")
 
 
-            start = time.perf_counter()
-            jul_net = jl.stepper(jul_net)
-            finish = time.perf_counter()
-            if net.print_times: print(f"Julia stepper time: {finish-start}")
-            net.run_time = finish-start
+                start = time.perf_counter()
+                jul_net = jl.stepper(jul_net)
+                finish = time.perf_counter()
+                if net.print_times: print(f"Julia stepper time: {finish-start}")
+                net.run_time = finish-start
+
+            else:
+                jul_net = jl.obj_to_structs(net)
+
+                s2 = time.perf_counter()
+                jl.save_dict(jul_net)
+                f2 = time.perf_counter()
+                # print("ThreadSave call = ", f2-s2)
+
+                start = time.perf_counter()
+                import os
+                os.system(f"julia --threads {net.jul_threading} jul_main.jl")
+                f2 = time.perf_counter()
+                # print("ThreadNet call = ", f2-start)
+
+                s2 = time.perf_counter()
+                jul_net = jl.load_net("net_temp.jld2")
+                f2 = time.perf_counter()
+                # print("ThreadLoad call = ", f2-s2)
+
+                finish = time.perf_counter()
+                net.run_time = finish-start
+                # return
 
 
             start = time.perf_counter()
