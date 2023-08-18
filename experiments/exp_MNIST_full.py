@@ -349,12 +349,13 @@ def main():
 
                 # run the network
                 net = network(
+                    name=config.name,
                     sim=True,
                     dt=.1,
                     tf=config.duration,
                     nodes=nodes,
                     backend=backend,
-                    print_times=True,
+                    # print_times=True,
                     jul_threading=config.jul_threading
                     )
                 
@@ -567,6 +568,10 @@ def main():
 
     from sim_soens.argparse import setup_argument_parser
     config = setup_argument_parser()
+    if config.jul_threading > 1:
+        import os
+        print("Multi-threading")
+        os.system("$env:JULIA_NUM_THREADS=4")
 
     # call in previously generated dataset
     path    = 'results/MNIST/'

@@ -3,7 +3,6 @@
 # REPL.activate(NewMain)
 
 function stepper(net_dict::Dict{Any,Any})
-
     """
     Plan:
      - Go over all nodes in network

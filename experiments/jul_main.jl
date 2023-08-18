@@ -78,7 +78,7 @@ function save_net(net::Dict{Any,Any})
     save("net_temp.jld2", "data", net)
 end
 
-# @show Threads.nthreads()
+@show Threads.nthreads()
 name = "net_temp.jld2"
 net = load_net(name)
 run_net(net)

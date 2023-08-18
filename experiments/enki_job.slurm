@@ -7,7 +7,7 @@
 #SBATCH --ntasks-per-core=1 # How many tasks on each core
 #SBATCH --cpus-per-task=4 # Number of CPUs per MPI rank 
 #SBATCH --gres=gpu:1 # Number of GPUs per
-#SBATCH --mem-per-cpu=4G\\ # Memory per processor
+#SBATCH --mem-per-cpu=2G\\ # Memory per processor
 #SBATCH --time=160:00:00 # Time limit hrs:min:sec
 #SBATCH --array=1 # job array with index values 1, 2, 3
 #SBATCH --partition=gpu # Selected partition
