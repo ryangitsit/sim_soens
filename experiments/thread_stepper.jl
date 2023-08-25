@@ -2,7 +2,8 @@
 # using REPL
 # REPL.activate(NewMain)
 
-function stepper(net_dict::Dict{Any,Any})
+function stepper(net_dict::Dict{String,Any})
+    # @show Threads.nthreads()
     """
     Plan:
      - Go over all nodes in network
@@ -17,8 +18,10 @@ function stepper(net_dict::Dict{Any,Any})
     # net_dict["T"] = 10
     syn_names  = Dict{String,Vector{Any}}()
     dend_names = Dict{String,Vector{Any}}()
+    node_names = []
 
     for (node_name,node) in net_dict["nodes"]
+        push!(node_names,node_name)
         syns = collect(keys(node["synapses"]))
         dends = collect(keys(node["dendrites"]))
         syn_names[node_name] = syns
@@ -26,8 +29,9 @@ function stepper(net_dict::Dict{Any,Any})
     end
 
     for t_idx in 1:net_dict["T"]-1
-        for (node_name,node) in net_dict["nodes"]
-
+        for idx in 1:length(node_names)
+            node = net_dict["nodes"][node_names[idx]]
+            node_name = node_names[idx]
             loop_synapses(node,node_name,syn_names,net_dict["T"],net_dict["conversion"],t_idx)
             loop_dendrites(node,node_name,dend_names,net_dict["d_tau"],t_idx)
 
@@ -47,7 +51,7 @@ function stepper(net_dict::Dict{Any,Any})
     return net_dict
 end
 
-function loop_synapses(node::Dict{Any, Any},node_name::String,syn_names::Dict{String,Vector{Any}},T::Int64,conversion::Float64,t_idx::Int64)
+function loop_synapses(node::Dict{String, Any},node_name::String,syn_names::Dict{String,Vector{Any}},T::Int64,conversion::Float64,t_idx::Int64)
     Threads.@threads for iter in 1:length(node["synapses"])
         syn = node["synapses"][syn_names[node_name][iter]]
         synapse_input_update(
@@ -59,7 +63,7 @@ function loop_synapses(node::Dict{Any, Any},node_name::String,syn_names::Dict{St
     end
 end
 
-function loop_dendrites(node::Dict{Any, Any},node_name::String,dend_names::Dict{String,Vector{Any}},d_tau::Float64,t_idx::Int64)
+function loop_dendrites(node::Dict{String, Any},node_name::String,dend_names::Dict{String,Vector{Any}},d_tau::Float64,t_idx::Int64)
     Threads.@threads for iter in 1:length(node["dendrites"])
         dend = node["dendrites"][dend_names[node_name][iter]]
         dend_update(

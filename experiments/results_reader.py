@@ -148,8 +148,8 @@ def plot_singles(experiments,until):
         plt.show()
 
 
-        # plt.plot(df["run_time"])
-        # plt.show()
+        plt.plot(df["run_time"])
+        plt.show()
 
         # print("Average runtime = ",np.mean(df["run_time"]))
 
@@ -190,7 +190,7 @@ experiments = [
     # 'heidelearn',
     'MNIST_asymmetic',
     # 'M_binary',
-    'MNIST_deep_prime',
+    # 'MNIST_deep_prime',
     # 'MNIST_rich',
     # 'prob_update'
     ]

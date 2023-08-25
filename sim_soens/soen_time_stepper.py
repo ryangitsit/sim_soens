@@ -83,64 +83,54 @@ def run_soen_sim(net):
             # if net.jul_threading > 1:
             #     import os
             #     os.system(f"$env:JULIA_NUM_THREADS={net.jul_threading}")
+            print(net.jul_threading)
+            if net.jul_threading == 1:
+                print("no threading")
+                from julia import Main as jl
+                jl.include("py_to_jul.jl")
+                jl.include("julia_stepper.jl")
+                jul_net = jl.obj_to_structs(net)
+                finish = time.perf_counter()
+                if net.print_times: print(f"Julia setup time: {finish-start}")
+                start = time.perf_counter()
+                jl.stepper(jul_net)
+                finish = time.perf_counter()
+                if net.print_times: print(f"Julia stepper time: {finish-start}")
 
-            from julia import Main as jl
-            jl.include("py_to_jul.jl")
-            jl.include("thread_stepper.jl")
-            # jl.include("jul_main.jl")
+                net.run_time = finish-start      
 
-            jul_net = jl.obj_to_structs(net)
-            finish = time.perf_counter()
-            if net.print_times: print(f"Julia setup time: {finish-start}")
+            else:
+                # print("Multi-threading")
+                from julia import Main as jl
+                jl.include("py_to_jul.jl")
+                jl.include("thread_stepper.jl")
 
+                jl.obj_to_structs(net)
 
-            start = time.perf_counter()
-            jl.stepper(jul_net)
-            finish = time.perf_counter()
-            if net.print_times: print(f"Julia stepper time: {finish-start}")
+                # start = time.perf_counter()
+                # jul_net = jl.stepper(jul_net)
+                # finish = time.perf_counter()
 
-            net.run_time = finish-start      
+                # net.run_time = finish-start
+                # s2 = time.perf_counter()
+                # jl.save_dict(jul_net)
+                # f2 = time.perf_counter()
+                # print("ThreadSave call = ", f2-s2)
 
-            # if net.jul_threading == 1:
-            #     jul_net = jl.obj_to_structs(net)
-            #     finish = time.perf_counter()
-            #     if net.print_times: print(f"Julia setup time: {finish-start}")
+                start = time.perf_counter()
+                import os
+                os.system(f"julia --threads {net.jul_threading} jul_main.jl")
 
+                # f2 = time.perf_counter()
+                # print("ThreadNet call = ", f2-start)
 
-            #     start = time.perf_counter()
-            #     jl.stepper(jul_net)
-            #     finish = time.perf_counter()
-            #     if net.print_times: print(f"Julia stepper time: {finish-start}")
+                # s2 = time.perf_counter()
+                jul_net = jl.load_net("net_temp.jld2")
+                # f2 = time.perf_counter()
+                # print("ThreadLoad call = ", f2-s2)
 
-            #     net.run_time = finish-start
-
-            # else:
-            #     jul_net = jl.obj_to_structs(net)
-
-            #     start = time.perf_counter()
-            #     jul_net = jl.stepper(jul_net)
-            #     finish = time.perf_counter()
-
-            #     net.run_time = finish-start
-            #     # s2 = time.perf_counter()
-            #     # jl.save_dict(jul_net)
-            #     # f2 = time.perf_counter()
-            #     # print("ThreadSave call = ", f2-s2)
-
-            #     # start = time.perf_counter()
-            #     # import os
-            #     # os.system(f"julia --threads {net.jul_threading} jul_main.jl")
-            #     # os.system(f"julia jul_main.jl")
-            #     # f2 = time.perf_counter()
-            #     # print("ThreadNet call = ", f2-start)
-
-            #     # s2 = time.perf_counter()
-            #     # jul_net = jl.load_net("net_temp.jld2")
-            #     # f2 = time.perf_counter()
-            #     # print("ThreadLoad call = ", f2-s2)
-
-            #     # finish = time.perf_counter()
-            #     # net.run_time = finish-start
+                finish = time.perf_counter()
+                net.run_time = finish-start
             #     # return
 
 
@@ -495,7 +485,9 @@ def dendrite_updater(dend_obj,time_index,present_time,d_tau,HW=None):
     lst = dend_obj.phi_r__vec[:] # old way
     # lst = np.asarray(phi_r__array[dend_obj._ind__ib])[:] # new way
 
+    
     val = dend_obj.phi_r[time_index+1] 
+    # print(dend_obj.phi_r[time_index+1],val)
 
     if val > np.max(dend_obj.phi_r__vec[:]):
         # print("High roll")
@@ -504,9 +496,26 @@ def dendrite_updater(dend_obj,time_index,present_time,d_tau,HW=None):
         # print("Low roll")
         val = val - np.min(dend_obj.phi_r__vec[:])
 
-    _ind__phi_r = closest_index(lst,val)
+    if val <= -.1675:
+        _ind__phi_r = np.min([int(333*(np.abs(val)-.1675)/(1-.1675)),667])
+    elif val >= .1675:
+        _ind__phi_r = np.min([int(333*(np.abs(val)-.1675)/(1-.1675)),667])+335
+    elif val < 0:
+        _ind__phi_r = 333
+    else:
+        _ind__phi_r = 334
+    
+    # _ind__phi_r = closest_index(lst,val) 
 
+    # if "soma" in dend_obj.name: print(val,_ind__phi_r)
+
+    # _ind__phi_r = np.min([int(333*(np.abs(val)-.1675)/(1-.1675)),667])
+    # _ind__phi_r = closest_index(lst,val)
     i_di__vec = np.asarray(dend_obj.i_di__subarray[_ind__phi_r]) # old way
+
+    # print(dend_obj.phi_r[time_index+1],val,_ind__phi_r)
+
+
     # i_di__vec = np.asarray(np.asarray(i_di__array[dend_obj._ind__ib],dtype=object)[_ind__phi_r]) # new way
 
     if dend_obj.pri == True:

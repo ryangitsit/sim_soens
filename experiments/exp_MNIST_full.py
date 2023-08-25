@@ -568,10 +568,10 @@ def main():
 
     from sim_soens.argparse import setup_argument_parser
     config = setup_argument_parser()
-    if config.jul_threading > 1:
-        import os
-        print("Multi-threading")
-        os.system("$env:JULIA_NUM_THREADS=4")
+    # if config.jul_threading > 1:
+    #     import os
+    #     print("Multi-threading")
+    #     os.system("$env:JULIA_NUM_THREADS=4")
 
     # call in previously generated dataset
     path    = 'results/MNIST/'

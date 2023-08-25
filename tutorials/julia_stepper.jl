@@ -2,7 +2,7 @@
 # using REPL
 # REPL.activate(NewMain)
 
-function stepper(net_dict::Dict{Any,Any})
+function stepper(net_dict::Dict{String,Any})
 
     """
     Plan:

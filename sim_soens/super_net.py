@@ -252,8 +252,8 @@ class PointReservoir:
 
 
 
-    def run_network(self,prune_synapses=True,backend='Python'):
-        self.net = network(dt=self.dt,tf=self.tf,nodes=self.neurons,new_way=False,backend=backend)
+    def run_network(self,prune_synapses=True,backend='julia'):
+        self.net = network(dt=self.dt,tf=self.tf,nodes=self.neurons,new_way=False,backend=backend,jul_threading=4)
         self.net.null_synapses = prune_synapses
         print("running network")
         self.net.simulate()

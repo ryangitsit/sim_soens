@@ -74,12 +74,12 @@ function arbor_update(net_dict,desired)
     end
 end
 
-function save_net(net::Dict{Any,Any})
+function save_net(net::Dict{String,Any})
     save("net_temp.jld2", "data", net)
 end
 
-@show Threads.nthreads()
+# @show Threads.nthreads()
 name = "net_temp.jld2"
 net = load_net(name)
-run_net(net)
+@time run_net(net)
 save_net(net)

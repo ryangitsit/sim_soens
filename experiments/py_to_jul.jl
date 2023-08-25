@@ -4,7 +4,7 @@
 
 using PyCall
 # using julia_stepper
-# using JLD2, FileIO
+using JLD2, FileIO
 
 abstract type AbstractDendrite end
 
@@ -253,6 +253,15 @@ function make_nodes(
     return node_dict
 end
 
+function save_dict(net::Dict{String,Any})
+    save("net_temp.jld2", "data", net)
+end
+
+function load_net(name)
+    net_dict = load(name)["data"]
+    return net_dict
+end
+
 function obj_to_structs(net::PyObject)
 
     net_dict  = Dict{String,Any}()
@@ -282,15 +291,8 @@ function obj_to_structs(net::PyObject)
     end
     # save("net_dict_2.jld2", "data", net_dict)
     # load("net_dict.jld2")["data"]
+    save_dict(net_dict)
     return net_dict
 
 end
 
-# function save_dict(net::Dict{Any,Any})
-#     save("net_temp.jld2", "data", net)
-# end
-
-# function load_net(name)
-#     net_dict = load(name)["data"]
-#     return net_dict
-# end
