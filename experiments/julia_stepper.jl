@@ -1,6 +1,7 @@
 # module NewMain end
 # using REPL
 # REPL.activate(NewMain)
+using Distributed
 
 function stepper(net_dict::Dict{Any,Any})
     # @show Threads.nthreads()
@@ -19,7 +20,7 @@ function stepper(net_dict::Dict{Any,Any})
     for t_idx in 1:net_dict["T"]-1
         for (node_name,node) in net_dict["nodes"]
             # @show node
-            for (name,syn) in node["synapses"]
+            @distributed for (name,syn) in node["synapses"]
                 synapse_input_update(
                     syn,
                     t_idx,
@@ -28,7 +29,7 @@ function stepper(net_dict::Dict{Any,Any})
                     )
             end
 
-            for (name,dend) in node["dendrites"]
+            @distributed for (name,dend) in node["dendrites"]
                 dend_update(
                     node,
                     dend,
@@ -206,7 +207,10 @@ function dend_signal(dend::AbstractDendrite,t_idx::Int,d_tau::Float64)
         val = val - dend.phi_min
     end
 
-    ind_phi = closest_index(dend.phi_vec,val)
+    # ind_phi = closest_index(dend.phi_vec,val)
+    ind_phi = index_approxer(val)
+
+
     # ind_phi = closest_index(dend.phi_vec,dend.phir[t_idx+1]) # +1 or not?
 
     # ind_phi = index_approxer(
@@ -218,7 +222,10 @@ function dend_signal(dend::AbstractDendrite,t_idx::Int,d_tau::Float64)
 
     s_vec = dend.s_array[ind_phi]
 
-    ind_s = closest_index(s_vec,dend.s[t_idx])
+    # ind_s = closest_index(s_vec,dend.s[t_idx])
+
+    ind_s = s_index_approxer(s_vec,dend.s[t_idx])
+
     # @show ind_phi
     # @show s_vec
     # ind_s = index_approxer(
@@ -245,23 +252,32 @@ function closest_index(lst,val)
 end
 
 
-function index_approxer(val::Float64,maxval::Float64,minval::Float64,lenlst::Int)
-    if maxval == 0 && minval == 0
-        return 1
+function s_index_approxer(vec::Vector{Float64},val::Float64)
+    if length(vec) > 1
+    # s_idx = floor(Int, (val/(maximum(vec)-minimum(vec)))*length(vec) )
+        slope = (last(vec) - vec[1])/length(vec)
+        s_idx = maximum([floor(Int,((val-vec[1])/slope)),1])
+        s_idx = minimum([s_idx,length(vec)])
     else
-        range = abs(maxval-minval)::Float64
-        ratio = abs(minval-val)/range::Float64
-        ind = ratio*lenlst
-        # ind = floor(Int,((val+range/2)/range)*lenlst)%lenlst+1
-        # @show val
-        # @show maxval
-        # @show minval
-        # @show range
-        # @show ratio
-        ind = min(floor(Int,ind)+1,lenlst-1) #%lenlst +1
-        return ind + 1
+        s_idx = 1
     end
+    return s_idx
 end
+
+function index_approxer(val::Float64)
+    # ,maxval::Float64,minval::Float64,lenlst::Int
+    if val <= -.1675
+        _ind__phi_r = minimum([floor(Int,(333*(abs(val)-.1675)/(1-.1675))),667])
+    elseif val >= .1675
+        _ind__phi_r = minimum([floor(Int,(333*(abs(val)-.1675)/(1-.1675))),667])+335
+    elseif val < 0
+        _ind__phi_r = 333
+    else
+        _ind__phi_r = 334
+    end
+    return _ind__phi_r + 1
+end
+
 
 
 function clear_all(strct)

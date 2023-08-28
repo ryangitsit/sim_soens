@@ -80,6 +80,6 @@ end
 
 # @show Threads.nthreads()
 name = "net_temp.jld2"
-net = load_net(name)
+@time net = load_net(name)
 @time run_net(net)
-save_net(net)
+@time save_net(net)

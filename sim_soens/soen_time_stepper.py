@@ -83,12 +83,12 @@ def run_soen_sim(net):
             # if net.jul_threading > 1:
             #     import os
             #     os.system(f"$env:JULIA_NUM_THREADS={net.jul_threading}")
-            print(net.jul_threading)
+            
             if net.jul_threading == 1:
-                print("no threading")
+                # print("no threading")
                 from julia import Main as jl
                 jl.include("py_to_jul.jl")
-                jl.include("julia_stepper.jl")
+                jl.include("thread_stepper.jl")
                 jul_net = jl.obj_to_structs(net)
                 finish = time.perf_counter()
                 if net.print_times: print(f"Julia setup time: {finish-start}")
