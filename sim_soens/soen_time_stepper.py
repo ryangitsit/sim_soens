@@ -1,7 +1,6 @@
 import numpy as np
 import time
 
-
 from numpy.random import default_rng
 rng = default_rng()
 
@@ -15,10 +14,7 @@ from sim_soens.soen_initialize import (
 )
 
 # from sim_soens.soen_utilities import dend_load_rate_array
-
-
 # load_string = 'default_ri'
-
 # ib__list, phi_r__array, i_di__array, r_fq__array, _, _ = dend_load_rate_array(load_string)
 
 
@@ -52,7 +48,7 @@ def run_soen_sim(net):
             # print('julia')
             from sim_soens.soen_initialize import make_subarrays
             
-            # if net.print_times: print("----------------------------------------------------\n\n")
+            # if net.print_times: print("-------------------------\n\n")
             start = time.perf_counter()
             # interate through all network nodes and initialize all related elements
             net.phi_vec, net.s_array, net.r_array = make_subarrays(net.nodes[0].neuron.ib,'ri')
@@ -62,77 +58,45 @@ def run_soen_sim(net):
                 node.neuron.dend_soma.threshold_flag = False
 
                 for dend in node.dendrite_list:
-                    # print(" Initializing dendrite: ", dend.name)
-                    # dendrite_drive_construct(dend,tau_vec,t_tau_conversion,d_tau)
-                    # rate_array_attachment(dend)
-
                     dend.beta = dend.circuit_betas[-1]
                     synapse_initialization(dend,tau_vec,t_tau_conversion)
 
                 output_synapse_initialization(node.neuron,tau_vec,t_tau_conversion)
                 transmitter_initialization(node.neuron,t_tau_conversion)
             finish = time.perf_counter()
-            # if net.print_times: print(f"Initialization procedure run time: {finish-start}")
+            if net.print_times: print(f"Initialization procedure run time: {finish-start}")
             net.init_time = finish-start
-            
-            # from super_functions import picklit
-            # picklit(net,"pickle_net","test_net_asymnm")
+
+
+            start = time.perf_counter()            
+
+            import os
+            from multiprocessing import cpu_count
+            os.environ["JULIA_NUM_THREADS"] = str(net.jul_threading)
+            string = f"$env:JULIA_NUM_THREADS={net.jul_threading}"
+            os.system(string)
+            from julia import Main as jl
+
+            # jl.using("Distributed")
+            # jl.addprocs(2)
+
+
+            jl.include("py_to_jul.jl")
+            jl.include("thread_stepper.jl")
+
+            jul_net = jl.obj_to_structs(net)
+
+            finish = time.perf_counter()
+            if net.print_times: print(f"Julia setup time: {finish-start}")
 
 
             start = time.perf_counter()
-            # if net.jul_threading > 1:
-            #     import os
-            #     os.system(f"$env:JULIA_NUM_THREADS={net.jul_threading}")
-            
-            if net.jul_threading == 1:
-                # print("no threading")
-                from julia import Main as jl
-                jl.include("py_to_jul.jl")
-                jl.include("thread_stepper.jl")
-                jul_net = jl.obj_to_structs(net)
-                finish = time.perf_counter()
-                if net.print_times: print(f"Julia setup time: {finish-start}")
-                start = time.perf_counter()
-                jl.stepper(jul_net)
-                finish = time.perf_counter()
-                if net.print_times: print(f"Julia stepper time: {finish-start}")
+            jl.stepper(jul_net)
+            finish = time.perf_counter()
 
-                net.run_time = finish-start      
+            if net.print_times: print(f"Julia stepper time: {finish-start}")
 
-            else:
-                # print("Multi-threading")
-                from julia import Main as jl
-                jl.include("py_to_jul.jl")
-                jl.include("thread_stepper.jl")
-
-                jl.obj_to_structs(net)
-
-                # start = time.perf_counter()
-                # jul_net = jl.stepper(jul_net)
-                # finish = time.perf_counter()
-
-                # net.run_time = finish-start
-                # s2 = time.perf_counter()
-                # jl.save_dict(jul_net)
-                # f2 = time.perf_counter()
-                # print("ThreadSave call = ", f2-s2)
-
-                start = time.perf_counter()
-                import os
-                os.system(f"julia --threads {net.jul_threading} jul_main.jl")
-
-                # f2 = time.perf_counter()
-                # print("ThreadNet call = ", f2-start)
-
-                # s2 = time.perf_counter()
-                jul_net = jl.load_net("net_temp.jld2")
-                # f2 = time.perf_counter()
-                # print("ThreadLoad call = ", f2-s2)
-
-                finish = time.perf_counter()
-                net.run_time = finish-start
-            #     # return
-
+            net.run_time = finish-start      
 
             start = time.perf_counter()
             for node in net.nodes:
@@ -155,16 +119,10 @@ def run_soen_sim(net):
                     syn.phi_spd = jul_syn.phi_spd
             finish = time.perf_counter()
 
-
             if net.print_times: print(f"jul-to-py re-attachment time: {finish-start}")
-            # if net.print_times: print("\n\n----------------------------------------------------")
 
-            # jl.include("julia_clearing.jl")
             jul_net = jl.clear_all(jul_net)
             jl.unbindvariables()
-
-            # jl.workspace()
-            # jl.gc()
 
         else:
             # print('python')
@@ -180,7 +138,6 @@ def run_soen_sim(net):
                     dend.ind_phi = []  # temp
                     dend.ind_s = [] # temp
                     dend.spk_print = True # temp
-
 
                     dendrite_drive_construct(dend,tau_vec,t_tau_conversion,d_tau)
 
@@ -275,7 +232,10 @@ def spike(neuron,ii,tau_vec):
     if neuron.dend_soma.s[ii+1] >= neuron.integrated_current_threshold:
         
         neuron.dend_soma.threshold_flag = True
-        neuron.dend_soma.spike_times.append(tau_vec[ii+1])
+        neuron.dend_soma.spike_times = np.append(
+            neuron.dend_soma.spike_times,
+            tau_vec[ii+1]
+            )
         neuron.spike_times.append(tau_vec[ii+1])
         neuron.spike_indices.append(ii+1)
         
@@ -496,21 +456,22 @@ def dendrite_updater(dend_obj,time_index,present_time,d_tau,HW=None):
         # print("Low roll")
         val = val - np.min(dend_obj.phi_r__vec[:])
 
-    if val <= -.1675:
-        _ind__phi_r = np.min([int(333*(np.abs(val)-.1675)/(1-.1675)),667])
-    elif val >= .1675:
-        _ind__phi_r = np.min([int(333*(np.abs(val)-.1675)/(1-.1675)),667])+335
-    elif val < 0:
-        _ind__phi_r = 333
-    else:
-        _ind__phi_r = 334
+    # if val <= -.1675:
+    #     _ind__phi_r = np.min([int(333*(np.abs(val)-.1675)/(1-.1675)),667])
+    # elif val >= .1675:
+    #     _ind__phi_r = np.min([int(333*(np.abs(val)-.1675)/(1-.1675)),667])+335
+    # elif val < 0:
+    #     _ind__phi_r = 333
+    # else:
+    #     _ind__phi_r = 334
     
-    # _ind__phi_r = closest_index(lst,val) 
+    _ind__phi_r = closest_index(lst,val) 
 
     # if "soma" in dend_obj.name: print(val,_ind__phi_r)
 
     # _ind__phi_r = np.min([int(333*(np.abs(val)-.1675)/(1-.1675)),667])
     # _ind__phi_r = closest_index(lst,val)
+
     i_di__vec = np.asarray(dend_obj.i_di__subarray[_ind__phi_r]) # old way
 
     # print(dend_obj.phi_r[time_index+1],val,_ind__phi_r)

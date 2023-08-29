@@ -4,7 +4,7 @@
 using Distributed
 
 function stepper(net_dict::Dict{Any,Any})
-    # @show Threads.nthreads()
+    @show Threads.nthreads()
     """
     Plan:
      - Go over all nodes in network

@@ -1,7 +1,8 @@
 # module NewMain end
 # using REPL
 # REPL.activate(NewMain)
-
+# using Distributed
+# addprocs(2)
 using PyCall
 # using julia_stepper
 using JLD2, FileIO

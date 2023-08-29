@@ -1,7 +1,78 @@
-# module NewMain end
-# using REPL
-# REPL.activate(NewMain)
-using Distributed
+# using Distributed
+# addprocs(2)
+
+function stepper(net_dict::Dict{Any,Any})
+    # @show Threads.nthreads()
+    """
+    Plan:
+     - Go over all nodes in network
+        - create structs for synapses
+        - create structs for dendrites
+        - creat information table for connectivity
+        - update in downstream direction
+        - return dataframe of signals and fluxes
+            - update py objects with new info
+        - win
+    """
+    # net_dict["T"] = 10
+    syn_names  = Dict{String,Vector{Any}}()
+    dend_names = Dict{String,Vector{Any}}()
+    node_names = []
+
+    for (node_name,node) in net_dict["nodes"]
+        push!(node_names,node_name)
+        syns = collect(keys(node["synapses"]))
+        dends = collect(keys(node["dendrites"]))
+        syn_names[node_name] = syns
+        dend_names[node_name] = dends
+    end
+
+    for t_idx in 1:net_dict["T"]-1
+        Threads.@threads for idx in 1:length(node_names)
+            node = net_dict["nodes"][node_names[idx]]
+            node_name = node_names[idx]
+            loop_synapses(node,node_name,syn_names,net_dict["T"],net_dict["conversion"],t_idx)
+            loop_dendrites(node,node_name,dend_names,net_dict["d_tau"],t_idx)
+
+            if node["dendrites"][node["soma"]].spiked == 1
+                for (syn_name,spks) in node["outputs"]
+                    for (node_name,node) in net_dict["nodes"]
+                        if occursin(node_name,syn_name)
+                            push!(net_dict["nodes"][node_name]["synapses"][syn_name].spike_times,t_idx+100)
+                        end
+                    end
+                end
+                node["dendrites"][node["soma"]].spiked = 0
+            end
+            
+        end
+    end
+    return net_dict
+end
+
+function loop_synapses(node::Dict{Any, Any},node_name::String,syn_names::Dict{String,Vector{Any}},T::Int64,conversion::Float64,t_idx::Int64)
+    Threads.@threads for iter in 1:length(node["synapses"])
+        syn = node["synapses"][syn_names[node_name][iter]]
+        synapse_input_update(
+            syn,
+            t_idx,
+            T,
+            conversion
+            )
+    end
+end
+
+function loop_dendrites(node::Dict{Any, Any},node_name::String,dend_names::Dict{String,Vector{Any}},d_tau::Float64,t_idx::Int64)
+    Threads.@threads for iter in 1:length(node["dendrites"])
+        dend = node["dendrites"][dend_names[node_name][iter]]
+        dend_update(
+            node,
+            dend,
+            t_idx,
+            d_tau
+            )
+    end
+end
 
 function stepper(net_dict::Dict{String,Any})
     # @show Threads.nthreads()
@@ -53,7 +124,7 @@ function stepper(net_dict::Dict{String,Any})
 end
 
 function loop_synapses(node::Dict{String, Any},node_name::String,syn_names::Dict{String,Vector{Any}},T::Int64,conversion::Float64,t_idx::Int64)
-    @distributed for iter in 1:length(node["synapses"])
+    Threads.@threads for iter in 1:length(node["synapses"])
         syn = node["synapses"][syn_names[node_name][iter]]
         synapse_input_update(
             syn,
@@ -65,7 +136,7 @@ function loop_synapses(node::Dict{String, Any},node_name::String,syn_names::Dict
 end
 
 function loop_dendrites(node::Dict{String, Any},node_name::String,dend_names::Dict{String,Vector{Any}},d_tau::Float64,t_idx::Int64)
-    @distributed for iter in 1:length(node["dendrites"])
+    Threads.@threads for iter in 1:length(node["dendrites"])
         dend = node["dendrites"][dend_names[node_name][iter]]
         dend_update(
             node,
@@ -75,8 +146,6 @@ function loop_dendrites(node::Dict{String, Any},node_name::String,dend_names::Di
             )
     end
 end
-
-
 
 
 function synapse_input_update(syn::Synapse,t::Int64,T::Int64,conversion::Float64)
@@ -227,7 +296,7 @@ end
 function dend_synputs(node::Dict,dend::AbstractDendrite,t_idx::Int)
     update = 0
     for synput in dend.synputs 
-        dend.phir[t_idx+1] += node["synapses"][synput[1]].phi_spd[t_idx]*synput[2] # dend.s[t_idx]*input[2] + t_idx
+        dend.phir[t_idx+1] += node["synapses"][synput[1]].phi_spd[t_idx]*synput[2] 
     end
 end
 
