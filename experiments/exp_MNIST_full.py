@@ -280,6 +280,55 @@ def main():
                 )
         return nodes
     
+    def make_update(nodes,config,digit,sample,errors):
+        # print("Functional Update")
+        s = time.perf_counter()
+        offset_sums = [0 for _ in range(config.digits)]
+        
+        for n,node in enumerate(nodes):
+            for l,layer in enumerate(node.dendrites):
+                for g,group in enumerate(layer):
+                    for d,dend in enumerate(group):
+                        if 'ref' not in dend.name and 'soma' not in dend.name:
+                            
+                            if hasattr(dend, 'hebb'):
+                                hebb = dend.hebb*20
+                            else:
+                                hebb = 1
+
+                            step = errors[n]*np.mean(dend.s)*config.eta*hebb
+                            flux = np.mean(dend.phi_r) + step
+                            
+                            if config.hebbian == "True":
+                                for in_dend in dend.dendritic_inputs.keys():
+                                    in_dendrite = dend.dendritic_inputs[in_dend]
+                                    if "ref" not in in_dend:
+                                        in_dendrite.hebb = np.mean(dend.s)
+                                        # print(np.mean(dend.s))
+
+
+                            if config.elasticity=="elastic":
+                                if flux > 0.5 or flux < config.low_bound:
+                                    step = -step
+            
+                            elif config.elasticity=="inelastic":
+                                if flux > 0.5 or flux < config.low_bound:
+                                    step = 0
+
+                            dend.offset_flux += step
+                            offset_sums[n] += step
+
+                        # else:
+                        #     print("soma")
+
+                        dend.s = []
+                        dend.phi_r = []
+
+        f = time.perf_counter()
+        # print(f"Update time = {f-s}")
+        return nodes, offset_sums
+
+    
     def train_MNIST_neurons(nodes,dataset,path,name,config):
         '''
         Trains nodes on MNIST dataset
@@ -301,8 +350,8 @@ def main():
             for idx in range(config.digits):
                 desired.append([0 for _ in range(config.digits)])
             for idx in range(config.digits):
-                desired[idx][idx] = 3
-            print(desired)
+                desired[idx][idx] = 5
+            # print(desired)
 
         backend = 'julia'
         print('Backend: ', backend)
@@ -324,12 +373,17 @@ def main():
             # count errors for this sample
             # total_errors = [[] for i in range(3)]
 
-            # track outputs for this sample
+            # track outputs for this samples
             outputs = [[] for i in range(config.digits)]
 
             # iterate over each digit-class
+            np.random.seed(None)
+            shuffled = np.arange(0,config.digits,1)
+            np.random.shuffle(shuffled)
+
             for digit in range(config.digits):
-                
+                digit = shuffled[digit]
+
                 start = time.perf_counter()
 
                 # create input opject for appropriate class and sample
@@ -402,50 +456,52 @@ def main():
                 if config.run%10 != 0 or config.run == 0:
 
                     if config.probabilistic == 1:
-                        # print("Determined update")
-                        if config.elasticity=="elastic":
-                            if sample == 0 and config.run == 0: print("elastic")
-                            for n,node in enumerate(nodes):
-                                for l,layer in enumerate(node.dendrites):
-                                    for g,group in enumerate(layer):
-                                        for d,dend in enumerate(group):
-                                            if 'ref' not in dend.name and 'soma' not in dend.name:
-                                                step = errors[n]*np.mean(dend.s)*config.eta #+(2-l)*.001
-                                                flux = np.mean(dend.phi_r) + step #dend.offset_flux
-                                                if flux > 0.5 or flux < config.low_bound:
-                                                    step = -step
-                                                dend.offset_flux += step
-                                                offset_sums[n] += dend.offset_flux
-                                            dend.s = []
+                        nodes, offset_sums = make_update(nodes,config,digit,sample,errors)
+                        # # print("Determined update")
+                        # if config.elasticity=="elastic":
+                        #     if sample == 0 and config.run == 0: print("elastic")
+                        #     for n,node in enumerate(nodes):
+                        #         for l,layer in enumerate(node.dendrites):
+                        #             for g,group in enumerate(layer):
+                        #                 for d,dend in enumerate(group):
+                        #                     if 'ref' not in dend.name and 'soma' not in dend.name:
+                        #                         step = errors[n]*np.mean(dend.s)*config.eta #+(2-l)*.001
+                        #                         flux = np.mean(dend.phi_r) + step #dend.offset_flux
+                        #                         if flux > 0.5 or flux < config.low_bound:
+                        #                             step = -step
+                        #                         dend.offset_flux += step
+                        #                         offset_sums[n] += step
+                        #                     dend.s = []
+                        #                     dend.phi_r = []
 
-                        if config.elasticity=="inelastic":
-                            if sample == 0 and config.run == 0: print("inealstic")
-                            for n,node in enumerate(nodes):
-                                for l,layer in enumerate(node.dendrites):
-                                    for g,group in enumerate(layer):
-                                        for d,dend in enumerate(group):
-                                            if 'ref' not in dend.name and 'soma' not in dend.name:
-                                                step = errors[n]*np.mean(dend.s)*config.eta #+(2-l)*.001
-                                                flux = np.mean(dend.phi_r) + step #dend.offset_flux
-                                                if flux > 0.5 or flux < config.low_bound:
-                                                    step = 0
-                                                dend.offset_flux += step
-                                                offset_sums[n] += dend.offset_flux
-                                            dend.s = []
-                                            dend.phi_r = []
+                        # if config.elasticity=="inelastic":
+                        #     if sample == 0 and config.run == 0: print("inealstic")
+                        #     for n,node in enumerate(nodes):
+                        #         for l,layer in enumerate(node.dendrites):
+                        #             for g,group in enumerate(layer):
+                        #                 for d,dend in enumerate(group):
+                        #                     if 'ref' not in dend.name and 'soma' not in dend.name:
+                        #                         step = errors[n]*np.mean(dend.s)*config.eta #+(2-l)*.001
+                        #                         flux = np.mean(dend.phi_r) + step #dend.offset_flux
+                        #                         if flux > 0.5 or flux < config.low_bound:
+                        #                             step = 0
+                        #                         dend.offset_flux += step
+                        #                         offset_sums[n] += step
+                        #                     dend.s = []
+                        #                     dend.phi_r = []
 
-                        if config.elasticity=="unbounded":
-                            if sample == 0 and config.run == 0: print("unbounded")
-                            for n,node in enumerate(nodes):
-                                for l,layer in enumerate(node.dendrites):
-                                    for g,group in enumerate(layer):
-                                        for d,dend in enumerate(group):
-                                            if 'ref' not in dend.name and 'soma' not in dend.name:
-                                                step = errors[n]*np.mean(dend.s)*config.eta #+(2-l)*.001
-                                                dend.offset_flux += step
-                                                offset_sums[n] += dend.offset_flux
-                                            dend.s = []
-                                            dend.phi_r = []
+                        # if config.elasticity=="unbounded":
+                        #     if sample == 0 and config.run == 0: print("unbounded")
+                        #     for n,node in enumerate(nodes):
+                        #         for l,layer in enumerate(node.dendrites):
+                        #             for g,group in enumerate(layer):
+                        #                 for d,dend in enumerate(group):
+                        #                     if 'ref' not in dend.name and 'soma' not in dend.name:
+                        #                         step = errors[n]*np.mean(dend.s)*config.eta #+(2-l)*.001
+                        #                         dend.offset_flux += step
+                        #                         offset_sums[n] += step
+                        #                     dend.s = []
+                        #                     dend.phi_r = []
                     else:
                         # print("Probabilistic update")
                         bool_array = np.random.rand(len(nodes)*len(nodes[0].dendrite_list)) < config.probabilistic
@@ -464,7 +520,7 @@ def main():
                                                     if flux > 0.5 or flux < config.low_bound:
                                                         step = -step
                                                     dend.offset_flux += step
-                                                    offset_sums[n] += dend.offset_flux
+                                                    offset_sums[n] += step
                                             dend.s = []
                                             dend.phi_r = []
                                             dend_counter += 1
@@ -483,7 +539,7 @@ def main():
                                                     if flux > 0.5 or flux < config.low_bound:
                                                         step = 0
                                                     dend.offset_flux += step
-                                                    offset_sums[n] += dend.offset_flux
+                                                    offset_sums[n] += step
                                             dend.s = []
                                             dend.phi_r = []
                                             dend_counter += 1

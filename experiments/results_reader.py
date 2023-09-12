@@ -60,7 +60,7 @@ def by_run_performance(df,decider,digits,samples):
     zrs = [0 for _ in range(digits)]
 
     dig_runs = zrs
-    
+    print(zrs)
     run_wins = 0
     if decider == 'ties':
         for index, row in df.iterrows():
@@ -81,6 +81,7 @@ def by_run_performance(df,decider,digits,samples):
             if df["sample"].astype(int)[1] == 0:#< samples:
                 if no_ties(df,index) == True:
                     run_wins+=1
+                    # print(df["digit"][index])
                     dig_runs[df["digit"][index]]+=1
                 if (index+1)%(digits*samples) == 0:
                     by_run.append(run_wins/(digits*samples))
@@ -128,20 +129,21 @@ def plot_singles(experiments,until):
             )
 
         # percents, procents = ongoing_performance(df)
-        by_run, digs = by_run_performance(df,'winner',3,1)
+        by_run, digs = by_run_performance(df,'winner',3,10)
 
         pr = np.max(np.ceil(np.array(by_run)*30))
         print(f"Experiment {exp}, {len(by_run)} epochs, {np.round(pr*100/30,2)}% best run")
 
 
-        plt.style.use('seaborn-muted')
+        # plt.style.use('seaborn-muted')
         plt.figure(figsize=(8,4))
 
         plt.title(f"MNIST Training Classification Performance - {exp}",fontsize=16)
         plt.xlabel("Epoch",fontsize=14)
         plt.ylabel("Accuracy",fontsize=14)
-        plt.plot(by_run[:until], linewidth = 1, label="Total")
-        # plt.plot(np.transpose(digs)[:until], '--', label=['0','1','2'])
+        plt.plot(by_run, linewidth = 4, label="Total")
+        for ii, dig in enumerate(digs):
+            plt.plot(dig, '--',label=ii)#, label=['0','1','2'])
         plt.ylim(0,1.025)
 
         plt.legend()
@@ -151,7 +153,7 @@ def plot_singles(experiments,until):
         plt.plot(df["run_time"])
         plt.show()
 
-        # print("Average runtime = ",np.mean(df["run_time"]))
+        print("Average runtime = ",np.mean(df["run_time"]))
 
 def plot_all(experiments,until):
     plt.style.use('seaborn-muted')
@@ -188,14 +190,16 @@ experiments = [
     # 'MNIST_rich',
     # 'prob_update',
     # 'heidelearn',
-    'MNIST_asymmetic',
+    # 'MNIST_asymmetic',
     # 'M_binary',
     # 'MNIST_deep_prime',
     # 'MNIST_rich',
     # 'prob_update'
+    # 'MNIST_large',
+    'hebb_test'
     ]
 
 until = 150*10000
 
-# plot_singles(experiments,until)
-plot_all(experiments,until)
+plot_singles(experiments,until)
+# plot_all(experiments,until)

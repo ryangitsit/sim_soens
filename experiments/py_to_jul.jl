@@ -292,7 +292,7 @@ function obj_to_structs(net::PyObject)
     end
     # save("net_dict_2.jld2", "data", net_dict)
     # load("net_dict.jld2")["data"]
-    save_dict(net_dict)
+    # save_dict(net_dict)
     return net_dict
 
 end

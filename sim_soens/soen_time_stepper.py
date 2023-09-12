@@ -67,62 +67,111 @@ def run_soen_sim(net):
             if net.print_times: print(f"Initialization procedure run time: {finish-start}")
             net.init_time = finish-start
 
+            distributed = False
+            if distributed == False:
+                # print("Thread path")
+                start = time.perf_counter()            
 
-            start = time.perf_counter()            
+                import os
+                os.environ["JULIA_NUM_THREADS"] = str(net.jul_threading)
+                # string = f"$env:JULIA_NUM_THREADS={net.jul_threading}"
+                # os.system("$env:JULIA_NUM_THREADS=8")
+                # os.system('echo "Hello out there"')
 
-            import os
-            from multiprocessing import cpu_count
-            os.environ["JULIA_NUM_THREADS"] = str(net.jul_threading)
-            string = f"$env:JULIA_NUM_THREADS={net.jul_threading}"
-            os.system(string)
-            from julia import Main as jl
+                from julia import Main as jl
 
-            # jl.using("Distributed")
-            # jl.addprocs(2)
-
-
-            jl.include("py_to_jul.jl")
-            jl.include("thread_stepper.jl")
-
-            jul_net = jl.obj_to_structs(net)
-
-            finish = time.perf_counter()
-            if net.print_times: print(f"Julia setup time: {finish-start}")
+                # jl.using("Distributed")
+                # jl.addprocs(2)
 
 
-            start = time.perf_counter()
-            jl.stepper(jul_net)
-            finish = time.perf_counter()
+                jl.include("py_to_jul.jl")
+                jl.include("thread_stepper.jl")
 
-            if net.print_times: print(f"Julia stepper time: {finish-start}")
+                jul_net = jl.obj_to_structs(net)
 
-            net.run_time = finish-start      
+                finish = time.perf_counter()
+                if net.print_times: print(f"Julia setup time: {finish-start}")
 
-            start = time.perf_counter()
-            for node in net.nodes:
-                for i,dend in enumerate(node.dendrite_list):
-                    jul_dend = jul_net["nodes"][node.name]["dendrites"][dend.name]
-                    dend.s     = jul_dend.s #[:-1]
-                    dend.phi_r = jul_dend.phir #[:-1]
 
-                    dend.ind_phi = jul_dend.ind_phi #[:-1]
-                    dend.ind_s = jul_dend.ind_s #[:-1]
-                    dend.phi_vec = jul_dend.phi_vec #[:-1]
+                start = time.perf_counter()
+                jl.stepper(jul_net)
+                finish = time.perf_counter()
 
-                    if "soma" in dend.name:
-                        spike_times = (jul_dend.out_spikes-1)* net.dt * t_tau_conversion
-                        dend.spike_times        = spike_times
-                        node.neuron.spike_times = spike_times
-                    # # if net.print_times: print(sum(jul_net[node.name][i].s))/net.dt
-                for i,syn in enumerate(node.synapse_list):
-                    jul_syn = jul_net["nodes"][node.name]["synapses"][syn.name]
+                if net.print_times: print(f"Julia stepper time: {finish-start}")
+
+                net.run_time = finish-start  
+
+                start = time.perf_counter()
+                for node in net.nodes:
+                    for i,dend in enumerate(node.dendrite_list):
+                        jul_dend = jul_net["nodes"][node.name]["dendrites"][dend.name]
+                        dend.s     = jul_dend.s #[:-1]
+                        dend.phi_r = jul_dend.phir #[:-1]
+
+                        dend.ind_phi = jul_dend.ind_phi #[:-1]
+                        dend.ind_s = jul_dend.ind_s #[:-1]
+                        dend.phi_vec = jul_dend.phi_vec #[:-1]
+
+                        if "soma" in dend.name:
+                            spike_times = (jul_dend.out_spikes-1)* net.dt * t_tau_conversion
+                            dend.spike_times        = spike_times
+                            node.neuron.spike_times = spike_times
+                        # # if net.print_times: print(sum(jul_net[node.name][i].s))/net.dt
+                    for i,syn in enumerate(node.synapse_list):
+                        jul_syn = jul_net["nodes"][node.name]["synapses"][syn.name]
+                        syn.phi_spd = jul_syn.phi_spd
+                finish = time.perf_counter()
+                if net.print_times: print(f"jul-to-py re-attachment time: {finish-start}")
+
+                jul_net = jl.clear_all(jul_net)
+                jl.unbindvariables()
+
+            else:
+                print("dist path")
+                import os
+                # os.environ["JULIA_NUM_THREADS"] = str(net.jul_threading)
+                # string = f"$env:JULIA_NUM_THREADS={net.jul_threading}"
+                # os.system("$env:JULIA_NUM_THREADS=8")
+                # os.system('echo "Hello out there"')
+
+                from julia import Main as jl
+
+                # jl.using("Distributed")
+                # jl.addprocs(2)    
+                sp = time.perf_counter()
+                from super_functions import picklit,picklin
+                picklit(net,"./","temp_net")
+                fp = time.perf_counter()
+                print("Picklit time: ", fp-sp)
+
+                start = time.perf_counter()
+
+                os.system(f"julia --threads {net.jul_threading} dist_stepper.jl")
+
+                jul_net = picklin("./","temp_out")
+                finish = time.perf_counter()
+                net.run_time = finish-start    
+                print("Time: " ,net.run_time)
+
+                for n,node in enumerate(net.nodes):
+                    for i,dend in enumerate(node.dendrite_list):
+                        jul_dend = jul_net.nodes[n].dendrite_list[i] 
+                        dend.s     = jul_dend.s #[:-1]
+                        dend.phi_r = jul_dend.phi_r #[:-1]
+
+                        dend.ind_phi = jul_dend.ind_phi #[:-1]
+                        dend.ind_s = jul_dend.ind_s #[:-1]
+                        dend.phi_vec = jul_dend.phi_vec #[:-1]
+
+                        if "soma" in dend.name:
+                            spike_times = jul_dend.spike_times 
+                            dend.spike_times        = spike_times
+                            node.neuron.spike_times = spike_times
+                        # # if net.print_times: print(sum(jul_net[node.name][i].s))/net.dt
+                    for i,syn in enumerate(node.synapse_list):
+                        jul_syn = jul_net.nodes[n].synapse_list[i] 
                     syn.phi_spd = jul_syn.phi_spd
-            finish = time.perf_counter()
 
-            if net.print_times: print(f"jul-to-py re-attachment time: {finish-start}")
-
-            jul_net = jl.clear_all(jul_net)
-            jl.unbindvariables()
 
         else:
             # print('python')

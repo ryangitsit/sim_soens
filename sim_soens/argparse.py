@@ -29,6 +29,8 @@ def setup_argument_parser():
     parser.add_argument( "--low_bound",     type=float,     default = -0.5      )
     parser.add_argument( "--plotting",      type=str,       default = "sparse"  )
     parser.add_argument( "--jul_threading", type=int,       default = 1  )
+    parser.add_argument( "--hebbian",      type=str,       default = "False"  )
+    
 
 
     return parser.parse_args()
