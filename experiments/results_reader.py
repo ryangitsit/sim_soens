@@ -172,7 +172,7 @@ def plot_all(experiments,until):
         by_run, digs = by_run_performance(df,'winner',3,10)
         print(exp,' -- ', np.max(np.ceil(np.array(by_run)*30)))
         plt.plot(by_run, linewidth = 4, label=exp)
-        plt.plot(np.transpose(digs)[:until], '--', label=['0','1','2'])
+        # plt.plot(np.transpose(digs)[:until], '--', label=['0','1','2'])
     plt.ylim(0,1)
     plt.legend()
     plt.show()
@@ -196,10 +196,16 @@ experiments = [
     # 'MNIST_rich',
     # 'prob_update'
     # 'MNIST_large',
-    'hebb_test'
+    # 'hebb_large',
+    # 'hebb_test',
+    # 'MNIST_asymm',
+    # 'exin_test'
+    'fixed_test',
+    'modern_layers',
+    'modern_inh_counter',
     ]
 
 until = 150*10000
 
-plot_singles(experiments,until)
-# plot_all(experiments,until)
+# plot_singles(experiments,until)
+plot_all(experiments,until)

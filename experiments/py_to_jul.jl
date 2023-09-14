@@ -72,31 +72,31 @@ mutable struct RefractoryDendrite <: AbstractDendrite
 end
 
 mutable struct SomaticDendrite <: AbstractDendrite
-    name       :: String
-    s          :: Vector{Float64}
-    phir       :: Vector{Float64}
-    inputs     :: Dict{String,Float64}
-    synputs    :: Dict{String,Float64}
-    const alpha      :: Float64
-    const beta       :: Float64
+    name            :: String
+    s               :: Vector{Float64}
+    phir            :: Vector{Float64}
+    inputs          :: Dict{String,Float64}
+    synputs         :: Dict{String,Float64}
+    const alpha     :: Float64
+    const beta      :: Float64
+ 
+    const phi_vec   :: Vector{Float64}
+    const s_array   :: Vector{Vector{Float64}}
+    const r_array   :: Vector{Vector{Float64}}
 
-    const phi_vec    :: Vector{Float64}
-    const s_array    :: Vector{Vector{Float64}}
-    const r_array    :: Vector{Vector{Float64}}
- 
-    ind_phi    :: Vector{Int64}
-    ind_s      :: Vector{Int64}
- 
-    const phi_min    :: Float64
-    const phi_max    :: Float64
-    const phi_len    :: Int64
- 
-    spiked     :: Int64
-    out_spikes :: Vector{Int64}
-    const threshold  :: Float64
-    const abs_ref    :: Float64
-    const syn_ref    :: AbstractSynapse
-    const syn_outs   :: Dict{String,Int64}
+    ind_phi         :: Vector{Int64}
+    ind_s           :: Vector{Int64}
+
+    const phi_min   :: Float64
+    const phi_max   :: Float64
+    const phi_len   :: Int64
+
+    spiked          :: Int64
+    out_spikes      :: Vector{Int64}
+    const threshold :: Float64
+    const abs_ref   :: Float64
+    const syn_ref   :: AbstractSynapse
+    const syn_outs  :: Dict{String,Int64}
 
     flux_offset::Float64
 end
@@ -163,11 +163,14 @@ function  make_dendrites(
         # s_array = obj_to_vect(arr_list[2])::Vector{Vector{Float64}}
         # r_array = obj_to_vect(arr_list[3])::Vector{Vector{Float64}}
 
+        offset = minimum( [(maximum([dend.offset_flux,-dend.phi_th])), dend.phi_th] )
+        # println(dend.offset_flux," or ",dend.phi_th," --> ",offset)
+
         if occursin("soma",dend.name)
             new_dend = SomaticDendrite( 
                 dend.name,                              # name      :: String
                 zeros(T),                               # s         :: Vector
-                ones(T).*dend.offset_flux,                               # phir      :: Vector
+                ones(T).*offset,                               # phir      :: Vector
                 inputs,                                 # inputs    :: Dict
                 synputs,                                # synputs   :: Dict
                 dend.alpha,
@@ -193,7 +196,7 @@ function  make_dendrites(
             new_dend = RefractoryDendrite(
                 dend.name,
                 zeros(T),
-                ones(T).*dend.offset_flux, 
+                ones(T).*offset,
                 inputs,
                 synputs,
                 dend.alpha,
@@ -213,7 +216,7 @@ function  make_dendrites(
             new_dend = ArborDendrite(
                 dend.name,
                 zeros(T),
-                ones(T).*dend.offset_flux, 
+                ones(T).*offset,
                 inputs,
                 synputs,
                 dend.alpha,

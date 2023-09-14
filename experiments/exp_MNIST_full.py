@@ -14,6 +14,11 @@ from sim_soens.super_node import SuperNode
 from sim_soens.super_functions import *
 from sim_soens.soen_sim import network, synapse
 
+from sim_soens.soen_utilities import (
+    dend_load_arrays_thresholds_saturations, 
+    index_finder
+)
+
 import time
 
 def main():
@@ -128,7 +133,61 @@ def main():
             plt.title(f'Node {n} - Digit {digit} Sample {sample} - Run {run}')
             plt.savefig(path+name+f'plots/node_{n}_digit_{digit}_sample_{sample}_run_{run}.png')
             plt.close()
-            
+
+    def make_weights(size,exin,fixed):
+        ones = np.ones(size)
+        symm = 1
+
+        if exin != None:
+            # print(exin)
+            symm = np.random.choice([-1,0,1], p=[exin[0]/100,exin[1]/100,exin[2]/100], size=size)
+
+        if fixed is not None:
+            # print("fixed")
+            w = ones*fixed*symm
+        else:
+            w = np.random.rand(size)*symm
+        return w
+    
+    def add_inhibition_counts(node):
+    
+        def recursive_downstream_inhibition_counter(dendrite,superdend):
+            for out_name,out_dend in dendrite.outgoing_dendritic_connections.items():
+                cs = out_dend.dendritic_connection_strengths[dendrite.name]
+                if cs < 0:
+                    superdend.downstream_inhibition += 1
+                recursive_downstream_inhibition_counter(out_dend,superdend)
+
+        for dendrite in node.dendrite_list:
+            dendrite.downstream_inhibition = 0
+            recursive_downstream_inhibition_counter(dendrite,dendrite)
+
+    def max_s_finder(dendrite):
+        d_params_ri = dend_load_arrays_thresholds_saturations('default_ri')
+        ib_list = d_params_ri["ib__list"]
+        s_max_plus__vec = d_params_ri["s_max_plus__vec"]
+        _ind_ib = index_finder(ib_list[:],dendrite.ib) 
+        return s_max_plus__vec[_ind_ib]
+
+    def normalize_fanin(node):
+        for dendrite in node.dendrite_list:
+            if len(dendrite.dendritic_connection_strengths) > 0:
+                print(dendrite.name)
+                max_s = max_s_finder(dendrite) - dendrite.phi_th
+                cs_list = []
+                max_list = []
+                influence = []
+                for in_name,in_dend in dendrite.dendritic_inputs.items():
+                    cs = dendrite.dendritic_connection_strengths[in_name]
+                    max_in = max_s_finder(in_dend)
+                    cs_list.append(cs)
+                    max_list.append(max_in)
+                    influence.append(cs*max_in)
+                if sum(influence) > max_s:
+                    norm_fact = sum(influence)/max_s
+                    cs_normed = cs_list/norm_fact
+                    for i,(in_name,cs) in enumerate(dendrite.dendritic_connection_strengths.items()):
+                        dendrite.dendritic_connection_strengths[in_name] = cs_normed[i]
 
     def get_nodes(
             path,
@@ -159,99 +218,119 @@ def main():
 
         if new_nodes == True:
             print("Making new nodes...")
+            if config.inh_counter:
+                print("Inhibition counter")  
+            if config.norm_fanin:
+                print("Fanin Normalization")  
             saved_run = 0
             start = time.perf_counter()
             np.random.seed(10)
 
-            # branching factor
-            f_idx = 28
+            exin = config.exin
+            fixed = config.fixed
+            print(f" Excitatory, zeroed, inhibitory ratios: {exin}")
+            print(f" Fixed uniform Jij (coupling strength) factor: {fixed}")
 
-            if config.layers == 3:
-                layer_1_weighting = 1/4
-                layer_2_weighting = 3/4
-
-                # create random weights for each layer
-                layer_1 = [np.random.rand(f_idx)*layer_1_weighting]
-                layer_2 = [np.random.rand(f_idx)*layer_2_weighting for _ in range(f_idx)]
-
-                # place them in a weight structure (defines structure and weighing of a neuron)
-                weights = [
-                    layer_1,
-                    layer_2
-                ]
-
-            elif config.layers == 2:
-                layer_1_weighting = 3/4
-
-                # create random weights for each layer
-                layer_1 = [np.random.rand(f_idx**2)*layer_1_weighting]
-                # layer_2 = [np.random.rand(f_idx)*layer_2_weighting for _ in range(f_idx)]
-
-                # place them in a weight structure (defines structure and weighing of a neuron)
-                weights = [
-                    layer_1
-                ]
-
-            elif config.layers == 4:
-                layer_1_weighting = 1/4
-                layer_2_weighting = 3/4
-
-                # create random weights for each layer
-                layer_1 = [np.random.rand(f_idx)*layer_1_weighting]
-                layer_2 = [np.random.rand(f_idx)*layer_2_weighting for _ in range(f_idx)]
-                layer_3 = [np.random.rand(1)*layer_2_weighting for _ in range(f_idx**2)]
-
-                # place them in a weight structure (defines structure and weighing of a neuron)
-                weights = [
-                    layer_1,
-                    layer_2,
-                    layer_3
-                ]
-
-            elif config.layers == 5:
-                l1_weighting = 1/4
-                l2_weighting = 3/4
-                l3_weighting = 2
-
-                # create random weights for each layer
-                layer_1 = np.array([np.random.rand(f_idx)*l1_weighting])
-                layer_2 = np.array([np.random.rand(2)*l2_weighting for _ in range(f_idx)])
-                layer_3 = np.array([np.random.rand(int(f_idx/2))*l3_weighting for _ in range(f_idx*2)])
-                print(layer_1.shape)
-                print(layer_2.shape)
-                print(layer_3.shape)
-
-                # place them in a weight structure (defines structure and weighing of a neuron)
-                weights = [
-                    layer_1,
-                    layer_2,
-                    layer_3
-                ]
-
-
-            # internal node parameters
-            mutual_inhibition = True
-            ib      = 1.8
-            tau     = 50
-            beta    = 2*np.pi*10**2
-            s_th    = 0.5
-            params = {
-                "ib"        :ib,
-                "ib_n"      :ib,
-                "ib_di"     :ib,
-                "tau"       :tau,
-                "tau_ni"    :tau,
-                "tau_di"    :tau,
-                "beta"      :beta,
-                "beta_ni"   :beta,
-                "beta_di"   :beta,
-                "s_th"      :s_th
-            }
-            
 
             # initialize a neuron of each class with this structure
             nodes = []
             for node in range(config.digits):
+                # branching factor
+                f_idx = 28
+
+                if config.layers == 3:
+                    layer_1_weighting = 1/4
+                    layer_2_weighting = 3/4
+                    exin = config.exin
+                    fixed = config.fixed
+                    # create random weights for each layer
+                    layer_1 = [make_weights(f_idx,exin,fixed)*layer_1_weighting]
+                    layer_2 = [make_weights(f_idx,exin,fixed)*layer_2_weighting for _ in range(f_idx)]
+
+                    # place them in a weight structure (defines structure and weighing of a neuron)
+                    weights = [
+                        layer_1,
+                        layer_2
+                    ]
+
+                elif config.layers == 2:
+                    layer_1_weighting = 3/4
+
+                    # create random weights for each layer
+                    layer_1 = [np.random.rand(f_idx**2)*layer_1_weighting]
+                    # layer_2 = [np.random.rand(f_idx)*layer_2_weighting for _ in range(f_idx)]
+
+                    # place them in a weight structure (defines structure and weighing of a neuron)
+                    weights = [
+                        layer_1
+                    ]
+
+                elif config.layers == 4:
+                    layer_1_weighting = 1/4
+                    layer_2_weighting = 3/4
+
+                    # create random weights for each layer
+                    layer_1 = [np.random.rand(f_idx)*layer_1_weighting]
+                    layer_2 = [np.random.rand(f_idx)*layer_2_weighting for _ in range(f_idx)]
+                    layer_3 = [np.random.rand(1)*layer_2_weighting for _ in range(f_idx**2)]
+
+                    # place them in a weight structure (defines structure and weighing of a neuron)
+                    weights = [
+                        layer_1,
+                        layer_2,
+                        layer_3
+                    ]
+
+                elif config.layers == 5:
+                    # l1_weighting = 1/4
+                    # l2_weighting = 3/4
+                    # l3_weighting = 2
+
+                    # # create random weights for each layer
+                    # layer_1 = np.array([np.random.rand(f_idx)*l1_weighting])
+                    # layer_2 = np.array([np.random.rand(2)*l2_weighting for _ in range(f_idx)])
+                    # layer_3 = np.array([np.random.rand(int(f_idx/2))*l3_weighting for _ in range(f_idx*2)])
+
+                    l1_weighting = 1/4
+                    l2_weighting = 3/4
+                    l3_weighting = 2
+
+                    # create random weights for each layer
+                    layer_1 = np.array([make_weights(f_idx,exin,fixed)*l1_weighting])
+                    layer_2 = np.array([make_weights(2,exin,fixed)*l2_weighting for _ in range(f_idx)])
+                    layer_3 = np.array([make_weights(int(f_idx/2),exin,fixed)*l3_weighting for _ in range(f_idx*2)])
+
+                    print(layer_1.shape)
+                    print(layer_2.shape)
+                    print(layer_3.shape)
+
+                    # place them in a weight structure (defines structure and weighing of a neuron)
+                    weights = [
+                        layer_1,
+                        layer_2,
+                        layer_3
+                    ]
+
+
+                # internal node parameters
+                mutual_inhibition = True
+                ib      = 1.8
+                tau     = 50
+                beta    = 2*np.pi*10**2
+                s_th    = 0.5
+                params = {
+                    "ib"        :ib,
+                    "ib_n"      :ib,
+                    "ib_di"     :ib,
+                    "tau"       :tau,
+                    "tau_ni"    :tau,
+                    "tau_di"    :tau,
+                    "beta"      :beta,
+                    "beta_ni"   :beta,
+                    "beta_di"   :beta,
+                    "s_th"      :s_th
+                }
+                    
                 nodes.append(SuperNode(name=f'node_{node}',weights=weights,**params))
                 # if node == 0:
                 #     # nodes[node].plot_structure()
@@ -268,6 +347,24 @@ def main():
                         if other_node.name != node.name:
                             node.neuron.add_output(other_node.synapse_list[-1])
                             print(other_node.synapse_list[-1].name)
+
+            if config.rand_flux is not None:
+                print(f" Random flux factor: {config.rand_flux}")
+
+                for n,node in enumerate(nodes):
+                    for l,layer in enumerate(node.dendrites):
+                        for g,group in enumerate(layer):
+                            for d,dend in enumerate(group):
+                                if 'ref' not in dend.name and 'soma' not in dend.name:
+                                    sign = np.random.choice([-1,1], p=[.5,.5], size=1)[0]
+                                    dend.offset_flux = np.random.rand()*config.rand_flux*sign
+
+                    if config.inh_counter:
+                        add_inhibition_counts(node)
+
+                    if config.norm_fanin:
+                        normalize_fanin(node)
+
 
             finish = time.perf_counter()
             print("Time to make neurons: ", finish-start)
@@ -315,6 +412,10 @@ def main():
                                 if flux > 0.5 or flux < config.low_bound:
                                     step = 0
 
+                            if config.inh_counter:
+                                if dend.downstream_inhibition%2!=0:
+                                    step = -step
+
                             dend.offset_flux += step
                             offset_sums[n] += step
 
@@ -335,9 +436,9 @@ def main():
         '''
         if config.dataset=='MNIST':
             desired = [
-                [3,0,0],
-                [0,3,0],
-                [0,0,3],
+                [5,0,0],
+                [0,5,0],
+                [0,0,5],
             ]
         elif config.dataset=='Heidelberg':
             desired = [

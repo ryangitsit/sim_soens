@@ -126,6 +126,7 @@ class dendrite():
         self.name = 'unnamed_dendrite__{}'.format(self.unique_label)
         self.pri=False
         self.offset_trj = []
+        self.outgoing_dendritic_connections = {}
 
         # check ahead of time if loop defined in custom params
         # pull default params for that loop
@@ -208,6 +209,11 @@ class dendrite():
             if "dend_name" in self.__dict__.keys():
                 self.name = self.dend_name
         self.circuit_betas[-1] = self.beta_di
+
+        phi_th_vec  = d_params["phi_th_plus__vec"]
+        ib_list     = d_params["ib__list"]
+        _ind_ib     = index_finder(ib_list[:],self.ib) 
+        self.phi_th = phi_th_vec[_ind_ib]
             
         if 'integrated_current_threshold' in params:
             self.s_th = params['integrated_current_threshold']
@@ -286,6 +292,7 @@ class dendrite():
         if type(connection_object).__name__ == 'dendrite':
             self.dendritic_inputs[name] = dendrite.dendrites[name]            
             self.dendritic_connection_strengths[name] = cs
+            connection_object.outgoing_dendritic_connections[self.name] = self
             
         if type(connection_object).__name__ == 'neuron':
             self.dendritic_inputs[name] = neuron.neurons[name]            
