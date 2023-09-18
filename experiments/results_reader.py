@@ -153,7 +153,7 @@ def plot_singles(experiments,until):
         plt.plot(df["run_time"])
         plt.show()
 
-        print("Average runtime = ",np.mean(df["run_time"]))
+        # print("Average runtime = ",np.mean(df["run_time"]))
 
 def plot_all(experiments,until):
     plt.style.use('seaborn-muted')
@@ -200,9 +200,10 @@ experiments = [
     # 'hebb_test',
     # 'MNIST_asymm',
     # 'exin_test'
-    'fixed_test',
+    # 'fixed_test',
     'modern_layers',
     'modern_inh_counter',
+    'layers_heavy',
     ]
 
 until = 150*10000

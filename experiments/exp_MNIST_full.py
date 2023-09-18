@@ -172,7 +172,6 @@ def main():
     def normalize_fanin(node):
         for dendrite in node.dendrite_list:
             if len(dendrite.dendritic_connection_strengths) > 0:
-                print(dendrite.name)
                 max_s = max_s_finder(dendrite) - dendrite.phi_th
                 cs_list = []
                 max_list = []
@@ -291,9 +290,9 @@ def main():
                     # layer_2 = np.array([np.random.rand(2)*l2_weighting for _ in range(f_idx)])
                     # layer_3 = np.array([np.random.rand(int(f_idx/2))*l3_weighting for _ in range(f_idx*2)])
 
-                    l1_weighting = 1/4
-                    l2_weighting = 3/4
-                    l3_weighting = 2
+                    l1_weighting = 1#1/4
+                    l2_weighting = 1#3/4
+                    l3_weighting = 1#2
 
                     # create random weights for each layer
                     layer_1 = np.array([make_weights(f_idx,exin,fixed)*l1_weighting])
@@ -311,13 +310,45 @@ def main():
                         layer_3
                     ]
 
+                elif config.layers == 6:
+
+                    # l1_weighting = 1#1/4
+                    # l2_weighting = 1#3/4
+                    # l3_weighting = 1#2
+                    lw = np.array(config.lay_weighting)
+
+                    # create random weights for each layer
+                    layer_1 = np.array([make_weights(7,exin,fixed)])*lw[0]*.5
+                    layer_2 = np.array([make_weights(7,exin,fixed)*lw[1] for _ in range(int(49/7))])
+                    layer_3 = np.array([make_weights(2,exin,fixed)*lw[2] for _ in range(int(98/2))])
+                    layer_4 = np.array([make_weights(2,exin,fixed)*lw[3] for _ in range(int(196/2))])
+                    layer_5 = np.array([make_weights(2,exin,fixed)*lw[4] for _ in range(int(392/2))])
+                    layer_6 = np.array([make_weights(2,exin,fixed)*lw[5] for _ in range(int(784/2))])
+
+                    print(layer_1.shape)
+                    print(layer_2.shape)
+                    print(layer_3.shape)
+                    print(layer_4.shape)
+                    print(layer_5.shape)
+                    print(layer_6.shape)
+
+                    # place them in a weight structure (defines structure and weighing of a neuron)
+                    weights = [
+                        layer_1,
+                        layer_2,
+                        layer_3,
+                        layer_4,
+                        layer_5,
+                        layer_6,
+                    ]
+
 
                 # internal node parameters
                 mutual_inhibition = True
                 ib      = 1.8
                 tau     = 50
                 beta    = 2*np.pi*10**2
-                s_th    = 0.5
+                s_th    = config.s_th
                 params = {
                     "ib"        :ib,
                     "ib_n"      :ib,
@@ -332,8 +363,9 @@ def main():
                 }
                     
                 nodes.append(SuperNode(name=f'node_{node}',weights=weights,**params))
+                print("Ref: ",nodes[0].neuron.tau_ref,nodes[0].neuron.ib_ref)
                 # if node == 0:
-                #     # nodes[node].plot_structure()
+                #     nodes[node].plot_structure()
 
 
             if mutual_inhibition == True:
@@ -346,7 +378,7 @@ def main():
                     for other_node in nodes:
                         if other_node.name != node.name:
                             node.neuron.add_output(other_node.synapse_list[-1])
-                            print(other_node.synapse_list[-1].name)
+                            print("-- ",other_node.synapse_list[-1].name)
 
             if config.rand_flux is not None:
                 print(f" Random flux factor: {config.rand_flux}")
@@ -446,13 +478,18 @@ def main():
                 [10,20,10],
                 [10,10,20],
             ]
-        if config.digits != 3:
+        if config.digits > 0:
             desired = []
             for idx in range(config.digits):
                 desired.append([0 for _ in range(config.digits)])
-            for idx in range(config.digits):
-                desired[idx][idx] = 5
-            # print(desired)
+            if 'heavy' in config.name:
+                for idx in range(config.digits):
+                    desired[idx][idx] = 5
+                print(desired)
+            else:
+                for idx in range(config.digits):
+                    desired[idx][idx] = 5
+                # print(desired)
 
         backend = 'julia'
         print('Backend: ', backend)
@@ -520,6 +557,8 @@ def main():
                         plot_nodes(nodes,digit,sample,config.run)
                 elif config.plotting == 'full':
                     plot_nodes(nodes,digit,sample,config.run)
+                if "heavy" in config.name:
+                    plot_nodes(nodes,digit,sample,config.run)
                 
 
                 # keep track of run time costs
@@ -553,6 +592,13 @@ def main():
                 
                 offset_sums = [0 for _ in range(config.digits)]
 
+                # if 'vector_train' in config.name:# or 'modern_inh_counter' in config.name:
+                #     picklit(
+                #         nodes,
+                #         f"{path}{name}/full_nodes/",
+                #         f"full_{sample}_{digit}_nodes_at_{config.run}"
+                #         )
+                    
                 # on all but every tenth run, make updates according to algorithm 1 with elasticity
                 if config.run%10 != 0 or config.run == 0:
 
@@ -664,7 +710,7 @@ def main():
                 # on the tenth run test, but don't update -- save full nodes with data
                 else:
                     # print("Skipping Update")
-                    if sample == 0 and config.run%50 == 0:
+                    if (sample == 0 and config.run%50 == 0):
                         # save the nodes!
                         picklit(
                             nodes,
@@ -762,6 +808,17 @@ def main():
         " -- ", 
         config.eta
         )
+    
+    if config.run > 1:
+        import json
+        with open(f'{path}/{name}/config.txt', 'w') as convert_file:
+            convert_file.write(json.dumps(config.__dict__))
+            
+    # if config.name == 'layered':
+    #     print("new_threshold")
+    #     for node in nodes:
+    #         node.neuron.s_th = 0.1
+
     train_MNIST_neurons(nodes,dataset,path,name,config)
 
 if __name__=='__main__':

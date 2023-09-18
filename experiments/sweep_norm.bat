@@ -6,14 +6,14 @@ FOR /L %%i IN (1,1,100000) DO (
       --jul_threading 4^
       --digits        3^
       --samples       10^
-      --name          norm_test^
+      --name          layered^
       --low_bound     0^
       --eta           0.001^
       --hebbian       True^
       --exin          10,0,90^
-      --fixed         .5^
+      --fixed         .5 ^
       --rand_flux     0.1^
-      --layers        5^
+      --layers        6^
       --inh_counter   True^
       --norm_fanin    True
 )

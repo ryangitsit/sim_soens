@@ -7,8 +7,8 @@ sys.path.append('../')
 from sim_soens.super_functions import *
 
 
-def load_nodes(run,digit,name):
-    nodes = picklin(f"results\\MNIST\\MNIST_{name}\\full_nodes",f"full_0_{digit}_nodes_at_{run}")
+def load_nodes(run,digit,sample,name):
+    nodes = picklin(f"results\\MNIST\\{name}\\full_nodes",f"full_{sample}_{digit}_nodes_at_{run}")
     # print("Loaded nodes:")
     # for node in nodes:
     #     print(" ",node.name)
@@ -44,7 +44,7 @@ def mem_analysis(span):
 
 # mem_analysis([10,50])
 
-def offset_analysis(path,files):
+def offset_analysis(path,files,digit,layer):
 
     # file_name = files[0][len(path):len(files[0])-len('.pickle')]
     nodes = picklin(path,files[0][:len(files[0])-len('.pickle')])
@@ -54,15 +54,34 @@ def offset_analysis(path,files):
     
     import sys
 
-    dend_offsets = [[] for _ in range(len(nodes[0].dendrite_list))]
+    # dend_offsets = [[] for _ in range(len(nodes[0].dendrite_list))]
+    length = len(np.concatenate(nodes[0].dendrites[layer]))
+    # print(length)
+    dend_offsets = [[] for _ in range(length)]
 
     for file_name in files:
         # nodes = load_nodes(i,0,'inelast')
         # file_name = f[len(path):len(f)-len('.pickle')]
-        nodes = picklin(path,file_name[:len(files[0])-len('.pickle')])
+        if digit == 'any':
+            nodes = picklin(path,file_name[:len(file_name)-len('.pickle')])
 
-        for ii,dend in enumerate(nodes[1].dendrite_list):
-            dend_offsets[ii].append(dend.offset_flux)
+            d_count = 0
+            for ii,dend in enumerate(nodes[1].dendrite_list):
+                if f'lay{str(layer)}' in dend.name:
+                    # print(" ",dend.name)
+                    dend_offsets[d_count].append(dend.offset_flux)
+                    d_count+=1
+
+        elif file_name[7] == f'{digit}':
+            # print(file_name)
+            nodes = picklin(path,file_name[:len(file_name)-len('.pickle')])
+
+            d_count = 0
+            for ii,dend in enumerate(nodes[1].dendrite_list):
+                if f'lay{str(layer)}' in dend.name:
+                    # print(" ",dend.name)
+                    dend_offsets[d_count].append(dend.offset_flux)
+                    d_count+=1
 
 
     plt.plot(np.transpose(dend_offsets))
@@ -96,13 +115,74 @@ def get_ordered_files(path):
 
     return ordered_files
 
-
 ### MNIST ###
-# name = "inelast"
-# path = f"results\\MNIST\\julia_inhibit_solver\\nodes\\"
+name = "modern_inh_counter"
+# name = "MNIST_asymmetic"
+# path = f"results\\MNIST\\{name}\\full_nodes\\"
 # files = get_ordered_files(path)
+# digit = 'any'
+# layer = 1
+
 # # nodes = load_nodes(10,0,'inelast')
-# offset_analysis(path,files)
+# offset_analysis(path,files,digit,layer)
+
+
+
+# for digit in digits:
+
+def mean_layer_analysis(name):
+    nodes = load_nodes(run,0,0,name)
+    runs = np.arange(50,1000,50)
+    digits = [0,1,2]
+    MEANS = [[[] for i in range(len(np.concatenate(nodes[0].dendrites[1])))] for i in range(len(nodes))]
+    for run in runs:
+        nodes = load_nodes(run,0,name)
+        trace_vecs = [[] for i in range(len(nodes))]
+        for i,node in enumerate(nodes):
+            # plt.title(node.name)
+            for d,dend in enumerate(np.concatenate(node.dendrites[1])):
+                # plt.plot(dend.s)
+                trace_vecs[i].append(np.mean(dend.s))
+                MEANS[i][d].append(np.mean(dend.s))
+            # plt.show()
+
+        # colors = ['r','b','g']
+        # for c,trace in enumerate(trace_vecs):
+        #     for t in trace:
+        #         plt.plot(np.arange(0,10,1)+c*10,np.ones(10)*t)#,color=colors[c])
+        # plt.show()
+        # print(trace)
+    print(MEANS)
+    for n,nodes in enumerate(MEANS):
+        for m,mns in enumerate(nodes):
+            plt.plot(np.arange(0,len(mns),1)+n*len(mns),mns)
+    plt.show()
+
+def vector_analysis(name,run,digit):
+    nd = load_nodes(run,0,0,name)
+    digits = [0,1,2]
+    digit = 0
+    MEANS = [[[] for i in range(len(np.concatenate(nd[0].dendrites[1])))] for i in range(len(nd))]
+
+
+    for sample in range(10):
+        nodes = load_nodes(run,digit,sample,name)
+        for i,node in enumerate(nodes):
+            for d,dend in enumerate(np.concatenate(node.dendrites[1])):
+                MEANS[i][d].append(np.mean(dend.s))
+    # print(MEANS)
+    colors = plt.rcParams["axes.prop_cycle"].by_key()["color"]
+    for n,nodes in enumerate(MEANS):
+        for m,mns in enumerate(nodes):
+            plt.plot(np.arange(0,len(mns),1)+n*len(mns),mns,color=colors[m%(len(colors))])
+    plt.show()
+
+name = 'vector_train'
+run = 1
+# name = 'modern_inh_counter'
+# run = 1031
+for digit in [0,1,2]:
+    vector_analysis(name,run,digit)
 
 
 ### Pixels ###
@@ -182,8 +262,8 @@ def get_trajects(path):
             plot_offsets(picklin(path,file))
 
 
-path = 'results/jul_testing/early_plots'
-get_trajects(path)
+# path = 'results/jul_testing/early_plots'
+# get_trajects(path)
 
 
 

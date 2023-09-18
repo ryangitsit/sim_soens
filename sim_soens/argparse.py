@@ -38,6 +38,7 @@ def setup_argument_parser():
     parser.add_argument( "--rand_flux",     type=float,         default = None     )
     parser.add_argument( "--inh_counter",   type=bool,          default = None     )
     parser.add_argument( "--norm_fanin",    type=bool,          default = None     )
+    parser.add_argument( "--lay_weighting", type=list_of_ints,  default = None     )
     
     
 
