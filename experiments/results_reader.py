@@ -78,17 +78,17 @@ def by_run_performance(df,decider,digits,samples):
         for index, row in df.iterrows():
             # print(df["sample"].astype(int)[1])
             # if df["sample"][(df["sample"]< samples)]:
-            if df["sample"].astype(int)[1] == 0:#< samples:
-                if no_ties(df,index) == True:
-                    run_wins+=1
-                    # print(df["digit"][index])
-                    dig_runs[df["digit"][index]]+=1
-                if (index+1)%(digits*samples) == 0:
-                    by_run.append(run_wins/(digits*samples))
-                    for i,dig in enumerate(dig_runs):
-                        by_dig_runs[i].append(dig/samples)
-                    dig_runs = [0 for _ in range(digits)]
-                    run_wins = 0
+            # if df["sample"].astype(int)[1] == 0:#< samples:
+            if no_ties(df,index) == True:
+                run_wins+=1
+                # print(df["digit"][index])
+                dig_runs[df["digit"][index]]+=1
+            if (index+1)%(digits*samples) == 0:
+                by_run.append(run_wins/(digits*samples))
+                for i,dig in enumerate(dig_runs):
+                    by_dig_runs[i].append(dig/samples)
+                dig_runs = [0 for _ in range(digits)]
+                run_wins = 0
 
     if decider == 'lucky':
         for index, row in df.iterrows():
@@ -150,8 +150,8 @@ def plot_singles(experiments,until):
         plt.show()
 
 
-        plt.plot(df["run_time"])
-        plt.show()
+        # plt.plot(df["run_time"])
+        # plt.show()
 
         # print("Average runtime = ",np.mean(df["run_time"]))
 
@@ -190,7 +190,7 @@ experiments = [
     # 'MNIST_rich',
     # 'prob_update',
     # 'heidelearn',
-    # 'MNIST_asymmetic',
+    'MNIST_asymmetic',
     # 'M_binary',
     # 'MNIST_deep_prime',
     # 'MNIST_rich',
@@ -201,9 +201,12 @@ experiments = [
     # 'MNIST_asymm',
     # 'exin_test'
     # 'fixed_test',
-    'modern_layers',
-    'modern_inh_counter',
-    'layers_heavy',
+    # 'modern_layers',
+    # 'modern_inh_counter',
+    # 'layers_heavy',
+    # 'norm_test',
+    'long',
+    'long_deep'
     ]
 
 until = 150*10000

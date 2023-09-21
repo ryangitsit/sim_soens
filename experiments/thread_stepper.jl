@@ -101,7 +101,7 @@ function stepper(net_dict::Dict{String,Any})
     end
 
     for t_idx in 1:net_dict["T"]-1
-        for idx in 1:length(node_names)
+        Threads.@threads for idx in 1:length(node_names)
             node = net_dict["nodes"][node_names[idx]]
             node_name = node_names[idx]
             loop_synapses(node,node_name,syn_names,net_dict["T"],net_dict["conversion"],t_idx)

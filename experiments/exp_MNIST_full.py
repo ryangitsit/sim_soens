@@ -466,30 +466,28 @@ def main():
         '''
         Trains nodes on MNIST dataset
         '''
-        if config.dataset=='MNIST':
-            desired = [
-                [5,0,0],
-                [0,5,0],
-                [0,0,5],
-            ]
-        elif config.dataset=='Heidelberg':
+        # if config.dataset=='MNIST':
+        #     desired = [
+        #         [5,0,0],
+        #         [0,5,0],
+        #         [0,0,5],
+        #     ]
+        if config.dataset=='Heidelberg':
             desired = [
                 [20,10,10],
                 [10,20,10],
                 [10,10,20],
             ]
-        if config.digits > 0:
+        else:
             desired = []
             for idx in range(config.digits):
                 desired.append([0 for _ in range(config.digits)])
-            if 'heavy' in config.name:
-                for idx in range(config.digits):
-                    desired[idx][idx] = 5
-                print(desired)
-            else:
-                for idx in range(config.digits):
-                    desired[idx][idx] = 5
-                # print(desired)
+            target = 5
+            if 'long' in config.name: target=10
+            for idx in range(config.digits):
+                desired[idx][idx] = target
+
+            print(desired)
 
         backend = 'julia'
         print('Backend: ', backend)
@@ -557,8 +555,8 @@ def main():
                         plot_nodes(nodes,digit,sample,config.run)
                 elif config.plotting == 'full':
                     plot_nodes(nodes,digit,sample,config.run)
-                if "heavy" in config.name:
-                    plot_nodes(nodes,digit,sample,config.run)
+                # if "long" in config.name:
+                #     plot_nodes(nodes,digit,sample,config.run)
                 
 
                 # keep track of run time costs

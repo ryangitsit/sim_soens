@@ -1,17 +1,28 @@
-using PyCall
-# include("py_to_jul.jl")
-
 using Distributed
-# addprocs(3)
+addprocs(4)
+nprocs()
+procs()
+workers()
+nworkers()
+myid()
+remotecall_fetch(() -> myid(), 3)
+pmap(i -> println("I'm worker $(myid()), working on i=$i"), 1:10)
+println("-----")
+@sync @distributed for i in 1:10
+  println("I'm worker $(myid()), working on i=$i")
+end
+# addprocs(2)
+
+
 
 # module NewMain end
 # using REPL
 # REPL.activate(NewMain)
 # using Distributed
 # addprocs(2)
-# using PyCall
+using PyCall
 # using julia_stepper
-
+using JLD2, FileIO
 
 abstract type AbstractDendrite end
 
@@ -78,36 +89,36 @@ mutable struct RefractoryDendrite <: AbstractDendrite
 end
 
 mutable struct SomaticDendrite <: AbstractDendrite
-    name       :: String
-    s          :: Vector{Float64}
-    phir       :: Vector{Float64}
-    inputs     :: Dict{String,Float64}
-    synputs    :: Dict{String,Float64}
-    const alpha      :: Float64
-    const beta       :: Float64
+    name            :: String
+    s               :: Vector{Float64}
+    phir            :: Vector{Float64}
+    inputs          :: Dict{String,Float64}
+    synputs         :: Dict{String,Float64}
+    const alpha     :: Float64
+    const beta      :: Float64
+ 
+    const phi_vec   :: Vector{Float64}
+    const s_array   :: Vector{Vector{Float64}}
+    const r_array   :: Vector{Vector{Float64}}
 
-    const phi_vec    :: Vector{Float64}
-    const s_array    :: Vector{Vector{Float64}}
-    const r_array    :: Vector{Vector{Float64}}
- 
-    ind_phi    :: Vector{Int64}
-    ind_s      :: Vector{Int64}
- 
-    const phi_min    :: Float64
-    const phi_max    :: Float64
-    const phi_len    :: Int64
- 
-    spiked     :: Int64
-    out_spikes :: Vector{Int64}
-    const threshold  :: Float64
-    const abs_ref    :: Float64
-    const syn_ref    :: AbstractSynapse
-    const syn_outs   :: Dict{String,Int64}
+    ind_phi         :: Vector{Int64}
+    ind_s           :: Vector{Int64}
+
+    const phi_min   :: Float64
+    const phi_max   :: Float64
+    const phi_len   :: Int64
+
+    spiked          :: Int64
+    out_spikes      :: Vector{Int64}
+    const threshold :: Float64
+    const abs_ref   :: Float64
+    const syn_ref   :: AbstractSynapse
+    const syn_outs  :: Dict{String,Int64}
 
     flux_offset::Float64
 end
 
-function obj_to_vect(obj)
+@everywhere function obj_to_vect(obj)
     vect = Vector{Float64}[]
     for arr in obj
         push!(vect,convert(Vector{Float64},arr))
@@ -115,7 +126,7 @@ function obj_to_vect(obj)
     return vect
 end
     
-function make_synapses(node::PyObject,T::Int64,dt::Float64)
+@everywhere function make_synapses(node::PyObject,T::Int64,dt::Float64)
     synapses = Dict()
 
     for syn in node.synapse_list
@@ -141,7 +152,7 @@ function make_synapses(node::PyObject,T::Int64,dt::Float64)
     return synapses
 end
 
-function  make_dendrites(
+@everywhere function  make_dendrites(
     node::PyObject,
     T::Int64,
     synapses,
@@ -169,11 +180,14 @@ function  make_dendrites(
         # s_array = obj_to_vect(arr_list[2])::Vector{Vector{Float64}}
         # r_array = obj_to_vect(arr_list[3])::Vector{Vector{Float64}}
 
+        offset = minimum( [(maximum([dend.offset_flux,-dend.phi_th])), dend.phi_th] )
+        # println(dend.offset_flux," or ",dend.phi_th," --> ",offset)
+
         if occursin("soma",dend.name)
             new_dend = SomaticDendrite( 
                 dend.name,                              # name      :: String
                 zeros(T),                               # s         :: Vector
-                ones(T).*dend.offset_flux,                               # phir      :: Vector
+                ones(T).*offset,                               # phir      :: Vector
                 inputs,                                 # inputs    :: Dict
                 synputs,                                # synputs   :: Dict
                 dend.alpha,
@@ -199,7 +213,7 @@ function  make_dendrites(
             new_dend = RefractoryDendrite(
                 dend.name,
                 zeros(T),
-                ones(T).*dend.offset_flux, 
+                ones(T).*offset,
                 inputs,
                 synputs,
                 dend.alpha,
@@ -219,7 +233,7 @@ function  make_dendrites(
             new_dend = ArborDendrite(
                 dend.name,
                 zeros(T),
-                ones(T).*dend.offset_flux, 
+                ones(T).*offset,
                 inputs,
                 synputs,
                 dend.alpha,
@@ -242,7 +256,7 @@ function  make_dendrites(
     return dendrites
 end
 
-function make_nodes(
+@everywhere function make_nodes(
     node::PyObject,
     T::Int64,
     dt::Float64,
@@ -260,8 +274,16 @@ function make_nodes(
     return node_dict
 end
 
+@everywhere function save_dict(net::Dict{String,Any})
+    save("net_temp.jld2", "data", net)
+end
 
-function obj_to_structs(net::PyObject)
+@everywhere function load_net(name)
+    net_dict = load(name)["data"]
+    return net_dict
+end
+
+@everywhere function obj_to_structs(net::PyObject)
 
     net_dict  = Dict{String,Any}()
     node_dict = Dict{String,Any}()
@@ -297,7 +319,80 @@ end
 
 
 
-function stepper(net_dict::Dict{Any,Any})
+@everywhere function stepper(net_dict::Dict{Any,Any})
+    # @show Threads.nthreads()
+    """
+    Plan:
+     - Go over all nodes in network
+        - create structs for synapses
+        - create structs for dendrites
+        - creat information table for connectivity
+        - update in downstream direction
+        - return dataframe of signals and fluxes
+            - update py objects with new info
+        - win
+    """
+    # net_dict["T"] = 10
+    syn_names  = Dict{String,Vector{Any}}()
+    dend_names = Dict{String,Vector{Any}}()
+    node_names = []
+
+    for (node_name,node) in net_dict["nodes"]
+        push!(node_names,node_name)
+        syns = collect(keys(node["synapses"]))
+        dends = collect(keys(node["dendrites"]))
+        syn_names[node_name] = syns
+        dend_names[node_name] = dends
+    end
+
+    for t_idx in 1:net_dict["T"]-1
+        Threads.@threads for idx in 1:length(node_names)
+            node = net_dict["nodes"][node_names[idx]]
+            node_name = node_names[idx]
+            loop_synapses(node,node_name,syn_names,net_dict["T"],net_dict["conversion"],t_idx)
+            loop_dendrites(node,node_name,dend_names,net_dict["d_tau"],t_idx)
+
+            if node["dendrites"][node["soma"]].spiked == 1
+                for (syn_name,spks) in node["outputs"]
+                    for (node_name,node) in net_dict["nodes"]
+                        if occursin(node_name,syn_name)
+                            push!(net_dict["nodes"][node_name]["synapses"][syn_name].spike_times,t_idx+100)
+                        end
+                    end
+                end
+                node["dendrites"][node["soma"]].spiked = 0
+            end
+            
+        end
+    end
+    return net_dict
+end
+
+@everywhere function loop_synapses(node::Dict{Any, Any},node_name::String,syn_names::Dict{String,Vector{Any}},T::Int64,conversion::Float64,t_idx::Int64)
+    @sync @distributed for iter in 1:length(node["synapses"])
+        syn = node["synapses"][syn_names[node_name][iter]]
+        synapse_input_update(
+            syn,
+            t_idx,
+            T,
+            conversion
+            )
+    end
+end
+
+@everywhere function loop_dendrites(node::Dict{Any, Any},node_name::String,dend_names::Dict{String,Vector{Any}},d_tau::Float64,t_idx::Int64)
+    @sync @distributed (+) for iter in 1:length(node["dendrites"])
+        dend = node["dendrites"][dend_names[node_name][iter]]
+        dend_update(
+            node,
+            dend,
+            t_idx,
+            d_tau
+            )
+    end
+end
+
+@everywhere function stepper(net_dict::Dict{String,Any})
     # @show Threads.nthreads()
     """
     Plan:
@@ -346,8 +441,8 @@ function stepper(net_dict::Dict{Any,Any})
     return net_dict
 end
 
-function loop_synapses(node::Dict{Any, Any},node_name::String,syn_names::Dict{String,Vector{Any}},T::Int64,conversion::Float64,t_idx::Int64)
-    @distributed for iter in 1:length(node["synapses"])
+@everywhere function loop_synapses(node::Dict{String, Any},node_name::String,syn_names::Dict{String,Vector{Any}},T::Int64,conversion::Float64,t_idx::Int64)
+    Threads.@threads for iter in 1:length(node["synapses"])
         syn = node["synapses"][syn_names[node_name][iter]]
         synapse_input_update(
             syn,
@@ -358,81 +453,8 @@ function loop_synapses(node::Dict{Any, Any},node_name::String,syn_names::Dict{St
     end
 end
 
-function loop_dendrites(node::Dict{Any, Any},node_name::String,dend_names::Dict{String,Vector{Any}},d_tau::Float64,t_idx::Int64)
-    @distributed for iter in 1:length(node["dendrites"])
-        dend = node["dendrites"][dend_names[node_name][iter]]
-        dend_update(
-            node,
-            dend,
-            t_idx,
-            d_tau
-            )
-    end
-end
-
-function stepper(net_dict::Dict{String,Any})
-    # @show Threads.nthreads()
-    """
-    Plan:
-     - Go over all nodes in network
-        - create structs for synapses
-        - create structs for dendrites
-        - creat information table for connectivity
-        - update in downstream direction
-        - return dataframe of signals and fluxes
-            - update py objects with new info
-        - win
-    """
-    # net_dict["T"] = 10
-    syn_names  = Dict{String,Vector{Any}}()
-    dend_names = Dict{String,Vector{Any}}()
-    node_names = []
-
-    for (node_name,node) in net_dict["nodes"]
-        push!(node_names,node_name)
-        syns = collect(keys(node["synapses"]))
-        dends = collect(keys(node["dendrites"]))
-        syn_names[node_name] = syns
-        dend_names[node_name] = dends
-    end
-
-    for t_idx in 1:net_dict["T"]-1
-        for idx in 1:length(node_names)
-            node = net_dict["nodes"][node_names[idx]]
-            node_name = node_names[idx]
-            loop_synapses(node,node_name,syn_names,net_dict["T"],net_dict["conversion"],t_idx)
-            loop_dendrites(node,node_name,dend_names,net_dict["d_tau"],t_idx)
-
-            if node["dendrites"][node["soma"]].spiked == 1
-                for (syn_name,spks) in node["outputs"]
-                    for (node_name,node) in net_dict["nodes"]
-                        if occursin(node_name,syn_name)
-                            push!(net_dict["nodes"][node_name]["synapses"][syn_name].spike_times,t_idx+100)
-                        end
-                    end
-                end
-                node["dendrites"][node["soma"]].spiked = 0
-            end
-            
-        end
-    end
-    return net_dict
-end
-
-function loop_synapses(node::Dict{String, Any},node_name::String,syn_names::Dict{String,Vector{Any}},T::Int64,conversion::Float64,t_idx::Int64)
-    @distributed for iter in 1:length(node["synapses"])
-        syn = node["synapses"][syn_names[node_name][iter]]
-        synapse_input_update(
-            syn,
-            t_idx,
-            T,
-            conversion
-            )
-    end
-end
-
-function loop_dendrites(node::Dict{String, Any},node_name::String,dend_names::Dict{String,Vector{Any}},d_tau::Float64,t_idx::Int64)
-    @distributed for iter in 1:length(node["dendrites"])
+@everywhere function loop_dendrites(node::Dict{String, Any},node_name::String,dend_names::Dict{String,Vector{Any}},d_tau::Float64,t_idx::Int64)
+    Threads.@threads for iter in 1:length(node["dendrites"])
         dend = node["dendrites"][dend_names[node_name][iter]]
         dend_update(
             node,
@@ -444,7 +466,7 @@ function loop_dendrites(node::Dict{String, Any},node_name::String,dend_names::Di
 end
 
 
-function synapse_input_update(syn::Synapse,t::Int64,T::Int64,conversion::Float64)
+@everywhere function synapse_input_update(syn::Synapse,t::Int64,T::Int64,conversion::Float64)
     if t in syn.spike_times
         duration = 1500
         hotspot = 3
@@ -455,7 +477,7 @@ function synapse_input_update(syn::Synapse,t::Int64,T::Int64,conversion::Float64
 end
 
 
-function synapse_input_update(syn::RefractorySynapse,t::Int64,T::Int64,conversion::Float64)
+@everywhere function synapse_input_update(syn::RefractorySynapse,t::Int64,T::Int64,conversion::Float64)
     if t in syn.spike_times
         duration = 1500
         hotspot = 2 
@@ -467,7 +489,7 @@ function synapse_input_update(syn::RefractorySynapse,t::Int64,T::Int64,conversio
 end
 
 
-function SPD_response(conversion::Float64,hs::Int64)
+@everywhere function SPD_response(conversion::Float64,hs::Int64)
     """
     Move to before time stepper
     """
@@ -492,21 +514,21 @@ function SPD_response(conversion::Float64,hs::Int64)
 end
 
 
-function dend_update(node::Dict,dend::ArborDendrite,t_idx::Int,d_tau::Float64)
+@everywhere function dend_update(node::Dict,dend::ArborDendrite,t_idx::Int,d_tau::Float64)
     dend_inputs(node,dend,t_idx)
     dend_synputs(node,dend,t_idx)
     dend_signal(dend,t_idx,d_tau::Float64)
 end
 
 
-function dend_update(node::Dict,dend::RefractoryDendrite,t_idx::Int,d_tau::Float64)
+@everywhere function dend_update(node::Dict,dend::RefractoryDendrite,t_idx::Int,d_tau::Float64)
     # dend_inputs(node,dend,t_idx)
     dend_synputs(node,dend,t_idx)
     dend_signal(dend,t_idx,d_tau::Float64)
 end
 
 
-# function dend_update(node::Dict,dend::SomaticDendrite,t_idx::Int,d_tau::Float64)
+# @everywhere function dend_update(node::Dict,dend::SomaticDendrite,t_idx::Int,d_tau::Float64)
 #     # if dend.s[t_idx] >= dend.threshold && t_idx .- dend.last_spike > dend.abs_ref
 #     #     spike(dend,t_idx,dend.syn_ref)
 #     if dend.s[t_idx] >= dend.threshold
@@ -542,7 +564,7 @@ end
 
 # end
 
-function dend_update(node::Dict,dend::SomaticDendrite,t_idx::Int,d_tau::Float64)
+@everywhere function dend_update(node::Dict,dend::SomaticDendrite,t_idx::Int,d_tau::Float64)
     dend_inputs(node,dend,t_idx)
     dend_synputs(node,dend,t_idx)
     if dend.s[t_idx] >= dend.threshold
@@ -566,7 +588,7 @@ function dend_update(node::Dict,dend::SomaticDendrite,t_idx::Int,d_tau::Float64)
 end
 
 
-function spike(dend::SomaticDendrite,t_idx::Int,syn_ref::AbstractSynapse) ## add spike to syn_ref
+@everywhere function spike(dend::SomaticDendrite,t_idx::Int,syn_ref::AbstractSynapse) ## add spike to syn_ref
     dend.spiked = 1
     push!(dend.out_spikes,t_idx)
     # dend.s[t_idx+1:length(dend.s)] .= 0
@@ -580,7 +602,7 @@ function spike(dend::SomaticDendrite,t_idx::Int,syn_ref::AbstractSynapse) ## add
 end
 
 
-function dend_inputs(node::Dict,dend::AbstractDendrite,t_idx::Int64)
+@everywhere function dend_inputs(node::Dict,dend::AbstractDendrite,t_idx::Int64)
     update = 0
     for input in dend.inputs
         update += node["dendrites"][input[1]].s[t_idx]*input[2]
@@ -589,7 +611,7 @@ function dend_inputs(node::Dict,dend::AbstractDendrite,t_idx::Int64)
 end
 
 
-function dend_synputs(node::Dict,dend::AbstractDendrite,t_idx::Int)
+@everywhere function dend_synputs(node::Dict,dend::AbstractDendrite,t_idx::Int)
     update = 0
     for synput in dend.synputs 
         dend.phir[t_idx+1] += node["synapses"][synput[1]].phi_spd[t_idx]*synput[2] 
@@ -597,7 +619,7 @@ function dend_synputs(node::Dict,dend::AbstractDendrite,t_idx::Int)
 end
 
 
-function dend_signal(dend::AbstractDendrite,t_idx::Int,d_tau::Float64)
+@everywhere function dend_signal(dend::AbstractDendrite,t_idx::Int,d_tau::Float64)
 
     # lst = dend.phi_vec
     val = dend.phir[t_idx+1]
@@ -648,11 +670,11 @@ function dend_signal(dend::AbstractDendrite,t_idx::Int,d_tau::Float64)
 end
 
 
-function closest_index(lst,val)
+@everywhere function closest_index(lst,val)
     return findmin(abs.(lst.-val))[2] #indexing!
 end
 
-function s_index_approxer(vec::Vector{Float64},val::Float64)
+@everywhere function s_index_approxer(vec::Vector{Float64},val::Float64)
     if length(vec) > 1
     # s_idx = floor(Int, (val/(maximum(vec)-minimum(vec)))*length(vec) )
         slope = (last(vec) - vec[1])/length(vec)
@@ -664,7 +686,7 @@ function s_index_approxer(vec::Vector{Float64},val::Float64)
     return s_idx
 end
 
-function index_approxer(val::Float64)
+@everywhere function index_approxer(val::Float64)
     # ,maxval::Float64,minval::Float64,lenlst::Int
     if val <= -.1675
         _ind__phi_r = minimum([floor(Int,(333*(abs(val)-.1675)/(1-.1675))),667])
@@ -679,66 +701,15 @@ function index_approxer(val::Float64)
 end
 
 
-function clear_all(strct)
+@everywhere function clear_all(strct)
     strct = nothing
     return strct
 end
 
-function unbindvariables()
+@everywhere function unbindvariables()
     for name in names(Main)
         if !isconst(Main, name)
             Main.eval(:($name = nothing))
         end
     end
 end
-
-py"""
-def jul_to_py(pynet,jul_net):
-    for node in pynet.nodes:
-        for i,dend in enumerate(node.dendrite_list):
-            jul_dend = jul_net["nodes"][node.name]["dendrites"][dend.name]
-            dend.s     = jul_dend.s #[:-1]
-            dend.phi_r = jul_dend.phir #[:-1]
-
-            dend.ind_phi = jul_dend.ind_phi #[:-1]
-            dend.ind_s = jul_dend.ind_s #[:-1]
-            dend.phi_vec = jul_dend.phi_vec #[:-1]
-
-            if "soma" in dend.name:
-                spike_times = (jul_dend.out_spikes-1)* pynet.dt * pynet.time_params["t_tau_conversion"]
-                dend.spike_times        = spike_times
-                node.neuron.spike_times = spike_times
-            # # if net.print_times: print(sum(jul_net[node.name][i].s))/net.dt
-        for i,syn in enumerate(node.synapse_list):
-            jul_syn = jul_net["nodes"][node.name]["synapses"][syn.name]
-            syn.phi_spd = jul_syn.phi_spd  
-
-        import os
-        import pickle
-        pick = f'./temp_out.pickle'
-        filehandler = open(pick, 'wb') 
-        pickle.dump(pynet, filehandler)
-        filehandler.close()
-"""
-
-py"""
-import pickle
-import sys
-sys.path.append('../sim_soens')
-sys.path.append('../')
-import sim_soens
-def load_pickle(fpath):
-    with open(fpath, "rb") as f:
-        data = pickle.load(f)
-    return data
-"""
-
-picklin  = py"load_pickle"
-picklit  = py"jul_to_py"
-
-pynet = picklin("temp_net.pickle")
-julnet = obj_to_structs(pynet)
-stepper(julnet)
-picklit(pynet,julnet)
-
-
