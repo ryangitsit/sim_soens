@@ -190,7 +190,7 @@ experiments = [
     # 'MNIST_rich',
     # 'prob_update',
     # 'heidelearn',
-    'MNIST_asymmetic',
+    # 'MNIST_asymmetic',
     # 'M_binary',
     # 'MNIST_deep_prime',
     # 'MNIST_rich',
@@ -211,5 +211,5 @@ experiments = [
 
 until = 150*10000
 
-# plot_singles(experiments,until)
+plot_singles(experiments,until)
 plot_all(experiments,until)

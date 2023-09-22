@@ -474,16 +474,16 @@ def main():
         #     ]
         if config.dataset=='Heidelberg':
             desired = [
-                [20,10,10],
-                [10,20,10],
-                [10,10,20],
+                [30,10,10],
+                [10,30,10],
+                [10,10,30],
             ]
         else:
             desired = []
             for idx in range(config.digits):
                 desired.append([0 for _ in range(config.digits)])
-            target = 5
-            if 'long' in config.name: target=10
+            target = 10
+            # if 'long' in config.name: target=10
             for idx in range(config.digits):
                 desired[idx][idx] = target
 
@@ -788,7 +788,7 @@ def main():
     # load_start = time.perf_counter()
 
     if config.decay == "True":
-        config.eta = np.max([1/(500+15*config.run),0.0001])
+        config.eta = np.max([1/(250+15*config.run),0.00001])
 
     nodes = get_nodes(path,name,config)
     # load_finish = time.perf_counter()
@@ -807,7 +807,7 @@ def main():
         config.eta
         )
     
-    if config.run > 1:
+    if config.run == 1:
         import json
         with open(f'{path}/{name}/config.txt', 'w') as convert_file:
             convert_file.write(json.dumps(config.__dict__))

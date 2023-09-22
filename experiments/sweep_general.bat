@@ -8,20 +8,21 @@ FOR /L %%i IN (1,1,100000) DO (
       --jul_threading 4^
       --digits        3^
       --samples       10^
-      --name          long_deep^
+      --name          simple_long^
+      --dataset       MNIST^
       --elast         elastic^
       --low_bound     0^
       --eta           0.001^
-      --hebbian       True^
-      --exin          10,0,90^
       --fixed         .5^
       --rand_flux     0.1^
-      --layers        6^
-      --lay_weighting 1,1,1,4,8,10^
-      --inh_counter   True
+      --layers        3^
+      --decay         True
 )
 
 PAUSE
 
 @REM --lay_weighting 1,1,1,4,8,10^
 @REM --norm_fanin    True
+@REM --hebbian       True^
+@REM --exin          10,0,90^
+@REM --inh_counter   True
