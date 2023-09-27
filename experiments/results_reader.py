@@ -205,8 +205,10 @@ experiments = [
     # 'modern_inh_counter',
     # 'layers_heavy',
     # 'norm_test',
-    'long',
-    'long_deep'
+    # 'long',
+    # 'long_deep'
+    'simple_long',
+    'simple_deep'
     ]
 
 until = 150*10000

@@ -49,6 +49,16 @@ def offset_analysis(path,files,digit,layer):
     # file_name = files[0][len(path):len(files[0])-len('.pickle')]
     nodes = picklin(path,files[0][:len(files[0])-len('.pickle')])
 
+    for node in nodes:
+        total = 0
+        on = 0
+        for dend in nodes[0].dendrite_list:
+            if np.mean(dend.s) > 0:
+                on+=1
+            total +=1
+        print(f"Node activity ratio = {on/total}")
+
+
     plt.style.use('seaborn-muted')
     plt.figure(figsize=(8,4))
     
@@ -65,27 +75,39 @@ def offset_analysis(path,files,digit,layer):
         if digit == 'any':
             nodes = picklin(path,file_name[:len(file_name)-len('.pickle')])
 
-            d_count = 0
-            for ii,dend in enumerate(nodes[1].dendrite_list):
-                if f'lay{str(layer)}' in dend.name:
-                    # print(" ",dend.name)
-                    dend_offsets[d_count].append(dend.offset_flux)
-                    d_count+=1
-
-        elif file_name[7] == f'{digit}':
-            # print(file_name)
-            nodes = picklin(path,file_name[:len(file_name)-len('.pickle')])
-
-            d_count = 0
-            for ii,dend in enumerate(nodes[1].dendrite_list):
-                if f'lay{str(layer)}' in dend.name:
-                    # print(" ",dend.name)
-                    dend_offsets[d_count].append(dend.offset_flux)
-                    d_count+=1
+            print(file_name)
+            for node in nodes:
+                total = 0
+                on = 0
+                for dend in nodes[0].dendrite_list:
+                    if np.mean(dend.s) > 0:
+                        on+=1
+                    total +=1
+                print(f"  Node activity ratio = {on/total}")
+            print("\n\n")
 
 
-    plt.plot(np.transpose(dend_offsets))
-    plt.show()
+    #         d_count = 0
+    #         for ii,dend in enumerate(nodes[1].dendrite_list):
+    #             if f'lay{str(layer)}' in dend.name:
+    #                 # print(" ",dend.name)
+    #                 dend_offsets[d_count].append(dend.offset_flux)
+    #                 d_count+=1
+
+    #     elif file_name[7] == f'{digit}':
+    #         # print(file_name)
+    #         nodes = picklin(path,file_name[:len(file_name)-len('.pickle')])
+
+    #         d_count = 0
+    #         for ii,dend in enumerate(nodes[1].dendrite_list):
+    #             if f'lay{str(layer)}' in dend.name:
+    #                 # print(" ",dend.name)
+    #                 dend_offsets[d_count].append(dend.offset_flux)
+    #                 d_count+=1
+
+
+    # plt.plot(np.transpose(dend_offsets))
+    # plt.show()
 
 def get_ordered_files(path):
     import os
@@ -116,15 +138,15 @@ def get_ordered_files(path):
     return ordered_files
 
 ### MNIST ###
-name = "modern_inh_counter"
+name = "simple_deep"
 # name = "MNIST_asymmetic"
-# path = f"results\\MNIST\\{name}\\full_nodes\\"
-# files = get_ordered_files(path)
-# digit = 'any'
-# layer = 1
+path = f"results\\MNIST\\{name}\\full_nodes\\"
+files = get_ordered_files(path)
+digit = 'any'
+layer = 1
 
 # # nodes = load_nodes(10,0,'inelast')
-# offset_analysis(path,files,digit,layer)
+offset_analysis(path,files,digit,layer)
 
 
 
@@ -177,12 +199,12 @@ def vector_analysis(name,run,digit):
             plt.plot(np.arange(0,len(mns),1)+n*len(mns),mns,color=colors[m%(len(colors))])
     plt.show()
 
-name = 'vector_train'
-run = 1
-# name = 'modern_inh_counter'
-# run = 1031
-for digit in [0,1,2]:
-    vector_analysis(name,run,digit)
+# name = 'vector_train'
+# run = 1
+# # name = 'modern_inh_counter'
+# # run = 1031
+# for digit in [0,1,2]:
+#     vector_analysis(name,run,digit)
 
 
 ### Pixels ###

@@ -186,7 +186,7 @@ def main():
                     norm_fact = sum(influence)/max_s
                     cs_normed = cs_list/norm_fact
                     for i,(in_name,cs) in enumerate(dendrite.dendritic_connection_strengths.items()):
-                        dendrite.dendritic_connection_strengths[in_name] = cs_normed[i]
+                        dendrite.dendritic_connection_strengths[in_name] = cs_normed[i]*5
 
     def get_nodes(
             path,
@@ -413,7 +413,7 @@ def main():
         # print("Functional Update")
         s = time.perf_counter()
         offset_sums = [0 for _ in range(config.digits)]
-        
+        if config.inh_counter: print("inh counter")
         for n,node in enumerate(nodes):
             for l,layer in enumerate(node.dendrites):
                 for g,group in enumerate(layer):
@@ -466,13 +466,13 @@ def main():
         '''
         Trains nodes on MNIST dataset
         '''
-        # if config.dataset=='MNIST':
-        #     desired = [
-        #         [5,0,0],
-        #         [0,5,0],
-        #         [0,0,5],
-        #     ]
-        if config.dataset=='Heidelberg':
+        if 'unbounded' in config.name:
+            desired = [
+                [30,10,10],
+                [10,30,10],
+                [10,10,30],
+            ]
+        elif config.dataset=='Heidelberg':
             desired = [
                 [30,10,10],
                 [10,30,10],
@@ -568,9 +568,11 @@ def main():
 
                 # define error by difference of desired with actual spiking for each node
                 errors = []
-                for nd in range(config.digits):
-                    errors.append(desired[nd][digit] - len(spikes[nd]))
 
+                for nd in range(config.digits):
+                    # print(f"Node ->, {nd}, Digit -> {digit}, desired -> {desired[nd][digit]}, actual -> {len(spikes[nd])}, error -> {desired[nd][digit] - len(spikes[nd])}")
+                    errors.append(desired[nd][digit] - len(spikes[nd]))
+                # print(errors)
                 # output spike totals from each class
                 output = []
                 for nd in range(config.digits):
