@@ -138,15 +138,15 @@ def get_ordered_files(path):
     return ordered_files
 
 ### MNIST ###
-name = "simple_deep"
-# name = "MNIST_asymmetic"
-path = f"results\\MNIST\\{name}\\full_nodes\\"
-files = get_ordered_files(path)
-digit = 'any'
-layer = 1
+# name = "unbounded_deep"
+# # name = "MNIST_asymmetic"
+# path = f"results\\MNIST\\{name}\\full_nodes\\"
+# files = get_ordered_files(path)
+# digit = 'any'
+# layer = 1
 
-# # nodes = load_nodes(10,0,'inelast')
-offset_analysis(path,files,digit,layer)
+nodes = load_nodes(0,0,0,'unbounded_deep')
+# offset_analysis(path,files,digit,layer)
 
 
 

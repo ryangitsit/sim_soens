@@ -207,8 +207,10 @@ experiments = [
     # 'norm_test',
     # 'long',
     # 'long_deep'
-    'simple_long',
-    'simple_deep'
+    # 'simple_long',
+    # 'simple_deep'
+    'unbounded_deep',
+    'unbounded_fan'
     ]
 
 until = 150*10000

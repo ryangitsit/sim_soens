@@ -15,7 +15,7 @@ FOR /L %%i IN (1,1,100000) DO (
       --rand_flux     0.1^
       --layers        6^
       --lay_weighting 1,1,1,4,8,10^
-      --norm_fanin    True
+      --norm_fanin    True^
       --decay         True
 )
 

@@ -186,7 +186,7 @@ def main():
                     norm_fact = sum(influence)/max_s
                     cs_normed = cs_list/norm_fact
                     for i,(in_name,cs) in enumerate(dendrite.dendritic_connection_strengths.items()):
-                        dendrite.dendritic_connection_strengths[in_name] = cs_normed[i]*5
+                        dendrite.dendritic_connection_strengths[in_name] = cs_normed[i]*2.5
 
     def get_nodes(
             path,
@@ -466,12 +466,20 @@ def main():
         '''
         Trains nodes on MNIST dataset
         '''
-        if 'unbounded' in config.name:
+        if 'unbounded' == config.name:
             desired = [
                 [30,10,10],
                 [10,30,10],
                 [10,10,30],
             ]
+
+        if 'unbounded_fan' == config.name:
+            desired = [
+                [60,40,40],
+                [40,60,40],
+                [40,40,60],
+            ]
+
         elif config.dataset=='Heidelberg':
             desired = [
                 [30,10,10],
