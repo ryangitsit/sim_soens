@@ -145,9 +145,18 @@ def get_ordered_files(path):
 # digit = 'any'
 # layer = 1
 
-nodes = load_nodes(0,0,0,'unbounded_deep')
+# nodes = load_nodes(0,0,0,'unbounded_deep')
 # offset_analysis(path,files,digit,layer)
 
+name = 'fanin_1.5_full'
+# name = 'MNIST_large'
+# name = 'MNIST_asymmetic'
+nodes = picklin(f"results\\MNIST\\{name}\\nodes",f"eternal_nodes")
+node = nodes[0]
+for i,(k,v) in enumerate(nodes[0].__dict__.items()):
+    print(k,sys.getsizeof(v))
+print(node.dendrite_list[0].__dict__.keys())
+print(node.synapse_list[0].spd_duration_converted)
 
 
 # for digit in digits:

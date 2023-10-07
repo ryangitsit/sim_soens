@@ -53,7 +53,7 @@ def ongoing_performance(df):
     return percents, procents
 
 
-def by_run_performance(df,decider,digits,samples):
+def by_run_performance(df,decider,digits,samples,indivs):
     by_run = []
     by_dig_runs = [[] for _ in range(digits)]
 
@@ -75,20 +75,31 @@ def by_run_performance(df,decider,digits,samples):
                 run_wins = 0
 
     if decider == 'winner':
+        counter = 0
         for index, row in df.iterrows():
-            # print(df["sample"].astype(int)[1])
-            # if df["sample"][(df["sample"]< samples)]:
-            # if df["sample"].astype(int)[1] == 0:#< samples:
+            
             if no_ties(df,index) == True:
                 run_wins+=1
                 # print(df["digit"][index])
-                dig_runs[df["digit"][index]]+=1
+                if indivs == True:
+                    dig_runs[df["digit"][index]]+=1
+                
+
             if (index+1)%(digits*samples) == 0:
                 by_run.append(run_wins/(digits*samples))
-                for i,dig in enumerate(dig_runs):
-                    by_dig_runs[i].append(dig/samples)
+                if indivs==True:
+                    for i,dig in enumerate(dig_runs):
+                        by_dig_runs[i].append(dig/samples)
                 dig_runs = [0 for _ in range(digits)]
                 run_wins = 0
+                counter = 0
+
+            # if index == len(df["digit"]) - 1 and (index+1)%(digits*samples) != 0:
+            #     by_run.append(run_wins/(counter))
+            #     for i,dig in enumerate(dig_runs):
+            #         by_dig_runs[i].append(dig/(index/samples))
+
+            counter +=1
 
     if decider == 'lucky':
         for index, row in df.iterrows():
@@ -129,7 +140,7 @@ def plot_singles(experiments,until):
             )
 
         # percents, procents = ongoing_performance(df)
-        by_run, digs = by_run_performance(df,'winner',3,10)
+        by_run, digs = by_run_performance(df,'winner',10,50,True)
 
         pr = np.max(np.ceil(np.array(by_run)*30))
         print(f"Experiment {exp}, {len(by_run)} epochs, {np.round(pr*100/30,2)}% best run")
@@ -149,7 +160,8 @@ def plot_singles(experiments,until):
         plt.legend()
         plt.show()
 
-
+        
+        print(np.sum(df["run_time"]))
         # plt.plot(df["run_time"])
         # plt.show()
 
@@ -168,9 +180,16 @@ def plot_all(experiments,until):
             f'results\MNIST\{exp}\learning_logger.csv',
             names=['sample','digit','spikes','error','prediction','time','init_time','run_time','offsets']
             )
+        if 'full' in exp or 'large' in exp:
+            print("FULL")
+            digits = 10
+            samples = 50
+        else:
+            digits = 3
+            samples = 10
 
-        by_run, digs = by_run_performance(df,'winner',3,10)
-        print(exp,' -- ', np.max(np.ceil(np.array(by_run)*30)))
+        by_run, digs = by_run_performance(df,'winner',digits,samples,False)
+        print(exp,' -- ', np.max(np.ceil(np.array(by_run)*(digits*samples))))
         plt.plot(by_run, linewidth = 4, label=exp)
         # plt.plot(np.transpose(digs)[:until], '--', label=['0','1','2'])
     plt.ylim(0,1)
@@ -208,12 +227,14 @@ experiments = [
     # 'long',
     # 'long_deep'
     # 'simple_long',
-    # 'simple_deep'
-    'unbounded_deep',
-    'unbounded_fan'
+    # 'simple_deep',
+    # 'unbounded_deep',
+    # 'unbounded_fan',
+    # 'fanin_1.5',
+    'fanin_1.5_full',
     ]
 
 until = 150*10000
 
 plot_singles(experiments,until)
-plot_all(experiments,until)
+# plot_all(experiments,until)

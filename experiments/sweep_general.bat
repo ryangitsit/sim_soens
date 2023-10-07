@@ -1,14 +1,15 @@
 ECHO OFF
 
-FOR /L %%i IN (1,1,100000) DO (
+FOR /L %%i IN (208,1,100000) DO (
     python exp_MNIST_full.py^
       --run           %%i^
       --s_th          0.25^
       --duration      1000^
       --jul_threading 4^
-      --digits        3^
-      --samples       10^
-      --name          unbounded_fan^
+      --digits        10^
+      --samples       50^
+      --name          fanin_1.5_full^
+      --backend       julia^
       --dataset       MNIST^
       --eta           0.001^
       --fixed         .5^
