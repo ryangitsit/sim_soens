@@ -1,6 +1,6 @@
 ECHO OFF
 
-FOR /L %%i IN (208,1,100000) DO (
+FOR /L %%i IN (921,1,100000) DO (
     python exp_MNIST_full.py^
       --run           %%i^
       --s_th          0.25^

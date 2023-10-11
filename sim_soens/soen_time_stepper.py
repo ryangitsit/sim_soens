@@ -29,7 +29,7 @@ def run_soen_sim(net):
         
     # network
     if type(net).__name__ == 'network':
-        
+
         # convert to dimensionless time
         net.time_params = {
             'dt': net.dt, 
@@ -51,18 +51,24 @@ def run_soen_sim(net):
             # if net.print_times: print("-------------------------\n\n")
             start = time.perf_counter()
             # interate through all network nodes and initialize all related elements
+            
             net.phi_vec, net.s_array, net.r_array = make_subarrays(net.nodes[0].neuron.ib,'ri')
-            for node in net.nodes:
-                # print("Initializing neuron: ", neuron.name)
-                node.neuron.time_params = net.time_params
-                node.neuron.dend_soma.threshold_flag = False
+            if hasattr(net.nodes[0].neuron,'time_params') and type(net.nodes[0].neuron.time_params)!=dict:
+                # print("initializing...")
+                for node in net.nodes:
+                    # print("Initializing neuron: ", neuron.name)
+                    node.neuron.time_params = net.time_params
+                    node.neuron.dend_soma.threshold_flag = False
 
-                for dend in node.dendrite_list:
-                    dend.beta = dend.circuit_betas[-1]
-                    synapse_initialization(dend,tau_vec,t_tau_conversion)
+                    for dend in node.dendrite_list:
+                        dend.beta = dend.circuit_betas[-1]
+                        synapse_initialization(dend,tau_vec,t_tau_conversion)
 
-                output_synapse_initialization(node.neuron,tau_vec,t_tau_conversion)
-                transmitter_initialization(node.neuron,t_tau_conversion)
+                    output_synapse_initialization(node.neuron,tau_vec,t_tau_conversion)
+                    transmitter_initialization(node.neuron,t_tau_conversion)
+            # else:
+                # print("...pre-initialized")
+
             finish = time.perf_counter()
             if net.print_times: print(f"Initialization procedure run time: {finish-start}")
             net.init_time = finish-start

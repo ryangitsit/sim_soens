@@ -303,7 +303,6 @@ end
 
 function dend_signal(dend::AbstractDendrite,t_idx::Int,d_tau::Float64)
 
-    # lst = dend.phi_vec
     val = dend.phir[t_idx+1]
 
     if val > dend.phi_max
@@ -314,39 +313,22 @@ function dend_signal(dend::AbstractDendrite,t_idx::Int,d_tau::Float64)
         val = val - dend.phi_min
     end
 
-    # ind_phi = closest_index(dend.phi_vec,val)
-    ind_phi = index_approxer(val)
-    # ind_phi = closest_index(dend.phi_vec,dend.phir[t_idx+1]) # +1 or not?
 
-    # ind_phi = index_approxer(
-    #     val,
-    #     dend.phi_max,
-    #     dend.phi_min,
-    #     dend.phi_len
-    #     )
+    ind_phi = index_approxer(val)
+    # ind_phi = searchsortedfirst(dend.phi_vec,val)
+    # ind_phi= minimum([ind_phi,length(dend.phi_vec)])
+
+
 
     s_vec = dend.s_array[ind_phi]
 
-    # ind_s = closest_index(s_vec,dend.s[t_idx])
 
     ind_s = s_index_approxer(s_vec,dend.s[t_idx])
-
-    # @show ind_phi
-    # @show s_vec
-    # ind_s = index_approxer(
-    #     dend.s[t_idx],
-    #     first(s_vec),
-    #     last(s_vec),
-    #     length(s_vec)
-    #     )
-
-    # ind_s = index_approxer(dend.s[t_idx],first(s_vec),last(s_vec),length(s_vec))
+    # ind_s = searchsortedfirst(s_vec,dend.s[t_idx])
+    # ind_s= minimum([ind_s,length(s_vec)])
 
     r_fq = dend.r_array[ind_phi][ind_s]
-    # @show ind_phi,ind_s, r_fq
-    # if occursin("soma",dend.name) #&& t_idx%10==0
-    #     @show ind_phi,ind_s, r_fq
-    # end
+    
     dend.s[t_idx+1] = dend.s[t_idx]*(1 - d_tau*dend.alpha/dend.beta) + (d_tau/dend.beta)*r_fq
     
 end

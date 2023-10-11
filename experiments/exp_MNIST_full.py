@@ -737,12 +737,6 @@ def main():
         else:
             print(f"samples passed: {samples_passed}/{config.digits} -- running epoch accuracy: {np.round(nodes[0].passed*100/(nodes[0].seen),2)}%\n")
 
-        # save the nodes!
-        picklit(
-            nodes,
-            f"{path}{name}/nodes/",
-            f"eternal_nodes"
-            )
         
         # if all samples passed, task complete!
         # if samples_passed == config.digits*config.samples:
@@ -768,6 +762,17 @@ def main():
                 nodes[0].passed = 0
                 nodes[0].seen = 0
 
+        if (config.run+1) % 50 == 0:
+            nodes[0].passed = 0
+            nodes[0].seen = 0
+
+        # save the nodes!
+        picklit(
+            nodes,
+            f"{path}{name}/nodes/",
+            f"eternal_nodes"
+            )
+
     from sim_soens.argparse import setup_argument_parser
     config = setup_argument_parser()
 
@@ -791,9 +796,7 @@ def main():
 
     nodes = get_nodes(path,name,config)
 
-    # nodes[0].passed = 37
-    # nodes[0].seen = 80
-    print(nodes[0].passed, ' -- ', nodes[0].seen,'\n')
+    # print(nodes[0].passed, ' -- ', nodes[0].seen,'\n')
 
     # load_finish = time.perf_counter()
     # print("Load time: ", load_finish-load_start)

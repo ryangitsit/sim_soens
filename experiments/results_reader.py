@@ -97,7 +97,7 @@ def by_run_performance(df,decider,digits,samples,indivs):
             # if index == len(df["digit"]) - 1 and (index+1)%(digits*samples) != 0:
             #     by_run.append(run_wins/(counter))
             #     for i,dig in enumerate(dig_runs):
-            #         by_dig_runs[i].append(dig/(index/samples))
+            #         by_dig_runs[i].append(dig/(samples))
 
             counter +=1
 
@@ -162,8 +162,8 @@ def plot_singles(experiments,until):
 
         
         print(np.sum(df["run_time"]))
-        # plt.plot(df["run_time"])
-        # plt.show()
+        plt.plot(df["run_time"])
+        plt.show()
 
         # print("Average runtime = ",np.mean(df["run_time"]))
 
