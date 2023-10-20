@@ -9,7 +9,7 @@ def setup_argument_parser():
 
     # OO implementation 
     parser.add_argument( "--ib",            type=float,         default = 1.8      )
-    parser.add_argument( "--tau",           type=float,         default = 150      )
+    parser.add_argument( "--tau",           type=float,         default = 50      )
     parser.add_argument( "--beta",          type=float,         default = 2        )
     parser.add_argument( "--s_th",          type=float,         default = 0.5      )
     parser.add_argument( "--eta",           type=float,         default = .005     )
@@ -39,6 +39,8 @@ def setup_argument_parser():
     parser.add_argument( "--inh_counter",   type=bool,          default = None     )
     parser.add_argument( "--norm_fanin",    type=bool,          default = None     )
     parser.add_argument( "--lay_weighting", type=list_of_ints,  default = None     )
+    parser.add_argument( "--fan_coeff",     type=float,         default = 1.5      )
+    parser.add_argument( "--dt",            type=float,         default = .1       )
     
     
 

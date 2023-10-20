@@ -153,11 +153,18 @@ name = 'fanin_1.5_full'
 # name = 'MNIST_asymmetic'
 nodes = picklin(f"results\\MNIST\\{name}\\nodes",f"eternal_nodes")
 node = nodes[0]
-for i,(k,v) in enumerate(nodes[0].__dict__.items()):
-    print(k,sys.getsizeof(v))
-print(node.dendrite_list[0].__dict__.keys())
-print(node.synapse_list[0].spd_duration_converted)
+# print("Node size = ", sys.getsizeof(node))
+# for i,(k,v) in enumerate(nodes[0].__dict__.items()):
+#     print(k,sys.getsizeof(v))
+# print(node.dendrite_list[0].__dict__.keys())
+# print(node.synapse_list[0].spd_duration_converted)
 
+dend = node.dendrite_list[0]
+
+for i,(k,v) in enumerate(dend.__dict__.items()):
+    print(k,sys.getsizeof(v))
+
+# print(dend.doubleroll)
 
 # for digit in digits:
 

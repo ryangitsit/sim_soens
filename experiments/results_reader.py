@@ -232,9 +232,12 @@ experiments = [
     # 'unbounded_fan',
     # 'fanin_1.5',
     'fanin_1.5_full',
+    'fanin_1.75_full',
+    # 'fanin_1.75_nodec_full',
+    'speed_testing_full',
     ]
 
 until = 150*10000
 
-plot_singles(experiments,until)
-# plot_all(experiments,until)
+# plot_singles(experiments,until)
+plot_all(experiments,until)

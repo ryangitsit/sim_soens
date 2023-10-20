@@ -169,7 +169,7 @@ def main():
         _ind_ib = index_finder(ib_list[:],dendrite.ib) 
         return s_max_plus__vec[_ind_ib]
 
-    def normalize_fanin(node):
+    def normalize_fanin(node,coeff):
         for dendrite in node.dendrite_list:
             if len(dendrite.dendritic_connection_strengths) > 0:
                 max_s = max_s_finder(dendrite) - dendrite.phi_th
@@ -186,7 +186,7 @@ def main():
                     norm_fact = sum(influence)/max_s
                     cs_normed = cs_list/norm_fact
                     for i,(in_name,cs) in enumerate(dendrite.dendritic_connection_strengths.items()):
-                        dendrite.dendritic_connection_strengths[in_name] = cs_normed[i]*1.5
+                        dendrite.dendritic_connection_strengths[in_name] = cs_normed[i]*coeff
 
     def get_nodes(
             path,
@@ -346,8 +346,8 @@ def main():
                 # internal node parameters
                 mutual_inhibition = True
                 ib      = 1.8
-                tau     = 50
-                beta    = 2*np.pi*10**2
+                tau     = config.tau
+                beta    = 2*np.pi*10**config.beta
                 s_th    = config.s_th
                 params = {
                     "ib"        :ib,
@@ -395,7 +395,8 @@ def main():
                         add_inhibition_counts(node)
 
                     if config.norm_fanin:
-                        normalize_fanin(node)
+                        print(f"Fanin normalization with coefficient of {config.fan_coeff}")
+                        normalize_fanin(node,config.fan_coeff)
 
 
             finish = time.perf_counter()
@@ -614,7 +615,7 @@ def main():
                 net = network(
                     name=config.name,
                     sim=True,
-                    dt=.1,
+                    dt=config.dt,
                     tf=config.duration,
                     nodes=nodes,
                     backend=config.backend,
@@ -721,21 +722,21 @@ def main():
 
 
         if hasattr(nodes[0],'seen'):
-            nodes[0].seen = ((config.run % 50)+1)*10
+            nodes[0].seen = ((config.run % 50))*10 + 10
         else:
-            nodes[0].seen = 0
+            nodes[0].seen = 10
 
         if hasattr(nodes[0],'passed'):
             nodes[0].passed += samples_passed
         else:
-            nodes[0].passed = 0
+            nodes[0].passed = samples_passed
 
 
         # samples passed out of total epoch
         if 'full' not in config.name: 
-            print(f"samples passed: {samples_passed}/{config.digits*config.samples}\n")
+            print(f" samples passed: {samples_passed}/{config.digits*config.samples}\n")
         else:
-            print(f"samples passed: {samples_passed}/{config.digits} -- running epoch accuracy: {np.round(nodes[0].passed*100/(nodes[0].seen),2)}%\n")
+            print(f" samples passed: {samples_passed}/{config.digits} -- running epoch accuracy: {np.round(nodes[0].passed*100/(nodes[0].seen),2)}%\n")
 
         
         # if all samples passed, task complete!

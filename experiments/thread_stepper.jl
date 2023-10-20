@@ -31,7 +31,7 @@ function stepper(net_dict::Dict{Any,Any})
         Threads.@threads for idx in 1:length(node_names)
             node = net_dict["nodes"][node_names[idx]]
             node_name = node_names[idx]
-            loop_synapses(node,node_name,syn_names,net_dict["T"],net_dict["conversion"],t_idx)
+            loop_synapses(node,node_name,syn_names,net_dict["T"],net_dict["conversion"],t_idx,net_dict["dt"])
             loop_dendrites(node,node_name,dend_names,net_dict["d_tau"],t_idx)
 
             if node["dendrites"][node["soma"]].spiked == 1
@@ -50,14 +50,15 @@ function stepper(net_dict::Dict{Any,Any})
     return net_dict
 end
 
-function loop_synapses(node::Dict{Any, Any},node_name::String,syn_names::Dict{String,Vector{Any}},T::Int64,conversion::Float64,t_idx::Int64)
+function loop_synapses(node::Dict{Any, Any},node_name::String,syn_names::Dict{String,Vector{Any}},T::Int64,conversion::Float64,t_idx::Int64,dt::Float64)
     Threads.@threads for iter in 1:length(node["synapses"])
         syn = node["synapses"][syn_names[node_name][iter]]
         synapse_input_update(
             syn,
             t_idx,
             T,
-            conversion
+            conversion,
+            dt
             )
     end
 end
@@ -104,7 +105,7 @@ function stepper(net_dict::Dict{String,Any})
         Threads.@threads for idx in 1:length(node_names)
             node = net_dict["nodes"][node_names[idx]]
             node_name = node_names[idx]
-            loop_synapses(node,node_name,syn_names,net_dict["T"],net_dict["conversion"],t_idx)
+            loop_synapses(node,node_name,syn_names,net_dict["T"],net_dict["conversion"],t_idx,net_dict["dt"])
             loop_dendrites(node,node_name,dend_names,net_dict["d_tau"],t_idx)
 
             if node["dendrites"][node["soma"]].spiked == 1
@@ -123,14 +124,15 @@ function stepper(net_dict::Dict{String,Any})
     return net_dict
 end
 
-function loop_synapses(node::Dict{String, Any},node_name::String,syn_names::Dict{String,Vector{Any}},T::Int64,conversion::Float64,t_idx::Int64)
+function loop_synapses(node::Dict{String, Any},node_name::String,syn_names::Dict{String,Vector{Any}},T::Int64,conversion::Float64,t_idx::Int64,dt::Float64)
     Threads.@threads for iter in 1:length(node["synapses"])
         syn = node["synapses"][syn_names[node_name][iter]]
         synapse_input_update(
             syn,
             t_idx,
             T,
-            conversion
+            conversion,
+            dt
             )
     end
 end
@@ -148,37 +150,37 @@ function loop_dendrites(node::Dict{String, Any},node_name::String,dend_names::Di
 end
 
 
-function synapse_input_update(syn::Synapse,t::Int64,T::Int64,conversion::Float64)
+function synapse_input_update(syn::Synapse,t::Int64,T::Int64,conversion::Float64,dt::Float64)
     if t in syn.spike_times
         duration = 1500
         hotspot = 3
         until = min(t+duration,T)
-        syn.phi_spd[t:until] = max.(syn.phi_spd[t:until],SPD_response(conversion,hotspot)[1:until-t+1])
+        syn.phi_spd[t:until] = max.(syn.phi_spd[t:until],SPD_response(conversion,hotspot,dt)[1:until-t+1])
     end
     return syn
 end
 
 
-function synapse_input_update(syn::RefractorySynapse,t::Int64,T::Int64,conversion::Float64)
+function synapse_input_update(syn::RefractorySynapse,t::Int64,T::Int64,conversion::Float64,dt::Float64)
     if t in syn.spike_times
         duration = 1500
         hotspot = 2 
         # t = tau_vec[spk]
         until = min(t+duration,T)
-        syn.phi_spd[t:until] = max.(syn.phi_spd[t:until],SPD_response(conversion,hotspot)[1:until-t+1])
+        syn.phi_spd[t:until] = max.(syn.phi_spd[t:until],SPD_response(conversion,hotspot,dt)[1:until-t+1])
     end
     return syn
 end
 
 
-function SPD_response(conversion::Float64,hs::Int64)
+function SPD_response(conversion::Float64,hs::Int64,dt::Float64)
     """
     Move to before time stepper
     """
-    conversion = conversion * .01 #.0155
+    conversion = (conversion * .01) #.0155
     phi_peak = 0.5
     tau_rise = 0.02 *conversion
-    tau_fall = 65   *conversion #50
+    tau_fall = 65   *conversion/(dt*10) #50
     hotspot  = hs*.02    *conversion #- 22.925
     # @show phi_peak 
     # @show tau_rise 
