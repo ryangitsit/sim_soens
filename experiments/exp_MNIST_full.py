@@ -448,7 +448,7 @@ def main():
                             if config.inh_counter:
                                 if dend.downstream_inhibition%2!=0:
                                     step = -step
-
+                            step = np.max([step,config.max_offset])
                             dend.offset_flux += step
                             offset_sums[n] += step
 
