@@ -41,6 +41,7 @@ def setup_argument_parser():
     parser.add_argument( "--lay_weighting", type=list_of_ints,  default = None     )
     parser.add_argument( "--fan_coeff",     type=float,         default = 1.5      )
     parser.add_argument( "--dt",            type=float,         default = .1       )
+    parser.add_argument( "--target",        type=int,           default = 10       )
     
     
 

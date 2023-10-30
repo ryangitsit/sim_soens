@@ -49,22 +49,23 @@ FOR /L %%i IN (1,1,100000) DO (
     python exp_MNIST_full.py^
       --run           %%i^
       --s_th          0.25^
-      --duration      1000^
+      --duration      2000^
       --beta          3^
       --dt            1.0^
       --jul_threading 4^
       --digits        10^
       --samples       50^
       --eta           0.005^
-      --name          speed_testing_full^
+      --name          spread_full^
       --backend       julia^
       --dataset       MNIST^
       --fixed         .5^
-      --rand_flux     0.1^
+      --rand_flux     0.005^
       --layers        6^
       --lay_weighting 1,1,1,4,8,10^
       --norm_fanin    True^
-      --fan_coeff     1.5
+      --fan_coeff     1.5^
+      --target        50
 )
 
 

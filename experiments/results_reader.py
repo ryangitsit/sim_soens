@@ -145,7 +145,7 @@ def plot_singles(experiments,until):
         pr = np.max(np.ceil(np.array(by_run)*30))
         print(f"Experiment {exp}, {len(by_run)} epochs, {np.round(pr*100/30,2)}% best run")
 
-
+        print(f"Best run: {np.max(by_run)}% at {np.argmax(by_run)} out of {len(by_run)} runs")
         # plt.style.use('seaborn-muted')
         plt.figure(figsize=(8,4))
 
@@ -161,11 +161,11 @@ def plot_singles(experiments,until):
         plt.show()
 
         
-        print(np.sum(df["run_time"]))
+        # print(np.sum(df["run_time"]))
         plt.plot(df["run_time"])
         plt.show()
 
-        # print("Average runtime = ",np.mean(df["run_time"]))
+        print("Average runtime = ",np.mean(df["run_time"]))
 
 def plot_all(experiments,until):
     plt.style.use('seaborn-muted')
@@ -190,7 +190,8 @@ def plot_all(experiments,until):
 
         by_run, digs = by_run_performance(df,'winner',digits,samples,False)
         print(exp,' -- ', np.max(np.ceil(np.array(by_run)*(digits*samples))))
-        plt.plot(by_run, linewidth = 4, label=exp)
+        x = np.arange(0,len(by_run),1) #+i*50
+        plt.plot(x,by_run, linewidth = 4, label=exp)
         # plt.plot(np.transpose(digs)[:until], '--', label=['0','1','2'])
     plt.ylim(0,1)
     plt.legend()
@@ -231,13 +232,19 @@ experiments = [
     # 'unbounded_deep',
     # 'unbounded_fan',
     # 'fanin_1.5',
-    'fanin_1.5_full',
-    'fanin_1.75_full',
+    # 'fanin_1.5_full',
+    # 'fanin_1.75_full',
     # 'fanin_1.75_nodec_full',
     'speed_testing_full',
+    # 'speed_decay_full',
+    # 'speed_bigeta_full',
+    'speed_target15_full',
+    # 'speed_target5_full',
+    'spread_full'
     ]
 
 until = 150*10000
 
-# plot_singles(experiments,until)
+plot_singles(experiments,until)
 plot_all(experiments,until)
+# 

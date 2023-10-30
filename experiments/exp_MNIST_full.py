@@ -555,7 +555,7 @@ def main():
             target = 10
             # if 'long' in config.name: target=10
             for idx in range(config.digits):
-                desired[idx][idx] = target
+                desired[idx][idx] = config.target
 
             if config.run ==1: print(desired)
 
