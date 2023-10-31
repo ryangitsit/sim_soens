@@ -1,8 +1,0 @@
-MANIFEST.in
-README.md
-setup.py
-soen_sim_data/sim_soens.egg-info/PKG-INFO
-soen_sim_data/sim_soens.egg-info/SOURCES.txt
-soen_sim_data/sim_soens.egg-info/dependency_links.txt
-soen_sim_data/sim_soens.egg-info/not-zip-safe
-soen_sim_data/sim_soens.egg-info/top_level.txt

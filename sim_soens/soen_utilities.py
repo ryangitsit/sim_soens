@@ -6,7 +6,7 @@ import time
 import sys
 import copy
 import matplotlib as mp
-from sim_soens.soen_sim_data import *
+from .soen_sim_data import *
 
 # from soen_utilities import physical_constants, material_parameters, color_dictionary
 # colors = color_dictionary()
@@ -207,43 +207,47 @@ def omega_LRC(L,R,C):
     
     return omega_r, omega_i 
 
-def dend_save_rate_array(params,ib__list,phi_r__array,r_fq__array,i_di__array):
+# def dend_save_rate_array(params,ib__list,phi_r__array,r_fq__array,i_di__array):
 
-    data_array = dict()
-    data_array['ib__list'] = ib__list
-    data_array['phi_r__array'] = phi_r__array
-    data_array['params'] = params
+    # data_array = dict()
+    # data_array['ib__list'] = ib__list
+    # data_array['phi_r__array'] = phi_r__array
+    # data_array['params'] = params
         
-    if params['loops_present'] == 'r':
-        save_string = 'rate_array__dend_{}__beta_c_{:06.4f}__beta_1_{:07.4f}__beta_2_{:07.4f}__ib_i_{:06.4f}__ib_f_{:06.4f}__num_ib_{:d}__d_phi_a_{:6.4f}'.format(params['loops_present'],params['beta_c'],params['beta_1'],params['beta_2'],ib__list[0],ib__list[-1],len(ib__list),params['d_phi_a'])
+    # if params['loops_present'] == 'r':
+    #     save_string = 'rate_array__dend_{}__beta_c_{:06.4f}__beta_1_{:07.4f}__beta_2_{:07.4f}__ib_i_{:06.4f}__ib_f_{:06.4f}__num_ib_{:d}__d_phi_a_{:6.4f}'.format(params['loops_present'],params['beta_c'],params['beta_1'],params['beta_2'],ib__list[0],ib__list[-1],len(ib__list),params['d_phi_a'])
 
-        data_array['R_fq__array'] = r_fq__array
+    #     data_array['R_fq__array'] = r_fq__array
     
-    if params['loops_present'] == 'ri':
-        tau_di = 1e9*params['tau_di']*params['tau_0']
-        if tau_di >= 1e4: 
-            save_string = 'ra_dend_{}__beta_c_{:06.4f}__beta_1_{:07.4f}__beta_2_{:07.4f}__beta_di_{:07.5e}__tau_di_long__ib_i_{:06.4f}__ib_f_{:06.4f}__d_phi_r_{:6.4f}'.format(params['loops_present'],params['beta_c'],params['beta_1'],params['beta_2'],params['beta_di'],ib__list[0],ib__list[-1],params['d_phi_r'])
-        else:        
-            save_string = 'ra_dend_{}__beta_c_{:06.4f}__beta_1_{:07.4f}__beta_2_{:07.4f}__beta_di_{:07.5e}__tau_di_{:07.0f}ns__ib_i_{:06.4f}__ib_f_{:06.4f}_{:5.3f}__d_phi_r_{:6.4f}'.format(params['loops_present'],params['beta_c'],params['beta_1'],params['beta_2'],params['beta_di'],1e9*params['tau_di']*params['tau_0'],ib__list[0],ib__list[-1],params['d_phi_r'])
-        data_array['r_fq__array'] = r_fq__array
-        data_array['i_di__array'] = i_di__array
+    # if params['loops_present'] == 'ri':
+    #     tau_di = 1e9*params['tau_di']*params['tau_0']
+    #     if tau_di >= 1e4: 
+    #         save_string = 'ra_dend_{}__beta_c_{:06.4f}__beta_1_{:07.4f}__beta_2_{:07.4f}__beta_di_{:07.5e}__tau_di_long__ib_i_{:06.4f}__ib_f_{:06.4f}__d_phi_r_{:6.4f}'.format(params['loops_present'],params['beta_c'],params['beta_1'],params['beta_2'],params['beta_di'],ib__list[0],ib__list[-1],params['d_phi_r'])
+    #     else:        
+    #         save_string = 'ra_dend_{}__beta_c_{:06.4f}__beta_1_{:07.4f}__beta_2_{:07.4f}__beta_di_{:07.5e}__tau_di_{:07.0f}ns__ib_i_{:06.4f}__ib_f_{:06.4f}_{:5.3f}__d_phi_r_{:6.4f}'.format(params['loops_present'],params['beta_c'],params['beta_1'],params['beta_2'],params['beta_di'],1e9*params['tau_di']*params['tau_0'],ib__list[0],ib__list[-1],params['d_phi_r'])
+    #     data_array['r_fq__array'] = r_fq__array
+    #     data_array['i_di__array'] = i_di__array
     
-    if params['loops_present'] == 'rtti':
-        tau_di = 1e9*params['tau_di']*params['tau_0']
-        if tau_di >= 1e4: 
-            save_string = 'ra_dend_{}_beta_c_{:05.3f}_b1_{:05.3f}_b2_{:05.3f}_b3_{:05.3f}_b4_{:05.3f}_b_di_{:05.3e}_tau_di_long_ib1_i_{:05.3f}_ib1_f_{:05.3f}_ib2_{:05.3f}_ib3_{:05.3f}_d_phi_r_{:5.3f}'.format(params['loops_present'],params['beta_c'],params['beta_1'],params['beta_2'],params['beta_3'],params['beta_4'],params['beta_di'],ib__list[0],ib__list[-1],params['ib2'],params['ib3'],params['d_phi_r'])
-        else:        
-            save_string = 'ra_dend_{}_beta_c_{:05.3f}_b1_{:05.3f}_b2_{:05.3f}_b3_{:05.3f}_b4_{:05.3f}_b_di_{:05.3e}_tau_di_{:07.0f}ns_ib1_i_{:05.3f}_ib1_f_{:05.3f}_ib2_{:05.3f}_ib3_{:05.3f}_d_phi_r_{:5.3f}'.format(params['loops_present'],params['beta_c'],params['beta_1'],params['beta_2'],params['beta_3'],params['beta_4'],params['beta_di'],1e9*params['tau_di']*params['tau_0'],ib__list[0],ib__list[-1],params['ib2'],params['ib3'],params['d_phi_r'])
-        data_array['r_fq__array'] = r_fq__array
-        data_array['i_di__array'] = i_di__array
+    # if params['loops_present'] == 'rtti':
+    #     tau_di = 1e9*params['tau_di']*params['tau_0']
+    #     if tau_di >= 1e4: 
+    #         save_string = 'ra_dend_{}_beta_c_{:05.3f}_b1_{:05.3f}_b2_{:05.3f}_b3_{:05.3f}_b4_{:05.3f}_b_di_{:05.3e}_tau_di_long_ib1_i_{:05.3f}_ib1_f_{:05.3f}_ib2_{:05.3f}_ib3_{:05.3f}_d_phi_r_{:5.3f}'.format(params['loops_present'],params['beta_c'],params['beta_1'],params['beta_2'],params['beta_3'],params['beta_4'],params['beta_di'],ib__list[0],ib__list[-1],params['ib2'],params['ib3'],params['d_phi_r'])
+    #     else:        
+    #         save_string = 'ra_dend_{}_beta_c_{:05.3f}_b1_{:05.3f}_b2_{:05.3f}_b3_{:05.3f}_b4_{:05.3f}_b_di_{:05.3e}_tau_di_{:07.0f}ns_ib1_i_{:05.3f}_ib1_f_{:05.3f}_ib2_{:05.3f}_ib3_{:05.3f}_d_phi_r_{:5.3f}'.format(params['loops_present'],params['beta_c'],params['beta_1'],params['beta_2'],params['beta_3'],params['beta_4'],params['beta_di'],1e9*params['tau_di']*params['tau_0'],ib__list[0],ib__list[-1],params['ib2'],params['ib3'],params['d_phi_r'])
+    #     data_array['r_fq__array'] = r_fq__array
+    #     data_array['i_di__array'] = i_di__array
         
-    print('\n\nsaving session data ...\n\n')    
-    _path = pathfinder()
-    tt = time.time()             
-    # with open('soen_sim_data/{}__{}.soen'.format(save_string,time.strftime('%Y-%m-%d_%H-%M-%S', time.localtime(tt))), 'wb') as data_file:
-    #     pickle.dump(data_array, data_file) 
-    with open('{}{}{}__{}.soen'.format(_path,'/soen_sim_data/',save_string,time.strftime('%Y-%m-%d_%H-%M-%S', time.localtime(tt))), 'wb') as data_file:
-        pickle.dump(data_array, data_file)
+    # print('\n\nsaving session data ...\n\n')    
+    # _path = 'sim_soens/'
+    # tt = time.time()             
+    # # with open('soen_sim_data/{}__{}.soen'.format(save_string,time.strftime('%Y-%m-%d_%H-%M-%S', time.localtime(tt))), 'wb') as data_file:
+    # #     pickle.dump(data_array, data_file) 
+
+    # import sys
+    # print("path: ",sys.path)
+
+    # with open('{}{}{}__{}.soen'.format(_path,'soen_sim_data/',save_string,time.strftime('%Y-%m-%d_%H-%M-%S', time.localtime(tt))), 'wb') as data_file:
+    #     pickle.dump(data_array, data_file)
 
 def pathfinder():
     import os
@@ -263,23 +267,23 @@ def pathfinder():
 
 def dend_load_rate_array(load_string):
 
-    _path = pathfinder()
-
-    if load_string == 'default' or load_string == 'default_ri':
-        # _load_string = 'ra_dend_ri__beta_c_0.3000__beta_1_01.5708__beta_2_01.5708__beta_di_6.28319e+03__tau_di_long__ib_i_1.3673__ib_f_2.0673__d_ib_0.050__d_phi_r_0.0100__working_master'
-        # _load_string = 'ra_dend_ri__beta_c_0.3000__beta_1_01.5708__beta_2_01.5708__beta_di_6.28319e+03__tau_di_long__ib_i_1.3524__ib_f_2.0524__d_ib_0.050__d_phi_r_0.0100__working_master'
-        _load_string = 'ra_dend_ri__beta_c_0.3000__beta_1_01.5708__beta_2_01.5708__beta_di_6.28319e+03__tau_di_long__ib_i_1.3524__ib_f_2.0524__d_ib_0.050__d_phi_r_0.0025__working_master'
-    elif load_string == 'default_rtti':
-        _load_string = 'ra_dend_rtti__beta_c_0.300__b1_1.571_b2_1.571_b3_3.142_b4_3.142_b_di_6.28319e+03_tau_di_long_ib1_i_1.500_ib1_f_2.650_ib2_0.350_ib3_0.700_d_phi_r_0.010__working_master' # 'ra_dend_rtti__beta_c_0.3000__beta_1_01.5708__beta_2_01.5708__beta_3_03.1416__beta_4_03.1416_beta_di_6.28319e+03__tau_di_long__ib_i_1.5000__ib_f_2.6500__d_phi_r_0.0100__working_master'
-    elif load_string == 'default_pri':
-        _load_string = 'ra_dend_pri__beta_c_0.3000__beta_1_01.5708__beta_2_01.5708__beta_di_6.28319e+03__tau_di_long__ib_i_-0.5000__ib_f_0.5000__d_phi_r_0.0200__2023-02-23_04-39-12'  
-    else:
-        _load_string = load_string
-
     
-    with open('{}{}{}.soen'.format(_path,'/soen_sim_data/',_load_string), 'rb') as data_file:    
-        data_array_imported = pickle.load(data_file) # generated from soen_sim/dendrite/_functions__dend.py
-    
+    import os
+    # _path = os.path.join(sys.path[-1], 'sim_soens\\')
+
+    # if load_string == 'default' or load_string == 'default_ri':
+    #     _load_string = 'rate_array_default'
+
+    # _path = os.path.join(_path, 'soen_sim_data')
+
+
+    # with open(_path, 'rb') as data_file:    
+    #     data_array_imported = pickle.load(data_file)   
+
+    this_dir, this_filename = os.path.split(__file__)  # Get path of data.pkl
+    data_path = os.path.join(this_dir, 'soen_sim_data','rate_array_default.soen')
+    data_array_imported = pickle.load(open(data_path, 'rb'))
+
     if 'params' in data_array_imported:
         params_output = data_array_imported['params']
     else:
@@ -289,22 +293,30 @@ def dend_load_rate_array(load_string):
         if 'phi_r__array' not in 'phi_a__array':
             data_array_imported.update({'phi_r__array': data_array_imported['phi_a__array']})
     
-    return data_array_imported['ib__list'], data_array_imported['phi_r__array'], data_array_imported['i_di__array'], data_array_imported['r_fq__array'], params_output, _load_string
+    return data_array_imported['ib__list'], data_array_imported['phi_r__array'], data_array_imported['i_di__array'], data_array_imported['r_fq__array'], params_output, load_string
 
 
 def dend_load_thresholds_saturations(load_string):
 
-    _path = pathfinder()
+    import os
+    # _path = os.path.join(sys.path[-1], 'sim_soens')
 
-    if load_string == 'default' or load_string == 'default_ri':
-        _load_string = 'ra_dend_ri__beta_c_0.3000__beta_1_01.5708__beta_2_01.5708__beta_di_6.28319e+03__tau_di_long__ib_i_1.3524__ib_f_2.0524__d_ib_0.050__d_phi_r_0.0025__thresholds_saturations'
-    elif load_string == 'default_rtti':
-        _load_string = 'ra_dend_rtti__beta_c_0.3000__beta_1_01.5708__beta_2_01.5708__beta_di_6.28319e+03__tau_di_long__ib_i_1.5000__ib_f_2.6500__d_phi_r_0.0100__thresholds_saturations'
-    else:
-        _load_string = load_string
-         
-    with open('{}{}{}.soen'.format(_path,'/soen_sim_data/',_load_string), 'rb') as data_file:    
-        data_array_imported = pickle.load(data_file)   
+    # if load_string == 'default' or load_string == 'default_ri':
+    #     # _load_string = 'ra_dend_ri__beta_c_0.3000__beta_1_01.5708__beta_2_01.5708__beta_di_6.28319e+03__tau_di_long__ib_i_1.3524__ib_f_2.0524__d_ib_0.050__d_phi_r_0.0025__thresholds_saturations'
+    #     _load_string = 'rate_array_default_thresholds_saturations'
+    # # elif load_string == 'default_rtti':
+    # #     _load_string = 'ra_dend_rtti__beta_c_0.3000__beta_1_01.5708__beta_2_01.5708__beta_di_6.28319e+03__tau_di_long__ib_i_1.5000__ib_f_2.6500__d_phi_r_0.0100__thresholds_saturations'
+    # # else:
+    # #     _load_string = load_string
+
+    # _path = os.path.join(_path, 'soen_sim_data')
+    
+    # with open(_path, 'rb') as data_file:    
+    #     data_array_imported = pickle.load(data_file)   
+
+    this_dir, this_filename = os.path.split(__file__)  # Get path of data.pkl
+    data_path = os.path.join(this_dir, 'soen_sim_data','rate_array_default_thresholds_saturations.soen')
+    data_array_imported = pickle.load(open(data_path, 'rb'))
     
     return data_array_imported['phi_th_plus__vec'], data_array_imported['phi_th_minus__vec'], data_array_imported['s_max_plus__vec'], data_array_imported['s_max_minus__vec'], data_array_imported['s_max_plus__array'], data_array_imported['s_max_minus__array']
 

@@ -1,9 +1,15 @@
 import argparse
 
 def list_of_ints(arg):
+    '''
+    For parsing a command line argument as a list of integers with `setup_argument_parser`
+    '''
     return list(map(int, arg.split(',')))
 
 def setup_argument_parser():
+    '''
+    Command line arguments to run with sim_soens
+    '''  
 
     parser = argparse.ArgumentParser()
 
