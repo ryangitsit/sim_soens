@@ -12,7 +12,7 @@ sys.path.append('../')
 from sim_soens.super_input import SuperInput
 from sim_soens.super_node import SuperNode
 from sim_soens.super_functions import *
-from sim_soens.soen_sim import network, synapse
+from sim_soens.soen_components import network, synapse
 
 from sim_soens.soen_utilities import (
     dend_load_arrays_thresholds_saturations, 
@@ -448,7 +448,7 @@ def main():
                             if config.inh_counter:
                                 if dend.downstream_inhibition%2!=0:
                                     step = -step
-                            step = np.max([step,config.max_offset])
+                            # step = np.min([step,config.max_offset])
                             dend.offset_flux += step
                             offset_sums[n] += step
 

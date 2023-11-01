@@ -1,22 +1,17 @@
 import numpy as np
 import pickle
 import time
-
-from numpy.random import default_rng
-rng = default_rng()
-
 from sim_soens.soen_utilities import dend_load_arrays_thresholds_saturations
 
 '''
-Supporting simulation-related functions
+Simulation-related functions  -- mostly deprecated
 '''
 
-d_params_ri = dend_load_arrays_thresholds_saturations('default_ri')
-d_params_rtti = dend_load_arrays_thresholds_saturations('default_rtti')
-ib__vec__ri = np.asarray(d_params_ri['ib__list'][:])
-ib__vec__rtti = np.asarray(d_params_rtti['ib__list'][:])
 
 def spd_response(phi_peak,tau_rise,tau_fall,hotspot_duration,t):
+    '''
+    Returns flux response of a single-photon-detection event in an synapse
+    '''
     term_time_ind = phi_peak * ( 1 - tau_rise/tau_fall )
     if t <= hotspot_duration:
         phi = term_time_ind*( 1 - np.exp( -t / tau_rise ) )
@@ -27,7 +22,9 @@ def spd_response(phi_peak,tau_rise,tau_fall,hotspot_duration,t):
     return phi
 
 def construct_dendritic_drives(obj):
-                
+    '''
+    Drive dendrites with a piecewise linear function
+    '''
     for dir_sig in obj.external_inputs:
         
         if hasattr(obj.external_inputs[dir_sig],'piecewise_linear'):
@@ -47,7 +44,9 @@ def construct_dendritic_drives(obj):
     return obj
 
 def dendritic_drive__piecewise_linear(time_vec,pwl):
-    
+    '''
+    Piecewise linear function for driving dendrites
+    '''
     input_signal__dd = np.zeros([len(time_vec)])
     for ii in range(len(pwl)-1):
         t1_ind = (np.abs(np.asarray(time_vec)-pwl[ii][0])).argmin()
@@ -64,7 +63,9 @@ def dendritic_drive__piecewise_linear(time_vec,pwl):
     return input_signal__dd
 
 def dendritic_drive__exp_pls_train__LR(time_vec,exp_pls_trn_params):
-        
+    '''
+    
+    '''
     t_r1_start = exp_pls_trn_params['t_r1_start']
     t_r1_rise = exp_pls_trn_params['t_r1_rise']
     t_r1_pulse = exp_pls_trn_params['t_r1_pulse']
@@ -101,7 +102,9 @@ def dendritic_drive__exp_pls_train__LR(time_vec,exp_pls_trn_params):
     return input_signal__dd
 
 def dendritic_drive__exponential(time_vec,exp_params):
-        
+    '''
+    
+    '''    
     t_rise = exp_params['t_rise']
     t_fall = exp_params['t_fall']
     tau_rise = exp_params['tau_rise']
@@ -125,7 +128,9 @@ def dendritic_drive__exponential(time_vec,exp_params):
     return input_signal__dd
 
 def dendritic_drive__square_pulse_train(time_vec,sq_pls_trn_params):
+    '''
     
+    '''
     input_signal__dd = np.zeros([len(time_vec)])
     dt = time_vec[1]-time_vec[0]
     t_start = sq_pls_trn_params['t_start']
@@ -177,14 +182,16 @@ def dendritic_drive__square_pulse_train(time_vec,sq_pls_trn_params):
 # =============================================================================
 
 def load_neuron_data(load_string):
-        
+    '''
+    '''
     with open('data/'+load_string, 'rb') as data_file:         
         neuron_imported = pickle.load(data_file)
     
     return neuron_imported
     
 def save_session_data(data_array=[],save_string='soen_sim',include_time=True):
-    
+    '''
+    '''
     if include_time == True:
         tt = time.time()     
         s_str = save_string+'__'+time.strftime(
@@ -199,7 +206,8 @@ def save_session_data(data_array=[],save_string='soen_sim',include_time=True):
     return
 
 def load_session_data(load_string):
-        
+    '''
+    '''
     with open('soen_sim_data/'+load_string, 'rb') as data_file:         
         data_array_imported = pickle.load(data_file)
 
@@ -210,7 +218,8 @@ def load_session_data(load_string):
 # chi squareds
 # =============================================================================
 def chi_squared_error(target_data,actual_data):
-    
+    '''
+    '''
     print('\ncalculating chi^2 ...')
     
     target_data__interpolated = np.interp(
@@ -237,7 +246,8 @@ def chi_squared_error(target_data,actual_data):
 
 
 def phi_thresholds(neuron_object):
-
+    '''
+    '''
     if neuron_object.loops_present == 'ri':
         d_params_ri = dend_load_arrays_thresholds_saturations('default_ri')
         _ind_ib = (

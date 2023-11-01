@@ -19,6 +19,10 @@ Enjoy!
    - How to use jupyter notebooks: https://www.dataquest.io/blog/jupyter-notebook-tutorial/
    - Or just use vscode jupyter extension to use in the vscode IDE
 
+
+## System Flow
+![plot](./img/flo.png)
+
 ## Features
  - Custom neuron generation
    - Any possible SOEN neuron morphology can be called through the 'SuperNode` class
@@ -34,3 +38,5 @@ Enjoy!
    - Neuron morphologies
    - Dendrite behavior
    - Network activity
+![plot](./img/viz_example.png)
+# *Enjoy!*

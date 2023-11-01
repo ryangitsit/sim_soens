@@ -45,7 +45,7 @@ ECHO OFF
 @REM       --fan_coeff     1.75
 @REM )
 
-FOR /L %%i IN (1,1,100000) DO (
+FOR /L %%i IN (511,1,100000) DO (
     python exp_MNIST_full.py^
       --run           %%i^
       --s_th          0.25^

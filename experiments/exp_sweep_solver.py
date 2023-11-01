@@ -4,7 +4,7 @@ import sys
 sys.path.append('../sim_soens')
 sys.path.append('../')
 
-from sim_soens.soen_sim import input_signal, network
+from sim_soens.soen_components import input_signal, network
 from sim_soens.super_node import SuperNode
 from sim_soens.super_input import SuperInput
 from sim_soens.super_functions import array_to_rows

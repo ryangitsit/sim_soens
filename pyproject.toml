@@ -1,0 +1,8 @@
+[build-system]
+requires = ["flit_core >=3.2,<4"]
+build-backend = "flit_core.buildapi"
+
+[project]
+name = "sim_soens"
+authors = [{name = "Ryan O'Loughlin", email = "rmoloughlin11@gmail.com"}]
+dynamic = ["version", "description"]

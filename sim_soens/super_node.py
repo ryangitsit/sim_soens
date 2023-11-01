@@ -1,7 +1,7 @@
 import numpy as np
 
-from sim_soens.soen_sim import neuron, dendrite, synapse
-from sim_soens.soen_utilities import dend_load_arrays_thresholds_saturations
+from .soen_components import neuron, dendrite, synapse
+from .soen_utilities import dend_load_arrays_thresholds_saturations
 d_params_ri = dend_load_arrays_thresholds_saturations('default_ri')
 d_params_rtti = dend_load_arrays_thresholds_saturations('default_rtti')
 
@@ -61,8 +61,14 @@ class SuperNode():
             - types
             - synaptic_structure
         '''  
+
+        # default settings
         self.w_sd=1
         self.random_syn = False
+        self.weights = []
+        np.random.seed(None)
+
+        # writing over default settings
         self.__dict__.update(entries)
         self.params = self.__dict__  
 
@@ -77,9 +83,6 @@ class SuperNode():
         # add somatic dendrite (dend_soma) and refractory dendrite to list
         self.dendrite_list = [self.neuron.dend_soma,self.neuron.dend__ref]
 
-        # normalize input to soma to 1 in terms of weighting
-        self.neuron.normalize_input_connection_strengths=1
-
         # default random seed
         np.random.seed(None)
 
@@ -88,28 +91,35 @@ class SuperNode():
             np.random.seed(self.seed)
             # print("random seed: ",self.seed)
 
-
-        # weights defines structure implicitly and defines connection strengths
-        if hasattr(self, 'weights'):
-            arbor = self.weights
-        else:
-            arbor = []
-
-        self.check_arbor_structor(arbor)
+        # check that the structure implied by .weights is compatible with construction method
+        self.check_arbor_structor(self.weights)
                         
+        self.make_dendrites()
+        self.connect_dendrites()
+        self.make_and_connect_synapses()
+
+    ############################################################################
+    #                           dendritic arbor                                #
+    ############################################################################  
+
+    def make_dendrites(self):
+        '''
+        Makes dendrite components with appropriate parameters
+            - Uses self.weights to define structure
+        '''
         # dendrites attribute will have some structure as arbor
         # [layer][group][dendrite]
         # populated with dendrite objects
-        dendrites = [ [] for _ in range(len(arbor)) ]
-        if len(arbor)>0:
+        dendrites = [ [] for _ in range(len(self.weights)) ]
+        if len(self.weights)>0:
             count=0
             den_count = 0
-            for i,layer in enumerate(arbor):
+            for i,layer in enumerate(self.weights):
                 c=0
                 for j,dens in enumerate(layer):
                     sub = []
                     for k,d in enumerate(dens):
-                        #** add flags and auto connects for empty connections
+                        #(todo) add flags and auto connects for empty connections
 
                         # parameters for creating current dendrite
                         dend_params = self.params
@@ -164,32 +174,47 @@ class SuperNode():
                     
                     # add group to layer
                     dendrites[i].append(sub)
-        
-            # iterate over dendrites and connect them as defined by structure
-            for i,l in enumerate(dendrites):
-                for j, subgroup in enumerate(l):
-                    for k,d in enumerate(subgroup):
-                        if i==0:
-                            # print(i,j,k, " --> soma")
-                            self.neuron.add_input(d, 
-                                connection_strength=self.weights[i][j][k])
-                            # self.neuron.add_input(d, 
-                            #     connection_strength=self.w_dn)
-                        else:
-                            # print(i,j,k, " --> ", i-1,0,j)
-                            receiving_dend = np.concatenate(dendrites[i-1])[j]
-                            receiving_dend.add_input(d, 
-                                connection_strength=self.weights[i][j][k])
-                            d.branch = receiving_dend.branch
-                        d.output_connection_strength = self.weights[i][j][k]
+        self.dendrites = dendrites
+
+
+    def connect_dendrites(self):
+        '''
+        Connects dendrites in arbor-form implied by self.weights
+        '''
+        # iterate over dendrites and connect them as defined by structure
+        for i,l in enumerate(self.dendrites):
+            for j, subgroup in enumerate(l):
+                for k,d in enumerate(subgroup):
+                    if i==0:
+                        # print(i,j,k, " --> soma")
+                        self.neuron.add_input(d, 
+                            connection_strength=self.weights[i][j][k])
+                        # self.neuron.add_input(d, 
+                        #     connection_strength=self.w_dn)
+                    else:
+                        # print(i,j,k, " --> ", i-1,0,j)
+                        receiving_dend = np.concatenate(self.dendrites[i-1])[j]
+                        receiving_dend.add_input(d, 
+                            connection_strength=self.weights[i][j][k])
+                        d.branch = receiving_dend.branch
+                    d.output_connection_strength = self.weights[i][j][k]
 
         # add the somatic dendrite to the 0th layer of the arboric structure
-        dendrites.insert(0,[[self.neuron.dend_soma]])
+        self.dendrites.insert(0,[[self.neuron.dend_soma]])
 
-        # make dendrites readable through node object
-        if dendrites:
-            self.dendrites = dendrites
 
+    ############################################################################
+    #                              Synapses                                    #
+    ############################################################################ 
+
+    def make_and_connect_synapses(self):
+        '''
+        Creates and connects all synapses using a number of possible techniques
+            - `syns` is for adding multiple synapses specically to leaf dendrites
+            - `Synaptic_structure` uses a self.weights type list of lists to place synapses
+            - `Synaptic_indices` applies synapses to specific leaf denrite indices
+            - `Synaptic_layer` (default) places a synapse at all leaf dendrites
+        '''
         # if syns attribute, connect as a function of grouping to final layer
         if hasattr(self, 'syns'):
             self.synapses = [[] for _ in range(len(self.syns))]
@@ -197,10 +222,10 @@ class SuperNode():
                 for j,s in enumerate(group):
                     self.synapses[i].append(synapse(name=s))
             count=0
-            for j, subgroup in enumerate(dendrites[len(dendrites)-1]):
+            for j, subgroup in enumerate(self.dendrites[len(self.dendrites)-1]):
                 for k,d in enumerate(subgroup):
                     for s in self.synapses[count]:
-                        dendrites[len(dendrites)-1][j][k].add_input(s, 
+                        self.dendrites[len(self.dendrites)-1][j][k].add_input(s, 
                             connection_strength = self.syn_w[j][k])
                     count+=1
 
@@ -254,11 +279,10 @@ class SuperNode():
                                     connect=self.synaptic_structure[ii][i][j][k]
                                 elif self.random_syn==True:
                                     connect=np.random.rand()
-                                dendrites[i][j][k].add_input(s, 
+                                self.dendrites[i][j][k].add_input(s, 
                                     connection_strength = connect)
                                 
         elif hasattr(self, 'synaptic_indices'):
-
             self.synapse_list = []
             for i,layer in enumerate(self.dendrites):
                 for j,group in enumerate(layer):
@@ -271,7 +295,7 @@ class SuperNode():
                                 connect = self.synaptic_strengths[ii]
                             else:
                                 connect = self.w_sd
-                            dendrites[syn[0]][syn[1]][syn[2]].add_input(
+                            self.dendrites[syn[0]][syn[1]][syn[2]].add_input(
                                 s, 
                                 connection_strength = connect
                                 )                       
@@ -282,22 +306,14 @@ class SuperNode():
         self.refractory_synapse = self.neuron.dend__ref.synaptic_inputs[f"{self.name}__syn_refraction"]
 
 
-    def __copy__(self):
-        copy_object = SuperNode()
-        return copy_object
-
-    def __deepcopy__(self, memodict={}):
-        import copy
-        copy_object = SuperNode()
-        copy_object.neuron = self.neuron
-        copy_object.dendrites = copy.deepcopy(self.dendrites)
-        return copy_object
-
     ############################################################################
     #                           input functions                                #
     ############################################################################  
 
     def synaptic_layer(self):
+        '''
+        Add synapse to all leaf-node dendrites in arbor
+        '''
         self.synapse_list = []
         count = 0
         if hasattr(self,'w_sd'):
@@ -364,6 +380,9 @@ class SuperNode():
     ############################################################################  
 
     def parameter_print(self):
+        '''
+        Prints node parameters -- for user verification
+        '''
         print("\nSOMA:")
         # print(f" ib = {self.neuron.ib}")
         print(f" ib_n = {self.neuron.ib_n}")
@@ -432,11 +451,37 @@ class SuperNode():
                             ''')
                             return
                         
+    def __copy__(self):
+        '''
+        Copy a SuperNode object
+        '''
+        copy_object = SuperNode()
+        return copy_object
+
+    def __deepcopy__(self, memodict={}):
+        '''
+        Deep copy a SuperNode object
+        '''
+        import copy
+        copy_object = SuperNode()
+        copy_object.neuron = self.neuron
+        copy_object.dendrites = copy.deepcopy(self.dendrites)
+        return copy_object
+    
+    ############################################################################
+    #                           plotting functions                             #
+    ############################################################################        
     def plot_arbor_activity(self,net,**kwargs):
+        '''
+        Plots activity of node (after simulation) superimposed on arbor morphology
+        '''
         from sim_soens.soen_plotting import arbor_activity
         arbor_activity(self,net,**kwargs)
 
     def plot_structure(self):
+        '''
+        Plots structure of node
+        '''
         from sim_soens.soen_plotting import structure
         structure(self)
 

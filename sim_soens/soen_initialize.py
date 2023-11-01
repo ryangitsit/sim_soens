@@ -8,13 +8,44 @@ from sim_soens.soen_utilities import (
 )
 
 
-d_params_ri   = dend_load_arrays_thresholds_saturations('default_ri')
-d_params_rtti = dend_load_arrays_thresholds_saturations('default_rtti')
-ib__vec__ri = np.asarray(d_params_ri['ib__list'][:])
-ib__vec__rtti = np.asarray(d_params_rtti['ib__list'][:])
+################################################################################
+###                             Simplified Init                              ###
+################################################################################
+
+
+def make_subarrays(ib,loops_present):
+    '''
+    Simplified version of rate array calls
+        - Currently only used for julia backend
+        - Can be attached to each dendrite individually (like in py backend version)
+        - Or can be assigned to the network as a whole for homogeneous biasing
+    '''
+
+    if loops_present == 'ri':
+        d_params = dend_load_arrays_thresholds_saturations('default_ri')
+    elif loops_present == 'rtti':
+        d_params = dend_load_arrays_thresholds_saturations('default_rtti')
+
+    ib_idx = ( np.abs( np.asarray(d_params["ib__list"])[:] - ib ) ).argmin()
+
+    phi_vec = np.asarray(d_params["phi_r__array"][ib_idx])
+    s_array = np.asarray(d_params["i_di__array"][ib_idx],dtype=object)
+    r_array = np.asarray(d_params["r_fq__array"][ib_idx],dtype=object)
+
+    return phi_vec, s_array, r_array
 
 
 def dendrite_drive_construct(dend_obj,tau_vec,t_tau_conversion,d_tau):
+    '''
+    Initialize individual dendrite parameters
+        - With optional normalization
+        - Physics-related warnings
+    '''
+    
+    d_params_ri   = dend_load_arrays_thresholds_saturations('default_ri')
+    d_params_rtti = dend_load_arrays_thresholds_saturations('default_rtti')
+    ib__vec__ri = np.asarray(d_params_ri['ib__list'][:])
+    ib__vec__rtti = np.asarray(d_params_rtti['ib__list'][:])
     # print("  Constructing:",dend_obj.name)          
     dend_obj.phi_r_external__vec = np.zeros([len(tau_vec)]) # from ext drives
     dend_obj.phi_r = np.zeros([len(tau_vec)]) # from synapses and dendrites
@@ -37,7 +68,8 @@ def dendrite_drive_construct(dend_obj,tau_vec,t_tau_conversion,d_tau):
         dend_obj.absolute_refractory_period_converted = arp * t_tau_conversion
         
     # normalize inputs
-    if dend_obj.normalize_input_connection_strengths:       
+    if dend_obj.normalize_input_connection_strengths:   
+        print(f"Normalized dendrite {dend_obj.name}!")    
         J_ij_e__init = 0 # excitatory
         J_ij_i__init = 0 # inhibitory
         J_ij_e = dend_obj.total_excitatory_input_connection_strength
@@ -173,25 +205,17 @@ def dendrite_drive_construct(dend_obj,tau_vec,t_tau_conversion,d_tau):
 
 
 def rate_array_attachment(dend_obj):
-        
+    '''
+    Attach parameter-appropriate rate-arrays to individual dendrites
+    '''
     load_string = f'default_{dend_obj.loops_present}'
         
     ib__list, phi_r__array, i_di__array, r_fq__array, _, _ = dend_load_rate_array(load_string) 
     ib__vec = np.asarray(ib__list)
     
     # attach data to this dendrite
-
-    # bias_current = 2.2 #***
-    # _ind__ib = -1 #( np.abs( ib__vec[:] - bias_current ) ).argmin() #***
-    # print(ib__vec[-1])
-    # _ind__ib = ( np.abs( ib__vec[:] - dend_obj.bias_current ) ).argmin()
-
     if dend_obj.loops_present == 'pri':
-        # print("slide pri")
         _ind__ib = ( np.abs( ib__vec[:] - dend_obj.phi_p ) ).argmin()
-
-    # elif dend_obj.loops_present == 'ri':
-    #     _ind__ib = -1
     else:  
         _ind__ib = ( np.abs( ib__vec[:] - dend_obj.bias_current ) ).argmin()
 
@@ -199,34 +223,19 @@ def rate_array_attachment(dend_obj):
     dend_obj.phi_r__vec     = np.asarray(phi_r__array[_ind__ib])
     dend_obj.i_di__subarray = np.asarray(i_di__array[_ind__ib],dtype=object)
     dend_obj.r_fq__subarray = np.asarray(r_fq__array[_ind__ib],dtype=object)
-    # if "soma" in dend_obj.name:
-        # print("phi ",dend_obj.phi_r__vec,"--phi\n\n")
-        # for i in range(len(dend_obj.i_di__subarray)):
-            # print("i_di ",sum(dend_obj.i_di__subarray[i]))#,"--i_di\n\n")
-        # print(dend_obj.r_fq__subarray[10][10])
-        # for r in dend_obj.r_fq__subarray:
-        #     print("r_fq ",r[50])#,"--r_fq\n\n")
-
-        # print(dend_obj.name,"phi",dend_obj.phi_r__vec[200].shape)
-        # print(dend_obj.name,"i_di",dend_obj.i_di__subarray[0].shape)
-        # print(dend_obj.name,"r_fq",dend_obj.r_fq__subarray[402].shape)
     return
 
 def synapse_initialization(dend_obj,tau_vec,t_tau_conversion):
-    
+    '''
+    Initialize individual synapse parameters relative to dendrites they feed into
+    '''
     for synapse_key in dend_obj.synaptic_inputs:
-        # print(
-        # "   Initializing synapse: ", 
-        # dend_obj.synaptic_inputs[synapse_key].name
-        # )
-        
+
         syn_obj = dend_obj.synaptic_inputs[synapse_key]
 
         syn_obj._phi_spd_memory = 0
         syn_obj._st_ind_last = 0
         syn_obj.phi_spd = np.zeros([len(tau_vec)])
-        
-        # print('dend = {}, syn = {}'.format(dend_obj.name,syn_obj.name))
         
         if hasattr(syn_obj,'input_signal'):
             if hasattr(syn_obj.input_signal,'input_temporal_form'):
@@ -242,8 +251,6 @@ def synapse_initialization(dend_obj,tau_vec,t_tau_conversion):
                     syn_obj.input_signal.spike_times=np.arange(t_on,t_f+isi,isi)
         else:
             syn_obj.input_signal = dict()
-            # syn_obj.input_signal
-        # print(dend_obj.synaptic_inputs)#[synapse_key].input_signal,synapse_key)
         
         syn_obj.spike_times_converted = np.asarray(
             syn_obj.input_signal.spike_times
@@ -268,7 +275,9 @@ def synapse_initialization(dend_obj,tau_vec,t_tau_conversion):
 
 
 def output_synapse_initialization(neuron_object,tau_vec,t_tau_conversion):
-    
+    '''
+    Initialize individual synapse parameters relative input they recieve from firing neurons
+    '''
     for synapse_key in neuron_object.synaptic_outputs:
         syn = neuron_object.synaptic_outputs[synapse_key]
         syn._phi_spd_memory = 0
@@ -284,17 +293,19 @@ def output_synapse_initialization(neuron_object,tau_vec,t_tau_conversion):
     return
 
 def transmitter_initialization(neuron_object,t_tau_conversion):
-    
+    '''
+    Different firing mechanisms (more to be added with empirical results)
+    '''
     if neuron_object.source_type == 'qd' or neuron_object.source_type == 'ec':
     
         from sim_soens.soen_utilities import pathfinder
-        _path = pathfinder()
+        _path = '../sim_soens' #pathfinder()
         
         if neuron_object.source_type == 'qd':
             load_string = 'source_qd_Nph_1.0e+04'
         elif neuron_object.source_type == 'ec':
             load_string = 'source_ec_Nph_1.0e+04'
-            
+        
         with open(f'{_path}/soen_sim_data/{load_string}.soen', 'rb') as data_file:         
             data_dict_imported = pickle.load(data_file) 
             
@@ -324,7 +335,9 @@ def transmitter_initialization(neuron_object,t_tau_conversion):
     return
 
 def dendrite_data_attachment(dend_obj,neuron_object):
-    
+    '''
+    For post-simulation information organization
+    '''
     # attach data to this dendrite
     dend_obj.output_data = {
         's': dend_obj.s, 
@@ -339,7 +352,9 @@ def dendrite_data_attachment(dend_obj,neuron_object):
 
 
 def construct_dendritic_drives(obj):
-                
+    '''
+    Called from `dendrite_drive_construct` --> intializes type of received input for a given dendrite
+    '''
     for dir_sig in obj.external_inputs:
         
         if hasattr(obj.external_inputs[dir_sig],'piecewise_linear'):
@@ -360,7 +375,9 @@ def construct_dendritic_drives(obj):
 
 
 def dendritic_drive__piecewise_linear(time_vec,pwl):
-    
+    '''
+    For automated piecewise linear dendritic driving
+    '''
     input_signal__dd = np.zeros([len(time_vec)])
     for ii in range(len(pwl)-1):
         t1_ind = (np.abs(np.asarray(time_vec)-pwl[ii][0])).argmin()
@@ -378,63 +395,3 @@ def dendritic_drive__piecewise_linear(time_vec,pwl):
 
 
 
-################################################################################
-###                             Simplified Init                              ###
-################################################################################
-
-
-# def get_arrays(loops_present):
-#     # check that timestep is sufficiently small:
-#     if loops_present == 'ri':
-#         ib_list = d_params_ri["ib__list"]
-#         r_fq_array = d_params_ri["r_fq__array"]
-
-#     elif loops_present == 'rtti':
-#         ib_list = d_params_rtti["ib__list"]
-#         r_fq_array = d_params_rtti["r_fq__array"]
-#     elif loops_present == 'pri':
-#         ib_list = d_params_rtti["ib__list"]
-#         r_fq_array = d_params_rtti["r_fq__array"]
-
-#     return ib_list, r_fq_array
-
-# def dend_init(dend,T):
-
-
-def make_subarrays(ib,loops_present):
-    # load_string = f'default_{loops_present}'
-        
-    # ib__list, phi_r__array, i_di__array, r_fq__array, _, _ = dend_load_rate_array(load_string) 
-    # ib__vec = np.asarray(ib__list)
-    if loops_present == 'ri':
-        d_params = dend_load_arrays_thresholds_saturations('default_ri')
-    elif loops_present == 'rtti':
-        d_params = dend_load_arrays_thresholds_saturations('default_rtti')
-
-    # elif dend_obj.loops_present == 'ri':
-    #     _ind__ib = -1
-    # else:  
-    #     _ind__ib = ( np.abs( d_params["ib__vec"][:] - ib ) ).argmin()
-
-    ib_idx = ( np.abs( np.asarray(d_params["ib__list"])[:] - ib ) ).argmin()
-
-    phi_vec = np.asarray(d_params["phi_r__array"][ib_idx])
-    s_array = np.asarray(d_params["i_di__array"][ib_idx],dtype=object)
-    r_array = np.asarray(d_params["r_fq__array"][ib_idx],dtype=object)
-
-    # phi_vec = np.asarray(d_params["phi_r__array"][ib_idx][::10])
-
-    # s_array = []
-    # for i,s_vec in enumerate(d_params["i_di__array"][ib_idx]):
-    #     if i%10==0:
-    #         s_array.append(s_vec[::10])
-    # s_array = np.asarray(s_array,dtype=object)
-
-    # r_array = []
-    # for i,r_vec in enumerate(d_params["r_fq__array"][ib_idx]):
-    #     if i%10==0:
-    #         r_array.append(r_vec[::10])
-    # r_array = np.asarray(r_array,dtype=object)
-
-
-    return phi_vec, s_array, r_array

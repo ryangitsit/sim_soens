@@ -4,10 +4,10 @@ import sys
 sys.path.append('../sim_soens')
 sys.path.append('../')
 
-from sim_soens.super_library import NeuralZoo
+from sim_soens.neuron_library import NeuralZoo
 from sim_soens.super_input import SuperInput
 # from sim_soens.params import default_neuron_params
-from sim_soens.soen_sim import network
+from sim_soens.soen_components import network
 from sim_soens.soen_plotting import activity_plot
 from sim_soens.super_node import SuperNode
 

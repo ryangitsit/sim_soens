@@ -6,7 +6,7 @@ sys.path.append('../')
 
 from sim_soens.super_node import SuperNode
 from sim_soens.super_functions import *
-from sim_soens.soen_sim import network
+from sim_soens.soen_components import network
 from sim_soens.soen_plotting import activity_plot
 
 

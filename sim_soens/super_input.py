@@ -1,7 +1,7 @@
 import numpy as np
 
 
-from sim_soens.soen_sim import input_signal
+from sim_soens.soen_components import input_signal
 from sim_soens.super_functions import *
 
 class SuperInput():
