@@ -10,5 +10,3 @@ legacy/
 # sim_soens.egg-info/
 build/
 net_temp.jld2
-docs/
-docs
