@@ -2,9 +2,9 @@
 
 # -- Project information
 
-project = 'Lumache'
-copyright = '2021, Graziella'
-author = 'Graziella'
+project = 'sim_soens'
+copyright = '2023, NIST'
+author = 'O\'Loughlin'
 
 release = '0.1'
 version = '0.1.0'

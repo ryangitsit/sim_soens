@@ -1,13 +1,15 @@
-Welcome to Lumache's documentation!
+Welcome to *Simulator for Superconducting Optoelectronic Networks (sim_soens)* documentation!
 ===================================
 
-**Lumache** (/lu'make/) is a Python library for cooks and food lovers
-that creates recipes mixing random ingredients.
-It pulls data from the `Open Food Facts database <https://world.openfoodfacts.org/>`_
-and offers a *simple* and *intuitive* API.
+Superconducting Optoelectronic Networks (SOENs) are an in-development neuromorphic hardware that offer lightspeed communication and brain-level scalability.
+This repo is for the coders, neuroscientists, and machine-learners that want to play with the computational properties of SOENs through simulations, based on the phenomological model linked here:
+https://arxiv.org/abs/2210.09976
 
-Check out the :doc:`usage` section for further information, including
-how to :ref:`installation` the project.
+
+For the interested hardware afficianados and device physicists, explanatory materical can be found:
+https://aip.scitation.org/doi/full/10.1063/1.5096403
+
+Enjoy!
 
 .. note::
 
