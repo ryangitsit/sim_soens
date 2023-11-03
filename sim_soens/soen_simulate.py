@@ -100,9 +100,9 @@ def run_python_backend(net):
     start = time.perf_counter()
     
     if net.backend == 'numba':
-        net = net_step(net,net.time_params['tau_vec'],net.time_params['d_tau'])
-    else:
         net = numba_net_step(net,net.time_params['tau_vec'],net.time_params['d_tau'])
+    else:
+        net = net_step(net,net.time_params['tau_vec'],net.time_params['d_tau'])
 
     finish = time.perf_counter()
     if net.print_times: print(f"Py stepper time: {finish-start}")

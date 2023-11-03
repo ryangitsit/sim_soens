@@ -264,7 +264,7 @@ def numba_output_synapse_updater(neuron_object,time_index,present_time):
                 and (present_time - syn_out.spike_times_converted[_st_ind]) < 
                 syn_out.spd_duration_converted ): # the case that counts    
                 _dt_spk = present_time - syn_out.spike_times_converted[_st_ind]
-                _phi_spd = spd_response( syn_out.phi_peak, 
+                _phi_spd = numba_spd_response( syn_out.phi_peak, 
                                         syn_out.tau_rise_converted,
                                         syn_out.tau_fall_converted,
                                         syn_out.hotspot_duration_converted, _dt_spk)
