@@ -6,102 +6,95 @@ from sim_soens.super_functions import *
 from sklearn.linear_model import LogisticRegression
 
 
-# x = np.random.rand(4,3)
-# print(x)
-# print(np.sum(x,axis=1)) 
+'''
+This file is for analysing the quality of spiking input and is not soens-specific
+'''
+def main():
+    def make_dataset(digits,samples,slowdown,duration):
+        '''
+        Creates rate coded spiking MNIST dataset
+            - digits   = number of classes (different handwritten digits)
+            - samples  = number of examples from each class
+            - slowdown = factor by which to reduce rate encoding
+            - duration = how long each sample should be (nanoseconds)
+        '''
+        import matplotlib.pyplot as plt
+        from .sim_soens import SuperInput
+        dataset = [[] for _ in range(digits)]
+        fig, axs = plt.subplots(digits,samples,figsize=(36,12))
+        for i in range(digits):
+            for j in range(samples):
+                input_MNIST = SuperInput(
+                    type='MNIST',
+                    index=i,
+                    sample=j,
+                    slow_down=slowdown,
+                    duration=duration
+                    )
+                spikes = input_MNIST.spike_arrays
+                dataset[i].append([spikes[0],spikes[1]])
 
-dataset = picklin("datasets/MNIST/","duration=5000_slowdown=100")
-# print(len(dataset))
-# print(len(dataset[0]))
+                axs[i][j].plot(spikes[1],spikes[0],'.k',ms=.5)
+                axs[i][j].set_xticks([])
+                axs[i][j].set_yticks([])
+        # saves dataset
+        picklit(
+            dataset,
+            "datasets/MNIST/",
+            f"duration={duration}_slowdown={slowdown}"
+            )
+        # plots dataset
+        plt.show()
 
-digits = 3
-samples = 10
-T = 250
-N = 784
+    # make_dataset()
 
-def bin_to(bins):
-    # return np.concatenate(bins)
-    return np.sum(bins,axis=1)
+    dataset = picklin("datasets/MNIST/","duration=5000_slowdown=100")
+    # print(len(dataset))
+    # print(len(dataset[0]))
 
-mats = []
-labels = []
-for digit in range(digits):
-    for sample in range(samples):
-        # print(dataset[digit][sample])
-        spikes = dataset[digit][sample]
-        mats.append(bin_to(spks_to_binmatrix(N,T,spikes)))
-        labels.append(digit)
+    digits = 10
+    samples = 50
+    T = 1000
+    N = 784
 
-# print(labels)
+    def bin_to(bins):
+        # return np.concatenate(bins)
+        return np.sum(bins,axis=1)
 
-model = LogisticRegression(max_iter=100)
-model.fit(mats,labels)
+    mats = []
+    labels = []
+    for digit in range(digits):
+        for sample in range(samples):
+            # print(dataset[digit][sample])
+            spikes = dataset[digit][sample]
+            mats.append(bin_to(spks_to_binmatrix(N,T,spikes)))
+            labels.append(digit)
 
-test = []
-test_labels = []
-for digit in range(digits):
-    for sample in range(10):
-        # print(dataset[digit][sample])
-        spikes = dataset[digit][sample+samples]
-        test.append(bin_to(spks_to_binmatrix(N,T,spikes)))
-        test_labels.append(digit)
+    # print(labels)
 
-correct = 0
-total = 0
-predictions = model.predict(test)
-for i,pred in enumerate(predictions):
-    lab = test_labels[i]
-    # print(lab,' --> ',pred)
-    total += 1
-    if lab==pred: correct +=1
+    model = LogisticRegression(max_iter=10000)
+    model.fit(mats,labels)
 
-print(f"Test accuracy = {np.round(100*correct/total,2)}%")
+    test = []
+    test_labels = []
+    for digit in range(digits):
+        for sample in range(10):
+            # print(dataset[digit][sample])
+            spikes = dataset[digit][sample+samples]
+            test.append(bin_to(spks_to_binmatrix(N,T,spikes)))
+            test_labels.append(digit)
 
+    correct = 0
+    total = 0
+    predictions = model.predict(test)
+    for i,pred in enumerate(predictions):
+        lab = test_labels[i]
+        # print(lab,' --> ',pred)
+        total += 1
+        if lab==pred: correct +=1
 
-# for i,m in enumerate(mats):
-#     model.fit(mats[i],labels[i])
-
-# spikes = input.spike_arrays
-
-# N = 72
-# T = 3601*5
-# classes = 3
-# examples_per_class = 3
-# samples = classes*examples_per_class
-# window = 360*5
-# labels = [0,0,0,1,1,1,2,2,2]
-
-# # spikes = net.net.spikes
-# mat = spks_to_binmatrix(N,T,spikes)
-# # raster_plot(spikes)
-# model = LogisticRegression(max_iter=100000)
-# X = []
-# y = []
-# X_f = []
-# y_f = []
-# for i in range(samples):
-#     if  i%3 != 2:
-#         section = mat[:,i*window:i*window+window]
-#         x = np.concatenate(section).reshape(1, -1)[0]
-#         X.append(x)
-#         y.append(labels[i])
-
-
-# model.fit(X,y)
-
-# X_test = []
-# y_test = []
-# for i in range(samples):
-#     if i%3 == 2:
-#         section = mat[:,i*window:i*window+window]
-#         x = np.concatenate(section).reshape(1, -1)[0]
-#         X_test.append(x)
+    print(f"Test accuracy = {np.round(100*correct/total,2)}%")
 
 
-# predictions=model.predict(X_test)
-
-# if np.array_equal(predictions, [0,1,2]):
-#     print(predictions, " --> Classified!")
-#     # raster_plot(spikes)
-# else:
-#     print(predictions)
+if __name__=='__main__':
+    main()

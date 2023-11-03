@@ -3,9 +3,9 @@ import matplotlib.pyplot as plt
 import sys
 sys.path.append('../sim_soens')
 sys.path.append('../')
-from sim_soens.super_library import NeuralZoo
+from sim_soens.neuron_library import NeuralZoo
 from sim_soens.super_input import SuperInput
-from sim_soens.soen_sim import input_signal, synapse, neuron, network
+from sim_soens.soen_components import input_signal, synapse, neuron, network
 from sim_soens.soen_plotting import raster_plot
 
 '''
@@ -112,7 +112,7 @@ def main():
 
 
         ### create and run network ###
-        net = network(sim=True,dt=.1,tf=500,nodes=[n1,n2],backend='julia')
+        net = network(sim=True,dt=.1,tf=500,nodes=[n1,n2],backend='python')
 
         return net, n1, n2
 

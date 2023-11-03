@@ -6,18 +6,17 @@ import time
 import sys
 import copy
 import matplotlib as mp
-from sim_soens.soen_sim_data import *
 
-# from soen_utilities import physical_constants, material_parameters, color_dictionary
-# colors = color_dictionary()
 
-# m_p = material_parameters()
+'''
+Miscellaneous helper functions portered over from Shaineline's original repo
+'''
 
 fig_size = plt.rcParams['figure.figsize']
-
-
 def physical_constants():
-
+    '''
+    Physical constants from photonics, superconducting, and semiconducting device physics
+    '''
     p = dict(h = 6.62606957e-34,#Planck's constant in kg m^2/s
          hbar = 6.62606957e-34/(2*np.pi),
          hBar = 6.62606957e-34/(2*np.pi),
@@ -38,8 +37,10 @@ def physical_constants():
          m_e = 9.10938291e-31,#mass of electron in kg
          eV = 1.60217657e-19,#joules per eV
          ev = 1.60217657e-19,#joules per eV
-         Ry = 9.10938291e-31*1.60217657e-19**4/(8*8.854187817e-12**2*(6.62606957e-34/2/np.pi)**3*299792458),#13.3*eV;#Rydberg in joules
-         a0 = 4*np.pi*8.854187817e-12*(6.62606957e-34/2/np.pi)**2/(9.10938291e-31*1.60217657e-19**2),#estimate of Bohr radius
+         #13.3*eV;#Rydberg in joules
+         Ry = 9.10938291e-31*1.60217657e-19**4/(8*8.854187817e-12**2*(6.62606957e-34/2/np.pi)**3*299792458),
+         #estimate of Bohr radius
+         a0 = 4*np.pi*8.854187817e-12*(6.62606957e-34/2/np.pi)**2/(9.10938291e-31*1.60217657e-19**2),
          Phi0 = 6.62606957e-34/(2*1.60217657e-19),#flux quantum
          Phi0__pH_ns = 6.62606957e3/(2*1.60217657),
          N_mole = 6.02214076e23, # atoms per mole
@@ -49,9 +50,25 @@ def physical_constants():
 
     return p 
 
-p = physical_constants()
+def material_parameters():
+    
+    p = physical_constants()
+    
+    mp = dict(epsilon_sio2 = (1.46**2)*p['epsilon0'], # dc permittivity of silicon dioxide
+              epsilon_si = (3.48**2)*p['epsilon0'], # dc permittivity of silicon
+              epsilon_gaas = 12.85*p['epsilon0'], # dc permittivity of GaAs
+              epsilon_algaas = 12.9*p['epsilon0'], # dc permittivity of AlGaAs
+              n_i__si = 1e16, # electrons per meter cubed in silicon at 300K, grimoire table 5
+              n_i__gaas = 2.25e12, # electrons per meter cubed in GaAs at 300K, grimoire table 6
+              Lsq__MoSi = 160e-12, # kinetic inductance per square for MoSi
+              Lsq__WSi = 400e-12, # kinetic inductance per square for WSi
+              rsq__MoSi = 500, # resistance per square for MoSi,
+              alpha__MoSi = 2e-2, # w_wire = alpha Idi_sat
+              Eg__gaas = 2.275e-19 # GaAs band gap in joules
+              )
+    
+    return mp
 
-#%%
 def bias_ramp(t,dt_ramp,ii_max):
     
     if t < 0:
@@ -69,32 +86,23 @@ def bias_ramp(t,dt_ramp,ii_max):
 def square_pulse_train(t,t_rise,t_hold,t_fall,value_on,value_off,period):
         
     _i = np.floor(t/period)
-    # print('t = {}, t_rise = {}, t_hold = {}, t_fall = {}, value_on = {}, value_off = {}, period = {}, _i = {}'.format(t,t_rise,t_hold,t_fall,value_on,value_off,period,_i))
     if _i >= 0:
         
-        # print('here1')
         _t = t-_i*period
-        # print('_t = {}, t_rise = {}, t_rise+t_hold = {}, t_rise+t_hold+t_fall = {}'.format(_t,t_rise,t_rise+t_hold,t_rise+t_hold+t_fall))
         if _t <= t_rise:
-            # print('here1a')
             s = _t*(value_on-value_off)/t_rise
             s_dot = (value_on-value_off)/t_rise
         elif _t > t_rise and _t <= t_rise+t_hold:
-            # print('here1b')
             s = value_on
             s_dot = 0
         elif _t > t_rise+t_hold and _t < t_rise+t_hold+t_fall:
-            # print('here1c')
             s = ( _t - (t_rise+t_hold) ) * (value_off-value_on) / t_fall + value_on
             s_dot = (value_off-value_on) / t_rise
         elif _t >= t_rise+t_hold+t_fall:
-            # print('here1d')
             s = value_off
             s_dot = 0
             
     else:
-        
-        # print('here2')
         s = value_off
         s_dot = 0                
         
@@ -102,14 +110,25 @@ def square_pulse_train(t,t_rise,t_hold,t_fall,value_on,value_off,period):
 
 def sigmoid__rise_and_fall(x_vec,x_on,x_off,width,amplitude,off_level):
     
-    y = ( amplitude - off_level ) * ( 1 - ( np.exp( (x_vec-x_on) / width ) + 1 )**(-1) ) * ( ( np.exp( (x_vec-x_off) / width ) + 1 )**(-1) ) + off_level
-    dydx = ( amplitude - off_level ) * (1/width)* ( ( ( np.exp((x_vec-x_off)/width) + 1 )**(-1) )  * ( np.exp((x_vec-x_on)/width) / ( np.exp((x_vec-x_on)/width) + 1 )**2) - ( 1 - ( np.exp((x_vec-x_on)/width) + 1 )**(-1) ) * np.exp((x_vec-x_off)/width) / ( np.exp((x_vec-x_off)/width) + 1 )**2 )
+    y = (
+        ( amplitude - off_level )
+        *( 1 - ( np.exp( (x_vec-x_on) / width ) + 1 )**(-1) )
+        * ( ( np.exp( (x_vec-x_off) / width ) + 1 )**(-1) )
+        + off_level
+        )
+    dydx = (
+        ( amplitude - off_level ) 
+        * (1/width) 
+        * ( ( ( np.exp((x_vec-x_off)/width) + 1 )**(-1) )
+        * ( np.exp((x_vec-x_on)/width) / ( np.exp((x_vec-x_on)/width) + 1 )**2) 
+        - ( 1 - ( np.exp((x_vec-x_on)/width) + 1 )**(-1) ) * np.exp((x_vec-x_off)/width) 
+        / ( np.exp((x_vec-x_off)/width) + 1 )**2 )
+        )
     
     return y, dydx
 
 def sigmoid__rise(x_vec,x_on,width,amplitude,off_level):
     
-    # y = ( amplitude - off_level ) * ( 1 - ( np.exp( (x_vec-x_on) / width ) + 1 )**(-1) ) + off_level
     y = ( amplitude - off_level ) * ( 1 - ( np.exp( (x_vec-x_on) / width ) + 1 )**(-1) ) + off_level
     
     return y
@@ -119,7 +138,7 @@ def line(x_vec,m,b):
     return m*x_vec+b
 
 def exponential_pulse_train(t,beta_1,Ic,I_spd,period,tau_0,phi_a_max):
-    
+    p = physical_constants()
     r1 = 10e3
     r2 = 275.919 # 123.75
     L1 = 825e-9
@@ -196,7 +215,7 @@ def lorentzian(omega,omega_0,**kwargs):
 
 
 def fermi_distribution__eV(E_vec,E_f,T):
-    
+    p = physical_constants()
     return ( np.exp( (E_vec-E_f) / (p['kB__eV']*T) ) + 1 )**(-1)
 
 
@@ -206,44 +225,6 @@ def omega_LRC(L,R,C):
     omega_i = R/(2*L)
     
     return omega_r, omega_i 
-
-def dend_save_rate_array(params,ib__list,phi_r__array,r_fq__array,i_di__array):
-
-    data_array = dict()
-    data_array['ib__list'] = ib__list
-    data_array['phi_r__array'] = phi_r__array
-    data_array['params'] = params
-        
-    if params['loops_present'] == 'r':
-        save_string = 'rate_array__dend_{}__beta_c_{:06.4f}__beta_1_{:07.4f}__beta_2_{:07.4f}__ib_i_{:06.4f}__ib_f_{:06.4f}__num_ib_{:d}__d_phi_a_{:6.4f}'.format(params['loops_present'],params['beta_c'],params['beta_1'],params['beta_2'],ib__list[0],ib__list[-1],len(ib__list),params['d_phi_a'])
-
-        data_array['R_fq__array'] = r_fq__array
-    
-    if params['loops_present'] == 'ri':
-        tau_di = 1e9*params['tau_di']*params['tau_0']
-        if tau_di >= 1e4: 
-            save_string = 'ra_dend_{}__beta_c_{:06.4f}__beta_1_{:07.4f}__beta_2_{:07.4f}__beta_di_{:07.5e}__tau_di_long__ib_i_{:06.4f}__ib_f_{:06.4f}__d_phi_r_{:6.4f}'.format(params['loops_present'],params['beta_c'],params['beta_1'],params['beta_2'],params['beta_di'],ib__list[0],ib__list[-1],params['d_phi_r'])
-        else:        
-            save_string = 'ra_dend_{}__beta_c_{:06.4f}__beta_1_{:07.4f}__beta_2_{:07.4f}__beta_di_{:07.5e}__tau_di_{:07.0f}ns__ib_i_{:06.4f}__ib_f_{:06.4f}_{:5.3f}__d_phi_r_{:6.4f}'.format(params['loops_present'],params['beta_c'],params['beta_1'],params['beta_2'],params['beta_di'],1e9*params['tau_di']*params['tau_0'],ib__list[0],ib__list[-1],params['d_phi_r'])
-        data_array['r_fq__array'] = r_fq__array
-        data_array['i_di__array'] = i_di__array
-    
-    if params['loops_present'] == 'rtti':
-        tau_di = 1e9*params['tau_di']*params['tau_0']
-        if tau_di >= 1e4: 
-            save_string = 'ra_dend_{}_beta_c_{:05.3f}_b1_{:05.3f}_b2_{:05.3f}_b3_{:05.3f}_b4_{:05.3f}_b_di_{:05.3e}_tau_di_long_ib1_i_{:05.3f}_ib1_f_{:05.3f}_ib2_{:05.3f}_ib3_{:05.3f}_d_phi_r_{:5.3f}'.format(params['loops_present'],params['beta_c'],params['beta_1'],params['beta_2'],params['beta_3'],params['beta_4'],params['beta_di'],ib__list[0],ib__list[-1],params['ib2'],params['ib3'],params['d_phi_r'])
-        else:        
-            save_string = 'ra_dend_{}_beta_c_{:05.3f}_b1_{:05.3f}_b2_{:05.3f}_b3_{:05.3f}_b4_{:05.3f}_b_di_{:05.3e}_tau_di_{:07.0f}ns_ib1_i_{:05.3f}_ib1_f_{:05.3f}_ib2_{:05.3f}_ib3_{:05.3f}_d_phi_r_{:5.3f}'.format(params['loops_present'],params['beta_c'],params['beta_1'],params['beta_2'],params['beta_3'],params['beta_4'],params['beta_di'],1e9*params['tau_di']*params['tau_0'],ib__list[0],ib__list[-1],params['ib2'],params['ib3'],params['d_phi_r'])
-        data_array['r_fq__array'] = r_fq__array
-        data_array['i_di__array'] = i_di__array
-        
-    print('\n\nsaving session data ...\n\n')    
-    _path = pathfinder()
-    tt = time.time()             
-    # with open('soen_sim_data/{}__{}.soen'.format(save_string,time.strftime('%Y-%m-%d_%H-%M-%S', time.localtime(tt))), 'wb') as data_file:
-    #     pickle.dump(data_array, data_file) 
-    with open('{}{}{}__{}.soen'.format(_path,'/soen_sim_data/',save_string,time.strftime('%Y-%m-%d_%H-%M-%S', time.localtime(tt))), 'wb') as data_file:
-        pickle.dump(data_array, data_file)
 
 def pathfinder():
     import os
@@ -263,23 +244,13 @@ def pathfinder():
 
 def dend_load_rate_array(load_string):
 
-    _path = pathfinder()
-
-    if load_string == 'default' or load_string == 'default_ri':
-        # _load_string = 'ra_dend_ri__beta_c_0.3000__beta_1_01.5708__beta_2_01.5708__beta_di_6.28319e+03__tau_di_long__ib_i_1.3673__ib_f_2.0673__d_ib_0.050__d_phi_r_0.0100__working_master'
-        # _load_string = 'ra_dend_ri__beta_c_0.3000__beta_1_01.5708__beta_2_01.5708__beta_di_6.28319e+03__tau_di_long__ib_i_1.3524__ib_f_2.0524__d_ib_0.050__d_phi_r_0.0100__working_master'
-        _load_string = 'ra_dend_ri__beta_c_0.3000__beta_1_01.5708__beta_2_01.5708__beta_di_6.28319e+03__tau_di_long__ib_i_1.3524__ib_f_2.0524__d_ib_0.050__d_phi_r_0.0025__working_master'
-    elif load_string == 'default_rtti':
-        _load_string = 'ra_dend_rtti__beta_c_0.300__b1_1.571_b2_1.571_b3_3.142_b4_3.142_b_di_6.28319e+03_tau_di_long_ib1_i_1.500_ib1_f_2.650_ib2_0.350_ib3_0.700_d_phi_r_0.010__working_master' # 'ra_dend_rtti__beta_c_0.3000__beta_1_01.5708__beta_2_01.5708__beta_3_03.1416__beta_4_03.1416_beta_di_6.28319e+03__tau_di_long__ib_i_1.5000__ib_f_2.6500__d_phi_r_0.0100__working_master'
-    elif load_string == 'default_pri':
-        _load_string = 'ra_dend_pri__beta_c_0.3000__beta_1_01.5708__beta_2_01.5708__beta_di_6.28319e+03__tau_di_long__ib_i_-0.5000__ib_f_0.5000__d_phi_r_0.0200__2023-02-23_04-39-12'  
-    else:
-        _load_string = load_string
-
     
-    with open('{}{}{}.soen'.format(_path,'/soen_sim_data/',_load_string), 'rb') as data_file:    
-        data_array_imported = pickle.load(data_file) # generated from soen_sim/dendrite/_functions__dend.py
-    
+    import os  
+
+    this_dir, this_filename = os.path.split(__file__)  # Get path of data.pkl
+    data_path = os.path.join(this_dir, 'soen_sim_data','rate_array_default.soen')
+    data_array_imported = pickle.load(open(data_path, 'rb'))
+
     if 'params' in data_array_imported:
         params_output = data_array_imported['params']
     else:
@@ -289,30 +260,45 @@ def dend_load_rate_array(load_string):
         if 'phi_r__array' not in 'phi_a__array':
             data_array_imported.update({'phi_r__array': data_array_imported['phi_a__array']})
     
-    return data_array_imported['ib__list'], data_array_imported['phi_r__array'], data_array_imported['i_di__array'], data_array_imported['r_fq__array'], params_output, _load_string
+    return (
+        data_array_imported['ib__list'], 
+        data_array_imported['phi_r__array'],
+        data_array_imported['i_di__array'], 
+        data_array_imported['r_fq__array'], 
+        params_output, load_string
+        )
 
 
 def dend_load_thresholds_saturations(load_string):
 
-    _path = pathfinder()
+    import os
 
-    if load_string == 'default' or load_string == 'default_ri':
-        _load_string = 'ra_dend_ri__beta_c_0.3000__beta_1_01.5708__beta_2_01.5708__beta_di_6.28319e+03__tau_di_long__ib_i_1.3524__ib_f_2.0524__d_ib_0.050__d_phi_r_0.0025__thresholds_saturations'
-    elif load_string == 'default_rtti':
-        _load_string = 'ra_dend_rtti__beta_c_0.3000__beta_1_01.5708__beta_2_01.5708__beta_di_6.28319e+03__tau_di_long__ib_i_1.5000__ib_f_2.6500__d_phi_r_0.0100__thresholds_saturations'
-    else:
-        _load_string = load_string
-         
-    with open('{}{}{}.soen'.format(_path,'/soen_sim_data/',_load_string), 'rb') as data_file:    
-        data_array_imported = pickle.load(data_file)   
+    this_dir, this_filename = os.path.split(__file__)  # Get path of data.pkl
+    data_path = os.path.join(
+        this_dir, 
+        'soen_sim_data',
+        'rate_array_default_thresholds_saturations.soen'
+        )
+    data_array_imported = pickle.load(open(data_path, 'rb'))
     
-    return data_array_imported['phi_th_plus__vec'], data_array_imported['phi_th_minus__vec'], data_array_imported['s_max_plus__vec'], data_array_imported['s_max_minus__vec'], data_array_imported['s_max_plus__array'], data_array_imported['s_max_minus__array']
+    return (
+        data_array_imported['phi_th_plus__vec'], 
+        data_array_imported['phi_th_minus__vec'], 
+        data_array_imported['s_max_plus__vec'], 
+        data_array_imported['s_max_minus__vec'], 
+        data_array_imported['s_max_plus__array'], 
+        data_array_imported['s_max_minus__array']
+        )
 
 
 def dend_load_arrays_thresholds_saturations(load_string):
     
     ib__list, phi_r__array, i_di__array, r_fq__array, _, _ = dend_load_rate_array(load_string)
-    phi_th_plus__vec, phi_th_minus__vec, s_max_plus__vec, s_max_minus__vec, s_max_plus__array, s_max_minus__array = dend_load_thresholds_saturations(load_string)
+    (
+        phi_th_plus__vec, 
+        phi_th_minus__vec, 
+        s_max_plus__vec, s_max_minus__vec, 
+        s_max_plus__array, s_max_minus__array) = dend_load_thresholds_saturations(load_string)
     
     dend_thresh_params = {
         "ib__list":ib__list,
@@ -331,7 +317,7 @@ def dend_load_arrays_thresholds_saturations(load_string):
     return dend_thresh_params
 
 
-#%% determine depth of dendritic tree
+# determine depth of dendritic tree
 
 def depth_of_dendritic_tree(soen_object):
     
@@ -352,11 +338,12 @@ def depth_of_dendritic_tree(soen_object):
     
     return depth_of_tree + 1
 
-#%% JJs
+# JJs
 
 def get_jj_params(Ic,beta_c):
-    
-    gamma = 1.5e-9 # 5e-15/1e-6 # 1.5e-9 is latest value from David # proportionality between capacitance and Ic (units of farads per amp)
+    p = physical_constants()
+    gamma = 1.5e-9 # 5e-15/1e-6 # 1.5e-9 is latest value from David 
+    # proportionality between capacitance and Ic (units of farads per amp)
     c_j = gamma*Ic # JJ capacitance
     r_j = np.sqrt( (beta_c*p['Phi0']) /  (2*np.pi*c_j*Ic) )
     tau_0 = p['Phi0']/(2*np.pi*Ic*r_j)
@@ -364,7 +351,17 @@ def get_jj_params(Ic,beta_c):
     omega_c = 2*np.pi*Ic*r_j/p['Phi0']
     omega_p = np.sqrt(2*np.pi*Ic/(p['Phi0']*c_j))
     
-    return {'c_j': c_j, 'r_j': r_j, 'tau_0': tau_0, 'Ic': Ic, 'beta_c': beta_c, 'gamma': gamma, 'V_j': V_j, 'omega_c': omega_c, 'omega_p': omega_p}
+    return {
+        'c_j': c_j, 
+        'r_j': r_j, 
+        'tau_0': tau_0, 
+        'Ic': Ic, 
+        'beta_c': beta_c, 
+        'gamma': gamma, 
+        'V_j': V_j, 
+        'omega_c': omega_c, 
+        'omega_p': omega_p
+        }
 
 def Ljj(critical_current,current):
     
@@ -400,24 +397,29 @@ def Ljj__vec(critical_current,current):
     
     return L
 
-#%% MOSFETs
-
-def mos_c_i(epsilon_i,d_i): # capacitance per unit area (epsilon_i = permittivity of gate insulator, d_i = thickness of gate insulator)
+# MOSFETs
+# capacitance per unit area 
+# (epsilon_i = permittivity of gate insulator, d_i = thickness of gate insulator)
+def mos_c_i(epsilon_i,d_i):
     
     return epsilon_i/d_i
 
 def mos_V_fb(gate_contact_material = 'aluminum'): # flat-band voltage
 
+    # work function of aluminum in eV 
+    # (range from 4.06-4.26, https://en.wikipedia.org/wiki/Work_function#Work_functions_of_elements)
     if gate_contact_material == 'aluminum':
-        Phi_m = (4.26+4.06)/2 # work function of aluminum in eV (range from 4.06-4.26, https://en.wikipedia.org/wiki/Work_function#Work_functions_of_elements)
+        Phi_m = (4.26+4.06)/2 
     
-    Phi_s = (4.85+4.60)/2 # work function of silicon in eV (range from 4.6-4.85, https://en.wikipedia.org/wiki/Work_function#Work_functions_of_elements)
+    # work function of silicon in eV 
+    # (range from 4.6-4.85, https://en.wikipedia.org/wiki/Work_function#Work_functions_of_elements)
+    Phi_s = (4.85+4.60)/2 
     V_fb = (Phi_m - Phi_s) # mosfet doc eq 1.1 (omitting q because work functions are in eV)
 
     return V_fb
 
 def nmos_V_t(T,N_a,c_i,epsilon_s):
-    
+    p = physical_constants()
     n_i = m_p['n_i__si']
     phi_b = (p['kB']*T/p['e']) *np.log(N_a/n_i) # grimoire eq 105, mosfet doc eq 1.2
     V_t = mos_V_fb() + 2*phi_b + np.sqrt(4*epsilon_s*p['e']*N_a*phi_b)/c_i
@@ -425,7 +427,7 @@ def nmos_V_t(T,N_a,c_i,epsilon_s):
     return V_t
 
 def pmos_V_t(T,N_d,c_i,epsilon_s):
-    
+    p = physical_constants()
     Vsb = 0
     n_i = mp['n_i__si']
     phi_b = (p['kB']*T/p['e']) *np.log(N_d/n_i) # grimoire eq 105, mosfet doc eq 1.2
@@ -434,7 +436,7 @@ def pmos_V_t(T,N_d,c_i,epsilon_s):
     return V_t
 
 def nmos_ivv__charge_control(T,W,L,mu_n,c_i,N_a,V_ds,V_gs):
-    
+    p = physical_constants()
     V_t = nmos_V_t(T,N_a,c_i,m_p['epsilon_si'])
     V_gt = V_gs - V_t
     
@@ -511,40 +513,14 @@ def nmos_Ids_sat(T,W,L,mu_n,c_i,N_a,V_gs):
         I_ds_sat = 0
     return I_ds_sat, V_ds_sat
 
-# def nmos_inverter_IV(N_a__vec,ri__vec,V_in__vec, params):
-
-#     V_out__array = np.zeros([len(N_a__vec),len(ri__vec),len(V_in__vec)])
-    
-#     for mm in range(len(N_a__vec)):
-#         N_a = N_a__vec[mm]
-        
-#         for nn in range(len(ri__vec)):
-#             ri = ri__vec[nn]
-    
-#             for ii in range(len(V_in__vec)):
-#                 V_in = V_in__vec[ii]
-#                 args = (params['T'],params['W'],params['L'],params['mu_n'],params['c_i'],N_a,ri,params['Vb'],V_in)
-#                 V_t = nmos_V_t(params['T'],N_a,params['c_i'],mp['epsilon_si'])
-#                 if V_in >= V_t:
-#                     V_out_guess = params['Vb']
-#                 else:
-#                     V_out_guess = 0
-#                 V_out = fsolve(nmos_inverter_def, V_out_guess, args)
-#                 V_out__array[mm,nn,ii] = V_out[0]
-        
-#     # to plot, see _plotting__mosfet.py
-#     # plot_nmos_inverter_IV(N_a__vec,ri__vec,V_in__vec,V_out__array,params)
-        
-#     return V_out__array
-
 def nmos_inverter_def(Vout_guess,T,W,L,mu_n,c_i,N_a,ri,V_ds,V_g):
     
     return Vout_guess + ri*nmos_ivv__charge_control(T,W,L,mu_n,c_i,N_a,Vout_guess,V_g) - V_ds
 
-#%% diodes / LEDs / transmitter
+# diodes / LEDs / transmitter
 
 def LED_diode_iv(T,W,L,N_a,N_d,n_i,V):
-
+    p = physical_constants()
     A = W*L # diode area
     
     tau_np = 40e-9 # lifetime of electrons on p side
@@ -574,13 +550,21 @@ def transmitter_save_data(data_dict):
     elif params['diode'] == 'III-V':
         _str = 'um2'
         _factor = 1e-12
-    save_string = 'transmit__{}_process__group_{}_emitter__c_a_{:3.1e}fF_per_um2__rho_qd_{:3.1e}per_{}__W_led_{:03.1f}um__L_led_{:06.2f}um__N_qd_{:3.1e}'.format(params['process'],params['diode'],params['c_a']*1e3,_factor*params['rho_qd'],_str,1e6*params['W_led'],1e6*params['L_led'],params['N_qd'])
-    data_array = {'rho_qd': params['rho_qd'], 'W_led': params['W_led'], 'L_led': params['L_led'], 'C_led': params['C_led'], 'c_a': params['c_a'],
-                  'N_qd': params['N_qd'], 'N_e': data_dict['N_e_led'], 'process': params['process'], 'diode': params['diode'],
-                  'I_led': data_dict['I_led'], 'I_cap': data_dict['I11'],'time_vec': data_dict['time_vec'], 't_on_tron': data_dict['t_on_tron']}
+    save_string = 'transmit__{}_process__group_{}_emitter__c_a_{:3.1e}fF_per_um2__rho_qd_{:3.1e}per_{}__W_led_{:03.1f}um__L_led_{:06.2f}um__N_qd_{:3.1e}'.format(
+        params['process'],params['diode'],params['c_a']*1e3,_factor*params['rho_qd'],_str,1e6*params['W_led'],1e6*params['L_led'],params['N_qd']
+        )
+    data_array = {
+        'rho_qd': params['rho_qd'], 'W_led': params['W_led'], 'L_led': params['L_led'], 
+        'C_led': params['C_led'], 'c_a': params['c_a'], 'N_qd': params['N_qd'], 
+        'N_e': data_dict['N_e_led'], 'process': params['process'], 
+        'diode': params['diode'],'I_led': data_dict['I_led'], 'I_cap': data_dict['I11'],
+        'time_vec': data_dict['time_vec'], 't_on_tron': data_dict['t_on_tron']
+                  }
     print('\n\nsaving session data ...\n\n')
     tt = time.time()             
-    with open('data/{}__{}.soen'.format(save_string,time.strftime('%Y-%m-%d_%H-%M-%S', time.localtime(tt))), 'wb') as data_file:
+    with open('data/{}__{}.soen'.format(
+        save_string,time.strftime('%Y-%m-%d_%H-%M-%S', time.localtime(tt))
+        ), 'wb') as data_file:
         pickle.dump(data_array, data_file) 
     
     return
@@ -601,7 +585,7 @@ def transmitter_load_data(load_string):
     return time_vec, I_led_vec, I_cap_vec, C_led, N_qd, N_e, t_on_tron
 
 
-#%% meander dimensions
+# meander dimensions
 
 def meander_dimensions__inductance(material,inductance,gap, **kwargs):
     
@@ -612,14 +596,8 @@ def meander_dimensions__inductance(material,inductance,gap, **kwargs):
     if 'current' in kwargs:
         w_wire = kwargs['current']*alpha
     
-    # ao = 2*(w_wire+gap)
-    # N1 = -1+np.sqrt(1-(4-num_squares)/(2*ao)*w_wire-3*gap/(2*ao))
-    # w_array = (2*w_wire+gap)+N1*ao #%% see pg 43 in notebook started 20160425
-    # print('inductance_per_square = {:5.1f}pH\ninductance = {:5.1f}nH\nnum_squares = {:f}\nw_wire = {:f} nm\ngap = {:f} nm\nw_meander = {:f} um\narea_meander = {:f} um^2\n\n'.format(inductance_per_square*1e12,inductance*1e9,num_squares,w_wire*1e9,gap*1e9,w_array*1e6,w_array**2*1e12))
-    
     # simpler expression
     w_array = np.sqrt( inductance * w_wire * (w_wire+gap) / inductance_per_square )
-    # print('inductance_per_square = {:5.1f}pH\ninductance = {:5.1f}nH\nnum_squares = {:f}\nw_wire = {:f} nm\ngap = {:f} nm\nw_meander = {:f} um\narea_meander = {:f} um^2\n\n'.format(inductance_per_square*1e12,inductance*1e9,num_squares,w_wire*1e9,gap*1e9,w_array*1e6,w_array**2*1e12))
     
     data_dict = {'w_array': w_array, 'w_wire': w_wire, 'num_squares': num_squares}
     
@@ -633,22 +611,16 @@ def meander_dimensions__resistance(material,resistance,gap, **kwargs):
     num_squares = resistance/resistance_per_square
     if 'current' in kwargs:
         w_wire = kwargs['current']*alpha
-    
-    # ao = 2*(w_wire+gap)
-    # N1 = -1+np.sqrt(1-(4-num_squares)/(2*ao)*w_wire-3*gap/(2*ao))
-    # w_array = (2*w_wire+gap)+N1*ao #%% see pg 43 in notebook started 20160425
-    # print('inductance_per_square = {:5.1f}pH\ninductance = {:5.1f}nH\nnum_squares = {:f}\nw_wire = {:f} nm\ngap = {:f} nm\nw_meander = {:f} um\narea_meander = {:f} um^2\n\n'.format(inductance_per_square*1e12,inductance*1e9,num_squares,w_wire*1e9,gap*1e9,w_array*1e6,w_array**2*1e12))
-    
+
     # simpler expression
     w_array = np.sqrt( resistance * w_wire * (w_wire+gap) / resistance_per_square )
-    # print('inductance_per_square = {:5.1f}pH\ninductance = {:5.1f}nH\nnum_squares = {:f}\nw_wire = {:f} nm\ngap = {:f} nm\nw_meander = {:f} um\narea_meander = {:f} um^2\n\n'.format(inductance_per_square*1e12,inductance*1e9,num_squares,w_wire*1e9,gap*1e9,w_array*1e6,w_array**2*1e12))
     
     data_dict = {'w_array': w_array, 'w_wire': w_wire, 'num_squares': num_squares}
     
     return data_dict
 
 
-#%% misc helpers
+# misc helpers
 
 def exp_fitter(x,y,index1,index2, rise_or_fall = 'rise'): 
     
@@ -683,6 +655,7 @@ def exp_fitter(x,y,index1,index2, rise_or_fall = 'rise'):
 # =============================================================================
 
 def k_of_N_and_L(N,L):
+    p = physical_constants()
     return np.exp( ( np.log(N) - p['gamma_euler'] ) / ( L - 1/2 ) )
 
 # =============================================================================
@@ -734,7 +707,7 @@ def coth(x):
 
 # inductance per unit length of wire above ground plane
 def L_per_length(K,lam1,b1,lam2,b2,d,w):
-    
+    p = physical_constants()
     # K is fringe factor
     # lam1 is london penetration depth of strip, lam2 is penetration depth of ground plane
     # b1 is thickness of strip, b2 is thickness of ground plane
@@ -745,7 +718,7 @@ def L_per_length(K,lam1,b1,lam2,b2,d,w):
 
 # inductance per square of wire above ground plane
 def L_per_square(K,lam1,b1,lam2,b2,d):
-    
+    p = physical_constants()
     # K is fringe factor
     # lam1 is london penetration depth of strip, lam2 is penetration depth of ground plane
     # b1 is thickness of strip, b2 is thickness of ground plane
@@ -754,39 +727,13 @@ def L_per_square(K,lam1,b1,lam2,b2,d):
     return (p['mu0']*d/K) * ( 1 + (lam1/d)*coth(b1/lam1) + (lam2/d)*coth(b2/lam2) )
 
 def C_per_length(eps_r,w,d,C0):
-    
+    p = physical_constants()
     return np.max([eps_r*p['epsilon0']*w/d, C0]) # eps_r*p['epsilon0']*w/d + C0
 
 # =============================================================================
 # end superconducting wires
 # =============================================================================
 
-# =============================================================================
-# materials
-# =============================================================================
-
-def material_parameters():
-    
-    p = physical_constants()
-    
-    mp = dict(epsilon_sio2 = (1.46**2)*p['epsilon0'], # dc permittivity of silicon dioxide
-              epsilon_si = (3.48**2)*p['epsilon0'], # dc permittivity of silicon
-              epsilon_gaas = 12.85*p['epsilon0'], # dc permittivity of GaAs
-              epsilon_algaas = 12.9*p['epsilon0'], # dc permittivity of AlGaAs
-              n_i__si = 1e16, # electrons per meter cubed in silicon at 300K, grimoire table 5
-              n_i__gaas = 2.25e12, # electrons per meter cubed in GaAs at 300K, grimoire table 6
-              Lsq__MoSi = 160e-12, # kinetic inductance per square for MoSi
-              Lsq__WSi = 400e-12, # kinetic inductance per square for WSi
-              rsq__MoSi = 500, # resistance per square for MoSi,
-              alpha__MoSi = 2e-2, # w_wire = alpha Idi_sat
-              Eg__gaas = 2.275e-19 # GaAs band gap in joules
-              )
-    
-    return mp
-
-# =============================================================================
-# end materials
-# =============================================================================
 
 
 # =============================================================================
@@ -925,14 +872,23 @@ def colors_gist(x): # x can be scalar or vector, index of color between 0 (white
 
 def index_finder(var_1,var_2):
     
-    if type(var_1).__name__ == 'float' or type(var_1).__name__ == 'float64' or type(var_1).__name__ == 'int' or type(var_1).__name__ == 'uint8':
+    if (type(var_1).__name__ == 'float' 
+        or type(var_1).__name__ == 'float64' 
+        or type(var_1).__name__ == 'int' 
+        or type(var_1).__name__ == 'uint8'):
         value = var_1
         array = np.asarray(var_2)
-    elif type(var_2).__name__ == 'float' or type(var_2).__name__ == 'float64' or type(var_2).__name__ == 'int' or type(var_2).__name__ == 'uint8':
+    elif (type(var_2).__name__ == 'float' 
+          or type(var_2).__name__ == 'float64' 
+          or type(var_2).__name__ == 'int' 
+          or type(var_2).__name__ == 'uint8'):
         value = var_2
         array = np.asarray(var_1)
     else:
-        raise ValueError('index_finder: it doesn\'t seem like either input is an integer or float. type(var_1) = {}, type(var_2) = {}'.format(type(var_1).__name__,type(var_2).__name__))
+        raise ValueError(
+            'index_finder: it doesn\'t seem like either input is an integer or float. type(var_1) = {}, type(var_2) = {}'.format(
+                type(var_1).__name__,type(var_2).__name__)
+                )
         
     if len(np.shape(array)) == 2:
         _idx_1d = ( np.abs( array[:] - value ) ).argmin()
@@ -945,3 +901,5 @@ def index_finder(var_1,var_2):
 # =============================================================================
 # end the most important function
 # =============================================================================
+
+

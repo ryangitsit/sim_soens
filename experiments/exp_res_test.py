@@ -6,7 +6,7 @@ sys.path.append('../')
 from sim_soens.super_net import SuperNet
 from sim_soens.super_input import SuperInput
 from sim_soens.super_node import SuperNode
-from sim_soens.soen_sim import network
+from sim_soens.soen_components import network
 from sim_soens.super_functions import *
 from sim_soens.soen_plotting import raster_plot, activity_plot
 
@@ -15,7 +15,7 @@ input = SuperInput(channels=36,type="saccade_MNIST",tile_time=50)
 # raster_plot(input.spike_arrays)
 
 # Random network of 72 neurons
-from sim_soens.super_net import PointReservoir
+from sim_soens.network_library import PointReservoir
 params= {
     "N":72,
     "s_th":0.5,

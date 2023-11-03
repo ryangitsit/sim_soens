@@ -6,9 +6,9 @@ sys.path.append('../')
 from sim_soens.soen_plotting import raster_plot, activity_plot
 
 from sim_soens.super_input import SuperInput
-from sim_soens.super_library import NeuralZoo
+from sim_soens.neuron_library import NeuralZoo
 from sim_soens.super_functions import *
-from sim_soens.soen_sim import network, dendrite, HardwareInTheLoop
+from sim_soens.soen_components import network, dendrite, HardwareInTheLoop
 
 
 def main():

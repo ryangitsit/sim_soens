@@ -1,96 +1,6 @@
 import numpy as np
 import time
 
-from numpy.random import default_rng
-rng = default_rng()
-
-from sim_soens.soen_initialize import (
-    dendrite_drive_construct,
-    rate_array_attachment,
-    synapse_initialization,
-    output_synapse_initialization,
-    transmitter_initialization,
-    dendrite_data_attachment
-)
-
-
-np.random.seed(10)
-def run_soen_sim(net):
-    '''
-    Runs SOEN simulation
-    - Initializes simulation parameters through soen_intitialize.py
-    - Runs simulation through net_step()
-    '''
-    time_vec = np.arange(0,net.tf+net.dt,net.dt)          
-        
-    # network
-    if type(net).__name__ == 'network':
-
-        # convert to dimensionless time
-        net.time_params = {
-            'dt': net.dt, 
-            'tf': net.tf, 
-            'time_vec': time_vec, 
-            't_tau_conversion': 1e-9/net.jj_params['tau_0']
-            }
-        # print("pyversion = ", net.time_params["t_tau_conversion"])
-        t_tau_conversion = net.time_params['t_tau_conversion']
-        tau_vec = time_vec*t_tau_conversion
-        d_tau = net.time_params['dt']*t_tau_conversion
-        net.time_params.update({'tau_vec': tau_vec, 'd_tau': d_tau})
-
-        # run the simulation one time step at a time
-
-        start = time.perf_counter()
-
-        # interate through all network nodes and initialize all related elements
-        for node in net.nodes:
-            # # if net.print_times: print("Initializing neuron: ", neuron.name)
-            node.neuron.time_params = net.time_params
-            node.neuron.dend_soma.threshold_flag = False
-
-            for dend in node.dendrite_list:
-                # # if net.print_times: print(" Initializing dendrite: ", dend.name)
-                dend.ind_phi = []  # temp
-                dend.ind_s = [] # temp
-                dend.spk_print = True # temp
-
-                dendrite_drive_construct(dend,tau_vec,t_tau_conversion,d_tau)
-
-                rate_array_attachment(dend)
-                synapse_initialization(dend,tau_vec,t_tau_conversion)
-
-            output_synapse_initialization(node.neuron,tau_vec,t_tau_conversion)
-            transmitter_initialization(node.neuron,t_tau_conversion)
-
-        finish = time.perf_counter()
-        # if net.print_times: print(f"Initialization procedure run time: {finish-start}")
-        net.init_time = finish-start
-
-        start = time.perf_counter()
-        net = net_step(net,tau_vec,d_tau)
-        finish = time.perf_counter()
-        # if net.print_times: print(f"Py stepper time: {finish-start}")
-        net.run_time = finish-start
-
-        # attach results to dendrite objects
-        for node in net.nodes:
-            for dend in node.dendrite_list:
-                dend.phi_vec = dend.phi_r__vec[:]
-                dendrite_data_attachment(dend,net)
-        
-    # print(t_tau_conversion)
-    # print("Outspikes: ",node.neuron.spike_times)
-    # formerly, there were unique sim methods for each element
-    else:
-        print('''
-        Error: Simulations no longer supported for individual components.
-                --> Instead run component in the context of a network
-        ''')
-
-    return net
-
-
 
 def net_step(net,tau_vec,d_tau):
     '''
@@ -158,7 +68,7 @@ def spike(neuron,ii,tau_vec):
         if neuron.source_type == 'qd' or neuron.source_type == 'ec':
             syn_out = neuron.synaptic_outputs
             num_samples = neuron.num_photons_out_factor*len(syn_out)
-            random_numbers = rng.random(size = num_samples)
+            random_numbers = np.random.default_rng().random(size = num_samples)
             
             photon_delay_tau_vec = np.zeros([num_samples])
             for qq in range(num_samples):

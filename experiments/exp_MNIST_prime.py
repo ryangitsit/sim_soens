@@ -12,7 +12,7 @@ sys.path.append('../')
 from sim_soens.super_input import SuperInput
 from sim_soens.super_node import SuperNode
 from sim_soens.super_functions import *
-from sim_soens.soen_sim import network, synapse
+from sim_soens.soen_components import network, synapse
 
 import time
 
