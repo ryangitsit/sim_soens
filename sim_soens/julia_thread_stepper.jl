@@ -317,6 +317,15 @@ function dend_signal(dend::AbstractDendrite,t_idx::Int,d_tau::Float64)
 
 
     ind_phi = index_approxer(val)
+
+    # ind_phi = general_index_approxer(
+    #     val,
+    #     dend.abs_min_neg,
+    #     dend.abs_min_pos,
+    #     dend.abs_idx_neg,
+    #     dend.abs_idx_pos
+    #     )
+
     # ind_phi = searchsortedfirst(dend.phi_vec,val)
     # ind_phi= minimum([ind_phi,length(dend.phi_vec)])
 
@@ -362,6 +371,26 @@ function index_approxer(val::Float64)
         _ind__phi_r = 333
     else
         _ind__phi_r = 334
+    end
+    return _ind__phi_r + 1
+end
+
+function general_index_approxer(
+    val::Float64,
+    abs_min_neg::Float64,
+    abs_min_pos::Float64,
+    abs_idx_neg::Int64,
+    abs_idx_pos::Int64
+    )
+    # ,maxval::Float64,minval::Float64,lenlst::Int
+    if val <= abs_min_neg
+        _ind__phi_r = minimum([floor(Int,(abs_idx_neg*(abs(val)-abs_min_pos)/(1-abs_min_pos))),667])
+    elseif val >= abs_min_pos
+        _ind__phi_r = minimum([floor(Int,(abs_idx_neg*(abs(val)-abs_min_pos)/(1-abs_min_pos)))+abs_idx_pos+1,667])
+    elseif val < 0
+        _ind__phi_r =  abs_idx_neg
+    else
+        _ind__phi_r = abs_idx_pos
     end
     return _ind__phi_r + 1
 end

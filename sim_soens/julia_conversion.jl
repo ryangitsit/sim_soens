@@ -25,24 +25,29 @@ end
 
 
 mutable struct ArborDendrite <: AbstractDendrite
-    name      :: String
-    s         :: Vector{Float64}
-    phir      :: Vector{Float64}
-    inputs    :: Dict{String,Float64}
-    synputs   :: Dict{String,Float64}
-    const alpha     :: Float64
-    const beta      :: Float64
+    name              :: String
+    s                 :: Vector{Float64}
+    phir              :: Vector{Float64}
+    inputs            :: Dict{String,Float64}
+    synputs           :: Dict{String,Float64}
+    const alpha       :: Float64
+    const beta        :: Float64
 
-    const phi_vec   :: Vector{Float64}
-    const s_array   :: Vector{Vector{Float64}}
-    const r_array   :: Vector{Vector{Float64}}
+    const phi_vec     :: Vector{Float64}
+    const s_array     :: Vector{Vector{Float64}}
+    const r_array     :: Vector{Vector{Float64}}
 
-    ind_phi  :: Vector{Int64}
-    ind_s    :: Vector{Int64}
+    ind_phi           :: Vector{Int64}
+    ind_s             :: Vector{Int64}
 
-    const phi_min   :: Float64
-    const phi_max   :: Float64
-    const phi_len   :: Int64
+    const phi_min     :: Float64
+    const phi_max     :: Float64
+    const phi_len     :: Int64
+
+    const abs_min_neg :: Float64
+    const abs_min_pos :: Float64
+    const abs_idx_neg :: Int64
+    const abs_idx_pos :: Int64
 
     flux_offset::Float64
 end
@@ -67,6 +72,11 @@ mutable struct RefractoryDendrite <: AbstractDendrite
     const phi_min   :: Float64
     const phi_max   :: Float64
     const phi_len   :: Int64
+
+    const abs_min_neg :: Float64
+    const abs_min_pos :: Float64
+    const abs_idx_neg :: Int64
+    const abs_idx_pos :: Int64
 
     flux_offset::Float64
 end
@@ -97,6 +107,11 @@ mutable struct SomaticDendrite <: AbstractDendrite
     const abs_ref   :: Float64
     const syn_ref   :: AbstractSynapse
     const syn_outs  :: Dict{String,Int64}
+
+    const abs_min_neg :: Float64
+    const abs_min_pos :: Float64
+    const abs_idx_neg :: Int64
+    const abs_idx_pos :: Int64
 
     flux_offset::Float64
 end
@@ -142,7 +157,11 @@ function  make_dendrites(
     phi_vec::Vector{Float64},
     s_array::Vector{Vector{Float64}},
     r_array::Vector{Vector{Float64}},
-    dt::Float64
+    dt::Float64,
+    abs_min_neg::Float64,
+    abs_min_pos::Float64,
+    abs_idx_neg::Int64,
+    abs_idx_pos::Int64
     )
     dendrites = Dict{String,AbstractDendrite}() #Dict()
 
@@ -189,6 +208,10 @@ function  make_dendrites(
                 dend.absolute_refractory_period/(dt), #*conversion,     # abs_ref   :: Float64
                 synapses[node.name*"__syn_refraction"], # struct
                 dend.syn_outs,
+                abs_min_neg,
+                abs_min_pos,
+                abs_idx_neg,
+                abs_idx_pos,
                 dend.offset_flux
                 )
 
@@ -209,6 +232,10 @@ function  make_dendrites(
                 findmin(phi_vec)[1],
                 findmax(phi_vec)[1],
                 length(phi_vec),
+                abs_min_neg,
+                abs_min_pos,
+                abs_idx_neg,
+                abs_idx_pos,
                 dend.offset_flux
                 )
 
@@ -229,6 +256,10 @@ function  make_dendrites(
                 findmin(phi_vec)[1],
                 findmax(phi_vec)[1],
                 length(phi_vec),
+                abs_min_neg,
+                abs_min_pos,
+                abs_idx_neg,
+                abs_idx_pos,
                 dend.offset_flux
                 )
         end
@@ -245,12 +276,18 @@ function make_nodes(
     dt::Float64,
     p::Vector{Float64},
     s::Vector{Vector{Float64}},
-    r::Vector{Vector{Float64}}
+    r::Vector{Vector{Float64}},
+    abs_min_neg::Float64,
+    abs_min_pos::Float64,
+    abs_idx_neg::Int64,
+    abs_idx_pos::Int64
     )
 
     node_dict = Dict{String,Any}()
     node_dict["synapses"]  = make_synapses(node,T,dt)
-    node_dict["dendrites"] = make_dendrites(node,T,node_dict["synapses"],p,s,r,dt)
+    node_dict["dendrites"] = make_dendrites(
+        node,T,node_dict["synapses"],p,s,r,dt,abs_min_neg,abs_min_pos,abs_idx_neg,abs_idx_pos
+        )
     node_dict["outputs"] = node.neuron.dend_soma.syn_outs
     node_dict["soma"] = node.neuron.dend_soma.name
 
@@ -276,7 +313,14 @@ function obj_to_structs(net::PyObject)
     p = net.phi_vec::Vector{Float64}
     s = obj_to_vect(net.s_array)::Vector{Vector{Float64}}
     r = obj_to_vect(net.r_array)::Vector{Vector{Float64}}
+
+    abs_min_neg = net.phi_vals["neg_min"]
+    abs_min_pos = net.phi_vals["pos_min"]
+    abs_idx_neg = net.phi_vals["neg_idx"]
+    abs_idx_pos = net.phi_vals["pos_idx"]
     
+    
+
     net_dict["nodes"] = node_dict::Dict
     net_dict["dt"] = net.dt::Float64
     net_dict["d_tau"] = net.time_params["d_tau"]::Float64
@@ -290,7 +334,11 @@ function obj_to_structs(net::PyObject)
             net_dict["dt"],
             p,
             s,
-            r
+            r,
+            abs_min_neg,
+            abs_min_pos,
+            abs_idx_neg,
+            abs_idx_pos
             )
     end
     # save("net_dict_2.jld2", "data", net_dict)

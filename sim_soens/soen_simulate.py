@@ -10,6 +10,7 @@ from sim_soens.soen_initialize import (
     dendrite_data_attachment
 )
 from .soen_py_stepper import *
+from .soen_numba_stepper import *
 
 
 def run_soen_sim(net):
@@ -97,7 +98,12 @@ def run_python_backend(net):
     net.init_time = finish-start
 
     start = time.perf_counter()
-    net = net_step(net,net.time_params['tau_vec'],net.time_params['d_tau'])
+    
+    if net.backend == 'numba':
+        net = net_step(net,net.time_params['tau_vec'],net.time_params['d_tau'])
+    else:
+        net = numba_net_step(net,net.time_params['tau_vec'],net.time_params['d_tau'])
+
     finish = time.perf_counter()
     if net.print_times: print(f"Py stepper time: {finish-start}")
     net.run_time = finish-start
@@ -118,12 +124,23 @@ def run_julia_backend(net):
     '''
     # print('Running Julia Backend')
     
-    from sim_soens.soen_initialize import make_subarrays
+    from sim_soens.soen_initialize import make_subarrays, find_shoulders
     
     start = time.perf_counter()
 
     # interate through all network nodes and initialize all related elements
     net.phi_vec, net.s_array, net.r_array = make_subarrays(net.nodes[0].neuron.ib,'ri')
+
+    # for special indexing trick at update
+    neg_idx,pos_idx,neg_min,pos_min = find_shoulders(net.phi_vec)
+    print("PHI VALS:", neg_idx,pos_idx,neg_min,pos_min)
+    net.phi_vals = {
+        "neg_idx":int(neg_idx),
+        "pos_idx":int(pos_idx),
+        "neg_min":neg_min,
+        "pos_min":pos_min
+    }
+
     for node in net.nodes:
         # print("Initializing neuron: ", neuron.name)
         node.neuron.time_params = net.time_params

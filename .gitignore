@@ -6,6 +6,7 @@ __pycache__/
 testing.py
 testing_.py
 results/
+legacy/
 # sim_soens.egg-info/
 build/
 net_temp.jld2

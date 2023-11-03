@@ -110,71 +110,114 @@ class SuperNode():
         # dendrites attribute will have some structure as arbor
         # [layer][group][dendrite]
         # populated with dendrite objects
-        dendrites = [ [] for _ in range(len(self.weights)) ]
+        
+        self.dendrites = [ [] for _ in range(len(self.weights)) ]
+
         if len(self.weights)>0:
-            count=0
-            den_count = 0
-            for i,layer in enumerate(self.weights):
-                c=0
-                for j,dens in enumerate(layer):
-                    sub = []
-                    for k,d in enumerate(dens):
-                        #(todo) add flags and auto connects for empty connections
 
-                        # parameters for creating current dendrite
-                        dend_params = self.params
+            if (hasattr(self, 'betas') 
+                or hasattr(self, 'biases') 
+                or hasattr(self, 'types') 
+                or hasattr(self, 'taus')):
+                self.specified_arbor_params()
+            
+            else:
+                self.global_arbor_params()
 
+    def global_arbor_params(self):
+        count=0
+        den_count = 0
+        for i,layer in enumerate(self.weights):
+            c=0
+            for j,dens in enumerate(layer):
+                sub = []
+                for k,d in enumerate(dens):
 
-                        # check for any dendrite-specific parameters
-                        # if so, use in dend_parameters
-                        # otherwise, one of the following will be used
-                        #   - default parameters (defined in dendrite class)
-                        #   - general dendrite parameters defined in this node's
-                        #     initialization 
-                        if hasattr(self, 'betas'):
-                            beta = self.betas[i][j][k]
-                            dend_params["beta_di"] =(np.pi*2)*10**beta
-                        if hasattr(self, 'biases'):
-                            if hasattr(self, 'types'):
-                                bias = self.biases[i][j][k]
-                                if self.types[i][j][k] == 'ri':
-                                    dend_params["ib"] = d_params_ri["ib__list"][bias]
-                                else:
-                                    dend_params["ib"] = d_params_rtti["ib__list"][bias]
-                            else:
-                                dend_params["ib"] = d_params_ri["ib__list"][bias]
-                            dend_params["ib_di"] = dend_params["ib"]
-                        if hasattr(self, 'taus'):
-                            dend_params["tau_di"] = self.taus[i][j][k]
+                    # parameters for creating current dendrite
+                    dend_params = self.params
+                    dend_params["dend_name"] = f"{self.neuron.name}_lay{i+1}_branch{j}_den{k}"
+
+                    # generate a dendrite given parameters
+                    dend = dendrite(**dend_params)
+
+                    # add it to group
+                    sub.append(dend)
+
+                    # add it to node's dendrite list
+                    self.dendrite_list.append(dend)
+                    den_count+=1
+                    c+=1
+
+                    # keep track of origin branch
+                    if i==0:
+                        dend.branch=k
+                
+                # add group to layer
+                self.dendrites[i].append(sub)
+
+    def specified_arbor_params(self):
+        count=0
+        den_count = 0
+        for i,layer in enumerate(self.weights):
+            c=0
+            for j,dens in enumerate(layer):
+                sub = []
+                for k,d in enumerate(dens):
+                    #(todo) add flags and auto connects for empty connections
+
+                    # parameters for creating current dendrite
+                    dend_params = self.params
+
+                    # check for any dendrite-specific parameters
+                    # if so, use in dend_parameters
+                    # otherwise, one of the following will be used
+                    #   - default parameters (defined in dendrite class)
+                    #   - general dendrite parameters defined in this node's
+                    #     initialization 
+                    if hasattr(self, 'betas'):
+                        beta = self.betas[i][j][k]
+                        dend_params["beta_di"] = (np.pi*2)*10**beta
+                    if hasattr(self, 'biases'):
                         if hasattr(self, 'types'):
-                            dend_params["loops_present"] = self.types[i][j][k]
-                            # print("HERE",self.types[i][j][k])
+                            bias = self.biases[i][j][k]
+                            if self.types[i][j][k] == 'ri':
+                                dend_params["ib"] = d_params_ri["ib__list"][bias]
+                            else:
+                                dend_params["ib"] = d_params_rtti["ib__list"][bias]
                         else:
-                            dend_params["loops_present"] = 'ri'
+                            dend_params["ib"] = d_params_ri["ib__list"][bias]
+                        dend_params["ib_di"] = dend_params["ib"]
+                    if hasattr(self, 'taus'):
+                        dend_params["tau_di"] = self.taus[i][j][k]
+                    if hasattr(self, 'types'):
+                        dend_params["loops_present"] = self.types[i][j][k]
+                        # print("HERE",self.types[i][j][k])
+                    else:
+                        dend_params["loops_present"] = 'ri'
 
-                        # self.params = self.__dict__
-                        name = f"{self.neuron.name}_lay{i+1}_branch{j}_den{k}"
-                        dend_params["dend_name"] = name
-                        dend_params["type"] = type
+                    # self.params = self.__dict__
+                    name = f"{self.neuron.name}_lay{i+1}_branch{j}_den{k}"
+                    dend_params["dend_name"] = name
+                    dend_params["type"] = type
 
-                        # generate a dendrite given parameters
-                        dend = dendrite(**dend_params)
+                    # generate a dendrite given parameters
+                    dend = dendrite(**dend_params)
 
-                        # add it to group
-                        sub.append(dend)
+                    # add it to group
+                    sub.append(dend)
 
-                        # add it to node's dendrite list
-                        self.dendrite_list.append(dend)
-                        den_count+=1
-                        c+=1
+                    # add it to node's dendrite list
+                    self.dendrite_list.append(dend)
+                    den_count+=1
+                    c+=1
 
-                        # keep track of origin branch
-                        if i==0:
-                            dend.branch=k
-                    
-                    # add group to layer
-                    dendrites[i].append(sub)
-        self.dendrites = dendrites
+                    # keep track of origin branch
+                    if i==0:
+                        dend.branch=k
+                
+                # add group to layer
+                self.dendrites[i].append(sub)
+
 
 
     def connect_dendrites(self):
@@ -217,10 +260,13 @@ class SuperNode():
         '''
         # if syns attribute, connect as a function of grouping to final layer
         if hasattr(self, 'syns'):
+            self.synapse_list = []
             self.synapses = [[] for _ in range(len(self.syns))]
             for i,group in enumerate(self.syns):
                 for j,s in enumerate(group):
-                    self.synapses[i].append(synapse(name=s))
+                    syn = synapse(name=s)
+                    self.synapses[i].append(syn)
+                    self.synapse_list.append(syn)
             count=0
             for j, subgroup in enumerate(self.dendrites[len(self.dendrites)-1]):
                 for k,d in enumerate(subgroup):

@@ -35,6 +35,17 @@ def make_subarrays(ib,loops_present):
     return phi_vec, s_array, r_array
 
 
+def find_shoulders(arr):
+    x = np.array(arr)
+    x[x==0] = 1000
+    neg_idx = np.argmin(np.abs(x))
+    neg_min = x[neg_idx]
+    x[neg_idx] = 1000
+    pos_idx = np.argmin(np.abs(x))
+    pos_min=x[pos_idx]
+    return pos_idx,neg_idx,pos_min,neg_min
+
+
 def dendrite_drive_construct(dend_obj,tau_vec,t_tau_conversion,d_tau):
     '''
     Initialize individual dendrite parameters

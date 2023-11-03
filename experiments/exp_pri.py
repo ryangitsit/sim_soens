@@ -21,7 +21,9 @@ Notes:
 
 def main():
     def dend_pri(input):
-
+        '''
+        Deprecated
+        '''
         weights = [[[1]]]
         loops_present = [[['pri']]]
 
@@ -55,7 +57,9 @@ def main():
 
 
     def offset(input):
-
+        '''
+        Current primary plasticity mechanism
+        '''
         weights = [[[0.3]]]
         syn_struct = [[[[0]],[[1]]]] 
 
@@ -80,6 +84,9 @@ def main():
 
 
     def biasing(input):
+        '''
+        Also works as a plasticity mechanism
+        '''
         syn_struct = [[[[1]]]]
         # plt.figure(figsize=(12,4))
         plt.figure(figsize=(8,6))
@@ -110,7 +117,7 @@ def main():
 
     # dend_pri(input)
     offset(input)
-    # biasing(input)
+    biasing(input)
 
 if __name__=='__main__':
     main()

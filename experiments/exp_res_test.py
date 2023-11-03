@@ -15,7 +15,7 @@ input = SuperInput(channels=36,type="saccade_MNIST",tile_time=50)
 # raster_plot(input.spike_arrays)
 
 # Random network of 72 neurons
-from sim_soens.super_net import PointReservoir
+from sim_soens.network_library import PointReservoir
 params= {
     "N":72,
     "s_th":0.5,

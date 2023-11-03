@@ -65,6 +65,7 @@ def main():
 
     # create a neuron with this structure and parameters
     nine_neuron = SuperNode(s_th=.1,**params) 
+    nine_neuron.parameter_print()
     nine_neuron.plot_structure()
 
     letters=make_letters()
@@ -95,15 +96,16 @@ def main():
         run_neurons.append(nine_neuron)
 
     # run all neurons simultaneously
-    net = network(sim=True,dt=.1,tf=150,nodes=run_neurons,new_way=True)
+    net = network(sim=True,dt=.1,tf=150,nodes=run_neurons) #,new_way=True)
 
     # plot!
     title = 'Responses to All Three 9-Pixel Images'
     subtitles =['Z','V','N']
-    activity_plot(run_neurons,net,dend=False,phir=True,size=(12,8),title=title,subtitles=subtitles)
+    # activity_plot(run_neurons,net,dend=False,phir=True,size=(12,8),title=title,subtitles=subtitles)
 
     for n in run_neurons:
         n.plot_arbor_activity(net,phir=True)
+        # n.activity_plot()
 
 
 

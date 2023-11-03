@@ -68,6 +68,29 @@ FOR /L %%i IN (511,1,100000) DO (
       --target        50
 )
 
+@REM FOR /L %%i IN (70,1,100000) DO (
+@REM     python exp_MNIST_full.py^
+@REM       --run           %%i^
+@REM       --s_th          0.25^
+@REM       --duration      2500^
+@REM       --beta          3^
+@REM       --dt            1.0^
+@REM       --jul_threading 4^
+@REM       --digits        10^
+@REM       --samples       50^
+@REM       --eta           0.005^
+@REM       --name          target50_maxflux_full^
+@REM       --backend       julia^
+@REM       --dataset       MNIST^
+@REM       --max_offset    0.5^
+@REM       --fixed         .5^
+@REM       --rand_flux     0.005^
+@REM       --layers        6^
+@REM       --lay_weighting 1,1,1,4,8,10^
+@REM       --norm_fanin    True^
+@REM       --fan_coeff     1.5^
+@REM       --target        50
+@REM )
 
 
 
