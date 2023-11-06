@@ -1,6 +1,6 @@
 import numpy as np
 from sim_soens.soen_components import neuron, dendrite, synapse
-
+from sim_soens.super_node import SuperNode
 
 '''
 Here a class for calling from a 'zoo' of possible neurons is implemented.
@@ -11,6 +11,61 @@ Plan:
  - Should include a testing/plotting paradigm inherent in the class
  - Add more explicit connectivity defintions and corresponding plotting
 '''
+
+
+class MNISTNode(SuperNode):
+    '''
+    NeuralZoo object class
+     - offers a variety of archetypal neurons ready-to-implement
+    '''
+    def __init__(self,**entries):
+        super().__init__()
+        self.__dict__.update(entries)
+        self.params = self.__dict__
+
+        self.dendrite_list = [self.neuron.dend_soma,self.neuron.dend__ref]
+
+        self.build_arbor()
+        self.check_arbor_structor(self.weights)
+                        
+        self.make_dendrites()
+        self.connect_dendrites()
+        self.make_and_connect_synapses()
+
+        if self.rand_flux is not None:
+            self.random_flux(self.rand_flux)
+        if self.inh_counter:
+            self.add_inhibition_counts()
+        if self.norm_fanin:
+            print(f"Fanin normalization with coefficient of {self.fan_coeff}")
+            self.normalize_fanin(self.fan_coeff)
+
+    def build_arbor(self):
+
+        lw = np.array(self.lay_weighting)
+
+        # create random weights for each layer
+        layer_1 = np.array([self.make_weights(7,self.exin,self.fixed)])*lw[0]*.5
+        layer_2 = np.array([self.make_weights(7,self.exin,self.fixed)*lw[1] for _ in range(int(49/7))])
+        layer_3 = np.array([self.make_weights(2,self.exin,self.fixed)*lw[2] for _ in range(int(98/2))])
+        layer_4 = np.array([self.make_weights(2,self.exin,self.fixed)*lw[3] for _ in range(int(196/2))])
+        layer_5 = np.array([self.make_weights(2,self.exin,self.fixed)*lw[4] for _ in range(int(392/2))])
+        layer_6 = np.array([self.make_weights(2,self.exin,self.fixed)*lw[5] for _ in range(int(784/2))])
+
+        # place them in a weight structure (defines structure and weighing of a neuron)
+        self.weights = [
+            layer_1,
+            layer_2,
+            layer_3,
+            layer_4,
+            layer_5,
+            layer_6,
+        ]
+
+        for i,w in enumerate(self.weights):
+            print(f"Layer {i} has shape {w.shape}")
+
+
 
 
 class NeuralZoo():

@@ -133,7 +133,7 @@ def run_julia_backend(net):
 
     # for special indexing trick at update
     neg_idx,pos_idx,neg_min,pos_min = find_shoulders(net.phi_vec)
-    print("PHI VALS:", neg_idx,pos_idx,neg_min,pos_min)
+
     net.phi_vals = {
         "neg_idx":int(neg_idx),
         "pos_idx":int(pos_idx),

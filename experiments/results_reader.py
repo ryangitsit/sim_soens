@@ -240,7 +240,8 @@ experiments = [
     # 'speed_bigeta_full',
     'speed_target15_full',
     # 'speed_target5_full',
-    'spread_full'
+    'spread_full',
+    'target50_maxflux_full'
     ]
 
 until = 150*10000
