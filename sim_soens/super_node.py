@@ -273,12 +273,15 @@ class SuperNode():
             self.recursive_downstream_inhibition_counter(out_dend,superdend)
 
     def add_inhibition_counts(self):
-
+        '''
+        '''
         for dendrite in self.dendrite_list:
             dendrite.downstream_inhibition = 0
             self.recursive_downstream_inhibition_counter(dendrite,dendrite)
 
     def max_s_finder(self,dendrite):
+        '''
+        '''
         d_params_ri = dend_load_arrays_thresholds_saturations('default_ri')
         ib_list = d_params_ri["ib__list"]
         s_max_plus__vec = d_params_ri["s_max_plus__vec"]
@@ -286,6 +289,9 @@ class SuperNode():
         return s_max_plus__vec[_ind_ib]
 
     def normalize_fanin(self,coeff):
+        '''
+        '''
+        print("NORMALIZING")
         for dendrite in self.dendrite_list:
             if len(dendrite.dendritic_connection_strengths) > 0:
                 max_s = self.max_s_finder(dendrite) - dendrite.phi_th
@@ -305,6 +311,9 @@ class SuperNode():
                         dendrite.dendritic_connection_strengths[in_name] = cs_normed[i]*coeff
 
     def random_flux(self,rand_flux):
+        '''
+        '''
+        print("RANDOM FLUX")
         for l,layer in enumerate(self.dendrites):
             for g,group in enumerate(layer):
                 for d,dend in enumerate(group):

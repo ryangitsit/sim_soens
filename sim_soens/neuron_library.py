@@ -20,17 +20,59 @@ class MNISTNode(SuperNode):
     '''
     def __init__(self,**entries):
         super().__init__()
+
+        self.ib            = 1.8
+        self.tau           = 50
+        self.beta          = 3.0
+        self.s_th          = 0.25
+        self.eta           = 0.005
+        self.elast         = "None"
+        self.valid         = "True"
+        self.exp_name      = "test"
+        self.inhibit       = -1
+        self.backend       = "julia"
+        self.run           =  1
+        self.digits        = 10
+        self.samples       = 50
+        self.elasticity    = None
+        self.layers        = 6
+        self.decay         = "False"
+        self.probabilistic = 1
+        self.weights       = "preset"
+        self.dataset       = "MNIST"
+        self.duration      = 2500
+        self.low_bound     = -0.5
+        self.plotting      = "sparse"
+        self.jul_threading = 4
+        self.hebbian       = "False"
+        self.exin          = None
+        self.fixed         = 0.5
+        self.rand_flux     = 0.005
+        self.inh_counter   = None
+        self.norm_fanin    = True
+        self.lay_weighting = [1, 1, 1, 4, 8, 10]
+        self.fan_coeff     = 1.5
+        self.dt            = 1.0
+        self.target        = 50
+        self.max_offset    = 0.5
+
         self.__dict__.update(entries)
         self.params = self.__dict__
 
+        self.build_arbor()
+
+        # create a neuron object given init params
+        self.neuron = neuron(**self.params)
+        self.neuron.dend_soma.branch=0
+
+        # add somatic dendrite (dend_soma) and refractory dendrite to list
         self.dendrite_list = [self.neuron.dend_soma,self.neuron.dend__ref]
 
-        self.build_arbor()
+        # check that the structure implied by .weights is compatible with construction method
         self.check_arbor_structor(self.weights)
                         
         self.make_dendrites()
         self.connect_dendrites()
-        self.make_and_connect_synapses()
 
         if self.rand_flux is not None:
             self.random_flux(self.rand_flux)
@@ -40,17 +82,30 @@ class MNISTNode(SuperNode):
             print(f"Fanin normalization with coefficient of {self.fan_coeff}")
             self.normalize_fanin(self.fan_coeff)
 
+        self.make_and_connect_synapses()
+
     def build_arbor(self):
 
         lw = np.array(self.lay_weighting)
 
         # create random weights for each layer
-        layer_1 = np.array([self.make_weights(7,self.exin,self.fixed)])*lw[0]*.5
-        layer_2 = np.array([self.make_weights(7,self.exin,self.fixed)*lw[1] for _ in range(int(49/7))])
-        layer_3 = np.array([self.make_weights(2,self.exin,self.fixed)*lw[2] for _ in range(int(98/2))])
-        layer_4 = np.array([self.make_weights(2,self.exin,self.fixed)*lw[3] for _ in range(int(196/2))])
-        layer_5 = np.array([self.make_weights(2,self.exin,self.fixed)*lw[4] for _ in range(int(392/2))])
-        layer_6 = np.array([self.make_weights(2,self.exin,self.fixed)*lw[5] for _ in range(int(784/2))])
+        layer_1 = np.array(
+            [self.make_weights(7,self.exin,self.fixed)])*lw[0]*.5
+        
+        layer_2 = np.array(
+            [self.make_weights(7,self.exin,self.fixed)*lw[1] for _ in range(int(49/7))])
+        
+        layer_3 = np.array(
+            [self.make_weights(2,self.exin,self.fixed)*lw[2] for _ in range(int(98/2))])
+        
+        layer_4 = np.array(
+            [self.make_weights(2,self.exin,self.fixed)*lw[3] for _ in range(int(196/2))])
+        
+        layer_5 = np.array(
+            [self.make_weights(2,self.exin,self.fixed)*lw[4] for _ in range(int(392/2))])
+        
+        layer_6 = np.array(
+            [self.make_weights(2,self.exin,self.fixed)*lw[5] for _ in range(int(784/2))])
 
         # place them in a weight structure (defines structure and weighing of a neuron)
         self.weights = [
@@ -66,7 +121,77 @@ class MNISTNode(SuperNode):
             print(f"Layer {i} has shape {w.shape}")
 
 
+class SpecificNode(SuperNode):
+    '''
+    NeuralZoo object class
+     - offers a variety of archetypal neurons ready-to-implement
+    '''
+    def __init__(self,**entries):
+        super().__init__()
 
+        self.ib            = 1.8
+        self.tau           = 50
+        self.beta          = 3.0
+        self.s_th          = 0.25
+        self.eta           = 0.005
+        self.elast         = "None"
+        self.valid         = "True"
+        self.exp_name      = "test"
+        self.inhibit       = -1
+        self.backend       = "julia"
+        self.run           =  1
+        self.digits        = 10
+        self.samples       = 50
+        self.elasticity    = None
+        self.layers        = 6
+        self.decay         = "False"
+        self.probabilistic = 1
+        self.weights       = "preset"
+        self.dataset       = "MNIST"
+        self.duration      = 2500
+        self.low_bound     = -0.5
+        self.plotting      = "sparse"
+        self.jul_threading = 4
+        self.hebbian       = "False"
+        self.exin          = None
+        self.fixed         = 0.5
+        self.rand_flux     = 0.005
+        self.inh_counter   = None
+        self.norm_fanin    = True
+        self.lay_weighting = [1, 1, 1, 4, 8, 10]
+        self.fan_coeff     = 1.5
+        self.dt            = 1.0
+        self.target        = 50
+        self.max_offset    = 0.5
+
+        self.__dict__.update(entries)
+        self.params = self.__dict__
+
+        self.build_arbor()
+
+        # create a neuron object given init params
+        self.neuron = neuron(**self.params)
+        self.neuron.dend_soma.branch=0
+
+        # add somatic dendrite (dend_soma) and refractory dendrite to list
+        self.dendrite_list = [self.neuron.dend_soma,self.neuron.dend__ref]
+
+        # check that the structure implied by .weights is compatible with construction method
+        self.check_arbor_structor(self.weights)
+                        
+        self.make_dendrites()
+        self.connect_dendrites()
+
+        self.random_flux(self.rand_flux)
+        self.add_inhibition_counts()
+        print(f"Fanin normalization with coefficient of {self.fan_coeff}")
+        self.normalize_fanin(self.fan_coeff)
+
+        self.make_and_connect_synapses()
+
+    def build_arbor(self):
+        self.weights = [[[.5,.7]],
+                    [[.3,.3],[.4,.5]]]
 
 class NeuralZoo():
     '''

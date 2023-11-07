@@ -79,7 +79,7 @@ ECHO OFF
 @REM       --digits        10^
 @REM       --samples       50^
 @REM       --eta           0.005^
-@REM       --name          target50_maxflux_full^
+@REM       --exp_name      target50_maxflux_full^
 @REM       --backend       julia^
 @REM       --dataset       MNIST^
 @REM       --max_offset    0.5^
@@ -92,7 +92,7 @@ ECHO OFF
 @REM       --target        50
 @REM )
 
-FOR /L %%i IN (1,1,100000) DO (
+FOR /L %%i IN (1,1,10) DO (
     python exp_MNIST_full.py^
       --run           %%i^
       --s_th          0.25^

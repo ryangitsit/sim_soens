@@ -360,7 +360,8 @@ def main():
                     "beta"      :beta,
                     "beta_ni"   :beta,
                     "beta_di"   :beta,
-                    "s_th"      :s_th
+                    "s_th"      :s_th,
+                    "name"      :f'node_{node}'
                 }
                 params.update(config.__dict__)
                 nodes.append(MNISTNode(**params))
