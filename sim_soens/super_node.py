@@ -1,9 +1,7 @@
 import numpy as np
 
 from .soen_components import neuron, dendrite, synapse
-from .soen_utilities import dend_load_arrays_thresholds_saturations
-d_params_ri = dend_load_arrays_thresholds_saturations('default_ri')
-d_params_rtti = dend_load_arrays_thresholds_saturations('default_rtti')
+from .soen_utilities import dend_load_arrays_thresholds_saturations, index_finder
 
 class SuperNode():
 
@@ -156,6 +154,8 @@ class SuperNode():
                 self.dendrites[i].append(sub)
 
     def specified_arbor_params(self):
+        d_params_ri = dend_load_arrays_thresholds_saturations('default_ri')
+        d_params_rtti = dend_load_arrays_thresholds_saturations('default_rtti')
         count=0
         den_count = 0
         for i,layer in enumerate(self.weights):
@@ -244,6 +244,85 @@ class SuperNode():
 
         # add the somatic dendrite to the 0th layer of the arboric structure
         self.dendrites.insert(0,[[self.neuron.dend_soma]])
+
+
+    ############################################################################
+    #                            New Arbor Methods                             #
+    ############################################################################ 
+
+    def make_weights(self,size,exin,fixed):
+        '''
+        '''
+        ones = np.ones(size)
+        symm = 1
+
+        if exin != None:
+            # print(exin)
+            symm = np.random.choice([-1,0,1], p=[exin[0]/100,exin[1]/100,exin[2]/100], size=size)
+
+        if fixed is not None:
+            # print("fixed")
+            w = ones*fixed*symm
+        else:
+            w = np.random.rand(size)*symm
+        return w
+    
+    def recursive_downstream_inhibition_counter(self,dendrite,superdend):
+        for out_name,out_dend in dendrite.outgoing_dendritic_connections.items():
+            cs = out_dend.dendritic_connection_strengths[dendrite.name]
+            if cs < 0:
+                superdend.downstream_inhibition += 1
+            self.recursive_downstream_inhibition_counter(out_dend,superdend)
+
+    def add_inhibition_counts(self):
+        '''
+        '''
+        for dendrite in self.dendrite_list:
+            dendrite.downstream_inhibition = 0
+            self.recursive_downstream_inhibition_counter(dendrite,dendrite)
+
+    def max_s_finder(self,dendrite):
+        '''
+        '''
+        d_params_ri = dend_load_arrays_thresholds_saturations('default_ri')
+        ib_list = d_params_ri["ib__list"]
+        s_max_plus__vec = d_params_ri["s_max_plus__vec"]
+        _ind_ib = index_finder(ib_list[:],dendrite.ib) 
+        return s_max_plus__vec[_ind_ib]
+
+    def normalize_fanin(self,coeff):
+        '''
+        '''
+        print("NORMALIZING")
+        for dendrite in self.dendrite_list:
+            if len(dendrite.dendritic_connection_strengths) > 0:
+                max_s = self.max_s_finder(dendrite) - dendrite.phi_th
+                cs_list = []
+                max_list = []
+                influence = []
+                for in_name,in_dend in dendrite.dendritic_inputs.items():
+                    cs = dendrite.dendritic_connection_strengths[in_name]
+                    max_in = self.max_s_finder(in_dend)
+                    cs_list.append(cs)
+                    max_list.append(max_in)
+                    influence.append(cs*max_in)
+                if sum(influence) > max_s:
+                    norm_fact = sum(influence)/max_s
+                    cs_normed = cs_list/norm_fact
+                    for i,(in_name,cs) in enumerate(dendrite.dendritic_connection_strengths.items()):
+                        dendrite.dendritic_connection_strengths[in_name] = cs_normed[i]*coeff
+
+    def random_flux(self,rand_flux):
+        '''
+        '''
+        print("RANDOM FLUX")
+        for l,layer in enumerate(self.dendrites):
+            for g,group in enumerate(layer):
+                for d,dend in enumerate(group):
+                    if 'ref' not in dend.name and 'soma' not in dend.name:
+                        sign = np.random.choice([-1,1], p=[.5,.5], size=1)[0]
+                        dend.offset_flux = np.random.rand()*rand_flux*sign
+
 
 
     ############################################################################

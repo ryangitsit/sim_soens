@@ -262,7 +262,7 @@ def synapse_initialization(dend_obj,tau_vec,t_tau_conversion):
                     syn_obj.input_signal.spike_times=np.arange(t_on,t_f+isi,isi)
         else:
             syn_obj.input_signal = dict()
-        
+
         syn_obj.spike_times_converted = np.asarray(
             syn_obj.input_signal.spike_times
             ) * t_tau_conversion
