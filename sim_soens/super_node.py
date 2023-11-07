@@ -251,6 +251,8 @@ class SuperNode():
     ############################################################################ 
 
     def make_weights(self,size,exin,fixed):
+        '''
+        '''
         ones = np.ones(size)
         symm = 1
 
