@@ -33,11 +33,12 @@ Tutorial
 
    .. raw:: html
 
-      <!-- ![ title](img/wafer_tilted.png) ![ title](img/neuron_3d.png) ![ title](img/neuron_complex.png) -->
+.. container:: output display_data
 
-   .. image:: img/wafers_circuits.png
-      :alt: title
+   .. image:: img//wafers_circuits.png
+      
 
+.. container:: cell markdown
    -  **SOENs are an emerging neuromorphic hardware that leverage
       light-speed communication for brain level scalability.**
 
@@ -60,8 +61,10 @@ Tutorial
 
       -  Sophisticated dendritic arbors for single-neuron computations
 
-   .. image:: img/neuron_complex.png
-      :alt: title
+.. container:: output display_data
+
+   .. image:: img//neuron_complex.png
+      
 
 .. container:: cell code
 
@@ -109,10 +112,10 @@ Tutorial
    -  **Transmitter** = hTron coupled to a silicon light emitting diode
       which routes photonic output to downstream synapses via waveguides
 
-.. container:: cell markdown
+.. container:: output display_data
 
    .. image:: img/monosynaptic.png
-      :alt: title
+      
 
 .. container:: cell markdown
 
@@ -450,8 +453,12 @@ Tutorial
    -  :math:`r_{fq}` = flux quantum production (fluxons emmitted from
       receiving loop to integration loop)
 
-   .. image:: img/dendrite.png
-      :alt: title
+.. container:: output display_data
+
+   .. image:: img//dendrite.png
+      
+
+..container:: cell markdown
 
    The rate array :math:`r(\phi,s,i_b)` itself refers to pre-derived
    circuit equation solutions that take the form of a three-dimensional
@@ -466,8 +473,10 @@ Tutorial
    :math:`r_{fq}` values can be achieved for equivalent :math:`s` and
    :math:`\phi_r` values because the saturation limit is rasied.
 
-   .. image:: img/rate_arrays.png
-      :alt: title
+.. container:: output display_data
+
+   .. image:: img//rate_arrays.png
+      
 
 .. container:: cell markdown
 
@@ -529,8 +538,10 @@ Tutorial
       for the rollover node. Pay attention to the :math:`\phi_{th}`
       line. What does it demarcate?
 
-   .. image:: img/phi_period.png
-      :alt: title
+.. container:: output display_data
+
+   .. image:: img//phi_period.png
+      
 
 .. container:: cell code
 
@@ -569,10 +580,10 @@ Tutorial
 
       .. image:: tutorial_images/95dcad0a219aa365f5106956671e009b3e3e4678.png
 
-.. container:: cell markdown
+.. container:: output display_data
 
    .. image:: img/phi_period.png
-      :alt: title
+      
 
 .. container:: cell markdown
 
@@ -941,8 +952,10 @@ Tutorial
    response (same signal integrated for 1 or 2 inputs). This is simply
    an example dendritic processing in SOENs.
 
-   .. image:: img/9pixel.png
-      :alt: title
+.. container:: output display_data
+
+   .. image:: img//9pixel.png
+      
 
 .. container:: cell code
 
