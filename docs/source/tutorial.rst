@@ -35,7 +35,7 @@ Tutorial
 
       <!-- ![ title](img/wafer_tilted.png) ![ title](img/neuron_3d.png) ![ title](img/neuron_complex.png) -->
 
-   .. image:: ../img/wafers_circuits.png
+   .. image:: img/wafers_circuits.png
       :alt: title
 
    -  **SOENs are an emerging neuromorphic hardware that leverage
@@ -60,7 +60,7 @@ Tutorial
 
       -  Sophisticated dendritic arbors for single-neuron computations
 
-   .. image:: ../img/neuron_complex.png
+   .. image:: img/neuron_complex.png
       :alt: title
 
 .. container:: cell code
@@ -70,7 +70,7 @@ Tutorial
       import numpy as np
       import matplotlib.pyplot as plt
       import sys
-      sys.path.append('../')
+      sys.path.append('')
       from sim_soens.soen_sim_data import *
       from sim_soens.super_input import SuperInput
       from sim_soens.super_node import SuperNode
@@ -111,7 +111,7 @@ Tutorial
 
 .. container:: cell markdown
 
-   .. image:: ../img/monosynaptic.png
+   .. image:: img/monosynaptic.png
       :alt: title
 
 .. container:: cell markdown
@@ -450,7 +450,7 @@ Tutorial
    -  :math:`r_{fq}` = flux quantum production (fluxons emmitted from
       receiving loop to integration loop)
 
-   .. image:: ../img/dendrite.png
+   .. image:: img/dendrite.png
       :alt: title
 
    The rate array :math:`r(\phi,s,i_b)` itself refers to pre-derived
@@ -466,7 +466,7 @@ Tutorial
    :math:`r_{fq}` values can be achieved for equivalent :math:`s` and
    :math:`\phi_r` values because the saturation limit is rasied.
 
-   .. image:: ../img/rate_arrays.png
+   .. image:: img/rate_arrays.png
       :alt: title
 
 .. container:: cell markdown
@@ -529,7 +529,7 @@ Tutorial
       for the rollover node. Pay attention to the :math:`\phi_{th}`
       line. What does it demarcate?
 
-   .. image:: ../img/phi_period.png
+   .. image:: img/phi_period.png
       :alt: title
 
 .. container:: cell code
@@ -571,7 +571,7 @@ Tutorial
 
 .. container:: cell markdown
 
-   .. image:: ../img/phi_period.png
+   .. image:: img/phi_period.png
       :alt: title
 
 .. container:: cell markdown
@@ -941,7 +941,7 @@ Tutorial
    response (same signal integrated for 1 or 2 inputs). This is simply
    an example dendritic processing in SOENs.
 
-   .. image:: ../img/9pixel.png
+   .. image:: img/9pixel.png
       :alt: title
 
 .. container:: cell code
