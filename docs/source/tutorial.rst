@@ -33,9 +33,11 @@ Tutorial
 
    .. raw:: html
 
-.. container:: output display_data
+.. container:: cell code
 
-   .. image:: img//wafers_circuits.png
+   .. container:: output display_data
+
+      .. image:: img//wafers_circuits.png
       
 
 .. container:: cell markdown
@@ -61,9 +63,11 @@ Tutorial
 
       -  Sophisticated dendritic arbors for single-neuron computations
 
-.. container:: output display_data
+.. container:: cell code
 
-   .. image:: img//neuron_complex.png
+   .. container:: output display_data
+
+      .. image:: img//neuron_complex.png
       
 
 .. container:: cell code
@@ -112,9 +116,11 @@ Tutorial
    -  **Transmitter** = hTron coupled to a silicon light emitting diode
       which routes photonic output to downstream synapses via waveguides
 
-.. container:: output display_data
+.. container:: cell code
 
-   .. image:: img/monosynaptic.png
+   .. container:: output display_data
+
+      .. image:: img/monosynaptic.png
       
 
 .. container:: cell markdown
@@ -453,9 +459,11 @@ Tutorial
    -  :math:`r_{fq}` = flux quantum production (fluxons emmitted from
       receiving loop to integration loop)
 
-.. container:: output display_data
+.. container:: cell code
 
-   .. image:: img//dendrite.png
+   .. container:: output display_data
+
+      .. image:: img//dendrite.png
       
 
 ..container:: cell markdown
@@ -473,9 +481,11 @@ Tutorial
    :math:`r_{fq}` values can be achieved for equivalent :math:`s` and
    :math:`\phi_r` values because the saturation limit is rasied.
 
-.. container:: output display_data
+.. container:: cell code
 
-   .. image:: img//rate_arrays.png
+   .. container:: output display_data
+
+      .. image:: img//rate_arrays.png
       
 
 .. container:: cell markdown
@@ -538,9 +548,11 @@ Tutorial
       for the rollover node. Pay attention to the :math:`\phi_{th}`
       line. What does it demarcate?
 
-.. container:: output display_data
+.. container:: cell code
 
-   .. image:: img//phi_period.png
+   .. container:: output display_data
+
+      .. image:: img/phi_period.png
       
 
 .. container:: cell code
@@ -580,9 +592,11 @@ Tutorial
 
       .. image:: tutorial_images/95dcad0a219aa365f5106956671e009b3e3e4678.png
 
-.. container:: output display_data
+.. container:: cell code
 
-   .. image:: img/phi_period.png
+   .. container:: output display_data
+
+      .. image:: img/phi_period.png
       
 
 .. container:: cell markdown
@@ -952,9 +966,11 @@ Tutorial
    response (same signal integrated for 1 or 2 inputs). This is simply
    an example dendritic processing in SOENs.
 
-.. container:: output display_data
+.. container:: cell code
 
-   .. image:: img//9pixel.png
+   .. container:: output display_data
+
+      .. image:: img//9pixel.png
       
 
 .. container:: cell code
