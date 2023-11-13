@@ -135,59 +135,6 @@ def main():
             plt.savefig(path+name+f'plots/node_{n}_digit_{digit}_sample_{sample}_run_{run}.png')
             plt.close()
 
-    # def make_weights(size,exin,fixed):
-    #     ones = np.ones(size)
-    #     symm = 1
-
-    #     if exin != None:
-    #         # print(exin)
-    #         symm = np.random.choice([-1,0,1], p=[exin[0]/100,exin[1]/100,exin[2]/100], size=size)
-
-    #     if fixed is not None:
-    #         # print("fixed")
-    #         w = ones*fixed*symm
-    #     else:
-    #         w = np.random.rand(size)*symm
-    #     return w
-    
-    # def add_inhibition_counts(node):
-    
-    #     def recursive_downstream_inhibition_counter(dendrite,superdend):
-    #         for out_name,out_dend in dendrite.outgoing_dendritic_connections.items():
-    #             cs = out_dend.dendritic_connection_strengths[dendrite.name]
-    #             if cs < 0:
-    #                 superdend.downstream_inhibition += 1
-    #             recursive_downstream_inhibition_counter(out_dend,superdend)
-
-    #     for dendrite in node.dendrite_list:
-    #         dendrite.downstream_inhibition = 0
-    #         recursive_downstream_inhibition_counter(dendrite,dendrite)
-
-    # def max_s_finder(dendrite):
-    #     d_params_ri = dend_load_arrays_thresholds_saturations('default_ri')
-    #     ib_list = d_params_ri["ib__list"]
-    #     s_max_plus__vec = d_params_ri["s_max_plus__vec"]
-    #     _ind_ib = index_finder(ib_list[:],dendrite.ib) 
-    #     return s_max_plus__vec[_ind_ib]
-
-    # def normalize_fanin(node,coeff):
-    #     for dendrite in node.dendrite_list:
-    #         if len(dendrite.dendritic_connection_strengths) > 0:
-    #             max_s = max_s_finder(dendrite) - dendrite.phi_th
-    #             cs_list = []
-    #             max_list = []
-    #             influence = []
-    #             for in_name,in_dend in dendrite.dendritic_inputs.items():
-    #                 cs = dendrite.dendritic_connection_strengths[in_name]
-    #                 max_in = max_s_finder(in_dend)
-    #                 cs_list.append(cs)
-    #                 max_list.append(max_in)
-    #                 influence.append(cs*max_in)
-    #             if sum(influence) > max_s:
-    #                 norm_fact = sum(influence)/max_s
-    #                 cs_normed = cs_list/norm_fact
-    #                 for i,(in_name,cs) in enumerate(dendrite.dendritic_connection_strengths.items()):
-    #                     dendrite.dendritic_connection_strengths[in_name] = cs_normed[i]*coeff
 
     def get_nodes(
             path,
@@ -238,111 +185,6 @@ def main():
                 # branching factor
                 f_idx = 28
 
-                # if config.layers == 3:
-                #     layer_1_weighting = 1/4
-                #     layer_2_weighting = 3/4
-                #     exin = config.exin
-                #     fixed = config.fixed
-                #     # create random weights for each layer
-                #     layer_1 = [make_weights(f_idx,exin,fixed)*layer_1_weighting]
-                #     layer_2 = [make_weights(f_idx,exin,fixed)*layer_2_weighting for _ in range(f_idx)]
-
-                #     # place them in a weight structure (defines structure and weighing of a neuron)
-                #     weights = [
-                #         layer_1,
-                #         layer_2
-                #     ]
-
-                # elif config.layers == 2:
-                #     layer_1_weighting = 3/4
-
-                #     # create random weights for each layer
-                #     layer_1 = [np.random.rand(f_idx**2)*layer_1_weighting]
-                #     # layer_2 = [np.random.rand(f_idx)*layer_2_weighting for _ in range(f_idx)]
-
-                #     # place them in a weight structure (defines structure and weighing of a neuron)
-                #     weights = [
-                #         layer_1
-                #     ]
-
-                # elif config.layers == 4:
-                #     layer_1_weighting = 1/4
-                #     layer_2_weighting = 3/4
-
-                #     # create random weights for each layer
-                #     layer_1 = [np.random.rand(f_idx)*layer_1_weighting]
-                #     layer_2 = [np.random.rand(f_idx)*layer_2_weighting for _ in range(f_idx)]
-                #     layer_3 = [np.random.rand(1)*layer_2_weighting for _ in range(f_idx**2)]
-
-                #     # place them in a weight structure (defines structure and weighing of a neuron)
-                #     weights = [
-                #         layer_1,
-                #         layer_2,
-                #         layer_3
-                #     ]
-
-                # elif config.layers == 5:
-                #     # l1_weighting = 1/4
-                #     # l2_weighting = 3/4
-                #     # l3_weighting = 2
-
-                #     # # create random weights for each layer
-                #     # layer_1 = np.array([np.random.rand(f_idx)*l1_weighting])
-                #     # layer_2 = np.array([np.random.rand(2)*l2_weighting for _ in range(f_idx)])
-                #     # layer_3 = np.array([np.random.rand(int(f_idx/2))*l3_weighting for _ in range(f_idx*2)])
-
-                #     l1_weighting = 1#1/4
-                #     l2_weighting = 1#3/4
-                #     l3_weighting = 1#2
-
-                #     # create random weights for each layer
-                #     layer_1 = np.array([make_weights(f_idx,exin,fixed)*l1_weighting])
-                #     layer_2 = np.array([make_weights(2,exin,fixed)*l2_weighting for _ in range(f_idx)])
-                #     layer_3 = np.array([make_weights(int(f_idx/2),exin,fixed)*l3_weighting for _ in range(f_idx*2)])
-
-                #     print(layer_1.shape)
-                #     print(layer_2.shape)
-                #     print(layer_3.shape)
-
-                #     # place them in a weight structure (defines structure and weighing of a neuron)
-                #     weights = [
-                #         layer_1,
-                #         layer_2,
-                #         layer_3
-                #     ]
-
-                # elif config.layers == 6:
-
-                #     # l1_weighting = 1#1/4
-                #     # l2_weighting = 1#3/4
-                #     # l3_weighting = 1#2
-                #     lw = np.array(config.lay_weighting)
-
-                #     # create random weights for each layer
-                #     layer_1 = np.array([make_weights(7,exin,fixed)])*lw[0]*.5
-                #     layer_2 = np.array([make_weights(7,exin,fixed)*lw[1] for _ in range(int(49/7))])
-                #     layer_3 = np.array([make_weights(2,exin,fixed)*lw[2] for _ in range(int(98/2))])
-                #     layer_4 = np.array([make_weights(2,exin,fixed)*lw[3] for _ in range(int(196/2))])
-                #     layer_5 = np.array([make_weights(2,exin,fixed)*lw[4] for _ in range(int(392/2))])
-                #     layer_6 = np.array([make_weights(2,exin,fixed)*lw[5] for _ in range(int(784/2))])
-
-                #     print(layer_1.shape)
-                #     print(layer_2.shape)
-                #     print(layer_3.shape)
-                #     print(layer_4.shape)
-                #     print(layer_5.shape)
-                #     print(layer_6.shape)
-
-                #     # place them in a weight structure (defines structure and weighing of a neuron)
-                #     weights = [
-                #         layer_1,
-                #         layer_2,
-                #         layer_3,
-                #         layer_4,
-                #         layer_5,
-                #         layer_6,
-                #     ]
-
 
                 # internal node parameters
                 mutual_inhibition = True
@@ -381,35 +223,8 @@ def main():
                 for i,node in enumerate(nodes):
                     for other_node in nodes:
                         if other_node.name != node.name:
-                            node.neuron.add_output(other_node.synapse_list[-1])
+                            node.neuron.add_output(other_node.synapse_list[-1],out_node_name=other_node.name)
                             print("-- ",other_node.synapse_list[-1].name)
-
-            # if config.rand_flux is not None:
-            #     print(f" Random flux factor: {config.rand_flux}")
-
-            #     for n,node in enumerate(nodes):
-            #         for l,layer in enumerate(node.dendrites):
-            #             for g,group in enumerate(layer):
-            #                 for d,dend in enumerate(group):
-            #                     if 'ref' not in dend.name and 'soma' not in dend.name:
-            #                         sign = np.random.choice([-1,1], p=[.5,.5], size=1)[0]
-            #                         dend.offset_flux = np.random.rand()*config.rand_flux*sign
-
-            #         if config.inh_counter:
-            #             add_inhibition_counts(node)
-
-            #         if config.norm_fanin:
-            #             print(f"Fanin normalization with coefficient of {config.fan_coeff}")
-            #             normalize_fanin(node,config.fan_coeff)
-
-            # for node in nodes:
-            #     if config.rand_flux is not None:
-            #         node.random_flux(config.rand_flux)
-            #     if config.inh_counter:
-            #         node.add_inhibition_counts()
-            #     if config.norm_fanin:
-            #         print(f"Fanin normalization with coefficient of {config.fan_coeff}")
-            #         node.normalize_fanin(config.fan_coeff)
 
             finish = time.perf_counter()
             print("Time to make neurons: ", finish-start)
@@ -422,121 +237,6 @@ def main():
                 )
         return nodes
     
-    # def make_update(nodes,config,digit,sample,errors):
-    #     # print("Functional Update")
-    #     s = time.perf_counter()
-    #     offset_sums = [0 for _ in range(config.digits)]
-    #     if config.inh_counter: print("inh counter")
-    #     for n,node in enumerate(nodes):
-    #         for l,layer in enumerate(node.dendrites):
-    #             for g,group in enumerate(layer):
-    #                 for d,dend in enumerate(group):
-    #                     if 'ref' not in dend.name and 'soma' not in dend.name:
-                            
-    #                         if hasattr(dend, 'hebb'):
-    #                             hebb = dend.hebb*20
-    #                         else:
-    #                             hebb = 1
-
-    #                         step = errors[n]*np.mean(dend.s)*config.eta*hebb
-    #                         flux = np.mean(dend.phi_r) + step
-                            
-    #                         if config.hebbian == "True":
-    #                             for in_dend in dend.dendritic_inputs.keys():
-    #                                 in_dendrite = dend.dendritic_inputs[in_dend]
-    #                                 if "ref" not in in_dend:
-    #                                     in_dendrite.hebb = np.mean(dend.s)
-    #                                     # print(np.mean(dend.s))
-
-
-    #                         if config.elasticity=="elastic":
-    #                             if flux > 0.5 or flux < config.low_bound:
-    #                                 step = -step
-            
-    #                         elif config.elasticity=="inelastic":
-    #                             if flux > 0.5 or flux < config.low_bound:
-    #                                 step = 0
-
-    #                         if config.inh_counter:
-    #                             if dend.downstream_inhibition%2!=0:
-    #                                 step = -step
-    #                         if config.max_offset != None:
-    #                             step = np.min([step,dend.phi_th])
-
-    #                         dend.offset_flux += step
-    #                         offset_sums[n] += step
-
-    #                     # else:
-    #                     #     print("soma")
-
-    #                     dend.s = []
-    #                     dend.phi_r = []
-
-    #     f = time.perf_counter()
-    #     # print(f"Update time = {f-s}")
-    #     return nodes, offset_sums
-    
-    # def make_probablistic_update(nodes,config,digit,sample,errors):
-    #     s = time.perf_counter()
-    #     offset_sums = [0 for _ in range(config.digits)]
-    #     bool_array = np.random.rand(len(nodes)*len(nodes[0].dendrite_list)) < config.probabilistic
-    #     dend_counter = 0
-    #     if config.elasticity=="elastic":
-    #         if sample == 0 and config.run == 0: print("elastic")
-    #         for n,node in enumerate(nodes):
-    #             for l,layer in enumerate(node.dendrites):
-    #                 for g,group in enumerate(layer):
-    #                     for d,dend in enumerate(group):
-    #                         print(bool_array[dend_counter])
-    #                         if bool_array[dend_counter] == True:
-    #                             if 'ref' not in dend.name and 'soma' not in dend.name:
-    #                                 step = errors[n]*np.mean(dend.s)*config.eta #+(2-l)*.001
-    #                                 flux = np.mean(dend.phi_r) + step #dend.offset_flux
-    #                                 if flux > 0.5 or flux < config.low_bound:
-    #                                     step = -step
-    #                                 dend.offset_flux += step
-    #                                 offset_sums[n] += step
-    #                         dend.s = []
-    #                         dend.phi_r = []
-    #                         dend_counter += 1
-
-    #     if config.elasticity=="inelastic":
-    #         if sample == 0 and config.run == 0: print("inealstic")
-    #         for n,node in enumerate(nodes):
-    #             for l,layer in enumerate(node.dendrites):
-    #                 for g,group in enumerate(layer):
-    #                     for d,dend in enumerate(group):
-    #                         bool_array[dend_counter]
-    #                         if bool_array[dend_counter] == True:
-    #                             if 'ref' not in dend.name and 'soma' not in dend.name:
-    #                                 step = errors[n]*np.mean(dend.s)*config.eta #+(2-l)*.001
-    #                                 flux = np.mean(dend.phi_r) + step #dend.offset_flux
-    #                                 if flux > 0.5 or flux < config.low_bound:
-    #                                     step = 0
-    #                                 dend.offset_flux += step
-    #                                 offset_sums[n] += step
-    #                         dend.s = []
-    #                         dend.phi_r = []
-    #                         dend_counter += 1
-
-    #     if config.elasticity=="unbounded":
-    #         if sample == 0 and config.run == 0: print("unbounded")
-    #         for n,node in enumerate(nodes):
-    #             for l,layer in enumerate(node.dendrites):
-    #                 for g,group in enumerate(layer):
-    #                     for d,dend in enumerate(group):
-    #                         bool_array[dend_counter]
-    #                         if bool_array[dend_counter] == True:
-    #                             if 'ref' not in dend.name and 'soma' not in dend.name:
-    #                                 step = errors[n]*np.mean(dend.s)*config.eta #+(2-l)*.001
-    #                                 dend.offset_flux += step
-    #                                 offset_sums[n] += step #dend.offset_flux
-    #                         dend.s = []
-    #                         dend.phi_r = []
-    #                         dend_counter += 1
-    #     f = time.perf_counter()
-    #     # print(f"Update time = {f-s}")
-    #     return nodes, offset_sums
     
     def train_MNIST_neurons(nodes,dataset,path,name,config):
         '''
@@ -574,7 +274,7 @@ def main():
             if config.run ==1: print(desired)
 
         # backend = 'julia'
-        # print('Backend: ', config.backend)
+        print('Backend: ', config.backend)
 
         # tracks ongoing timing costs
         # run_times = []
@@ -811,7 +511,22 @@ def main():
 
     nodes = get_nodes(path,name,config)
 
-    # print(nodes[0].passed, ' -- ', nodes[0].seen,'\n')
+    # inhibition = -(1/config.digits)
+    # # for i,node in enumerate(nodes):
+    # #     syn_soma = synapse(name=f'{node.name}_somatic_synapse')
+    # #     node.synapse_list.append(syn_soma)
+    #     # node.neuron.dend_soma.add_input(syn_soma,connection_strength=inhibition)
+    # for i,node in enumerate(nodes):
+    #     node.neuron.dend_soma.firing_targets = {}
+
+    # for i,node in enumerate(nodes):
+    #     for other_node in nodes:
+    #         if other_node.name != node.name:
+    #             out_node_name=other_node.name
+    #             soma = node.neuron.dend_soma
+    #             if out_node_name not in list(soma.firing_targets.keys()):
+    #                 soma.firing_targets[out_node_name] = []
+    #             soma.firing_targets[out_node_name].append(name)
 
     # load_finish = time.perf_counter()
     # print("Load time: ", load_finish-load_start)
