@@ -182,10 +182,10 @@ class SpecificNode(SuperNode):
         self.make_dendrites()
         self.connect_dendrites()
 
-        self.random_flux(self.rand_flux)
-        self.add_inhibition_counts()
-        print(f"Fanin normalization with coefficient of {self.fan_coeff}")
-        self.normalize_fanin(self.fan_coeff)
+        # self.random_flux(self.rand_flux)
+        # self.add_inhibition_counts()
+        # print(f"Fanin normalization with coefficient of {self.fan_coeff}")
+        # self.normalize_fanin(self.fan_coeff)
 
         self.make_and_connect_synapses()
 

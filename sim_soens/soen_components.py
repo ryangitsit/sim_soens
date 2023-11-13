@@ -191,6 +191,7 @@ class dendrite():
                 self.ib = self.ib_n
                 self.beta_di = self.beta_ni
                 self.name = f'{self.name}_soma'
+                
         else:
             # print("REGULAR DENDRITE")
             if "ib_di" in self.__dict__.keys():
@@ -358,6 +359,8 @@ class synapse():
         
         self.synaptic_input = input_object.name
         self.input_signal = input_object
+        # if type(input_object).__name__ == 'neuron':
+        #     input_object.firing_targets[self.name] = self
         
         return self
     
@@ -462,6 +465,7 @@ class neuron():
         self.source_type = 'qd'
         self.num_photons_out_factor = 10
         self.light_production_delay = 2
+        self.firing_targets = {}
 
 
         # UPDATE TO CUSTOM PARAMS
@@ -644,13 +648,18 @@ class neuron():
         self.dend_soma.add_input(connection_object, connection_strength)
         return
         
-    def add_output(self, connection_object):
+    def add_output(self, connection_object, out_node_name=None):
         if type(connection_object).__name__ == 'synapse':
             name = connection_object.name
             # print(self.name, "-->", connection_object.name)
             self.synaptic_outputs[name] = synapse.synapses[name]
             synapse.synapses[name].add_input(self)
             self.dend_soma.syn_outs[name] = 0
+
+            if out_node_name is not None:
+                if out_node_name not in list(self.dend_soma.firing_targets.keys()):
+                    self.dend_soma.firing_targets[out_node_name] = []
+                self.dend_soma.firing_targets[out_node_name].append(name)
         else: 
             raise ValueError('[soen_sim] a neuron can only output to a synapse')    
         
@@ -659,14 +668,6 @@ class neuron():
     def run_sim(self, **kwargs):
         self = run_soen_sim(self, **kwargs)
         return self
-
-    ## deprecated --> use node.plot_neuron_activity(net)    
-    # def plot(self):
-    #     if self.plot_simple:
-    #         plot_neuron_simple(self)
-    #     else:
-    #         plot_neuron(self)
-    #     return
 
     def __del__(self):
         # print('dendrite deleted')
@@ -772,12 +773,13 @@ class network():
             spikes[1].append((spike_t))
             spike_signal = []
             spike_times = spike_t #/neuron.time_params['t_tau_conversion']
-            for spike in spike_times:
-                spot = int(spike/self.dt)
-                spread = int(5/self.dt)
-                spike_signal.append(np.max(s[np.max([0,spot-spread]):spot+spread]))
-                # spike_signal.append(s[spot])
-            spike_signals.append(spike_signal)
+            if 'window' not in self.backend:
+                for spike in spike_times:
+                    spot = int(spike/self.dt)
+                    spread = int(5/self.dt)
+                    spike_signal.append(np.max(s[np.max([0,spot-spread]):spot+spread]))
+                    # spike_signal.append(s[spot])
+                spike_signals.append(spike_signal)
             count+=1
         spikes[0] = np.concatenate(spikes[0])
         spikes[1] = np.concatenate(spikes[1])
@@ -811,6 +813,7 @@ class network():
             # print(f"{count} synapses recieving no input.")
         self.run_sim()
         self.get_recordings()
+
 
 
 class HardwareInTheLoop:
