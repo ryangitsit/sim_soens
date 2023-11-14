@@ -31,8 +31,8 @@ function stepper(net_dict::Dict{Any,Any})
         Threads.@threads for idx in 1:length(node_names)
             node = net_dict["nodes"][node_names[idx]]
             node_name = node_names[idx]
-            loop_synapses(node,node_name,syn_names,net_dict["T"],net_dict["conversion"],t_idx,net_dict["dt"])
-            loop_dendrites(node,node_name,dend_names,net_dict["d_tau"],t_idx)
+            loop_synapses(node,node_name,syn_names,Int32(net_dict["T"]),Float32(net_dict["conversion"]),Int32(t_idx),Float32(net_dict["dt"]))
+            loop_dendrites(node,node_name,dend_names,Float32(net_dict["d_tau"]),Int32(t_idx))
 
             if node["dendrites"][node["soma"]].spiked == 1
                 for (syn_name,spks) in node["outputs"]
@@ -50,7 +50,7 @@ function stepper(net_dict::Dict{Any,Any})
     return net_dict
 end
 
-function loop_synapses(node::Dict{Any, Any},node_name::String,syn_names::Dict{String,Vector{Any}},T::Int64,conversion::Float64,t_idx::Int64,dt::Float64)
+function loop_synapses(node::Dict{Any, Any},node_name::String,syn_names::Dict{String,Vector{Any}},T::Int32,conversion::Float32,t_idx::Int32,dt::Float32)
     Threads.@threads for iter in 1:length(node["synapses"])
         syn = node["synapses"][syn_names[node_name][iter]]
         synapse_input_update(
@@ -63,7 +63,7 @@ function loop_synapses(node::Dict{Any, Any},node_name::String,syn_names::Dict{St
     end
 end
 
-function loop_dendrites(node::Dict{Any, Any},node_name::String,dend_names::Dict{String,Vector{Any}},d_tau::Float64,t_idx::Int64)
+function loop_dendrites(node::Dict{Any, Any},node_name::String,dend_names::Dict{String,Vector{Any}},d_tau::Float32,t_idx::Int32)
     Threads.@threads for iter in 1:length(node["dendrites"])
         dend = node["dendrites"][dend_names[node_name][iter]]
         dend_update(
@@ -75,85 +75,86 @@ function loop_dendrites(node::Dict{Any, Any},node_name::String,dend_names::Dict{
     end
 end
 
-function stepper(net_dict::Dict{String,Any})
-    # @show Threads.nthreads()
-    """
-    Plan:
-     - Go over all nodes in network
-        - create structs for synapses
-        - create structs for dendrites
-        - creat information table for connectivity
-        - update in downstream direction
-        - return dataframe of signals and fluxes
-            - update py objects with new info
-        - win
-    """
-    # net_dict["T"] = 10
-    syn_names  = Dict{String,Vector{Any}}()
-    dend_names = Dict{String,Vector{Any}}()
-    node_names = []
+# function stepper(net_dict::Dict{String,Any})
+#     # @show Threads.nthreads()
+#     """
+#     Plan:
+#      - Go over all nodes in network
+#         - create structs for synapses
+#         - create structs for dendrites
+#         - creat information table for connectivity
+#         - update in downstream direction
+#         - return dataframe of signals and fluxes
+#             - update py objects with new info
+#         - win
+#     """
+#     # net_dict["T"] = 10
+#     syn_names  = Dict{String,Vector{Any}}()
+#     dend_names = Dict{String,Vector{Any}}()
+#     node_names = []
 
-    for (node_name,node) in net_dict["nodes"]
-        push!(node_names,node_name)
-        syns = collect(keys(node["synapses"]))
-        dends = collect(keys(node["dendrites"]))
-        syn_names[node_name] = syns
-        dend_names[node_name] = dends
-    end
+#     for (node_name,node) in net_dict["nodes"]
+#         push!(node_names,node_name)
+#         syns = collect(keys(node["synapses"]))
+#         dends = collect(keys(node["dendrites"]))
+#         syn_names[node_name] = syns
+#         dend_names[node_name] = dends
+#     end
 
-    for t_idx in 1:net_dict["T"]-1
-        Threads.@threads for idx in 1:length(node_names)
-            node = net_dict["nodes"][node_names[idx]]
-            node_name = node_names[idx]
-            loop_synapses(node,node_name,syn_names,net_dict["T"],net_dict["conversion"],t_idx,net_dict["dt"])
-            loop_dendrites(node,node_name,dend_names,net_dict["d_tau"],t_idx)
+#     for t_idx in 1:net_dict["T"]-1
+#         Threads.@threads for idx in 1:length(node_names)
+#             node = net_dict["nodes"][node_names[idx]]
+#             node_name = node_names[idx]
+#             loop_synapses(node,node_name,syn_names,net_dict["T"],net_dict["conversion"],t_idx,net_dict["dt"])
+#             loop_dendrites(node,node_name,dend_names,net_dict["d_tau"],t_idx)
 
-            if node["dendrites"][node["soma"]].spiked == 1
-                for (syn_name,spks) in node["outputs"]
-                    for (node_name,node) in net_dict["nodes"]
-                        if occursin(node_name,syn_name)
-                            push!(net_dict["nodes"][node_name]["synapses"][syn_name].spike_times,t_idx+100)
-                        end
-                    end
-                end
-                node["dendrites"][node["soma"]].spiked = 0
-            end
+#             if node["dendrites"][node["soma"]].spiked == 1
+#                 for (syn_name,spks) in node["outputs"]
+#                     for (node_name,node) in net_dict["nodes"]
+#                         if occursin(node_name,syn_name)
+#                             push!(net_dict["nodes"][node_name]["synapses"][syn_name].spike_times,t_idx+100)
+#                         end
+#                     end
+#                 end
+#                 node["dendrites"][node["soma"]].spiked = 0
+#             end
             
-        end
-    end
-    return net_dict
-end
+#         end
+#     end
+#     return net_dict
+# end
 
-function loop_synapses(node::Dict{String, Any},node_name::String,syn_names::Dict{String,Vector{Any}},T::Int64,conversion::Float64,t_idx::Int64,dt::Float64)
-    Threads.@threads for iter in 1:length(node["synapses"])
-        syn = node["synapses"][syn_names[node_name][iter]]
-        synapse_input_update(
-            syn,
-            t_idx,
-            T,
-            conversion,
-            dt
-            )
-    end
-end
+# function loop_synapses(node::Dict{String, Any},node_name::String,syn_names::Dict{String,Vector{Any}},T::Int32,conversion::Float32,t_idx::Int32,dt::Float32)
+#     Threads.@threads for iter in 1:length(node["synapses"])
+#         syn = node["synapses"][syn_names[node_name][iter]]
+#         synapse_input_update(
+#             syn,
+#             t_idx,
+#             T,
+#             conversion,
+#             dt
+#             )
+#     end
+# end
 
-function loop_dendrites(node::Dict{String, Any},node_name::String,dend_names::Dict{String,Vector{Any}},d_tau::Float64,t_idx::Int64)
-    Threads.@threads for iter in 1:length(node["dendrites"])
-        dend = node["dendrites"][dend_names[node_name][iter]]
-        dend_update(
-            node,
-            dend,
-            t_idx,
-            d_tau
-            )
-    end
-end
+# function loop_dendrites(node::Dict{String, Any},node_name::String,dend_names::Dict{String,Vector{Any}},d_tau::Float32,t_idx::Int32)
+#     Threads.@threads for iter in 1:length(node["dendrites"])
+#         dend = node["dendrites"][dend_names[node_name][iter]]
+#         dend_update(
+#             node,
+#             dend,
+#             t_idx,
+#             d_tau
+#             )
+#     end
+# end
 
 
-function synapse_input_update(syn::Synapse,t::Int64,T::Int64,conversion::Float64,dt::Float64)
+function synapse_input_update(syn::Synapse,t::Int32,T::Int32,conversion::Float32,dt::Float32)
     if t in syn.spike_times
         duration = 1500
-        hotspot = 3
+        hotspot    = Int32(3)
+        # hotspot = 3
         until = min(t+duration,T)
         syn.phi_spd[t:until] = max.(syn.phi_spd[t:until],SPD_response(conversion,hotspot,dt)[1:until-t+1])
     end
@@ -161,10 +162,11 @@ function synapse_input_update(syn::Synapse,t::Int64,T::Int64,conversion::Float64
 end
 
 
-function synapse_input_update(syn::RefractorySynapse,t::Int64,T::Int64,conversion::Float64,dt::Float64)
+function synapse_input_update(syn::RefractorySynapse,t::Int32,T::Int32,conversion::Float32,dt::Float32)
     if t in syn.spike_times
         duration = 1500
-        hotspot = 2 
+        hotspot    = Int32(2)
+        # hotspot = 2 
         # t = tau_vec[spk]
         until = min(t+duration,T)
         syn.phi_spd[t:until] = max.(syn.phi_spd[t:until],SPD_response(conversion,hotspot,dt)[1:until-t+1])
@@ -173,15 +175,15 @@ function synapse_input_update(syn::RefractorySynapse,t::Int64,T::Int64,conversio
 end
 
 
-function SPD_response(conversion::Float64,hs::Int64,dt::Float64)
+function SPD_response(conversion::Float32,hs::Int32,dt::Float32)
     """
     Move to before time stepper
     """
     conversion = (conversion * .01) #.0155
-    phi_peak = 0.5
-    tau_rise = 0.02 *conversion
-    tau_fall = 65   *conversion/(dt*10) #50
-    hotspot  = hs*.02    *conversion #- 22.925
+    phi_peak =   0.5
+    tau_rise =   0.02 *conversion
+    tau_fall =   65   *conversion/(dt*10) #50
+    hotspot  =   hs*.02    *conversion #- 22.925
     # @show phi_peak 
     # @show tau_rise 
     # @show tau_fall 
@@ -198,21 +200,21 @@ function SPD_response(conversion::Float64,hs::Int64,dt::Float64)
 end
 
 
-function dend_update(node::Dict,dend::ArborDendrite,t_idx::Int,d_tau::Float64)
+function dend_update(node::Dict,dend::ArborDendrite,t_idx::Int32,d_tau::Float32)
     dend_inputs(node,dend,t_idx)
     dend_synputs(node,dend,t_idx)
-    dend_signal(dend,t_idx,d_tau::Float64)
+    dend_signal(dend,t_idx,d_tau::Float32)
 end
 
 
-function dend_update(node::Dict,dend::RefractoryDendrite,t_idx::Int,d_tau::Float64)
+function dend_update(node::Dict,dend::RefractoryDendrite,t_idx::Int32,d_tau::Float32)
     # dend_inputs(node,dend,t_idx)
     dend_synputs(node,dend,t_idx)
-    dend_signal(dend,t_idx,d_tau::Float64)
+    dend_signal(dend,t_idx,d_tau::Float32)
 end
 
 
-# function dend_update(node::Dict,dend::SomaticDendrite,t_idx::Int,d_tau::Float64)
+# function dend_update(node::Dict,dend::SomaticDendrite,t_idx::Int32,d_tau::Float32)
 #     # if dend.s[t_idx] >= dend.threshold && t_idx .- dend.last_spike > dend.abs_ref
 #     #     spike(dend,t_idx,dend.syn_ref)
 #     if dend.s[t_idx] >= dend.threshold
@@ -232,7 +234,7 @@ end
 #                 # @show t_idx
 #                 dend_inputs(node,dend,t_idx)
 #                 dend_synputs(node,dend,t_idx)
-#                 dend_signal(dend,t_idx,d_tau::Float64)
+#                 dend_signal(dend,t_idx,d_tau::Float32)
 #             else
 #                 # dend_inputs(node,dend,t_idx)
 #                 dend_synputs(node,dend,t_idx)
@@ -242,13 +244,13 @@ end
 #             # @show t_idx
 #             dend_inputs(node,dend,t_idx)
 #             dend_synputs(node,dend,t_idx)
-#             dend_signal(dend,t_idx,d_tau::Float64)
+#             dend_signal(dend,t_idx,d_tau::Float32)
 #         end
 #     end
 
 # end
 
-function dend_update(node::Dict,dend::SomaticDendrite,t_idx::Int,d_tau::Float64)
+function dend_update(node::Dict,dend::SomaticDendrite,t_idx::Int32,d_tau::Float32)
     dend_inputs(node,dend,t_idx)
     dend_synputs(node,dend,t_idx)
     if dend.s[t_idx] >= dend.threshold
@@ -263,16 +265,16 @@ function dend_update(node::Dict,dend::SomaticDendrite,t_idx::Int,d_tau::Float64)
         # if neuron has spiked, check if abs_ref cleared
         if isempty(dend.out_spikes) != true 
             if t_idx .- last(dend.out_spikes) > dend.abs_ref
-                dend_signal(dend,t_idx,d_tau::Float64)
+                dend_signal(dend,t_idx,d_tau::Float32)
             end
         else
-            dend_signal(dend,t_idx,d_tau::Float64)
+            dend_signal(dend,t_idx,d_tau::Float32)
         end
     end
 end
 
 
-function spike(dend::SomaticDendrite,t_idx::Int,syn_ref::AbstractSynapse) ## add spike to syn_ref
+function spike(dend::SomaticDendrite,t_idx::Int32,syn_ref::AbstractSynapse) ## add spike to syn_ref
     dend.spiked = 1
     push!(dend.out_spikes,t_idx)
     # dend.s[t_idx+1:length(dend.s)] .= 0
@@ -286,7 +288,7 @@ function spike(dend::SomaticDendrite,t_idx::Int,syn_ref::AbstractSynapse) ## add
 end
 
 
-function dend_inputs(node::Dict,dend::AbstractDendrite,t_idx::Int64)
+function dend_inputs(node::Dict,dend::AbstractDendrite,t_idx::Int32)
     update = 0
     for input in dend.inputs
         update += node["dendrites"][input[1]].s[t_idx]*input[2]
@@ -295,7 +297,7 @@ function dend_inputs(node::Dict,dend::AbstractDendrite,t_idx::Int64)
 end
 
 
-function dend_synputs(node::Dict,dend::AbstractDendrite,t_idx::Int)
+function dend_synputs(node::Dict,dend::AbstractDendrite,t_idx::Int32)
     update = 0
     for synput in dend.synputs 
         dend.phir[t_idx+1] += node["synapses"][synput[1]].phi_spd[t_idx]*synput[2] 
@@ -303,7 +305,7 @@ function dend_synputs(node::Dict,dend::AbstractDendrite,t_idx::Int)
 end
 
 
-function dend_signal(dend::AbstractDendrite,t_idx::Int,d_tau::Float64)
+function dend_signal(dend::AbstractDendrite,t_idx::Int32,d_tau::Float32)
 
     val = dend.phir[t_idx+1]
 
@@ -349,7 +351,7 @@ function closest_index(lst,val)
     return findmin(abs.(lst.-val))[2] #indexing!
 end
 
-function s_index_approxer(vec::Vector{Float64},val::Float64)
+function s_index_approxer(vec::Vector{Float32},val::Float32)
     if length(vec) > 1
     # s_idx = floor(Int, (val/(maximum(vec)-minimum(vec)))*length(vec) )
         slope = (last(vec) - vec[1])/length(vec)
@@ -361,8 +363,8 @@ function s_index_approxer(vec::Vector{Float64},val::Float64)
     return s_idx
 end
 
-function index_approxer(val::Float64)
-    # ,maxval::Float64,minval::Float64,lenlst::Int
+function index_approxer(val::Float32)
+    # ,maxval::Float32,minval::Float32,lenlst::Int
     if val <= -.1675
         _ind__phi_r = minimum([floor(Int,(333*(abs(val)-.1675)/(1-.1675))),667])
     elseif val >= .1675
@@ -376,13 +378,13 @@ function index_approxer(val::Float64)
 end
 
 function general_index_approxer(
-    val::Float64,
-    abs_min_neg::Float64,
-    abs_min_pos::Float64,
-    abs_idx_neg::Int64,
-    abs_idx_pos::Int64
+    val::Float32,
+    abs_min_neg::Float32,
+    abs_min_pos::Float32,
+    abs_idx_neg::Int32,
+    abs_idx_pos::Int32
     )
-    # ,maxval::Float64,minval::Float64,lenlst::Int
+    # ,maxval::Float32,minval::Float32,lenlst::Int
     if val <= abs_min_neg
         _ind__phi_r = minimum([floor(Int,(abs_idx_neg*(abs(val)-abs_min_pos)/(1-abs_min_pos))),667])
     elseif val >= abs_min_pos

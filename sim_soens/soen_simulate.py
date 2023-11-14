@@ -180,6 +180,9 @@ def run_julia_backend(net):
 
 
     if net.backend == 'julia':
+
+        net.phi_vec = np.float32(net.phi_vec)
+        
         jl.include("../sim_soens/julia_conversion.jl")
 
         if jl.Threads.nthreads() == 1:

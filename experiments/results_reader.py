@@ -239,16 +239,16 @@ experiments = [
     # 'speed_bigeta_full',
     # 'speed_target5_full',
     
-    # 'speed_testing_full',
-    # 'speed_target15_full',
-    # 'spread_full',
-    # 'target50_maxflux_full',
+    'speed_testing_full',
+    'speed_target15_full',
+    'spread_full',
+    'target50_maxflux_full',
     'target5_maxflux_full',
     'speed_target15_full2'
     ]
 
 until = 150*10000
 
-plot_singles(experiments,until)   
-# plot_all(experiments,until)
+# plot_singles(experiments,until)   
+plot_all(experiments,until)
 # 

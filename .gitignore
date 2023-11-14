@@ -5,6 +5,8 @@ __pycache__/
 .ipynb_checkpoints/
 testing.py
 testing_.py
+scratch.py
+scratch.jl
 results/
 legacy/
 # sim_soens.egg-info/

@@ -301,7 +301,7 @@ def main():
             outputs = [[] for i in range(config.digits)]
 
             # iterate over each digit-class
-            np.random.seed(None)
+            np.random.seed(10)
             shuffled = np.arange(0,config.digits,1)
             np.random.shuffle(shuffled)
 
@@ -516,17 +516,17 @@ def main():
     # #     syn_soma = synapse(name=f'{node.name}_somatic_synapse')
     # #     node.synapse_list.append(syn_soma)
     #     # node.neuron.dend_soma.add_input(syn_soma,connection_strength=inhibition)
-    # for i,node in enumerate(nodes):
-    #     node.neuron.dend_soma.firing_targets = {}
+    for i,node in enumerate(nodes):
+        node.neuron.dend_soma.firing_targets = {}
 
-    # for i,node in enumerate(nodes):
-    #     for other_node in nodes:
-    #         if other_node.name != node.name:
-    #             out_node_name=other_node.name
-    #             soma = node.neuron.dend_soma
-    #             if out_node_name not in list(soma.firing_targets.keys()):
-    #                 soma.firing_targets[out_node_name] = []
-    #             soma.firing_targets[out_node_name].append(name)
+    for i,node in enumerate(nodes):
+        for other_node in nodes:
+            if other_node.name != node.name:
+                out_node_name=other_node.name
+                soma = node.neuron.dend_soma
+                if out_node_name not in list(soma.firing_targets.keys()):
+                    soma.firing_targets[out_node_name] = []
+                soma.firing_targets[out_node_name].append(other_node.synapse_list[-1].name)
 
     # load_finish = time.perf_counter()
     # print("Load time: ", load_finish-load_start)

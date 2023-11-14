@@ -13,118 +13,118 @@ abstract type AbstractSynapse end
 
 mutable struct Synapse <: AbstractSynapse
     name        ::String
-    spike_times ::Vector{Int64}
-    phi_spd     ::Vector{Float64}
+    spike_times ::Vector{Int32}
+    phi_spd     ::Vector{Float32}
 end
 
 mutable struct RefractorySynapse <: AbstractSynapse
     name        ::String
-    spike_times ::Vector{Int64}
-    phi_spd     ::Vector{Float64}
+    spike_times ::Vector{Int32}
+    phi_spd     ::Vector{Float32}
 end
 
 
 mutable struct ArborDendrite <: AbstractDendrite
     name              :: String
-    s                 :: Vector{Float64}
-    phir              :: Vector{Float64}
-    inputs            :: Dict{String,Float64}
-    synputs           :: Dict{String,Float64}
-    const alpha       :: Float64
-    const beta        :: Float64
+    s                 :: Vector{Float32}
+    phir              :: Vector{Float32}
+    inputs            :: Dict{String,Float32}
+    synputs           :: Dict{String,Float32}
+    const alpha       :: Float32
+    const beta        :: Float32
 
-    const phi_vec     :: Vector{Float64}
-    const s_array     :: Vector{Vector{Float64}}
-    const r_array     :: Vector{Vector{Float64}}
+    const phi_vec     :: Vector{Float32}
+    const s_array     :: Vector{Vector{Float32}}
+    const r_array     :: Vector{Vector{Float32}}
 
-    ind_phi           :: Vector{Int64}
-    ind_s             :: Vector{Int64}
+    ind_phi           :: Vector{Int32}
+    ind_s             :: Vector{Int32}
 
-    const phi_min     :: Float64
-    const phi_max     :: Float64
-    const phi_len     :: Int64
+    const phi_min     :: Float32
+    const phi_max     :: Float32
+    const phi_len     :: Int32
 
-    const abs_min_neg :: Float64
-    const abs_min_pos :: Float64
-    const abs_idx_neg :: Int64
-    const abs_idx_pos :: Int64
+    const abs_min_neg :: Float32
+    const abs_min_pos :: Float32
+    const abs_idx_neg :: Int32
+    const abs_idx_pos :: Int32
 
-    flux_offset::Float64
+    flux_offset::Float32
 end
 
 
 mutable struct RefractoryDendrite <: AbstractDendrite
     name      :: String
-    s         :: Vector{Float64}
-    phir      :: Vector{Float64}
-    inputs    :: Dict{String,Float64}
-    synputs   :: Dict{String,Float64}
-    const alpha     :: Float64
-    const beta      :: Float64
+    s         :: Vector{Float32}
+    phir      :: Vector{Float32}
+    inputs    :: Dict{String,Float32}
+    synputs   :: Dict{String,Float32}
+    const alpha     :: Float32
+    const beta      :: Float32
 
-    const phi_vec   :: Vector{Float64}
-    const s_array   :: Vector{Vector{Float64}}
-    const r_array   :: Vector{Vector{Float64}}
+    const phi_vec   :: Vector{Float32}
+    const s_array   :: Vector{Vector{Float32}}
+    const r_array   :: Vector{Vector{Float32}}
 
-    ind_phi  :: Vector{Int64}
-    ind_s    :: Vector{Int64}
+    ind_phi  :: Vector{Int32}
+    ind_s    :: Vector{Int32}
 
-    const phi_min   :: Float64
-    const phi_max   :: Float64
-    const phi_len   :: Int64
+    const phi_min   :: Float32
+    const phi_max   :: Float32
+    const phi_len   :: Int32
 
-    const abs_min_neg :: Float64
-    const abs_min_pos :: Float64
-    const abs_idx_neg :: Int64
-    const abs_idx_pos :: Int64
+    const abs_min_neg :: Float32
+    const abs_min_pos :: Float32
+    const abs_idx_neg :: Int32
+    const abs_idx_pos :: Int32
 
-    flux_offset::Float64
+    flux_offset::Float32
 end
 
 mutable struct SomaticDendrite <: AbstractDendrite
     name            :: String
-    s               :: Vector{Float64}
-    phir            :: Vector{Float64}
-    inputs          :: Dict{String,Float64}
-    synputs         :: Dict{String,Float64}
-    const alpha     :: Float64
-    const beta      :: Float64
+    s               :: Vector{Float32}
+    phir            :: Vector{Float32}
+    inputs          :: Dict{String,Float32}
+    synputs         :: Dict{String,Float32}
+    const alpha     :: Float32
+    const beta      :: Float32
  
-    const phi_vec   :: Vector{Float64}
-    const s_array   :: Vector{Vector{Float64}}
-    const r_array   :: Vector{Vector{Float64}}
+    const phi_vec   :: Vector{Float32}
+    const s_array   :: Vector{Vector{Float32}}
+    const r_array   :: Vector{Vector{Float32}}
 
-    ind_phi         :: Vector{Int64}
-    ind_s           :: Vector{Int64}
+    ind_phi         :: Vector{Int32}
+    ind_s           :: Vector{Int32}
 
-    const phi_min   :: Float64
-    const phi_max   :: Float64
-    const phi_len   :: Int64
+    const phi_min   :: Float32
+    const phi_max   :: Float32
+    const phi_len   :: Int32
 
-    spiked          :: Int64
-    out_spikes      :: Vector{Int64}
-    const threshold :: Float64
-    const abs_ref   :: Float64
+    spiked          :: Int32
+    out_spikes      :: Vector{Int32}
+    const threshold :: Float32
+    const abs_ref   :: Float32
     const syn_ref   :: AbstractSynapse
-    const syn_outs  :: Dict{String,Int64}
+    const syn_outs  :: Dict{String,Int32}
 
-    const abs_min_neg :: Float64
-    const abs_min_pos :: Float64
-    const abs_idx_neg :: Int64
-    const abs_idx_pos :: Int64
+    const abs_min_neg :: Float32
+    const abs_min_pos :: Float32
+    const abs_idx_neg :: Int32
+    const abs_idx_pos :: Int32
 
-    flux_offset::Float64
+    flux_offset::Float32
 end
 
 function obj_to_vect(obj)
-    vect = Vector{Float64}[]
+    vect = Vector{Float32}[]
     for arr in obj
-        push!(vect,convert(Vector{Float64},arr))
+        push!(vect,convert(Vector{Float32},Float32.(arr)))
     end
     return vect
 end
     
-function make_synapses(node::PyObject,T::Int64,dt::Float64)
+function make_synapses(node::PyObject,T::Int32,dt::Float32)
     synapses = Dict()
 
     for syn in node.synapse_list
@@ -152,35 +152,35 @@ end
 
 function  make_dendrites(
     node::PyObject,
-    T::Int64,
+    T::Int32,
     synapses,
-    phi_vec::Vector{Float64},
-    s_array::Vector{Vector{Float64}},
-    r_array::Vector{Vector{Float64}},
-    dt::Float64,
-    abs_min_neg::Float64,
-    abs_min_pos::Float64,
-    abs_idx_neg::Int64,
-    abs_idx_pos::Int64
+    phi_vec::Vector{Float32},
+    s_array::Vector{Vector{Float32}},
+    r_array::Vector{Vector{Float32}},
+    dt::Float32,
+    abs_min_neg::Float32,
+    abs_min_pos::Float32,
+    abs_idx_neg::Int32,
+    abs_idx_pos::Int32
     )
     dendrites = Dict{String,AbstractDendrite}() #Dict()
 
     for dend in node.dendrite_list
 
-        inputs = Dict{String,Float64}()
+        inputs = Dict{String,Float32}()
         for input in dend.dendritic_connection_strengths
             inputs[input[1]] = input[2]
         end
 
-        synputs   = Dict{String,Float64}()
+        synputs   = Dict{String,Float32}()
         for synput in dend.synaptic_connection_strengths
             # @show synput[1], synput[2]
             synputs[synput[1]] = synput[2]
         end
 
-        # phi_vec = arr_list[1]::Vector{Float64}
-        # s_array = obj_to_vect(arr_list[2])::Vector{Vector{Float64}}
-        # r_array = obj_to_vect(arr_list[3])::Vector{Vector{Float64}}
+        # phi_vec = arr_list[1]::Vector{Float32}
+        # s_array = obj_to_vect(arr_list[2])::Vector{Vector{Float32}}
+        # r_array = obj_to_vect(arr_list[3])::Vector{Vector{Float32}}
 
         offset = minimum( [(maximum([dend.offset_flux,-dend.phi_th])), dend.phi_th] )
         # println(dend.offset_flux," or ",dend.phi_th," --> ",offset)
@@ -197,15 +197,15 @@ function  make_dendrites(
                 phi_vec,
                 s_array,
                 r_array,
-                Int64[],
-                Int64[],
+                Int32[],
+                Int32[],
                 findmin(phi_vec)[1],
                 findmax(phi_vec)[1],
                 length(phi_vec),
                 0,                                      # last spike
-                Int64[],                                # spiked    :: Int
-                dend.s_th,                              # threshold :: Float64
-                dend.absolute_refractory_period/(dt), #*conversion,     # abs_ref   :: Float64
+                Int32[],                                # spiked    :: Int
+                dend.s_th,                              # threshold :: Float32
+                dend.absolute_refractory_period/(dt), #*conversion,     # abs_ref   :: Float32
                 synapses[node.name*"__syn_refraction"], # struct
                 dend.syn_outs,
                 abs_min_neg,
@@ -227,8 +227,8 @@ function  make_dendrites(
                 phi_vec,
                 s_array,
                 r_array,
-                Int64[],
-                Int64[],
+                Int32[],
+                Int32[],
                 findmin(phi_vec)[1],
                 findmax(phi_vec)[1],
                 length(phi_vec),
@@ -251,8 +251,8 @@ function  make_dendrites(
                 phi_vec,
                 s_array,
                 r_array,
-                Int64[],
-                Int64[],
+                Int32[],
+                Int32[],
                 findmin(phi_vec)[1],
                 findmax(phi_vec)[1],
                 length(phi_vec),
@@ -272,15 +272,15 @@ end
 
 function make_nodes(
     node::PyObject,
-    T::Int64,
-    dt::Float64,
-    p::Vector{Float64},
-    s::Vector{Vector{Float64}},
-    r::Vector{Vector{Float64}},
-    abs_min_neg::Float64,
-    abs_min_pos::Float64,
-    abs_idx_neg::Int64,
-    abs_idx_pos::Int64
+    T::Int32,
+    dt::Float32,
+    p::Vector{Float32},
+    s::Vector{Vector{Float32}},
+    r::Vector{Vector{Float32}},
+    abs_min_neg::Float32,
+    abs_min_pos::Float32,
+    abs_idx_neg::Int32,
+    abs_idx_pos::Int32
     )
 
     node_dict = Dict{String,Any}()
@@ -310,22 +310,26 @@ function obj_to_structs(net::PyObject)
     
     # arr_list = [net.phi_vec, net.s_array, net.r_array]
 
-    p = net.phi_vec::Vector{Float64}
-    s = obj_to_vect(net.s_array)::Vector{Vector{Float64}}
-    r = obj_to_vect(net.r_array)::Vector{Vector{Float64}}
+    p = net.phi_vec::Vector{Float32}
+    s = obj_to_vect(net.s_array)::Vector{Vector{Float32}}
+    r = obj_to_vect(net.r_array)::Vector{Vector{Float32}}
 
-    abs_min_neg = net.phi_vals["neg_min"]
-    abs_min_pos = net.phi_vals["pos_min"]
-    abs_idx_neg = net.phi_vals["neg_idx"]
-    abs_idx_pos = net.phi_vals["pos_idx"]
+    # p = p .|> Vector{Float32}
+    # s = s .|> Vector{Float32}
+    # r = r .|> Vector{Float32}
+
+    abs_min_neg = Float32(net.phi_vals["neg_min"])
+    abs_min_pos = Float32(net.phi_vals["pos_min"])
+    abs_idx_neg = Int32(net.phi_vals["neg_idx"])
+    abs_idx_pos = Int32(net.phi_vals["pos_idx"])
     
     
 
     net_dict["nodes"] = node_dict::Dict
-    net_dict["dt"] = net.dt::Float64
-    net_dict["d_tau"] = net.time_params["d_tau"]::Float64
-    net_dict["conversion"] = net.time_params["t_tau_conversion"]::Float64
-    net_dict["T"] = length(net.time_params["tau_vec"])::Int64
+    net_dict["dt"] = Float32(net.dt)::Float32
+    net_dict["d_tau"] = Float32(net.time_params["d_tau"])::Float32
+    net_dict["conversion"] = Float32(net.time_params["t_tau_conversion"])::Float32
+    net_dict["T"] = Int32(length(net.time_params["tau_vec"]))::Int32
 
     for node in net.nodes
         node_dict[node.name] = make_nodes(
