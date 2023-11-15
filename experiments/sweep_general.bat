@@ -118,42 +118,19 @@ ECHO OFF
 
 
 
-@REM FOR /L %%i IN (5504,1,100000) DO (
-@REM     python exp_MNIST_full.py^
-@REM       --run           %%i^
-@REM       --s_th          0.25^
-@REM       --duration      1000^
-@REM       --beta          3^
-@REM       --dt            1.0^
-@REM       --jul_threading 4^
-@REM       --digits        10^
-@REM       --samples       50^
-@REM       --eta           0.005^
-@REM       --exp_name      speed_target15_full2^
-@REM       --backend       julia^
-@REM       --dataset       MNIST^
-@REM       --max_offset    0.5^
-@REM       --fixed         .5^
-@REM       --rand_flux     0.005^
-@REM       --layers        6^
-@REM       --lay_weighting 1,1,1,4,8,10^
-@REM       --norm_fanin    True^
-@REM       --fan_coeff     1.5^
-@REM       --target        15
-@REM )
-
-FOR /L %%i IN (1607,1,100000) DO (
+@REM changed to 32 bit at 5504 -- 6062
+FOR /L %%i IN (5504,1,100000) DO (
     python exp_MNIST_full.py^
       --run           %%i^
       --s_th          0.25^
-      --duration      2500^
+      --duration      1000^
       --beta          3^
       --dt            1.0^
       --jul_threading 4^
       --digits        10^
       --samples       50^
       --eta           0.005^
-      --exp_name      target5_maxflux_full^
+      --exp_name      speed_target15_full2^
       --backend       julia^
       --dataset       MNIST^
       --max_offset    0.5^
@@ -163,8 +140,33 @@ FOR /L %%i IN (1607,1,100000) DO (
       --lay_weighting 1,1,1,4,8,10^
       --norm_fanin    True^
       --fan_coeff     1.5^
-      --target        5
+      --target        15
 )
+
+@REM changed to 32 bit at 1607 -- 1907 
+@REM FOR /L %%i IN (1607,1,100000) DO (
+@REM     python exp_MNIST_full.py^
+@REM       --run           %%i^
+@REM       --s_th          0.25^
+@REM       --duration      2500^
+@REM       --beta          3^
+@REM       --dt            1.0^
+@REM       --jul_threading 4^
+@REM       --digits        10^
+@REM       --samples       50^
+@REM       --eta           0.005^
+@REM       --exp_name      target5_maxflux_full^
+@REM       --backend       julia^
+@REM       --dataset       MNIST^
+@REM       --max_offset    0.5^
+@REM       --fixed         .5^
+@REM       --rand_flux     0.005^
+@REM       --layers        6^
+@REM       --lay_weighting 1,1,1,4,8,10^
+@REM       --norm_fanin    True^
+@REM       --fan_coeff     1.5^
+@REM       --target        5
+@REM )
 
 
 @REM --lay_weighting 1,1,1,4,8,10^
