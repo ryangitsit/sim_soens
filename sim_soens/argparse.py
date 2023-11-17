@@ -48,7 +48,7 @@ def setup_argument_parser():
     parser.add_argument( "--dt",            type=float,         default = .1       )
     parser.add_argument( "--target",        type=int,           default = 10       )
     parser.add_argument( "--max_offset",    type=float,         default = None     )
-    
+    parser.add_argument( "--tiling",        type=bool,          default = None     )
     
 
 

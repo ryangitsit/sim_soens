@@ -76,7 +76,9 @@ class MNISTNode(SuperNode):
 
         if self.rand_flux is not None:
             self.random_flux(self.rand_flux)
+            print("Random Flux")
         if self.inh_counter:
+            print("Inhibition counter")
             self.add_inhibition_counts()
         if self.norm_fanin:
             print(f"Fanin normalization with coefficient of {self.fan_coeff}")
@@ -85,41 +87,72 @@ class MNISTNode(SuperNode):
         self.make_and_connect_synapses()
 
     def build_arbor(self):
+        if self.layers == 6:
+            lw = np.array(self.lay_weighting)
 
-        lw = np.array(self.lay_weighting)
+            # create random weights for each layer
+            layer_1 = np.array(
+                [self.make_weights(7,self.exin,self.fixed)])*lw[0]*.5
+            
+            layer_2 = np.array(
+                [self.make_weights(7,self.exin,self.fixed)*lw[1] for _ in range(int(49/7))])
+            
+            layer_3 = np.array(
+                [self.make_weights(2,self.exin,self.fixed)*lw[2] for _ in range(int(98/2))])
+            
+            layer_4 = np.array(
+                [self.make_weights(2,self.exin,self.fixed)*lw[3] for _ in range(int(196/2))])
+            
+            layer_5 = np.array(
+                [self.make_weights(2,self.exin,self.fixed)*lw[4] for _ in range(int(392/2))])
+            
+            layer_6 = np.array(
+                [self.make_weights(2,self.exin,self.fixed)*lw[5] for _ in range(int(784/2))])
 
-        # create random weights for each layer
-        layer_1 = np.array(
-            [self.make_weights(7,self.exin,self.fixed)])*lw[0]*.5
-        
-        layer_2 = np.array(
-            [self.make_weights(7,self.exin,self.fixed)*lw[1] for _ in range(int(49/7))])
-        
-        layer_3 = np.array(
-            [self.make_weights(2,self.exin,self.fixed)*lw[2] for _ in range(int(98/2))])
-        
-        layer_4 = np.array(
-            [self.make_weights(2,self.exin,self.fixed)*lw[3] for _ in range(int(196/2))])
-        
-        layer_5 = np.array(
-            [self.make_weights(2,self.exin,self.fixed)*lw[4] for _ in range(int(392/2))])
-        
-        layer_6 = np.array(
-            [self.make_weights(2,self.exin,self.fixed)*lw[5] for _ in range(int(784/2))])
+            # place them in a weight structure (defines structure and weighing of a neuron)
+            self.weights = [
+                layer_1,
+                layer_2,
+                layer_3,
+                layer_4,
+                layer_5,
+                layer_6,
+            ]
 
-        # place them in a weight structure (defines structure and weighing of a neuron)
-        self.weights = [
-            layer_1,
-            layer_2,
-            layer_3,
-            layer_4,
-            layer_5,
-            layer_6,
-        ]
+            for i,w in enumerate(self.weights):
+                print(f"Layer {i} has shape {w.shape}")
 
-        for i,w in enumerate(self.weights):
-            print(f"Layer {i} has shape {w.shape}")
+        elif self.layers == 5:
+            print("Tiling Technique")
+            lw = np.array(self.lay_weighting)
 
+            # create random weights for each layer
+            layer_1 = np.array(
+                [self.make_weights(7,self.exin,self.fixed)])*lw[0]*.5
+            
+            layer_2 = np.array(
+                [self.make_weights(7,self.exin,self.fixed)*lw[1] for _ in range(int(49/7))])
+            
+            layer_3 = np.array(
+                [self.make_weights(2,self.exin,self.fixed)*lw[2] for _ in range(int(98/2))])
+            
+            layer_4 = np.array(
+                [self.make_weights(2,self.exin,self.fixed)*lw[3] for _ in range(int(196/2))])
+            
+            layer_5 = np.array(
+                [self.make_weights(4,self.exin,self.fixed)*lw[4] for _ in range(int(784/4))])
+
+            # place them in a weight structure (defines structure and weighing of a neuron)
+            self.weights = [
+                layer_1,
+                layer_2,
+                layer_3,
+                layer_4,
+                layer_5,
+            ]
+
+            for i,w in enumerate(self.weights):
+                print(f"Layer {i} has shape {w.shape}")   
 
 class SpecificNode(SuperNode):
     '''

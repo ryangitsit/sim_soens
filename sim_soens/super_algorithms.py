@@ -11,6 +11,7 @@ def arbor_update(nodes,config,digit,sample,errors):
     
     s = time.perf_counter()
     offset_sums = [0 for _ in range(config.digits)]
+    max_hits = np.zeros(config.digits)
     if config.inh_counter: print("inh counter")
     for n,node in enumerate(nodes):
         for l,layer in enumerate(node.dendrites):
@@ -44,18 +45,29 @@ def arbor_update(nodes,config,digit,sample,errors):
                         if config.inh_counter:
                             if dend.downstream_inhibition%2!=0:
                                 step = -step
-                        if config.max_offset != None:
-                            step = np.min([step,dend.phi_th])
                             
                         dend.offset_flux += step
-                        offset_sums[n] += step
+                        
+
+                        if config.max_offset != None:
+                            if np.abs(dend.offset_flux) > dend.phi_th: 
+                                old = dend.offset_flux
+                                max_hits[n]+=1
+                                if dend.offset_flux < 0:
+                                    dend.offset_flux = np.max([dend.offset_flux,dend.phi_th])
+                                else:
+                                    dend.offset_flux = np.min([dend.offset_flux,dend.phi_th])
+                                offset_sums[n] += dend.offset_flux - old 
+                            else:
+                                offset_sums[n] += step
 
                     dend.s = []
                     dend.phi_r = []
-
+    # if max_hits > 0:
+    #     print(f"{max_hits} max_update hits!")
     f = time.perf_counter()
     # print(f"Update time = {f-s}")
-    return nodes, offset_sums
+    return nodes, offset_sums,max_hits
 
 
 def probablistic_arbor_update(nodes,config,digit,sample,errors):
@@ -120,5 +132,6 @@ def probablistic_arbor_update(nodes,config,digit,sample,errors):
                         dend.phi_r = []
                         dend_counter += 1
     f = time.perf_counter()
+    max_hits = 0
     # print(f"Update time = {f-s}")
-    return nodes, offset_sums
+    return nodes, offset_sums,max_hits

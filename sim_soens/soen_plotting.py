@@ -660,6 +660,61 @@ def plot_basal_proximal(node,net,phir=False,dend=True,title=None,
     plt.subplots_adjust(bottom=.15)
     # plt.legend()
     plt.show()
+
+
+
+
+
+
+
+
+
+def plot_MNIST_nodes(nodes,digit,sample,run,name,path):
+    import os
+    try:
+        os.makedirs(path+name+'plots/')    
+    except FileExistsError:
+        pass
+    for n,node in enumerate(nodes):
+        lays = [[] for _ in range(len(node.dendrites))]
+        phays = [[] for _ in range(len(node.dendrites))]
+        for l,layer in enumerate(node.dendrites):
+            for g,group in enumerate(layer):
+                for d,dend in enumerate(group):
+                    lays[l].append(dend.s)
+                    phays[l].append(dend.phi_r)
+        # try:
+        #     plt.style.use('seaborn-muted')  
+        # except MatplotlibDeprecationWarning:
+        #     plt.style.use("seaborn-v0_8")
+
+        # plt.style.use('seaborn-muted')
+        colors = plt.rcParams["axes.prop_cycle"].by_key()["color"]
+        plt.figure(figsize=(8,4))
+        for l,lay in enumerate(lays):
+            if l == 0:
+                lw = 4
+            else:
+                lw = 2
+            plt.plot(
+                np.mean(lay,axis=0),
+                linewidth=lw,
+                color=colors[l],
+                label=f'Layer {l} Mean Signal'
+                )
+            plt.plot(
+                np.mean(phays[l],axis=0),
+                '--',
+                linewidth=.5,
+                color=colors[l],
+                # label=f'Layer {l} Mean Flux'
+                )
+        plt.legend(loc='upper right')
+        plt.title(f'Node {n} - Digit {digit} Sample {sample} - Run {run}')
+        plt.savefig(path+name+f'plots/node_{n}_digit_{digit}_sample_{sample}_run_{run}.png')
+        plt.close()
+
+
 # =============================================================================
 # End plots added by Ryan
 # =============================================================================
