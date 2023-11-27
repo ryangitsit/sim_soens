@@ -132,21 +132,48 @@ def by_run_performance(df,decider,digits,samples,indivs):
 # experiments = ['MNIST_unbounded','MNIST_deep_prime','MNIST_shallow_prime']
 # until = 100000000
 
-def plot_singles(experiments,until):
+def plot_singles(experiments,until,digits,record='old'):
     for i,exp in enumerate(experiments):
-        df = pd.read_csv(
-            f'results\MNIST\{exp}\learning_logger.csv',
-            names=['sample','digit','spikes','error','prediction','time','init_time','run_time','offsets']
-            )
 
-        # percents, procents = ongoing_performance(df)
-        by_run, digs = by_run_performance(df,'winner',10,50,True)
+        if record == 'old':
+            df = pd.read_csv(
+                f'results\MNIST\{exp}\learning_logger.csv',
+                names=['sample','digit','spikes','error','prediction','time','init_time','run_time','offsets']
+                )
 
-        pr = np.max(np.ceil(np.array(by_run)*30))
-        print(f"Experiment {exp}, {len(by_run)} epochs, {np.round(pr*100/30,2)}% best run")
+            # percents, procents = ongoing_performance(df)
+            by_run, digs = by_run_performance(df,'winner',10,50,True)
 
-        print(f"Best run: {np.max(by_run)}% at {np.argmax(by_run)} out of {len(by_run)} runs")
-        # plt.style.use('seaborn-muted')
+            pr = np.max(np.ceil(np.array(by_run)*30))
+            print(f"Experiment {exp}, {len(by_run)} epochs, {np.round(pr*100/30,2)}% best run")
+
+            print(f"Best run: {np.max(by_run)}% at {np.argmax(by_run)} out of {len(by_run)} runs")
+            # plt.style.use('seaborn-muted')
+
+        else:
+            df = pd.read_csv(
+                        f'results\MNIST\{exp}\performance_log.csv',
+                        names=['all','digits']
+                        )
+            by_run = np.array(df["all"])
+            digs = [[] for _ in range(digits)]
+            for index, row in df.iterrows():
+                for i,d in enumerate(digs):
+                    str_arr = df["digits"][index][1:-1]
+                    arr = []
+                    num = ''
+                    for ii in str_arr:
+                        if ii != '.':
+                            if ii != ' ':
+                                num += ii
+                        else:
+                            arr.append(int(num))
+                            num = ''
+                    # if index == 10: print(arr)
+                    digs[i].append(arr[i])
+
+
+
         plt.figure(figsize=(8,4))
 
         plt.title(f"MNIST Training Classification Performance - {exp}",fontsize=16)
@@ -155,19 +182,19 @@ def plot_singles(experiments,until):
         plt.plot(by_run, linewidth = 4, label="Total")
         for ii, dig in enumerate(digs):
             plt.plot(dig, '--',label=ii)#, label=['0','1','2'])
-        plt.ylim(0,1.025)
+        # plt.ylim(0,1.025)
 
         plt.legend()
         plt.show()
 
         
         # print(np.sum(df["run_time"]))
-        plt.plot(df["run_time"])
-        plt.show()
+        # plt.plot(df["run_time"])
+        # plt.show()
 
-        print("Average runtime = ",np.mean(df["run_time"]))
+        # print("Average runtime = ",np.mean(df["run_time"]))
 
-def plot_all(experiments,until):
+def plot_all(experiments,until,record='old'):
     plt.style.use('seaborn-muted')
     plt.figure(figsize=(8,4))
 
@@ -176,10 +203,6 @@ def plot_all(experiments,until):
     plt.ylabel("Accuracy",fontsize=14)
 
     for i,exp in enumerate(experiments):
-        df = pd.read_csv(
-            f'results\MNIST\{exp}\learning_logger.csv',
-            names=['sample','digit','spikes','error','prediction','time','init_time','run_time','offsets']
-            )
         if 'full' in exp or 'large' in exp:
             print("FULL")
             digits = 10
@@ -188,12 +211,28 @@ def plot_all(experiments,until):
             digits = 3
             samples = 10
 
-        by_run, digs = by_run_performance(df,'winner',digits,samples,False)
-        print(exp,' -- ', np.max(np.ceil(np.array(by_run)*(digits*samples))))
-        x = np.arange(0,len(by_run),1) #+i*50
-        plt.plot(x,by_run, linewidth = 4, label=exp)
+        if record == 'old':
+            df = pd.read_csv(
+                        f'results\MNIST\{exp}\learning_logger.csv',
+                        names=['sample','digit','spikes','error','prediction','time','init_time','run_time','offsets']
+                        )
+            by_run, digs = by_run_performance(df,'winner',digits,samples,False)
+            print(exp,' -- ', np.max(np.ceil(np.array(by_run)*(digits*samples))))
+            x = np.arange(0,len(by_run),1) #+i*50
+            plt.plot(x,by_run, linewidth = 4, label=exp)
+            plt.ylim(0,1)
+        else:
+            df = pd.read_csv(
+                        f'results\MNIST\{exp}\performance_log.csv',
+                        names=['all','digits']
+                        )
+            by_run = np.array(df["all"])
+            print(by_run)
+            plt.plot(by_run, linewidth = 4, label=exp)
+
         # plt.plot(np.transpose(digs)[:until], '--', label=['0','1','2'])
-    plt.ylim(0,1)
+        plt.ylim(0,100)
+    # plt.ylim(0,1)
     plt.legend()
     plt.show()
 
@@ -246,6 +285,15 @@ experiments = [
 
 until = 150*10000
 
-plot_singles(experiments,until)
-plot_all(experiments,until)
+# plot_singles(experiments,until)
+# plot_all(experiments,until)
 # 
+
+experiments = {
+    "tiling_full",
+    "speed_target15_full3",
+}
+
+plot_singles(experiments,until,10,record='new')
+# plot_all(experiments,until,record='new')
+
