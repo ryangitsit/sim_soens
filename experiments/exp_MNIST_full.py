@@ -96,8 +96,8 @@ def main():
                 }
                 params.update(config.__dict__)
                 nodes.append(MNISTNode(**params))
-                if node == 0:
-                    nodes[0].plot_structure()
+                # if node == 0:
+                #     nodes[0].plot_structure()
                 # nodes.append(SuperNode(name=f'node_{node}',weights=weights,**params))
                 print("Ref: ",nodes[0].neuron.tau_ref,nodes[0].neuron.ib_ref)
                 # if node == 0:

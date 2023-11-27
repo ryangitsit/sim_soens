@@ -152,7 +152,63 @@ class MNISTNode(SuperNode):
             ]
 
             for i,w in enumerate(self.weights):
-                print(f"Layer {i} has shape {w.shape}")   
+                print(f"Layer {i} has shape {w.shape}")
+
+        elif self.layers == 9:
+            print("Deep Tree")
+            lw = np.array(self.lay_weighting)
+
+            # create random weights for each layer
+            layer_1 = np.array(
+                [self.make_weights(4,self.exin,self.fixed)])*lw[0]*.5
+
+            layer_2 = [
+                self.make_weights(2,self.exin,self.fixed)*lw[1] for _ in range(int(6/2))]
+            layer_2.append(self.make_weights(1,self.exin,self.fixed)*lw[1])
+                    
+            layer_3 = [
+                self.make_weights(2,self.exin,self.fixed)*lw[1] for _ in range(int(12/2))]
+            layer_3.append(self.make_weights(1,self.exin,self.fixed)*lw[1])
+
+            layer_4 = [
+                self.make_weights(2,self.exin,self.fixed)*lw[1] for _ in range(int(24/2))]
+            layer_4.append(self.make_weights(1,self.exin,self.fixed)*lw[1])
+
+            layer_5 = [
+                self.make_weights(2,self.exin,self.fixed)*lw[1] for _ in range(int(48/2))]
+            layer_5.append(self.make_weights(1,self.exin,self.fixed)*lw[1])
+            
+            layer_6 = np.array(
+                [self.make_weights(2,self.exin,self.fixed)*lw[2] for _ in range(int(98/2))])
+            
+            layer_7 = np.array(
+                [self.make_weights(2,self.exin,self.fixed)*lw[3] for _ in range(int(196/2))])
+            
+            layer_8 = np.array(
+                [self.make_weights(2,self.exin,self.fixed)*lw[4] for _ in range(int(392/2))])
+            
+            layer_9 = np.array(
+                [self.make_weights(2,self.exin,self.fixed)*lw[4] for _ in range(int(784/2))])
+
+            # place them in a weight structure (defines structure and weighing of a neuron)
+            self.weights = [
+                layer_1,
+                layer_2,
+                layer_3,
+                layer_4,
+                layer_5,
+                layer_6,
+                layer_7,
+                layer_8,
+                layer_9
+            ]
+
+            for i,w in enumerate(self.weights):
+                shp = []
+                for group in w:
+                    shp.append(len(group))
+                print(f"Layer {i} has shape {len(shp),sum(shp)}")  
+                    
 
 class SpecificNode(SuperNode):
     '''
