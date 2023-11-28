@@ -9,8 +9,8 @@ Overview
 The Monosynptic Neuron
 ----------------------
 
-SuperNet
+SuperNode
 --------
 
-NetworkLibrary
+NeuronLibrary
 --------------
