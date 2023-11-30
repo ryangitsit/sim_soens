@@ -318,6 +318,7 @@ def main():
                     # mhs[digit] = max_hits
                 # on the tenth run test, but don't update -- save full nodes with data
                 else:
+                    max_hits = np.zeros(config.digits)
                     # print("Skipping Update")
                     if (sample == 0 and config.run%1000 == 0):
                         # save the nodes!

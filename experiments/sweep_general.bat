@@ -167,18 +167,42 @@ ECHO OFF
 @REM )
 
 
-FOR /L %%i IN (0,1,100000) DO (
+@REM FOR /L %%i IN (0,1,100000) DO (
+@REM     python exp_MNIST_full.py^
+@REM       --run           %%i^
+@REM       --s_th          0.25^
+@REM       --duration      1000^
+@REM       --beta          3^
+@REM       --dt            1.0^
+@REM       --jul_threading 4^
+@REM       --digits        10^
+@REM       --samples       50^
+@REM       --eta           0.005^
+@REM       --exp_name      speed_target15_full_fan1^
+@REM       --backend       julia^
+@REM       --dataset       MNIST^
+@REM       --max_offset    0.5^
+@REM       --fixed         .5^
+@REM       --rand_flux     0.005^
+@REM       --layers        6^
+@REM       --lay_weighting 1,1,1,4,8,10^
+@REM       --norm_fanin    True^
+@REM       --fan_coeff     1^
+@REM       --target        15
+@REM )
+
+FOR /L %%i IN (6706,1,100000) DO (
     python exp_MNIST_full.py^
       --run           %%i^
-      --s_th          0.25^
+      --s_th          0.1^
       --duration      1000^
       --beta          3^
       --dt            1.0^
       --jul_threading 4^
       --digits        10^
       --samples       50^
-      --eta           0.005^
-      --exp_name      speed_target15_full_fan1^
+      --eta           0.001^
+      --exp_name      thresh_full^
       --backend       julia^
       --dataset       MNIST^
       --max_offset    0.5^
@@ -187,8 +211,8 @@ FOR /L %%i IN (0,1,100000) DO (
       --layers        6^
       --lay_weighting 1,1,1,4,8,10^
       --norm_fanin    True^
-      --fan_coeff     1^
-      --target        15
+      --fan_coeff     1.5^
+      --target        25
 )
 
 @REM FOR /L %%i IN (36,1,10000000) DO (

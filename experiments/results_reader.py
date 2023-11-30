@@ -230,8 +230,8 @@ def plot_all(experiments,until,record='old'):
             print(by_run)
             plt.plot(by_run, linewidth = 4, label=exp)
 
-        # plt.plot(np.transpose(digs)[:until], '--', label=['0','1','2'])
-        plt.ylim(0,100)
+            # plt.plot(np.transpose(digs)[:until], '--', label=['0','1','2'])
+            plt.ylim(0,100)
     # plt.ylim(0,1)
     plt.legend()
     plt.show()
@@ -274,26 +274,31 @@ experiments = [
     # 'fanin_1.5_full',
     # 'fanin_1.75_full',
     # 'fanin_1.75_nodec_full',
-    'speed_testing_full',
+    # 'speed_testing_full',
     # 'speed_decay_full',
     # 'speed_bigeta_full',
-    'speed_target15_full',
+    # 'speed_target15_full',
     # 'speed_target5_full',
-    'spread_full',
-    'target50_maxflux_full'
+    # 'spread_full',
+    # 'target50_maxflux_full'
+    "speed_target15_full2",
+    'fanin_1.5_full',
     ]
 
 until = 150*10000
 
 # plot_singles(experiments,until)
-# plot_all(experiments,until)
+plot_all(experiments,until,record='old')
 # 
 
 experiments = {
     "tiling_full",
     "speed_target15_full3",
+    "tiling_deep_full",
+    "speed_target15_full_fan1",
+    'thresh_full'
 }
 
-plot_singles(experiments,until,10,record='new')
-# plot_all(experiments,until,record='new')
+# plot_singles(experiments,until,10,record='new')
+plot_all(experiments,until,record='new')
 
