@@ -15,12 +15,12 @@ from sim_soens.soen_plotting import raster_plot
 from sim_soens.super_algorithms import *
 from sim_soens.input_library import *
 #%%
-syn_struct = [ [[[np.random.rand()]]] for _ in range(18)]
+# syn_struct = [ [[[np.random.rand()]]] for _ in range(18)]
 
-test_node = SuperNode(name='test_node',synaptic_structure=syn_struct)
-test_node.parameter_print()
-print(test_node.synapse_list[0].name)
-print(test_node.dendrite_list[0].name)
+# test_node = SuperNode(name='test_node',synaptic_structure=syn_struct)
+# test_node.parameter_print()
+# print(test_node.synapse_list[0].name)
+# print(test_node.dendrite_list[0].name)
 # print(test_node.neuron.dend_soma.__dict__.keys())
 
 
@@ -45,7 +45,7 @@ def make_sigprop_net():
     for i in range(pixels):
         hidden_in.append(SuperNode(
             name    = f"hidden_in_{i}",
-            # weights = W
+            synaptic_structure = [ [[[np.random.rand()]]] for _ in range(9)]
         ))
         
     for i in range(targets):
@@ -78,21 +78,6 @@ def make_sigprop_net():
 
         layers[layer].append(hidden)
         layers[layer].append(target)
-
-    # layers = [
-    #     [[[hidden],[target]]],
-    #     [[[hidden],[target]]]]
-
-    # print(len(layers))
-    # for layer in layers:
-    #     print(len(layer))
-    #     for column in layer:
-    #         print(len(column))
-    #         for nodes in column:
-    #             names = []
-    #             for n in nodes:
-    #                 names.append(n.name)
-    #             print(names)
 
 
     # connect input layers to first internal layer
@@ -145,32 +130,32 @@ def make_sigprop_net():
     return hidden_in, target_in, layers
 
 
-hidden_in, target_in, layers = make_sigprop_net()
+# hidden_in, target_in, layers = make_sigprop_net()
 
 #%%
-def add_sigprop_input(hidden_in,channels,duration,interval):
+# def add_sigprop_input(hidden_in,channels,duration,interval):
 
-    spike_times = np.arange(0,duration,interval) 
+#     spike_times = np.arange(0,duration,interval) 
 
-    sigprop_input = SuperInput(type='defined', defined_spikes=spike_times)
+#     sigprop_input = SuperInput(type='defined', defined_spikes=spike_times)
 
-    for i,node in enumerate(hidden_in):
-        syn = node.synapse_list[0]
-        # print(syn.name)
-        syn.add_input(sigprop_input.signals[0])
+#     for i,node in enumerate(hidden_in):
+#         syn = node.synapse_list[0]
+#         # print(syn.name)
+#         syn.add_input(sigprop_input.signals[0])
 
-    for i,node in enumerate(target_in):
-        if i == 1:
-            syn = node.synapse_list[0]
-            # print(syn.name)
-            syn.add_input(sigprop_input.signals[0])
+#     for i,node in enumerate(target_in):
+#         if i == 1:
+#             syn = node.synapse_list[0]
+#             # print(syn.name)
+#             syn.add_input(sigprop_input.signals[0])
 
 
 
-channels = 9
-duration = 500
-interval = 100
-add_sigprop_input(hidden_in,channels,duration,interval)
+# channels = 9
+# duration = 500
+# interval = 100
+# add_sigprop_input(hidden_in,channels,duration,interval)
 # %%
 
 def run_forward_pass(hidden_in, target_in, layers, duration):
@@ -182,8 +167,8 @@ def run_forward_pass(hidden_in, target_in, layers, duration):
     
     print(len(all_nodes))
 
-    for node in all_nodes:
-        print(node.neuron.name)
+    # for node in all_nodes:
+    #     print(node.neuron.name)
 
     sig_net = network(
     sim     = True,      # run simulation
@@ -193,12 +178,12 @@ def run_forward_pass(hidden_in, target_in, layers, duration):
     )
     return sig_net, all_nodes
 
-sig_net, all_nodes = run_forward_pass(hidden_in, target_in, layers, duration)
+# sig_net, all_nodes = run_forward_pass(hidden_in, target_in, layers, duration)
 
 #%%
 
 from sim_soens.soen_plotting import *
-activity_plot(all_nodes[:12],phir=True,size=(8,12))
+# activity_plot(all_nodes[:12],phir=True,size=(8,12))
 #%%
 
 def sig_raster(spikes,all_nodes):
@@ -213,24 +198,97 @@ def sig_raster(spikes,all_nodes):
             plt.plot(spikes[1][i], idx, '.',ms=10,color=colors[2])
     # plt.legend(['hidden','target'])
 
-sig_raster(sig_net.spikes,all_nodes)
+# sig_raster(sig_net.spikes,all_nodes)
 
 
 #%%
-net = sig_net
-raster_plot(net.spikes)
 
-# move to within class
-plt.figure(figsize=(12,4))
-plt.plot(net.t,np.mean(net.signal,axis=0),label="signal")
-plt.plot(net.t,np.mean(net.phi_r,axis=0),label="phi_r")
-plt.legend()
-plt.xlabel("Time(ns)",fontsize=16)
-plt.ylabel("Signal",fontsize=16)
-plt.title("Average Network Node Dynamics",fontsize=18)
-plt.show()
+def plot_average_activity(net):
+    # move to within class
+    plt.figure(figsize=(12,4))
+    plt.plot(net.t,np.mean(net.signal,axis=0),label="signal")
+    plt.plot(net.t,np.mean(net.phi_r,axis=0),label="phi_r")
+    plt.legend()
+    plt.xlabel("Time(ns)",fontsize=16)
+    plt.ylabel("Signal",fontsize=16)
+    plt.title("Average Network Node Dynamics",fontsize=18)
+    plt.show()
 
 # for node in all_nodes:
 #    node.plot_neuron_activity(net=sig_net,spikes=False,phir=True)
+
+# %%
+import numpy as np
+def make_data(time):
+    '''
+    returns list of letters in pixel-array form
+    '''
+    # non-noisy nine-pixel letters
+    letters = {
+        'z': [1,1,0,
+              0,1,0,
+              0,1,1],
+
+        'v': [1,0,1,
+              1,0,1,
+              0,1,0],
+
+        'n': [0,1,0,
+              1,0,1,
+              1,0,1]
+    }
+
+    in_spikes = {}
+
+    for name,letter in letters.items():
+        indices = np.where(np.array(letter)==1)[0]
+        in_spikes[name] = [indices,np.ones(len(indices))*time]
+
+    return in_spikes
+
+# data = make_data(25)
+
+
+
+def add_sigprop_input(hidden_in,target_in,input_data,letter_idx,duration,interval):
+
+    spike_times = input_data
+
+    sigprop_input = SuperInput(type='defined', defined_spikes=spike_times)
+
+    target_input = SuperInput(type='defined', defined_spikes=np.arange(0,duration,interval))
+
+    for i,node in enumerate(hidden_in):
+        for syn_idx, syn in enumerate(node.synapse_list):
+            # print(syn.name)
+            syn.add_input(sigprop_input.signals[syn_idx])
+
+    for i,node in enumerate(target_in):
+        if i == letter_idx:
+            syn = node.synapse_list[0]
+            # print(syn.name)
+            syn.add_input(target_input.signals[0])
+
+    return hidden_in, target_in
+
+#%%
+
+def run_sig_prop(duration,interval,letter):
+
+    hidden_in, target_in, layers = make_sigprop_net()
+    input_data = make_data(25)
+
+    letters = list(input_data.keys())
+    letter_idx = [i for i,let in enumerate(letters) if letter==let][0]
+    
+    hidden_in, target_in = add_sigprop_input(hidden_in, target_in,input_data[letter],letter_idx,duration,interval)
+    net, all_nodes = run_forward_pass(hidden_in, target_in, layers, duration)
+    sig_raster(net.spikes,all_nodes)
+    plot_average_activity(net)
+
+    return net, all_nodes
+
+for letter in ['z','v','n']:
+    net, all_nodes = run_sig_prop(500,50,letter)
 
 # %%

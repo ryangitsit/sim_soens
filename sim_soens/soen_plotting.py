@@ -83,10 +83,13 @@ def activity_plot(
     colors = plt.rcParams["axes.prop_cycle"].by_key()["color"]
 
     if len(neurons) > 1:
+
         fig, axs = plt.subplots(len(neurons), 1,figsize=(size))
+        fig.subplots_adjust(hspace=0)
+
         for ii,n in enumerate(neurons): 
-            if ii != len(neurons)-1:
-                axs[ii].get_xaxis().set_visible(False)
+            # if ii != len(neurons)-1:
+            #     axs[ii].get_xaxis().set_visible(False)
 
             signal = n.dendrites[0][0][0].s
             refractory = n.neuron.dend__ref.s
@@ -144,7 +147,7 @@ def activity_plot(
                              label='refractory signal')
 
             ## add input/output spikes
-            if spikes==True:
+            if spikes==True and hasattr(net,'spikes'):
 
                 ind = np.where(net.spikes[0]==ii)[0]
                 spike_times=np.array([net.spikes[1][i] for i in ind]).reshape(len(ind),)
@@ -238,7 +241,7 @@ def activity_plot(
             plt.plot(time_vec,refractory,':',color='r',label='refractory signal')
 
         ## add input/output spikes
-        if spikes==True:
+        if spikes==True and hasattr(net,'spikes'):
             if len(net.spikes[0]) > 0:
                 plt.plot(net.spikes[1],net.spike_signals[0],'xk', markersize=8, 
                          label='neuron fires')
@@ -255,14 +258,14 @@ def activity_plot(
         plt.ylabel("Signal (Ic)",fontsize=14)
         plt.subplots_adjust(bottom=.25)
         plt.title(title,fontsize=18)
-    if legend==True:
-        if legend_out==True:
-            plt.legend(loc='center left', bbox_to_anchor=(1, 1.2))
-            plt.subplots_adjust(right=.8)
-            plt.subplots_adjust(bottom=.15)
-        else:
-            plt.legend(loc=1)
-    plt.tight_layout()
+        if legend==True:
+            if legend_out==True:
+                plt.legend(loc='center left', bbox_to_anchor=(1, 1.2))
+                plt.subplots_adjust(right=.8)
+                plt.subplots_adjust(bottom=.15)
+            else:
+                plt.legend(loc=1)
+        plt.tight_layout()
     if path:
         plt.savefig(path)
     plt.show()

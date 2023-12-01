@@ -92,25 +92,27 @@ def spike(neuron,ii,tau_vec):
                     photon_delay_tau_vec = np.delete(photon_delay_tau_vec, 0)
                 # print(syn_out[synapse_name].photon_delay_times__temp)
             for synapse_name in syn_out:
-                lst = tau_vec[ii+1]
-                val = tau_vec[ii+1] + np.min(
-                    syn_out[synapse_name].photon_delay_times__temp
-                    )
-                _ind = closest_index(lst,val)
+                # lst = tau_vec[ii+1]
+                # val = tau_vec[ii+1] + np.min(
+                #     syn_out[synapse_name].photon_delay_times__temp
+                #     )
+                # _ind = closest_index(lst,val)
+
+                t_spk = tau_vec[ii+1]
                 # a prior spd event has occurred at this synapse                        
                 if len(syn_out[synapse_name].spike_times_converted) > 0:
                     # the spd has had time to recover 
-                    if (tau_vec[_ind] - syn_out[synapse_name].spike_times_converted[-1] >= 
+                    if (t_spk - syn_out[synapse_name].spike_times_converted[-1] >= 
                         syn_out[synapse_name].spd_reset_time_converted):                               
                         syn_out[synapse_name].spike_times_converted = np.append(
                             syn_out[synapse_name].spike_times_converted,
-                            tau_vec[_ind]
+                            t_spk
                             )
                 # a prior spd event has not occurred at this synapse
                 else: 
                     syn_out[synapse_name].spike_times_converted = np.append(
                         syn_out[synapse_name].spike_times_converted,
-                        tau_vec[_ind]
+                        t_spk
                         )
                                         
         elif neuron.source_type == 'delay_delta':

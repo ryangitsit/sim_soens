@@ -288,7 +288,7 @@ experiments = [
 until = 150*10000
 
 # plot_singles(experiments,until)
-plot_all(experiments,until,record='old')
+# plot_all(experiments,until,record='old')
 # 
 
 experiments = {

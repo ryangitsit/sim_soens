@@ -370,7 +370,7 @@ class SuperNode():
             for ii,S in enumerate(self.synaptic_structure):
 
                 # make a synapse
-                syn = synapse(name=f'{self.neuron.name[-2:]}_syn{ii}')
+                syn = synapse(name=f'{self.neuron.name}_syn{ii}')
 
                 # append to easy-access list
                 self.synapse_list.append(syn)
@@ -413,7 +413,7 @@ class SuperNode():
                 for j,group in enumerate(layer):
                     for k,dend in enumerate(group):
                         for ii,syn in enumerate(self.synaptic_indices):
-                            name = f'{self.neuron.name[-2:]}_syn{ii}'
+                            name = f'{self.neuron.name}_syn{ii}'
                             s = synapse(name=name)
                             self.synapse_list.append(s)
                             if hasattr(self, 'synaptic_strengths'):

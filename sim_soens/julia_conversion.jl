@@ -3,7 +3,6 @@
 # REPL.activate(NewMain)
 # using Distributed
 # addprocs(2)
-Pkg.add(["PyCall", "JLD2", "FileIO"])
 using PyCall
 # using julia_stepper
 using JLD2, FileIO
