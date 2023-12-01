@@ -1,6 +1,7 @@
 #%%
 import numpy as nps
 import matplotlib.pyplot as plt
+import random
 
 import sys
 sys.path.append('../sim_soens')
@@ -14,7 +15,7 @@ from sim_soens.soen_plotting import raster_plot
 
 from sim_soens.super_algorithms import *
 from sim_soens.input_library import *
-#%%
+
 # syn_struct = [ [[[np.random.rand()]]] for _ in range(18)]
 
 # test_node = SuperNode(name='test_node',synaptic_structure=syn_struct)
@@ -25,7 +26,6 @@ from sim_soens.input_library import *
 
 
 
-#%%
 def make_sigprop_net():
 
     # W = [
@@ -43,13 +43,20 @@ def make_sigprop_net():
     target_in = []
 
     for i in range(pixels):
-        hidden_in.append(SuperNode(
+        hi = SuperNode(
             name    = f"hidden_in_{i}",
-            synaptic_structure = [ [[[np.random.rand()]]] for _ in range(9)]
-        ))
+            # synaptic_structure = [ [[[np.random.rand()]]] for _ in range(9)]
+        )
+        # hi.neuron.dend_soma.offset_flux = random.uniform(-1, 1)
+        hidden_in.append(hi)
         
     for i in range(targets):
-        target_in.append(SuperNode(name = f"target_in_{i}"))
+        ti = SuperNode(
+            name = f"target_in_{i}",
+            # synaptic_structure = [ [[[np.random.rand()]]] for _ in range(3)]
+            )
+        # ti.neuron.dend_soma.offset_flux = random.uniform(-1, 1)
+        target_in.append(ti)
 
 
     # make internal layers
@@ -60,40 +67,61 @@ def make_sigprop_net():
         target = []
 
         for i in range(pixels):
-
-            hd = SuperNode(
-                name    = f"hidden_{layer}{i}",
-                synaptic_structure = [ [[[np.random.rand()]]] for _ in range(18)]
-            )
-
-            tg = SuperNode(
-                name = f"target_{layer}{i}",
-                synaptic_structure = [ [[[np.random.rand()]]] for _ in range(18)]
-                )
             
-            hd.neuron.dend_soma.offset_flux = np.random.rand()
-            tg.neuron.dend_soma.offset_flux = np.random.rand()
-            hidden.append(hd)
-            target.append(tg)
+            if layer == 0:
+                hd = SuperNode(
+                    name    = f"hidden_{layer}{i}",
+                    synaptic_structure = [ [[[np.random.rand()]]] for _ in range(9)]
+                )
+
+                tg = SuperNode(
+                    name = f"target_{layer}{i}",
+                    synaptic_structure = [ [[[np.random.rand()]]] for _ in range(3)]
+                    )
+                
+                hd.neuron.dend_soma.offset_flux = random.uniform(-1, 1)
+                tg.neuron.dend_soma.offset_flux = random.uniform(-1, 1)
+                hidden.append(hd)
+                target.append(tg)
+
+            else:
+                hd = SuperNode(
+                    name    = f"hidden_{layer}{i}",
+                    synaptic_structure = [ [[[np.random.rand()]]] for _ in range(18)]
+                )
+
+                tg = SuperNode(
+                    name = f"target_{layer}{i}",
+                    synaptic_structure = [ [[[np.random.rand()]]] for _ in range(18)]
+                    )
+                
+                hd.neuron.dend_soma.offset_flux = random.uniform(-1, 1)
+                tg.neuron.dend_soma.offset_flux = random.uniform(-1, 1)
+                hidden.append(hd)
+                target.append(tg)
 
         layers[layer].append(hidden)
         layers[layer].append(target)
 
 
     # connect input layers to first internal layer
-    for node_i in hidden_in:
+    for idx,node_i in enumerate(hidden_in):
         # print(node_i.name)
         for node_j in layers[0][0]:
+            syn = node_j.synapse_list[idx]
+            node_i.neuron.add_output(syn)
             # print("  ",node_j.name)
-            for syn in node_j.synapse_list:
-                node_i.neuron.add_output(syn)
+            # for syn in node_j.synapse_list:
+            #     node_i.neuron.add_output(syn)
 
-    for node_i in target_in:
+    for idx,node_i in enumerate(target_in):
         # print(node_i.name)
         for node_j in layers[0][1]:
             # print("  ",node_j.name)
-            for syn in node_j.synapse_list:
-                node_i.neuron.add_output(syn)
+            syn = node_j.synapse_list[idx]
+            node_i.neuron.add_output(syn)
+            # for syn in node_j.synapse_list:
+                # node_i.neuron.add_output(syn)
 
 
     # connect internal layers sequentially
@@ -132,31 +160,6 @@ def make_sigprop_net():
 
 # hidden_in, target_in, layers = make_sigprop_net()
 
-#%%
-# def add_sigprop_input(hidden_in,channels,duration,interval):
-
-#     spike_times = np.arange(0,duration,interval) 
-
-#     sigprop_input = SuperInput(type='defined', defined_spikes=spike_times)
-
-#     for i,node in enumerate(hidden_in):
-#         syn = node.synapse_list[0]
-#         # print(syn.name)
-#         syn.add_input(sigprop_input.signals[0])
-
-#     for i,node in enumerate(target_in):
-#         if i == 1:
-#             syn = node.synapse_list[0]
-#             # print(syn.name)
-#             syn.add_input(sigprop_input.signals[0])
-
-
-
-# channels = 9
-# duration = 500
-# interval = 100
-# add_sigprop_input(hidden_in,channels,duration,interval)
-# %%
 
 def run_forward_pass(hidden_in, target_in, layers, duration):
 
@@ -165,7 +168,7 @@ def run_forward_pass(hidden_in, target_in, layers, duration):
         col = layer[0]+layer[1]
         all_nodes += col
     
-    print(len(all_nodes))
+    # print(len(all_nodes))
 
     # for node in all_nodes:
     #     print(node.neuron.name)
@@ -180,11 +183,6 @@ def run_forward_pass(hidden_in, target_in, layers, duration):
 
 # sig_net, all_nodes = run_forward_pass(hidden_in, target_in, layers, duration)
 
-#%%
-
-from sim_soens.soen_plotting import *
-# activity_plot(all_nodes[:12],phir=True,size=(8,12))
-#%%
 
 def sig_raster(spikes,all_nodes):
     plt.style.use('seaborn-v0_8-dark-palette')
@@ -201,7 +199,6 @@ def sig_raster(spikes,all_nodes):
 # sig_raster(sig_net.spikes,all_nodes)
 
 
-#%%
 
 def plot_average_activity(net):
     # move to within class
@@ -217,7 +214,6 @@ def plot_average_activity(net):
 # for node in all_nodes:
 #    node.plot_neuron_activity(net=sig_net,spikes=False,phir=True)
 
-# %%
 import numpy as np
 def make_data(time):
     '''
@@ -259,9 +255,10 @@ def add_sigprop_input(hidden_in,target_in,input_data,letter_idx,duration,interva
     target_input = SuperInput(type='defined', defined_spikes=np.arange(0,duration,interval))
 
     for i,node in enumerate(hidden_in):
-        for syn_idx, syn in enumerate(node.synapse_list):
+        # for syn_idx, syn in enumerate(node.synapse_list):
             # print(syn.name)
-            syn.add_input(sigprop_input.signals[syn_idx])
+        syn = node.synapse_list[0]
+        syn.add_input(sigprop_input.signals[i])
 
     for i,node in enumerate(target_in):
         if i == letter_idx:
@@ -273,22 +270,92 @@ def add_sigprop_input(hidden_in,target_in,input_data,letter_idx,duration,interva
 
 #%%
 
-def run_sig_prop(duration,interval,letter):
+# def run_sig_prop(duration,interval):
+duration = 500
+interval = 200
 
-    hidden_in, target_in, layers = make_sigprop_net()
-    input_data = make_data(25)
+hidden_in, target_in, layers = make_sigprop_net()
+input_data = make_data(25)
 
-    letters = list(input_data.keys())
-    letter_idx = [i for i,let in enumerate(letters) if letter==let][0]
-    
-    hidden_in, target_in = add_sigprop_input(hidden_in, target_in,input_data[letter],letter_idx,duration,interval)
-    net, all_nodes = run_forward_pass(hidden_in, target_in, layers, duration)
-    sig_raster(net.spikes,all_nodes)
-    plot_average_activity(net)
+#%%
+# print(hidden_in[0].synapse_list[0].input_signal.__dict__.keys())
 
-    return net, all_nodes
+#%%
+interval = 200
+letters = list(input_data.keys())
+all_spikes = [[] for _ in range(3)]
+eta = 0.01
 
-for letter in ['z','v','n']:
-    net, all_nodes = run_sig_prop(500,50,letter)
+for epoch in range(500):
+    print(f"====================== EPOCH {epoch} ======================")
+
+    plt.style.use('seaborn-v0_8-dark-palette')
+    fig, axs = plt.subplots(1, 3,figsize=(16,6))
+    fig.subplots_adjust(hspace=0)
+    colors = plt.rcParams["axes.prop_cycle"].by_key()["color"]
+
+
+    for run,letter in enumerate(letters):
+        letter_idx = [i for i,let in enumerate(letters) if letter==let][0]
+
+        if epoch>0 or run>0:
+            # print(all_nodes[0].synapse_list[0].input_signal.__dict__.keys())
+            for node in all_nodes:
+                node.synapse_list[0].input_signal.spike_times=[]
+                node.synapse_list[0].phi_spd = []
+                node.neuron.dend_soma.phi_r  = []
+                node.neuron.dend_soma.s      = []
+        # else:
+        #     print(hidden_in[0].synapse_list[0].__dict__.keys())
+
+        hidden_in, target_in = add_sigprop_input(
+            hidden_in, target_in,input_data[letter],letter_idx,duration,interval
+            )
+        
+        net, all_nodes = run_forward_pass(hidden_in, target_in, layers, duration)
+
+        for layer in layers:
+            for i in range(len(layer[0])):
+                hid_node = layer[0][i]
+                targ_node = layer[1][i]
+                hid_spks =  len(hid_node.neuron.spike_times)
+                targ_spks = len(targ_node.neuron.spike_times)
+                error = targ_spks - hid_spks
+                # print(hid_spks, ' -- ', targ_spks, ' --> ', error) 
+                update_dend = hid_node.neuron.dend_soma
+                update_dend.offset_flux += error*eta*np.mean(update_dend.phi_r)
+
+        for node in all_nodes:
+            all_spikes[run].append(len(node.neuron.spike_times))
+
+        # sig_raster(net.spikes,all_nodes)
+        # plt.show()
+
+        if epoch%10 == 0:
+            spikes = net.spikes
+            for i,idx in enumerate(spikes[0]):
+                node = all_nodes[int(idx)]
+                if 'hidden' in node.name:
+                    axs[run].plot(spikes[1][i], idx, '.',ms=10,color=colors[0])
+                elif 'target' in node.name:
+                    axs[run].plot(spikes[1][i], idx, '.',ms=10,color=colors[2])
+
+    if epoch%10 == 0: plt.show()
+    # plot_average_activity(net)
+
+    # return net, all_nodes
+
+# for letter in ['z','v','n']:
+# net, all_nodes = run_sig_prop(500,200)
 
 # %%
+for i in range(len(all_nodes)):
+    print(all_spikes[0][i], ' -- ',all_spikes[1][i], ' -- ',all_spikes[2][i])
+
+#%%
+for layer in layers:
+    for i in range(len(layer[0])):
+       hid_spks =  len(layer[0][i].neuron.spike_times)
+       targ_spks = len(layer[1][i].neuron.spike_times)
+       print(hid_spks, ' -- ', targ_spks, ' --> ', targ_spks - hid_spks) 
+    

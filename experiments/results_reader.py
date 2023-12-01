@@ -296,7 +296,8 @@ experiments = {
     "speed_target15_full3",
     "tiling_deep_full",
     "speed_target15_full_fan1",
-    'thresh_full'
+    'thresh_full',
+    'thresh_slow_full'
 }
 
 # plot_singles(experiments,until,10,record='new')
