@@ -15,7 +15,10 @@ Enjoy!
    - `git clone https://github.com/ryangitsit/sim_soens.git` 
  - Be sure to have the necessary python packages with the following commands
    - `pip install -r requirements.txt` 
-   - To use the `backend=julia` feature when simulating a network, julia must be installed
+   - To use the `backend=julia` feature when simulating a network (slower call, much faster runtime), julia must be installed as follows:
+     - While in the `julia_setup`, run the following command arguments in order:
+       - `python run_first_py4jul_setup.py`
+       - `julia run_second_julia_setup.jl`
  - Open `NICE_tutorial` for a simulator walkthrough 
    - How to use jupyter notebooks: https://www.dataquest.io/blog/jupyter-notebook-tutorial/
    - Or just use the jupyter extension in the vscode IDE

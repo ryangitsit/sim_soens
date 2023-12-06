@@ -33,11 +33,12 @@ function stepper(net_dict::Dict{Any,Any})
             node_name = node_names[idx]
             loop_synapses(node,node_name,syn_names,net_dict["T"],net_dict["conversion"],t_idx,net_dict["dt"])
             loop_dendrites(node,node_name,dend_names,net_dict["d_tau"],t_idx)
-
+            
             if node["dendrites"][node["soma"]].spiked == 1
                 for (syn_name,spks) in node["outputs"]
                     for (node_name,node) in net_dict["nodes"]
-                        if occursin(node_name,syn_name)
+                        # if occursin(node_name,syn_name)
+                        if node_name*'_' == syn_name[begin:length(node_name)+1]    
                             push!(net_dict["nodes"][node_name]["synapses"][syn_name].spike_times,t_idx+100)
                         end
                     end

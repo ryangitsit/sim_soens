@@ -83,6 +83,7 @@ class PointReservoir:
         self.run=False
         self.dt = 0.1
         self.tf = 360*9
+        self.w_coeff = 0.6
 
         # custom input params
         self.__dict__.update(params)
@@ -99,18 +100,8 @@ class PointReservoir:
         '''
         self.neurons = []
         w_sd = 1
-        syn_struct = [
-            [[[w_sd]]],
-            [[[w_sd]]],
-            [[[w_sd]]],
-            [[[w_sd]]],
-            [[[w_sd]]],
-            [[[w_sd]]],
-            [[[w_sd]]],
-            [[[w_sd]]],
-            [[[w_sd]]],
-            [[[w_sd]]],
-        ]
+        np.random.seed(10)
+        syn_struct = [ [[[np.random.rand()*self.w_coeff]]] for _ in range(10)]
         
         for i in range(self.N):
             neuron = SuperNode(

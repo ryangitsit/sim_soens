@@ -148,19 +148,22 @@ def get_ordered_files(path):
 # nodes = load_nodes(0,0,0,'unbounded_deep')
 # offset_analysis(path,files,digit,layer)
 
-name = 'target5_maxflux_full'
+name = 'thresh_full'
 # name = 'target50_maxflux_full'
 # name = 'MNIST_large'
 # name = 'MNIST_asymmetic'
-nodes = picklin(f"results\\MNIST\\{name}\\nodes",f"init_nodes")
+nodes = picklin(f"results\\MNIST\\{name}\\nodes",f"eternal_nodes")
 # for node in nodes:
 #     print(node.name)
 node = nodes[0]
-node.plot_structure()
-print(node.neuron.name)
-print(len(node.dendrite_list))
-print(len(node.synapse_list))
-print(node.synapse_list[0].__dict__.keys())
+print(node.__dict__.keys())
+print(node.seen,node.passed)
+
+# node.plot_structure()
+# print(node.neuron.name)
+# print(len(node.dendrite_list))
+# print(len(node.synapse_list))
+# print(node.synapse_list[0].__dict__.keys())
 
 # print("Node size = ", sys.getsizeof(node))
 # for i,(k,v) in enumerate(nodes[0].__dict__.items()):

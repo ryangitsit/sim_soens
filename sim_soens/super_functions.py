@@ -171,6 +171,17 @@ def spks_to_binmatrix(N,T,spikes):
             binned[int(spikes[0][i])][int(np.floor(spikes[1][i]))] += 1
     return binned
 
+def bin_matrix_to_spks(mat):
+    indices = []
+    times = []
+    for i,row in enumerate(mat):
+        for t,val in enumerate(row):
+            if val!=0:
+                indices.append(i)
+                times.append(t)
+    spikes = [indices,times]
+    return spikes
+
 def make_letters():
 
     # non-noisy nine-pixel letters

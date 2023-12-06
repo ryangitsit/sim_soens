@@ -222,13 +222,15 @@ def plot_all(experiments,until,record='old'):
             plt.plot(x,by_run, linewidth = 4, label=exp)
             plt.ylim(0,1)
         else:
+
             df = pd.read_csv(
                         f'results\MNIST\{exp}\performance_log.csv',
                         names=['all','digits']
                         )
             by_run = np.array(df["all"])
-            print(by_run)
+            # print(by_run)
             plt.plot(by_run, linewidth = 4, label=exp)
+            print(f'{exp} -> {len(by_run)} runs with max {max(by_run)}')
 
             # plt.plot(np.transpose(digs)[:until], '--', label=['0','1','2'])
             plt.ylim(0,100)
@@ -292,14 +294,15 @@ until = 150*10000
 # 
 
 experiments = {
-    "tiling_full",
-    "speed_target15_full3",
-    "tiling_deep_full",
-    "speed_target15_full_fan1",
+    # "tiling_full",
+    # "speed_target15_full3",
+    # "tiling_deep_full",
+    # "speed_target15_full_fan1",
     'thresh_full',
-    'thresh_slow_full'
+    'thresh_slow_full',
+    'thresh_0.5_full',
 }
 
-# plot_singles(experiments,until,10,record='new')
+plot_singles(experiments,until,10,record='new')
 plot_all(experiments,until,record='new')
 

@@ -438,6 +438,12 @@ def main():
         # config.eta = 0.003389830508474576
 
     nodes = get_nodes(path,name,config)
+    
+    if hasattr(nodes[0],'run'):
+        nodes[0].run +=1
+        config.run = nodes[0].run
+    else:
+        nodes[0].run = config.run
 
     # load_finish = time.perf_counter()
     # print("Load time: ", load_finish-load_start)
@@ -455,7 +461,7 @@ def main():
         config.eta
         )
     
-    if config.run == 1:
+    if config.run == 0:
         import json
         with open(f'{path}/{name}/config.txt', 'w') as convert_file:
             convert_file.write(json.dumps(config.__dict__))

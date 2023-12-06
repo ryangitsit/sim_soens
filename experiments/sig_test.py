@@ -76,9 +76,9 @@ def make_sigprop_net():
 
                 tg = SuperNode(
                     name = f"target_{layer}{i}",
-                    synaptic_structure = [ [[[np.random.rand()]]] for _ in range(3)]
+                    weights = [[np.random.rand(3)]]
                     )
-                
+                tg.synaptic_layer()
                 hd.neuron.dend_soma.offset_flux = random.uniform(-1, 1)
                 tg.neuron.dend_soma.offset_flux = random.uniform(-1, 1)
                 hidden.append(hd)
@@ -87,12 +87,12 @@ def make_sigprop_net():
             else:
                 hd = SuperNode(
                     name    = f"hidden_{layer}{i}",
-                    synaptic_structure = [ [[[np.random.rand()]]] for _ in range(18)]
+                    synaptic_structure = [ [[[np.random.rand()]]] for _ in range(9)]
                 )
 
                 tg = SuperNode(
                     name = f"target_{layer}{i}",
-                    synaptic_structure = [ [[[np.random.rand()]]] for _ in range(18)]
+                    synaptic_structure = [ [[[np.random.rand()]]] for _ in range(9)]
                     )
                 
                 hd.neuron.dend_soma.offset_flux = random.uniform(-1, 1)
@@ -136,19 +136,19 @@ def make_sigprop_net():
                 syn = hidden_next.synapse_list[idx_i]
                 hidden_node.neuron.add_output(syn)
 
-            for idx_j,target_next in enumerate(layers[i+1][1]):
-                # print("  ",target_next.name)
-                syn = target_next.synapse_list[idx_i]
-                hidden_node.neuron.add_output(syn)
+            # for idx_j,target_next in enumerate(layers[i+1][1]):
+            #     # print("  ",target_next.name)
+            #     syn = target_next.synapse_list[idx_i]
+            #     hidden_node.neuron.add_output(syn)
 
         # target to next hidden and target
         for target_node in layer[1]:
             # print(target_node.name)
 
-            for hidden_next in layers[i+1][0]:
-                # print("  ",hidden_next.name)
-                for syn in hidden_next.synapse_list:
-                    target_node.neuron.add_output(syn)
+            # for hidden_next in layers[i+1][0]:
+            #     # print("  ",hidden_next.name)
+            #     for syn in hidden_next.synapse_list:
+            #         target_node.neuron.add_output(syn)
 
             for target_next in layers[i+1][1]:
                 # print("  ",target_next.name)
@@ -246,13 +246,19 @@ def make_data(time):
 
 
 
-def add_sigprop_input(hidden_in,target_in,input_data,letter_idx,duration,interval):
+# def run_sig_prop(duration,interval):
+
+hidden_in, target_in, layers = make_sigprop_net()
+input_data = make_data(25)
+
+#%%
+
+
+def add_sigprop_input(hidden_in,target_in,input_data,letter_idx,duration,interval,targ=True):
 
     spike_times = input_data
 
     sigprop_input = SuperInput(type='defined', defined_spikes=spike_times)
-
-    target_input = SuperInput(type='defined', defined_spikes=np.arange(0,duration,interval))
 
     for i,node in enumerate(hidden_in):
         # for syn_idx, syn in enumerate(node.synapse_list):
@@ -260,41 +266,51 @@ def add_sigprop_input(hidden_in,target_in,input_data,letter_idx,duration,interva
         syn = node.synapse_list[0]
         syn.add_input(sigprop_input.signals[i])
 
-    for i,node in enumerate(target_in):
-        if i == letter_idx:
-            syn = node.synapse_list[0]
-            # print(syn.name)
-            syn.add_input(target_input.signals[0])
+    if targ==True:
+        target_input = SuperInput(type='defined', defined_spikes=np.arange(0,duration,interval))
+        for i,node in enumerate(target_in):
+            if i == letter_idx:
+                syn = node.synapse_list[0]
+                # print(syn.name)
+                syn.add_input(target_input.signals[0])
+
+
+        # np.random.seed(letter_idx)
+        # target_input = SuperInput(channels=3, type='random', total_spikes=30, duration=500)
+        # # target_input.plot()
+        # for i,node in enumerate(target_in):
+        #     syn = node.synapse_list[0]
+        #     # print(syn.name)
+        #     syn.add_input(target_input.signals[i])
+
 
     return hidden_in, target_in
 
-#%%
+def cos_sim(a,b):
+    cos_sims = np.dot(a, b)/(np.linalg.norm(a)*np.linalg.norm(b))
+    # print(f"Cosine Simularities: {cos_sims}")
+    return cos_sims
 
-# def run_sig_prop(duration,interval):
+
+#%%
 duration = 500
-interval = 200
-
-hidden_in, target_in, layers = make_sigprop_net()
-input_data = make_data(25)
-
-#%%
-# print(hidden_in[0].synapse_list[0].input_signal.__dict__.keys())
-
-#%%
-interval = 200
+interval = 50
 letters = list(input_data.keys())
 all_spikes = [[] for _ in range(3)]
-eta = 0.01
+eta = .1
 
-for epoch in range(500):
-    print(f"====================== EPOCH {epoch} ======================")
+cos_sims = [[] for _ in range(3)]
+
+for epoch in range(5000):
+    print(f"\n\n====================== EPOCH {epoch} ======================")
 
     plt.style.use('seaborn-v0_8-dark-palette')
     fig, axs = plt.subplots(1, 3,figsize=(16,6))
     fig.subplots_adjust(hspace=0)
     colors = plt.rcParams["axes.prop_cycle"].by_key()["color"]
 
-
+    outputs = [[] for _ in range(len(letters))]
+    targ_outputs = [[] for _ in range(len(letters))]
     for run,letter in enumerate(letters):
         letter_idx = [i for i,let in enumerate(letters) if letter==let][0]
 
@@ -309,53 +325,112 @@ for epoch in range(500):
         #     print(hidden_in[0].synapse_list[0].__dict__.keys())
 
         hidden_in, target_in = add_sigprop_input(
-            hidden_in, target_in,input_data[letter],letter_idx,duration,interval
+            hidden_in, target_in,input_data[letter],letter_idx,duration,interval,targ=True
             )
         
         net, all_nodes = run_forward_pass(hidden_in, target_in, layers, duration)
 
-        for layer in layers:
+        for l,layer in enumerate(layers):
+            updates = np.zeros(len(layer[0]))
+            errors = np.zeros(len(layer[0]))
             for i in range(len(layer[0])):
                 hid_node = layer[0][i]
                 targ_node = layer[1][i]
                 hid_spks =  len(hid_node.neuron.spike_times)
                 targ_spks = len(targ_node.neuron.spike_times)
                 error = targ_spks - hid_spks
+                errors[i] = error
                 # print(hid_spks, ' -- ', targ_spks, ' --> ', error) 
                 update_dend = hid_node.neuron.dend_soma
-                update_dend.offset_flux += error*eta*np.mean(update_dend.phi_r)
+                step = np.min([error*eta*np.mean(update_dend.phi_r),.5])
+                update_dend.offset_flux += step
+                updates[i] = step
+
+                if l == len(layers) - 1: 
+                    outputs[run].append(hid_spks)
+                    targ_outputs[run].append(targ_spks)
+
+
+            # print(f"Error layer {l}: {errors}")
+            # print(f"Update layer {l}: {updates}")
 
         for node in all_nodes:
             all_spikes[run].append(len(node.neuron.spike_times))
 
+        
+
         # sig_raster(net.spikes,all_nodes)
         # plt.show()
 
-        if epoch%10 == 0:
-            spikes = net.spikes
-            for i,idx in enumerate(spikes[0]):
-                node = all_nodes[int(idx)]
-                if 'hidden' in node.name:
-                    axs[run].plot(spikes[1][i], idx, '.',ms=10,color=colors[0])
-                elif 'target' in node.name:
-                    axs[run].plot(spikes[1][i], idx, '.',ms=10,color=colors[2])
+        # if epoch%10 == 0:
+        spikes = net.spikes
+        for i,idx in enumerate(spikes[0]):
+            node = all_nodes[int(idx)]
+            if 'hidden' in node.name:
+                axs[run].plot(spikes[1][i], idx, '.',ms=10,color=colors[0])
+            elif 'target' in node.name:
+                axs[run].plot(spikes[1][i], idx, '.',ms=10,color=colors[2])
 
-    if epoch%10 == 0: plt.show()
+        if run==2: plt.show()
     # plot_average_activity(net)
 
     # return net, all_nodes
+    print(f"Outputs:\n{outputs[0]}\n{outputs[1]}\n{outputs[2]}\n")
+
+    print(f"Target Outputs:\n{targ_outputs[0]}\n{targ_outputs[1]}\n{targ_outputs[2]}\n")
+
+    a = np.array(outputs[0])
+    b = np.array(outputs[1])
+    c = np.array(outputs[2])
+
+    for i,output in enumerate(outputs):
+        sims = []
+        for j,targput in enumerate(targ_outputs):
+            sims.append(cos_sim(output,targput))
+        print(letters[i], '  -->  ',letters[np.argmax(np.array(sims))])
+        cos_sims[i].append(sims[i])
+
+    s1 = np.linalg.norm(a - b)
+    s2 = np.linalg.norm(a - c)
+    s3 = np.linalg.norm(b - c)
+    S  = s1 + s2 + s3
+    A  = np.sqrt(S*(S-s1)*(S-s2)*(S-s3))
+    print(f"Area: {A}")
+    if epoch%10: print(cos_sims)
+
 
 # for letter in ['z','v','n']:
 # net, all_nodes = run_sig_prop(500,200)
 
-# %%
-for i in range(len(all_nodes)):
-    print(all_spikes[0][i], ' -- ',all_spikes[1][i], ' -- ',all_spikes[2][i])
+# # %%
+# for i in range(len(all_nodes)):
+#     print(all_spikes[0][i], ' -- ',all_spikes[1][i], ' -- ',all_spikes[2][i])
+
+# #%%
+# for layer in layers:
+#     for i in range(len(layer[0])):
+#        hid_spks =  len(layer[0][i].neuron.spike_times)
+#        targ_spks = len(layer[1][i].neuron.spike_times)
+#        print(hid_spks, ' -- ', targ_spks, ' --> ', targ_spks - hid_spks) 
 
 #%%
-for layer in layers:
-    for i in range(len(layer[0])):
-       hid_spks =  len(layer[0][i].neuron.spike_times)
-       targ_spks = len(layer[1][i].neuron.spike_times)
-       print(hid_spks, ' -- ', targ_spks, ' --> ', targ_spks - hid_spks) 
-    
+print(cos_sims)
+for cos in cos_sims:
+    plt.plot(cos)
+plt.legend(labels=['z','v','n'])
+plt.show()
+#%%
+
+a = np.array([1,5,3,9,10,6])
+b = np.array([1,2,12,5,4,3])
+
+from numpy import dot
+from numpy.linalg import norm
+
+cos_sim = dot(a, b)/(norm(a)*norm(b))
+
+euc_dist = (norm(a-b))
+
+print(cos_sim)
+# print(euc_dist)
+# print(np.random.rand(3))

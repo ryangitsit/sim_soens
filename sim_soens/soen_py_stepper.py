@@ -98,7 +98,7 @@ def spike(neuron,ii,tau_vec):
                 #     )
                 # _ind = closest_index(lst,val)
 
-                t_spk = tau_vec[ii+1]
+                t_spk = tau_vec[ii+10]
                 # a prior spd event has occurred at this synapse                        
                 if len(syn_out[synapse_name].spike_times_converted) > 0:
                     # the spd has had time to recover 
