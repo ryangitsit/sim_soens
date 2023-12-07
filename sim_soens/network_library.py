@@ -88,6 +88,8 @@ class PointReservoir:
         # custom input params
         self.__dict__.update(params)
 
+        np.random.seed(self.run)
+        
         # make and potentially run neurons and network
         self.make_neurons(**params)
         self.make_net()
@@ -100,7 +102,6 @@ class PointReservoir:
         '''
         self.neurons = []
         w_sd = 1
-        np.random.seed(10)
         syn_struct = [ [[[np.random.rand()*self.w_coeff]]] for _ in range(10)]
         
         for i in range(self.N):
@@ -112,7 +113,6 @@ class PointReservoir:
 
     def make_net(self):
         self.connectivity = []
-        np.random.seed(self.run)
         connections = 0
         for i in range(self.N):
             for j in range(self.N):
