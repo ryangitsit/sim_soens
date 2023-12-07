@@ -16,7 +16,10 @@ Enjoy!
  - Be sure to have the necessary python packages with the following commands
    - `pip install -r requirements.txt` 
    - To use the `backend=julia` feature when simulating a network (slower call, much faster runtime), julia must be installed as follows:
-     - While in the `julia_setup`, run the following command arguments in order:
+    - Download julia v1.6.7 either from comman line or website as follows and be sure to add julia to you environment variables 
+      - https://julialang.org/downloads/platform/
+      - https://julialang.org/downloads/
+     - While in the `julia_setup` directory of this repo, run the following command arguments in order:
        - `python run_first_py4jul_setup.py`
        - `julia run_second_julia_setup.jl`
  - Open `NICE_tutorial` for a simulator walkthrough 
