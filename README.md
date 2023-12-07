@@ -13,7 +13,7 @@ Enjoy!
  - Clone this repo
    - Type the following in the command line of your desired local directory
    - `git clone https://github.com/ryangitsit/sim_soens.git` 
- - Be sure to have the necessary python packages with the following commands
+ - Be sure to have the necessary python packages with the following commands (setup for python v3.10 -- may have to manually add packages otherwise)
    - `pip install -r requirements.txt` 
    - To use the `backend=julia` feature when simulating a network (slower call, much faster runtime), julia must be installed as follows:
     - Download julia v1.6.7 either from comman line or website as follows and be sure to add julia to you environment variables 
