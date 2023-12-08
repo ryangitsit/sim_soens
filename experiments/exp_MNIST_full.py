@@ -300,6 +300,9 @@ def main():
                     node.neuron.spike_indices                       = []
                     node.neuron.electroluminescence_cumulative_vec  = []
                     node.neuron.time_params                         = []
+                    for syn in node.synapse_list:
+                        syn.phi_spd = []
+                    
 
                 s = time.perf_counter()
                 
