@@ -191,42 +191,18 @@ ECHO OFF
 @REM       --target        15
 @REM )
 
-@REM FOR /L %%i IN (0,1,100000) DO (
-@REM     python exp_MNIST_full.py^
-@REM       --run           %%i^
-@REM       --s_th          0.05^
-@REM       --duration      1000^
-@REM       --beta          3^
-@REM       --dt            1.0^
-@REM       --jul_threading 4^
-@REM       --digits        10^
-@REM       --samples       50^
-@REM       --eta           0.001^
-@REM       --exp_name      thresh_0.5_noref_full^
-@REM       --backend       julia^
-@REM       --dataset       MNIST^
-@REM       --max_offset    0.5^
-@REM       --fixed         .5^
-@REM       --rand_flux     0.005^
-@REM       --layers        6^
-@REM       --lay_weighting 1,1,1,4,8,10^
-@REM       --norm_fanin    True^
-@REM       --fan_coeff     1.5^
-@REM       --target        25
-@REM )
-
 FOR /L %%i IN (0,1,100000) DO (
     python exp_MNIST_full.py^
       --run           %%i^
       --s_th          0.05^
-      --duration      2500^
+      --duration      1000^
       --beta          3^
       --dt            1.0^
       --jul_threading 4^
       --digits        10^
       --samples       50^
       --eta           0.001^
-      --exp_name      thresh_0.5_noref_long_full^
+      --exp_name      thresh_0.5_noref_full^
       --backend       julia^
       --dataset       MNIST^
       --max_offset    0.5^
@@ -238,6 +214,30 @@ FOR /L %%i IN (0,1,100000) DO (
       --fan_coeff     1.5^
       --target        25
 )
+
+@REM FOR /L %%i IN (0,1,100000) DO (
+@REM     python exp_MNIST_full.py^
+@REM       --run           %%i^
+@REM       --s_th          0.05^
+@REM       --duration      2500^
+@REM       --beta          3^
+@REM       --dt            1.0^
+@REM       --jul_threading 4^
+@REM       --digits        10^
+@REM       --samples       50^
+@REM       --eta           0.001^
+@REM       --exp_name      thresh_0.5_noref_long_full^
+@REM       --backend       julia^
+@REM       --dataset       MNIST^
+@REM       --max_offset    0.5^
+@REM       --fixed         .5^
+@REM       --rand_flux     0.005^
+@REM       --layers        6^
+@REM       --lay_weighting 1,1,1,4,8,10^
+@REM       --norm_fanin    True^
+@REM       --fan_coeff     1.5^
+@REM       --target        25
+@REM )
 
 @REM FOR /L %%i IN (140,1,100000) DO (
 @REM     python exp_MNIST_full.py^

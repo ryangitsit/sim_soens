@@ -293,7 +293,7 @@ class SuperNode():
     def normalize_fanin(self,coeff):
         '''
         '''
-        print("NORMALIZING")
+        # print("NORMALIZING")
         for dendrite in self.dendrite_list:
             if len(dendrite.dendritic_connection_strengths) > 0:
                 max_s = self.max_s_finder(dendrite) - dendrite.phi_th
@@ -302,6 +302,7 @@ class SuperNode():
                 influence = []
                 for in_name,in_dend in dendrite.dendritic_inputs.items():
                     cs = dendrite.dendritic_connection_strengths[in_name]
+                    if 'ref' in in_name: cs = 0
                     max_in = self.max_s_finder(in_dend)
                     cs_list.append(cs)
                     max_list.append(max_in)
@@ -310,7 +311,8 @@ class SuperNode():
                     norm_fact = sum(influence)/max_s
                     cs_normed = cs_list/norm_fact
                     for i,(in_name,cs) in enumerate(dendrite.dendritic_connection_strengths.items()):
-                        dendrite.dendritic_connection_strengths[in_name] = cs_normed[i]*coeff
+                        if 'ref' not in in_name:
+                            dendrite.dendritic_connection_strengths[in_name] = cs_normed[i]*coeff
 
     def random_flux(self,rand_flux):
         '''

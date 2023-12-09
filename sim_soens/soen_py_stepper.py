@@ -33,7 +33,7 @@ def net_step(net,tau_vec,d_tau):
             # update all output synapses
             output_synapse_updater(neuron,ii,tau_vec[ii+1])
             
-            neuron = spike(neuron,ii,tau_vec)
+            neuron = spike(neuron,ii,tau_vec,net.time_params['dt'])
                        
     if net.timer==True:
         _t1 = time.time()
@@ -42,7 +42,7 @@ def net_step(net,tau_vec,d_tau):
     return net
 
 
-def spike(neuron,ii,tau_vec):
+def spike(neuron,ii,tau_vec,dt):
     # check if neuron integration loop has increased above threshold
     if neuron.dend_soma.s[ii+1] >= neuron.integrated_current_threshold:
         
@@ -97,23 +97,25 @@ def spike(neuron,ii,tau_vec):
                 #     syn_out[synapse_name].photon_delay_times__temp
                 #     )
                 # _ind = closest_index(lst,val)
+                _ind = int(ii+10/dt)#closest_index(lst,val)
+                if _ind < len(tau_vec)-1:
 
-                t_spk = tau_vec[ii+10]
-                # a prior spd event has occurred at this synapse                        
-                if len(syn_out[synapse_name].spike_times_converted) > 0:
-                    # the spd has had time to recover 
-                    if (t_spk - syn_out[synapse_name].spike_times_converted[-1] >= 
-                        syn_out[synapse_name].spd_reset_time_converted):                               
+                    t_spk = tau_vec[_ind]
+                    # a prior spd event has occurred at this synapse                        
+                    if len(syn_out[synapse_name].spike_times_converted) > 0:
+                        # the spd has had time to recover 
+                        if (t_spk - syn_out[synapse_name].spike_times_converted[-1] >= 
+                            syn_out[synapse_name].spd_reset_time_converted):                               
+                            syn_out[synapse_name].spike_times_converted = np.append(
+                                syn_out[synapse_name].spike_times_converted,
+                                t_spk
+                                )
+                    # a prior spd event has not occurred at this synapse
+                    else: 
                         syn_out[synapse_name].spike_times_converted = np.append(
                             syn_out[synapse_name].spike_times_converted,
                             t_spk
                             )
-                # a prior spd event has not occurred at this synapse
-                else: 
-                    syn_out[synapse_name].spike_times_converted = np.append(
-                        syn_out[synapse_name].spike_times_converted,
-                        t_spk
-                        )
                                         
         elif neuron.source_type == 'delay_delta':
             lst = tau_vec[:]

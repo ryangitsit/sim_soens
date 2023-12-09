@@ -117,16 +117,16 @@ def check_success(codes,digit):
     outputs = []
     for c,code in enumerate(codes):
         spikes = code.neuron.spike_times
-        print(f" {code.name} -> {spikes}")
+        # print(f" {code.name} -> {len(spikes)}")
         outputs.append(len(spikes))
     
     prediction = np.argmax(np.array(outputs))
-    print(f"  {digit} --> {prediction}")
+    print(f"   {digit} --> {prediction} :: {outputs}")
     if prediction == digit:
-        print("   success!")
+        # print("   success!")
         return 1
     else:
-        print("   keep learning!")
+        # print("   keep learning!")
         return 0
 
 def make_updates(codes,targets,eta):
@@ -179,25 +179,40 @@ def cleanup(net,nodes,codes):
 
 
 # %%
+
+seed = np.random.randint(100)
+np.random.seed(seed)
+exp_name = f"res_{seed}"
+print(exp_name)
+
 nodes, codes = make_neurons(100,3)
 nodes = connect_nodes(nodes,.3)
 nodes, codes = nodes_to_codes(nodes,codes)
 
-#%%
+all_nodes = nodes + codes
+# picklit(
+#     all_nodes,
+#     f"results/res_MNIST/{exp_name}/",
+#     f"init_nodes"
+#     )
+
 digits = 3
 samples = 10
 eta = 0.1
 
-def run_MNIST(nodes,codes,digits,samples,eta):
+def run_MNIST(exp_name,nodes,codes,digits,samples,eta):
     dataset = picklin("datasets/MNIST/","duration=5000_slowdown=100")
-
+    exp_name = f"res_{seed}"
     runs = 100
     for run in range(runs):
+        print(f"RUN: {run}")
         successes = 0
         seen = 0
-        for digit in range(digits):
-            for sample in range(samples):
-                print(f"Digit {digit} -- Sample {sample}")
+        for sample in range(samples):
+            print(f" sample: {sample}")
+            for digit in range(digits):
+                # print(f"Digit {digit} -- Sample {sample}")
+    
                 inp= SuperInput(
                     type="defined",
                     channels=784,
@@ -210,9 +225,16 @@ def run_MNIST(nodes,codes,digits,samples,eta):
                 
                 seen      += 1
                 successes += check_success(codes,digit)
-                print(f"Ongoing accuracy = {np.round(seen*100/successes,2)}%")
                 if seen == 30:
+                    print(f"  Epoch accuracy = {np.round(successes*100/seen,2)}%\n")
                     if successes == 30:
+                        print("Converged!")
+                        all_nodes = nodes + codes
+                        # picklit(
+                        #     all_nodes,
+                        #     f"results/res_MNIST/{exp_name}/",
+                        #     f"converged_nodes"
+                        #     )
                         return nodes,codes
 
                 targets = np.zeros(digits)
@@ -222,4 +244,4 @@ def run_MNIST(nodes,codes,digits,samples,eta):
                 nodes,codes = cleanup(net,nodes,codes)
     return nodes, codes
 
-run_MNIST()
+nodes,codes = run_MNIST(exp_name,nodes,codes,digits,samples,eta)

@@ -38,8 +38,9 @@ function stepper(net_dict::Dict{Any,Any})
                 for (syn_name,spks) in node["outputs"]
                     for (node_name,node) in net_dict["nodes"]
                         # if occursin(node_name,syn_name)
-                        if node_name*'_' == syn_name[begin:length(node_name)+1]    
-                            push!(net_dict["nodes"][node_name]["synapses"][syn_name].spike_times,t_idx+100)
+                        if node_name*'_' == syn_name[begin:length(node_name)+1]
+                            # @show node_name, syn_name 
+                            push!(net_dict["nodes"][node_name]["synapses"][syn_name].spike_times,t_idx+Int(10/net_dict["dt"]))
                         end
                     end
                 end
