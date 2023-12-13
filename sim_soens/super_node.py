@@ -68,14 +68,22 @@ class SuperNode():
 
         # writing over default settings
         self.__dict__.update(entries)
-        self.params = self.__dict__  
-
+        # self.params = self.__dict__  
+        # print("PARAMS: ", self.__dict__.keys())
         # give neuron name if not already assigned
-        if "name" not in self.params:
-            self.params['name'] = f"rand_neuron_{int(np.random.rand()*100000)}"
+        if hasattr(self,'name')==False:
+            self.name = f"rand_neuron_{int(np.random.rand()*100000)}"
 
         # create a neuron object given init params
-        self.neuron = neuron(**self.params)
+        neuron_params = {k:v for k,v in self.__dict__.items() if (k!='dendrites' or 
+                                                                k!='dendrite_list' or
+                                                                k!='synapses' or
+                                                                k!='synapse_list' or
+                                                                k!='synaptice_structure' or
+                                                                k!='params' 
+                                                                )}
+        # print("N-PARAMS: ", neuron_params.keys())
+        self.neuron = neuron(**neuron_params)
         self.neuron.dend_soma.branch=0
 
         # add somatic dendrite (dend_soma) and refractory dendrite to list
@@ -123,6 +131,20 @@ class SuperNode():
                 self.global_arbor_params()
 
     def global_arbor_params(self):
+
+
+        dend_params = {k:v for k,v in self.__dict__.items() if (k!='dendrites'
+                                                                and k!='dendrite_list'
+                                                                and k!='synapses' 
+                                                                and k!='synapse_list' 
+                                                                and k!='synaptice_structure' 
+                                                                and k!='params' 
+                                                                and k!= 'neuron'
+                                                                and k!= 'weights'
+                                                                )}
+
+        # print("GLOB-D-PARAMS: ", dend_params.keys())
+
         count=0
         den_count = 0
         for i,layer in enumerate(self.weights):
@@ -132,7 +154,8 @@ class SuperNode():
                 for k,d in enumerate(dens):
 
                     # parameters for creating current dendrite
-                    dend_params = self.params
+                    # dend_params = self.params
+                    
                     dend_params["dend_name"] = f"{self.neuron.name}_lay{i+1}_branch{j}_den{k}"
 
                     # generate a dendrite given parameters
@@ -158,6 +181,19 @@ class SuperNode():
         d_params_rtti = dend_load_arrays_thresholds_saturations('default_rtti')
         count=0
         den_count = 0
+
+        dend_params = {k:v for k,v in self.__dict__.items() if (k!='dendrites'
+                                                                and k!='dendrite_list'
+                                                                and k!='synapses' 
+                                                                and k!='synapse_list' 
+                                                                and k!='synaptice_structure' 
+                                                                and k!='params' 
+                                                                and k!= 'neuron'
+                                                                and k!= 'weights'
+                                                                )}
+
+        # print("SPEC-D-PARAMS: ", dend_params.keys())
+
         for i,layer in enumerate(self.weights):
             c=0
             for j,dens in enumerate(layer):
@@ -166,7 +202,7 @@ class SuperNode():
                     #(todo) add flags and auto connects for empty connections
 
                     # parameters for creating current dendrite
-                    dend_params = self.params
+                    # dend_params = self.params
 
                     # check for any dendrite-specific parameters
                     # if so, use in dend_parameters

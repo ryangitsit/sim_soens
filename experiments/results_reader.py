@@ -301,8 +301,10 @@ experiments = {
     'thresh_full',
     'thresh_slow_full',
     'thresh_0.5_full',
+    'thresh_0.5_noref_full',
+    'thresh_0.5_noref_long_full',
 }
 
-plot_singles(experiments,until,10,record='new')
+# plot_singles(experiments,until,10,record='new')
 plot_all(experiments,until,record='new')
 

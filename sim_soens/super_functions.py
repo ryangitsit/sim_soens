@@ -1,5 +1,17 @@
 import numpy as np
 
+def dict_size(dct):
+    from pympler import asizeof
+    print("Surface Size: ", asizeof.asizeof(dct),"\n")
+    print("Item sizes:")
+    tot = 0
+    for i,(k,v) in enumerate(dct.items()):
+        size = asizeof.asizeof(v)
+        print(f"  {k}"," "*(50-len(k)),f" -- {size}")
+        tot+=size
+        # print(tot)
+    print("\nTotal Size: ",tot,"\n")
+
 def array_to_rows(arrays,channels):
     rows = [ [] for _ in range(channels) ]
     for i in range(len(arrays[0])):

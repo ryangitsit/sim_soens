@@ -118,7 +118,7 @@ def activity_plot(
                                     pass
                                 else:
                                     if weighting == True:
-                                        weight = dendrite.weights[i-1][j][k]
+                                        weight = n.weights[i-1][j][k]
                                         dend_s = dendrite.s*weight
                                     else:
                                         dend_s = dendrite.s
@@ -221,7 +221,7 @@ def activity_plot(
                                 pass
                             else:
                                 if weighting == True:
-                                    weight = dendrite.weights[i-1][j][k]
+                                    weight = neurons[0].weights[i-1][j][k]
                                     dend_s = dendrite.s*weight
                                 else:
                                     dend_s = dendrite.s
