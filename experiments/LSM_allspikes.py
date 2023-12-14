@@ -129,11 +129,11 @@ def add_input(inp,nodes,method='random_windows'):
     
     return nodes
 
-def run_network(nodes,codes):
+def run_network(all_nodes):
     net = network(
         sim     =True,
         tf      = 500,
-        nodes   = nodes+codes,
+        nodes   = all_nodes,
         backend = 'julia'
     )
 
@@ -200,33 +200,10 @@ print(exp_name)
 
 nodes, codes = make_neurons(N,C)
 nodes = connect_nodes(nodes,.1)
-nodes, codes = nodes_to_codes(nodes,codes)
-#%%
-
-def dict_size(dct):
-    from pympler import asizeof
-    print("Surface Size: ", asizeof.asizeof(dct),"\n")
-    print("Item sizes:")
-    tot = 0
-    for i,(k,v) in enumerate(dct.items()):
-        size = asizeof.asizeof(v)
-        print(f"  {k}"," "*(50-len(k)),f" -- {size}")
-        tot+=size
-        # print(tot)
-    print("\nTotal Size: ",tot,"\n")
-
-node = nodes[0]
-dict_size(node.__dict__)
-# print(node.params['params'].keys()) #['params']['params']['params'].keys())
+# nodes, codes = nodes_to_codes(nodes,codes)
 
 #%%
-
-print(node.neuron.__dict__.keys())
-syns = node.neuron.dend_soma.synaptic_inputs
-dict_size(node.neuron.dend_soma.synaptic_inputs[list(syns.keys())[0]].input_signal.__dict__)
-
-#%%
-all_nodes = nodes + codes
+# all_nodes = nodes + codes
 # for n,node in enumerate(nodes):
 #     picklit(
 #         all_nodes,
@@ -236,13 +213,17 @@ all_nodes = nodes + codes
 
 digits = 3
 samples = 10
-eta = 0.1
+eta = 0.01
 #%%
 def run_MNIST(exp_name,nodes,codes,digits,samples,eta):
     dataset = picklin("datasets/MNIST/","duration=5000_slowdown=100")
     exp_name = f"res_{seed}"
     runs = 100
-    
+    res_spikes = {
+        str(0):[],
+        str(1):[],
+        str(2):[],
+    }
     for run in range(runs):
 
         if run == 0:
@@ -260,28 +241,61 @@ def run_MNIST(exp_name,nodes,codes,digits,samples,eta):
         print(f"RUN: {run}")
         successes = 0
         seen = 0
+        
         for sample in range(samples):
             print(f" sample: {sample}")
             for digit in range(digits):
                 # print(f"Digit {digit} -- Sample {sample}")
     
-                inp= SuperInput(
-                    type="defined",
-                    channels=784,
-                    defined_spikes=dataset[digit][sample]
-                    )
-                # raster_plot(inp.spike_arrays)
-                nodes = add_input(inp,nodes,method='synapse_sequential')
-                
-                net = run_network(nodes,codes)
+                if run == 0:
+                    inp = SuperInput(
+                        type="defined",
+                        channels=784,
+                        defined_spikes=dataset[digit][sample]
+                        )
 
-                if run==0:
+                    # raster_plot(inp.spike_arrays)
+                    nodes = add_input(inp,nodes,method='synapse_sequential')
+                    
+                    net = run_network(nodes)
+
                     spikes = net.spikes
                     axs[digit][sample].plot(spikes[1], spikes[0], '.k')
                     axs[digit][sample].axhline(y = N-.5, color = 'b', linestyle = '-') 
                     axs[digit][sample].set_xticks([])
                     axs[digit][sample].set_yticks([])
+
+
+                    res_spikes[str(digit)].append([
+                        net.spikes[0].astype(int).tolist(),
+                        net.spikes[1].tolist()]
+                        )
+                    del(net)
                 
+                if run == 1:
+                    picklit(
+                        res_spikes,
+                        f"results/res_MNIST/{exp_name}/",
+                        f"res_spikes"
+                        )
+
+                inpt = SuperInput(
+                    type="defined",
+                    channels=N,
+                    defined_spikes=res_spikes[str(digit)][sample]
+                    )
+
+                for c,code in enumerate(codes):
+                    for s,signal in enumerate(inpt.signals):
+                        code.synapse_list[s].add_input(signal)
+
+                c_net = network(
+                    sim     =True,
+                    tf      = np.max(res_spikes[str(digit)][sample][1])+50,
+                    nodes   = codes,
+                    backend = 'julia'
+                )
+
                 success,outputs,prediction = check_success(codes,digit)
 
                 seen      += 1
@@ -291,11 +305,11 @@ def run_MNIST(exp_name,nodes,codes,digits,samples,eta):
                     if successes == 30:
                         print("Converged!")
                         all_nodes = nodes + codes
-                        # picklit(
-                        #     all_nodes,
-                        #     f"results/res_MNIST/{exp_name}/",
-                        #     f"converged_nodes"
-                        #     )
+                        picklit(
+                            codes,
+                            f"results/res_MNIST/{exp_name}/",
+                            f"converged_nodes"
+                            )
                         return nodes,codes
 
                 targets = np.zeros(digits)
@@ -304,10 +318,11 @@ def run_MNIST(exp_name,nodes,codes,digits,samples,eta):
                 codes, update_sums = make_updates(codes,targets,eta)
 
                 print(
-                    f"   {digit} --> {prediction} :: {outputs} :: {np.round(update_sums,2)} :: {np.round(net.run_time,2)}"
+                    f"   {digit} --> {prediction} :: {outputs} :: {np.round(update_sums,2)} :: {np.round(c_net.run_time,2)}"
                     )
 
-                nodes,codes = cleanup(net,nodes,codes)
+                nodes,codes = cleanup(c_net,nodes,codes)
+
 
         if run == 0:
             plt.savefig(f"{path}/raster_all.png")
@@ -315,3 +330,6 @@ def run_MNIST(exp_name,nodes,codes,digits,samples,eta):
     return nodes, codes
 
 nodes,codes = run_MNIST(exp_name,nodes,codes,digits,samples,eta)
+
+# %%
+print(res_spikes)
