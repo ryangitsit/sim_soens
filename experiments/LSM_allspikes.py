@@ -10,11 +10,10 @@ from sim_soens.super_input import SuperInput
 from sim_soens.soen_components import network
 from sim_soens.super_node import SuperNode
 from sim_soens.super_functions import *
-from sim_soens.neuron_library import *
-from sim_soens.network_library import *
-from sim_soens.super_net import SuperNet
-from sim_soens.soen_plotting import raster_plot
+from sim_soens.soen_components import *
 
+import json
+import time
 
 
 
@@ -28,8 +27,26 @@ Plan
  - Arbor update rule only on C neurons
 '''
 
-def make_neurons(N,C):
+def make_neurons(N,C,config):
     
+    ib      = config['nodes_ib']
+    tau     = config['nodes_tau']
+    beta    = config['nodes_beta']
+    s_th    = config['nodes_s_th']
+
+    res_params = {
+                    "ib"        :ib,
+                    "ib_n"      :ib,
+                    "ib_di"     :ib,
+                    "tau"       :tau,
+                    "tau_ni"    :tau,
+                    "tau_di"    :tau,
+                    "beta"      :beta,
+                    "beta_ni"   :beta,
+                    "beta_di"   :beta,
+                    "s_th"      :s_th,
+                }
+
     nodes = []
     for n in range(N):
         node = SuperNode(
@@ -38,10 +55,31 @@ def make_neurons(N,C):
                 [np.random.rand(2)],
                 [np.random.rand(2) for _ in range(2)],
                 [np.random.rand(2) for _ in range(4)],
-            ]
+            ],
+            **res_params
         )
-        node.normalize_fanin(1.5)
+        node.normalize_fanin(config['fan_coeff_nodes'])
         nodes.append(node)
+
+
+    ib      = config['codes_ib']
+    tau     = config['codes_tau']
+    beta    = config['codes_beta']
+    s_th    = config['codes_s_th']
+
+
+    readout_params = {
+                    "ib"        :ib,
+                    "ib_n"      :ib,
+                    "ib_di"     :ib,
+                    "tau"       :tau,
+                    "tau_ni"    :tau,
+                    "tau_di"    :tau,
+                    "beta"      :beta,
+                    "beta_ni"   :beta,
+                    "beta_di"   :beta,
+                    "s_th"      :s_th,
+                }
 
 
     codes = []
@@ -54,9 +92,10 @@ def make_neurons(N,C):
                     [np.random.rand(3) for _ in range(3)],
                     [np.random.rand(3) for _ in range(9)],
                     [np.random.rand(4) for _ in range(27)],
-                ]
+                ],
+                **readout_params
             )
-            code.normalize_fanin(1.5)
+            code.normalize_fanin(config['fan_coeff_codes'])
             codes.append(code)
 
         elif N == 98:
@@ -68,7 +107,7 @@ def make_neurons(N,C):
                     [np.random.rand(2) for _ in range(49)],
                 ]
             )
-            code.normalize_fanin(1.5)
+            code.normalize_fanin(config['fan_coeff_codes'])
             codes.append(code)
 
         elif N == 10:
@@ -79,7 +118,7 @@ def make_neurons(N,C):
                     [np.random.rand(4) for _ in range(3)],
                 ]
             )
-            code.normalize_fanin(1.5)
+            code.normalize_fanin(config['fan_coeff_codes'])
             codes.append(code)
 
 
@@ -94,7 +133,7 @@ def connect_nodes(nodes,p_connect):
                     name=f'{N2.name}_synsoma_from_n{i}'
                     )
                 N2.synapse_list.append(syn)
-                N2.neuron.dend_soma.add_input(syn,connection_strength=np.random.rand())
+                N2.neuron.dend_soma.add_input(syn,connection_strength=np.random.rand()*config['res_connect_coeff'])
                 N1.neuron.add_output(N2.synapse_list[-1])
     return nodes
 
@@ -129,15 +168,16 @@ def add_input(inp,nodes,method='random_windows'):
     
     return nodes
 
-def run_network(all_nodes):
-    net = network(
-        sim     =True,
-        tf      = 500,
-        nodes   = all_nodes,
-        backend = 'julia'
-    )
+# def run_network(all_nodes):
+#     net = network(
+#         sim     =True,
+#         tf      = 500,
+#         nodes   = all_nodes,
+#         backend = 'julia',
+#         dt=1.0
+#     )
 
-    return net
+#     return net
 
 def check_success(codes,digit):
     outputs = []
@@ -188,42 +228,25 @@ def cleanup(net,nodes,codes):
     del(net)
     return nodes,codes
 
-
-N = 98
-C = 3
-
-seed = np.random.randint(1000)
-np.random.seed(seed)
-
-exp_name = f"res_N={N}_seed={seed}"
-print(exp_name)
-
-nodes, codes = make_neurons(N,C)
-nodes = connect_nodes(nodes,.1)
-# nodes, codes = nodes_to_codes(nodes,codes)
-
 #%%
-# all_nodes = nodes + codes
-# for n,node in enumerate(nodes):
-#     picklit(
-#         all_nodes,
-#         f"results/res_MNIST/{exp_name}/nodes/",
-#         f"init_node{n}"
-#         )
 
-digits = 3
-samples = 10
-eta = 0.01
-#%%
-def run_MNIST(exp_name,nodes,codes,digits,samples,eta):
+def run_MNIST(nodes,codes,config):
+
+
+    digits   = config['digits']
+    samples  = config['samples']
+    eta      = config['eta']
+    duration = config['duration']
+    runs     = config['runs']
+    exp_name = config['exp_name']
+    N        = config['N']
+
     dataset = picklin("datasets/MNIST/","duration=5000_slowdown=100")
-    exp_name = f"res_{seed}"
-    runs = 100
-    res_spikes = {
-        str(0):[],
-        str(1):[],
-        str(2):[],
-    }
+
+    res_spikes = {}
+    for i in range(digits):
+        res_spikes[str(i)]=[]
+
     for run in range(runs):
 
         if run == 0:
@@ -238,12 +261,12 @@ def run_MNIST(exp_name,nodes,codes,digits,samples,eta):
             # plt.ylabel("Neuron Index (Readouts Neurons Above Line)")
 
 
-        print(f"RUN: {run}")
+        print(f"RUN: {run} -- EXP: {exp_name}")
         successes = 0
         seen = 0
-        
+        accs = []
         for sample in range(samples):
-            print(f" sample: {sample}")
+            print(f"  -------------------------------- ")
             for digit in range(digits):
                 # print(f"Digit {digit} -- Sample {sample}")
     
@@ -257,11 +280,32 @@ def run_MNIST(exp_name,nodes,codes,digits,samples,eta):
                     # raster_plot(inp.spike_arrays)
                     nodes = add_input(inp,nodes,method='synapse_sequential')
                     
-                    net = run_network(nodes)
+                    # net = run_network(nodes)
+                    net = network(
+                        sim     =True,
+                        tf      = duration,
+                        nodes   = nodes,
+                        backend = 'julia',
+                        dt=1.0
+                    )
+
+                    # if digit==0 and sample == 0:
+                    #     # move to within class
+                    #     mid_plot = plt
+                    #     mid_plot.figure(figsize=(12,4))
+                        
+                    #     for node in nodes:
+                    #         mid_plot.plot(net.t,node.neuron.dend_soma.s)
+                    #         mid_plot.plot(net.t,node.neuron.dend_soma.phi_r,'--',linewidth=1)
+                    #     # plt.legend()
+                    #     mid_plot.xlabel("Time(ns)",fontsize=16)
+                    #     mid_plot.ylabel("Signal",fontsize=16)
+                    #     mid_plot.title("Network Node Dynamics",fontsize=18)
+                    #     mid_plot.show()
 
                     spikes = net.spikes
                     axs[digit][sample].plot(spikes[1], spikes[0], '.k')
-                    axs[digit][sample].axhline(y = N-.5, color = 'b', linestyle = '-') 
+                    # axs[digit][sample].axhline(y = N-.5, color = 'b', linestyle = '-') 
                     axs[digit][sample].set_xticks([])
                     axs[digit][sample].set_yticks([])
 
@@ -278,10 +322,12 @@ def run_MNIST(exp_name,nodes,codes,digits,samples,eta):
                         f"results/res_MNIST/{exp_name}/",
                         f"res_spikes"
                         )
+                    with open(f'{path}/config.txt', 'w') as file:
+                        file.write(json.dumps(config))
 
                 inpt = SuperInput(
                     type="defined",
-                    channels=N,
+                    channels=config['N'],
                     defined_spikes=res_spikes[str(digit)][sample]
                     )
 
@@ -291,45 +337,170 @@ def run_MNIST(exp_name,nodes,codes,digits,samples,eta):
 
                 c_net = network(
                     sim     =True,
-                    tf      = np.max(res_spikes[str(digit)][sample][1])+50,
+                    tf      = duration,
                     nodes   = codes,
-                    backend = 'julia'
+                    backend = 'julia',
+                    dt=1.0
                 )
+                    
 
                 success,outputs,prediction = check_success(codes,digit)
+
+                targets = np.zeros(digits)
+                targets[digit] = 10 # --> 10/15
+
+                codes, update_sums = make_updates(codes,targets,eta)
+
+                print(
+                    f"   {digit} --> {prediction} :: {outputs} :: {np.round(update_sums,2)} :: {np.round(c_net.run_time,2)} :: {len(res_spikes[str(digit)][sample][0])}"
+                    )   
 
                 seen      += 1
                 successes += success
                 if seen == 30:
-                    print(f"  Epoch accuracy = {np.round(successes*100/seen,2)}%\n")
+                    ep_acc = np.round(successes*100/seen,2)
+                    accs.append(ep_acc)
+                    print(f"  Epoch accuracy = {ep_acc}%\n")
                     if successes == 30:
                         print("Converged!")
                         all_nodes = nodes + codes
+                        picklit(
+                            accs,
+                            f"results/res_MNIST/{exp_name}/",
+                            f"CONVERGED"
+                            )
                         picklit(
                             codes,
                             f"results/res_MNIST/{exp_name}/",
                             f"converged_nodes"
                             )
                         return nodes,codes
-
-                targets = np.zeros(digits)
-                targets[digit] = 10
-
-                codes, update_sums = make_updates(codes,targets,eta)
-
-                print(
-                    f"   {digit} --> {prediction} :: {outputs} :: {np.round(update_sums,2)} :: {np.round(c_net.run_time,2)}"
-                    )
-
                 nodes,codes = cleanup(c_net,nodes,codes)
 
 
         if run == 0:
+            plt.subplots_adjust(wspace=0, hspace=0)
             plt.savefig(f"{path}/raster_all.png")
             plt.close()
-    return nodes, codes
 
-nodes,codes = run_MNIST(exp_name,nodes,codes,digits,samples,eta)
+    picklit(
+        res_spikes,
+        f"results/res_MNIST/{exp_name}/",
+        f"performance"
+        )
+    return nodes, codes, accs
 
-# %%
-print(res_spikes)
+
+def run_all(config):
+    s1=time.perf_counter()
+
+    N = config['N']
+    C = config['C']
+    print(f"res_eta_tau_c_tau_n_sth_n_sth_c_fans_n_fans_c_den_conn")
+    config['exp_name'] = f"res_{eta}_{tau_c}_{tau_n}_{sth_n}_{sth_c}_{fans_n}_{fans_c}_{den}_{conn}"
+
+    print(config['exp_name'])
+
+    config['path'] = f"results/res_MNIST/{config['exp_name']}"
+
+
+    np.random.seed(config['seed'])
+
+    nodes, codes = make_neurons(N,C,config)
+
+    s2 = time.perf_counter()
+    print(f"Time to make nodes: {np.round(s2-s1,2)}")
+
+    nodes = connect_nodes(nodes,config['density'])
+
+    s3 = time.perf_counter()
+    print(f"Time to connect nodes: {np.round(s3-s2,2)}")
+
+    # nodes, codes = nodes_to_codes(nodes,codes)
+
+    nodes,codes,accs = run_MNIST(nodes,codes,config)
+
+    s4 = time.perf_counter()
+    print(f"Time to run epoch: {np.round(s4-s3,2)}")
+
+
+etas     = [0.01,0.005,0.001]
+tau_cs   = [50,250,500]
+tau_ns   = [10,50,100]
+sth_ns   = [0.1,.25,.5]
+sth_cs   = [0.1,.25,.5]
+fans_ns  = [1.75,2.25,2.75]
+fans_cs  = [1.25,1.50,1.75]
+dens     = [0.1,0.25,.5]
+conns    = [0.05,0.1,0.15]
+
+
+for eta in etas:
+    for tau_c in tau_cs:
+        for tau_n in tau_ns:
+            for sth_n in sth_ns:
+                for sth_c in sth_cs:
+                    for fans_n in fans_ns:
+                        for fans_c in fans_cs:
+                            for den in dens:
+                                for conn in conns:
+                                    config = {
+
+                                        'N'                     : 98,
+                                        'C'                     : 3,
+                                        'seed'                  : 442,
+                                        'eta'                   : eta,
+                                        'digits'                : 3,
+                                        'samples'               : 10,
+                                        'duration'              : 100,
+                                        'runs'                  : 25,
+
+                                        'nodes_tau'             : tau_n,
+                                        'nodes_beta'            : 2*np.pi*10**3,
+                                        'nodes_ib'              : 1.8,
+                                        'nodes_s_th'            : sth_n,
+                                        'fan_coeff_nodes'       : fans_n,
+
+                                        'codes_tau'             : tau_c,
+                                        'codes_beta'            : 2*np.pi*10**3,
+                                        'codes_ib'              : 1.8,
+                                        'codes_s_th'            : sth_c,
+                                        'fan_coeff_codes'       : fans_c,
+
+                                        'density'               : den,
+                                        'res_connect_coeff'     : conn,
+
+                                    }
+                                    run_all(config)
+
+
+
+
+
+#-------------------------------------------------------
+# config = {
+
+#     'N'                     : 100,
+#     'C'                     : 3,
+#     'seed'                  : np.random.randint(1000),
+#     'eta'                   : 0.005,
+#     'digits'                : 3,
+#     'samples'               : 10,
+#     'duration'              : 100,
+
+#     'nodes_tau'             : 50,
+#     'nodes_beta'            : 2*np.pi*10**3,
+#     'nodes_ib'              : 1.8,
+#     'nodes_s_th'            : 0.1,
+#     'fan_coeff_nodes'       : 2.25,
+
+#     'codes_tau'             : 250,
+#     'codes_beta'            : 2*np.pi*10**3,
+#     'codes_ib'              : 1.8,
+#     'codes_s_th'            : 0.1,
+#     'fan_coeff_codes'       : 1.5,
+
+#     'density'               : .1,
+#     'res_connect_coeff'     : 0.1,
+
+# }
