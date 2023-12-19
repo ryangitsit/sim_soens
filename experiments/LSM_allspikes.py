@@ -11,9 +11,11 @@ from sim_soens.soen_components import network
 from sim_soens.super_node import SuperNode
 from sim_soens.super_functions import *
 from sim_soens.soen_components import *
+from sim_soens.argparse import setup_argument_parser
 
 import json
 import time
+import multiprocessing
 
 
 
@@ -26,6 +28,146 @@ Plan
  - N neurons connected to eachothers' somas directly, arbor reserved for input
  - Arbor update rule only on C neurons
 '''
+
+def make_res_node(n,config):
+    # print(f"Making node {n}")
+
+    ib      = config['nodes_ib']
+    tau     = config['nodes_tau']
+    beta    = config['nodes_beta']
+    s_th    = config['nodes_s_th']
+
+    res_params = {
+                    "ib"        :ib,
+                    "ib_n"      :ib,
+                    "ib_di"     :ib,
+                    "tau"       :tau,
+                    "tau_ni"    :tau,
+                    "tau_di"    :tau,
+                    "beta"      :beta,
+                    "beta_ni"   :beta,
+                    "beta_di"   :beta,
+                    "s_th"      :s_th,
+                }
+
+    node = SuperNode(
+        name = f'res_neuron_{n}',
+        weights = [
+            [np.random.rand(2)],
+            [np.random.rand(2) for _ in range(2)],
+            [np.random.rand(2) for _ in range(4)],
+        ],
+        **res_params
+    )
+    node.normalize_fanin(2.25)
+    return node
+
+def make_parallel_neurons(n1,n2,return_dict,config):
+
+    nodes = {(f'res_neuron_{n}',make_res_node(n,config)) for n in range(n1,n2)}
+    return_dict.update(nodes)
+
+def make_single_readout(c,return_dict,N,C,config):
+
+    ib      = config['codes_ib']
+    tau     = config['codes_tau']
+    beta    = config['codes_beta']
+    s_th    = config['codes_s_th']
+
+
+    readout_params = {
+                    "ib"        :ib,
+                    "ib_n"      :ib,
+                    "ib_di"     :ib,
+                    "tau"       :tau,
+                    "tau_ni"    :tau,
+                    "tau_di"    :tau,
+                    "beta"      :beta,
+                    "beta_ni"   :beta,
+                    "beta_di"   :beta,
+                    "s_th"      :s_th,
+                }
+
+
+    if N == 98:
+        code = SuperNode(
+            name = f'code_neuron_{c}',
+            weights = [
+                [np.random.rand(7)],
+                [np.random.rand(7) for _ in range(7)],
+                [np.random.rand(2) for _ in range(49)],
+            ],
+            **readout_params
+        )
+        code.normalize_fanin(config['fan_coeff_codes'])
+
+    return_dict[code.name] = code
+
+def make_readouts(N,C,config):
+
+    ib      = config['codes_ib']
+    tau     = config['codes_tau']
+    beta    = config['codes_beta']
+    s_th    = config['codes_s_th']
+
+
+    readout_params = {
+                    "ib"        :ib,
+                    "ib_n"      :ib,
+                    "ib_di"     :ib,
+                    "tau"       :tau,
+                    "tau_ni"    :tau,
+                    "tau_di"    :tau,
+                    "beta"      :beta,
+                    "beta_ni"   :beta,
+                    "beta_di"   :beta,
+                    "s_th"      :s_th,
+                }
+
+    codes = []
+    for c in range(C):
+        if N == 100:
+            code = SuperNode(
+                name = f'code_neuron_{c}',
+                weights = [
+                    [np.random.rand(3)],
+                    [np.random.rand(3) for _ in range(3)],
+                    [np.random.rand(3) for _ in range(9)],
+                    [np.random.rand(4) for _ in range(27)],
+                ],
+                **readout_params
+            )
+            code.normalize_fanin(config['fan_coeff_codes'])
+            codes.append(code)
+
+        elif N == 98:
+            code = SuperNode(
+                name = f'code_neuron_{c}',
+                weights = [
+                    [np.random.rand(7)],
+                    [np.random.rand(7) for _ in range(7)],
+                    [np.random.rand(2) for _ in range(49)],
+                ],
+                **readout_params
+            )
+            code.normalize_fanin(config['fan_coeff_codes'])
+            codes.append(code)
+
+        elif N == 10:
+            code = SuperNode(
+                name = f'code_neuron_{c}',
+                weights = [
+                    [np.random.rand(3)],
+                    [np.random.rand(4) for _ in range(3)],
+                ],
+                **readout_params
+            )
+            code.normalize_fanin(config['fan_coeff_codes'])
+            codes.append(code)
+
+
+    return codes
+
 
 def make_neurons(N,C,config):
     
@@ -125,7 +267,7 @@ def make_neurons(N,C,config):
     return nodes, codes
 
 
-def connect_nodes(nodes,p_connect):
+def connect_nodes(nodes,p_connect,conn_coeff):
     for i,N1 in enumerate(nodes):
         for j,N2 in enumerate(nodes):
             if np.random.rand() < p_connect and i!=j:
@@ -133,7 +275,7 @@ def connect_nodes(nodes,p_connect):
                     name=f'{N2.name}_synsoma_from_n{i}'
                     )
                 N2.synapse_list.append(syn)
-                N2.neuron.dend_soma.add_input(syn,connection_strength=np.random.rand()*config['res_connect_coeff'])
+                N2.neuron.dend_soma.add_input(syn,connection_strength=np.random.rand()*conn_coeff)
                 N1.neuron.add_output(N2.synapse_list[-1])
     return nodes
 
@@ -246,7 +388,7 @@ def run_MNIST(nodes,codes,config):
     res_spikes = {}
     for i in range(digits):
         res_spikes[str(i)]=[]
-
+    accs = []
     for run in range(runs):
 
         if run == 0:
@@ -264,9 +406,9 @@ def run_MNIST(nodes,codes,config):
         print(f"RUN: {run} -- EXP: {exp_name}")
         successes = 0
         seen = 0
-        accs = []
+        
         for sample in range(samples):
-            print(f"  -------------------------------- ")
+            print(f"  ------------------------------------------------ ")
             for digit in range(digits):
                 # print(f"Digit {digit} -- Sample {sample}")
     
@@ -347,7 +489,7 @@ def run_MNIST(nodes,codes,config):
                 success,outputs,prediction = check_success(codes,digit)
 
                 targets = np.zeros(digits)
-                targets[digit] = 10 # --> 10/15
+                targets[digit] = 15 # --> 10/15
 
                 codes, update_sums = make_updates(codes,targets,eta)
 
@@ -384,7 +526,7 @@ def run_MNIST(nodes,codes,config):
             plt.close()
 
     picklit(
-        res_spikes,
+        accs,
         f"results/res_MNIST/{exp_name}/",
         f"performance"
         )
@@ -396,6 +538,17 @@ def run_all(config):
 
     N = config['N']
     C = config['C']
+    
+    eta = config["eta"]
+    tau_c = config["codes_tau"]
+    tau_n = config["nodes_tau"]
+    sth_n = config["nodes_s_th"]
+    sth_c = config["codes_s_th"]
+    fans_n = config["fan_coeff_nodes"]
+    fans_c = config["fan_coeff_codes"]
+    den = config["density"]
+    conn = config["res_connect_coeff"]
+
     print(f"res_eta_tau_c_tau_n_sth_n_sth_c_fans_n_fans_c_den_conn")
     config['exp_name'] = f"res_{eta}_{tau_c}_{tau_n}_{sth_n}_{sth_c}_{fans_n}_{fans_c}_{den}_{conn}"
 
@@ -406,101 +559,205 @@ def run_all(config):
 
     np.random.seed(config['seed'])
 
-    nodes, codes = make_neurons(N,C,config)
+
+
+    ###################################
+    #     Making Reservoir Neurons    #
+    ###################################
+    manager = multiprocessing.Manager()
+    return_dict = manager.dict()
+
+    thrds = []
+    for thrd in range(14):
+        thrds.append(
+            multiprocessing.Process(
+                target=make_parallel_neurons, 
+                args=(thrd*7,thrd*7+7,return_dict,config)
+                )
+                )
+
+    for thrd in thrds:
+        thrd.start()
+
+    for thrd in thrds:
+        thrd.join()
+
+    nodes = []
+    for i in range(98):
+        nodes.append(return_dict[f'res_neuron_{i}'])
 
     s2 = time.perf_counter()
     print(f"Time to make nodes: {np.round(s2-s1,2)}")
 
-    nodes = connect_nodes(nodes,config['density'])
+    ###################################
+    #      Making Readout Neurons     #
+    ###################################
 
+    return_dict = manager.dict()
+    thrds = []
+    for thrd in range(C):
+        thrds.append(
+            multiprocessing.Process(
+                target=make_single_readout, 
+                args=(thrd,return_dict,N,C,config)
+                )
+                )
+
+    for thrd in thrds:
+        thrd.start()
+
+    for thrd in thrds:
+        thrd.join()
+
+    codes = []
+    for i in range(C):
+        codes.append(return_dict[f'code_neuron_{i}'])
+
+    # codes = make_readouts(N,C,config)
+    # nodes, codes = make_neurons(N,C,config)
+    
     s3 = time.perf_counter()
-    print(f"Time to connect nodes: {np.round(s3-s2,2)}")
+    print(f"Time to make codes: {np.round(s3-s2,2)}")
+
+    ###################################
+    #      Connecting Reservoir       #
+    ###################################
+
+    nodes = connect_nodes(nodes,config['density'],config['res_connect_coeff'])
+
+    s4 = time.perf_counter()
+    print(f"Time to connect nodes: {np.round(s4-s3,2)}")
 
     # nodes, codes = nodes_to_codes(nodes,codes)
 
+    ###################################
+    #       Running Simulation        #
+    ###################################
+
     nodes,codes,accs = run_MNIST(nodes,codes,config)
 
-    s4 = time.perf_counter()
-    print(f"Time to run epoch: {np.round(s4-s3,2)}")
+    s5 = time.perf_counter()
+    print(f"Time to run epoch: {np.round(s5-s4,2)}")
 
 
-etas     = [0.01,0.005,0.001]
-tau_cs   = [50,250,500]
-tau_ns   = [10,50,100]
-sth_ns   = [0.1,.25,.5]
-sth_cs   = [0.1,.25,.5]
-fans_ns  = [1.75,2.25,2.75]
-fans_cs  = [1.25,1.50,1.75]
-dens     = [0.1,0.25,.5]
-conns    = [0.05,0.1,0.15]
+if __name__ == "__main__":
+
+    
+    config = setup_argument_parser()
+    run_all(config.__dict__)
+
+    # etas     = [0.005]
+    # tau_cs   = [250,500]
+    # tau_ns   = [50,100]
+
+    # sth_ns   = [0.1,.25]
+    # sth_cs   = [0.1,.25]
+
+    # fans_ns  = [2.25,2.5]
+    # fans_cs  = [1.50,1.75]
+
+    # dens     = [0.1,0.25,.5]
+    # conns    = [0.05,0.1,0.15]
+
+    # all_configs = []
+    # for eta in etas:
+    #     for tau_c in tau_cs:
+    #         for tau_n in tau_ns:
+    #             for sth_n in sth_ns:
+    #                 for sth_c in sth_cs:
+    #                     for fans_n in fans_ns:
+    #                         for fans_c in fans_cs:
+    #                             for den in dens:
+    #                                 for conn in conns:
+    #                                     config = {
+
+    #                                         'N'                     : 98,
+    #                                         'C'                     : 3,
+    #                                         'seed'                  : 442,
+    #                                         'eta'                   : eta,
+    #                                         'digits'                : 3,
+    #                                         'samples'               : 10,
+    #                                         'duration'              : 100,
+    #                                         'runs'                  : 25,
+
+    #                                         'nodes_tau'             : tau_n,
+    #                                         'nodes_beta'            : 2*np.pi*10**3,
+    #                                         'nodes_ib'              : 1.8,
+    #                                         'nodes_s_th'            : sth_n,
+    #                                         'fan_coeff_nodes'       : fans_n,
+
+    #                                         'codes_tau'             : tau_c,
+    #                                         'codes_beta'            : 2*np.pi*10**3,
+    #                                         'codes_ib'              : 1.8,
+    #                                         'codes_s_th'            : sth_c,
+    #                                         'fan_coeff_codes'       : fans_c,
+
+    #                                         'density'               : den,
+    #                                         'res_connect_coeff'     : conn,
+
+    #                                     }
+
+    #                                     N = config['N']
+    #                                     C = config['C']
+                                        
+    #                                     eta = config["eta"]
+    #                                     tau_c = config["codes_tau"]
+    #                                     tau_n = config["nodes_tau"]
+    #                                     sth_n = config["nodes_s_th"]
+    #                                     sth_c = config["codes_s_th"]
+    #                                     fans_n = config["fan_coeff_nodes"]
+    #                                     fans_c = config["fan_coeff_codes"]
+    #                                     den = config["density"]
+    #                                     conn = config["res_connect_coeff"]
+
+    #                                     config['exp_name'] = f"res_{eta}_{tau_c}_{tau_n}_{sth_n}_{sth_c}_{fans_n}_{fans_c}_{den}_{conn}"
 
 
-for eta in etas:
-    for tau_c in tau_cs:
-        for tau_n in tau_ns:
-            for sth_n in sth_ns:
-                for sth_c in sth_cs:
-                    for fans_n in fans_ns:
-                        for fans_c in fans_cs:
-                            for den in dens:
-                                for conn in conns:
-                                    config = {
+    #                                     # run_all(config)
+    #                                     all_configs.append(config)
 
-                                        'N'                     : 98,
-                                        'C'                     : 3,
-                                        'seed'                  : 442,
-                                        'eta'                   : eta,
-                                        'digits'                : 3,
-                                        'samples'               : 10,
-                                        'duration'              : 100,
-                                        'runs'                  : 25,
-
-                                        'nodes_tau'             : tau_n,
-                                        'nodes_beta'            : 2*np.pi*10**3,
-                                        'nodes_ib'              : 1.8,
-                                        'nodes_s_th'            : sth_n,
-                                        'fan_coeff_nodes'       : fans_n,
-
-                                        'codes_tau'             : tau_c,
-                                        'codes_beta'            : 2*np.pi*10**3,
-                                        'codes_ib'              : 1.8,
-                                        'codes_s_th'            : sth_c,
-                                        'fan_coeff_codes'       : fans_c,
-
-                                        'density'               : den,
-                                        'res_connect_coeff'     : conn,
-
-                                    }
-                                    run_all(config)
+    # print(len(all_configs))
+    # import os
+    # path = 'results/res_MNIST/'
+    # for i,config in enumerate(all_configs):
+    #     exp_path = f"{path}{config['exp_name']}"
+    #     # print("Already Run:")
+    #     try:
+    #         acc = picklin(exp_path,"performance")
+    #         # print(f"  {config['exp_name']}")
+    #     except:
+    #         print("Running Now:")
+    #         print(f"  {config['exp_name']} -- file number {i}")
+    #         run_all(config)
 
 
 
 
 
-#-------------------------------------------------------
-# config = {
+    #-------------------------------------------------------
+    # config = {
 
-#     'N'                     : 100,
-#     'C'                     : 3,
-#     'seed'                  : np.random.randint(1000),
-#     'eta'                   : 0.005,
-#     'digits'                : 3,
-#     'samples'               : 10,
-#     'duration'              : 100,
+    #     'N'                     : 100,
+    #     'C'                     : 3,
+    #     'seed'                  : np.random.randint(1000),
+    #     'eta'                   : 0.005,
+    #     'digits'                : 3,
+    #     'samples'               : 10,
+    #     'duration'              : 100,
 
-#     'nodes_tau'             : 50,
-#     'nodes_beta'            : 2*np.pi*10**3,
-#     'nodes_ib'              : 1.8,
-#     'nodes_s_th'            : 0.1,
-#     'fan_coeff_nodes'       : 2.25,
+    #     'nodes_tau'             : 50,
+    #     'nodes_beta'            : 2*np.pi*10**3,
+    #     'nodes_ib'              : 1.8,
+    #     'nodes_s_th'            : 0.1,
+    #     'fan_coeff_nodes'       : 2.25,
 
-#     'codes_tau'             : 250,
-#     'codes_beta'            : 2*np.pi*10**3,
-#     'codes_ib'              : 1.8,
-#     'codes_s_th'            : 0.1,
-#     'fan_coeff_codes'       : 1.5,
+    #     'codes_tau'             : 250,
+    #     'codes_beta'            : 2*np.pi*10**3,
+    #     'codes_ib'              : 1.8,
+    #     'codes_s_th'            : 0.1,
+    #     'fan_coeff_codes'       : 1.5,
 
-#     'density'               : .1,
-#     'res_connect_coeff'     : 0.1,
+    #     'density'               : .1,
+    #     'res_connect_coeff'     : 0.1,
 
-# }
+    # }

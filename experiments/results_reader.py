@@ -306,5 +306,74 @@ experiments = {
 }
 
 # plot_singles(experiments,until,10,record='new')
-plot_all(experiments,until,record='new')
+# plot_all(experiments,until,record='new')
+
+def res_rasters(path):
+    import matplotlib.image as mpimg
+    import matplotlib.pyplot as plt
+    import os
+    if os.path.exists(path) == True:
+        dir_list = os.listdir(path)
+
+        for directory in dir_list:
+            try:
+                print(directory)
+                exp_path = f"{path}{directory}"
+
+                acc = picklin(exp_path,"performance")
+                # print(acc)
+
+                if np.max(acc)>49.9:
+                    print(acc,np.max(acc))
+                    plt.figure(figsize=(16, 11))
+                    img = mpimg.imread(f"{exp_path}/raster_all.png")
+                    plt.imshow(img)
+                    plt.show()
+
+            except:
+                print(f"Dir {directory} has no raster plot.")
+
+
+def res_performances(path):
+    import matplotlib.image as mpimg
+    import matplotlib.pyplot as plt
+    import os
+    print("here")
+    plt.figure(figsize=(16,6))
+    # plt.tight_layout(rect=[0,0,.5,-.5]) 
+    # plt.subplots_adjust(right=.7)
+    plt.subplots_adjust(right=.7)
+    colors = plt.rcParams["axes.prop_cycle"].by_key()["color"]
+    if os.path.exists(path) == True:
+        dir_list = os.listdir(path)
+        count = 0
+        above = 0
+        for directory in dir_list:
+            try:
+                exp_path = f"{path}{directory}"
+                acc = picklin(exp_path,"performance")
+
+                if np.max(acc)>49:
+                    print(acc,np.max(acc),directory)
+                    plt.plot(acc,linewidth=3,label=exp_path[len("results/res_MNIST/res_"):],color=colors[above])
+                    above+=1
+                else:
+                    plt.plot(acc,'--',alpha=0.4)
+            except:
+                print(f"Dir {directory} has no performance measures yet.")
+
+            count+=1
+        plt.legend(
+            title='eta_tau_c_tau_n_sth_n_sth_c_fans_n_fans_c_den_conn',
+            loc='upper left', bbox_to_anchor=(1.04,1)
+            )
+        plt.xlabel("Epochs"  ,fontsize=18)
+        plt.ylabel("Accuracy",fontsize=18)
+        plt.title("MNIST Performance of Different Reservoir Configurations",fontsize=22)
+        plt.show()
+
+path = 'results/res_MNIST/'
+res_performances(path)
+# res_rasters(path)
+
 
