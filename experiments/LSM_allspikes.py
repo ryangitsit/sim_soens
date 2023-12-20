@@ -101,6 +101,19 @@ def make_single_readout(c,return_dict,N,C,config):
         )
         code.normalize_fanin(config['fan_coeff_codes'])
 
+    if N == 490:
+        code = SuperNode(
+            name = f'code_neuron_{c}',
+            weights = [
+                [np.random.rand(7)],
+                [np.random.rand(7) for _ in range(7)],
+                [np.random.rand(2) for _ in range(49)],
+                [np.random.rand(5) for _ in range(98)],
+            ],
+            **readout_params
+        )
+        code.normalize_fanin(config['fan_coeff_codes'])
+
     return_dict[code.name] = code
 
 def make_readouts(N,C,config):
@@ -289,7 +302,7 @@ def nodes_to_codes(nodes,codes):
     return nodes, codes
 
 
-def add_input(inp,nodes,method='random_windows'):
+def connect_input(inp,nodes,method='random_windows'):
     if method == 'random_windows':
         #** check ref syn position
         input_dims = len(inp.signals)
@@ -304,7 +317,7 @@ def add_input(inp,nodes,method='random_windows'):
         for n,node in enumerate(nodes):
             for s,syn in enumerate(node.synapse_list):
                 if 'ref' not in syn.name and 'soma' not in syn.name:
-                    syn.add_input(inp.signals[count])
+                    syn.add_input(inp.signals[count%784])
                     count+=1
         # print("Input dimensions met: ", count)
     
@@ -420,7 +433,7 @@ def run_MNIST(nodes,codes,config):
                         )
 
                     # raster_plot(inp.spike_arrays)
-                    nodes = add_input(inp,nodes,method='synapse_sequential')
+                    nodes = connect_input(inp,nodes,method='synapse_sequential')
                     
                     # net = run_network(nodes)
                     net = network(
@@ -568,14 +581,25 @@ def run_all(config):
     return_dict = manager.dict()
 
     thrds = []
-    for thrd in range(14):
-        thrds.append(
-            multiprocessing.Process(
-                target=make_parallel_neurons, 
-                args=(thrd*7,thrd*7+7,return_dict,config)
-                )
-                )
-
+    if config['N'] == 98:
+        for thrd in range(14):
+            thrds.append(
+                multiprocessing.Process(
+                    target=make_parallel_neurons, 
+                    args=(thrd*7,thrd*7+7,return_dict,config)
+                    )
+            )
+    
+    elif config['N'] == 490:
+        thrd_cnt = 14
+        intrvl   = 35
+        for thrd in range(thrd_cnt):
+            thrds.append(
+                multiprocessing.Process(
+                    target=make_parallel_neurons, 
+                    args=(thrd*intrvl,thrd*intrvl+intrvl,return_dict,config)
+                    )
+            )
     for thrd in thrds:
         thrd.start()
 
@@ -583,7 +607,7 @@ def run_all(config):
         thrd.join()
 
     nodes = []
-    for i in range(98):
+    for i in range(config['N']):
         nodes.append(return_dict[f'res_neuron_{i}'])
 
     s2 = time.perf_counter()

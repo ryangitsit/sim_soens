@@ -21,6 +21,7 @@ Enjoy!
       - https://julialang.org/downloads/
      - While in the `julia_setup` directory of this repo, run the following command arguments in order:
        - `python run_first_py4jul_setup.py`
+         - Be sure to check that julia is accessing the correct version of Python (if there are multiple on the machine)
        - `julia run_second_julia_setup.jl`
  - Open `NICE_tutorial` for a simulator walkthrough 
    - How to use jupyter notebooks: https://www.dataquest.io/blog/jupyter-notebook-tutorial/
