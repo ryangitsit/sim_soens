@@ -373,7 +373,7 @@ def res_performances(path):
         plt.show()
 
 path = 'results/res_MNIST/'
-res_performances(path)
-# res_rasters(path)
+# res_performances(path)
+res_rasters(path)
 
 
