@@ -58,9 +58,9 @@ class MNISTNode(SuperNode):
 
         self.__dict__.update(entries)
         self.params = self.__dict__
-
+        print(f"Building {self.name} [>       ]", end="\r")
         self.build_arbor()
-
+        print(f"Building {self.name} [=>      ]", end="\r")
         # create a neuron object given init params
         self.neuron = neuron(**self.params)
         self.neuron.dend_soma.branch=0
@@ -70,21 +70,25 @@ class MNISTNode(SuperNode):
 
         # check that the structure implied by .weights is compatible with construction method
         self.check_arbor_structor(self.weights)
-                        
+        print(f"Building {self.name} [==>     ]", end="\r")
         self.make_dendrites()
         self.connect_dendrites()
-
+        print(f"Building {self.name} [===>    ]", end="\r")
         if self.rand_flux is not None:
             self.random_flux(self.rand_flux)
-            print("Random Flux")
-        if self.inh_counter:
-            print("Inhibition counter")
+            print(f"Building {self.name} [====>   ]", end="\r")
+            # print("Random Flux")
+        if self.inh_counter==True:
+            # print("Inhibition counter")
             self.add_inhibition_counts()
+            print(f"Building {self.name} [=====>  ]", end="\r")
         if self.norm_fanin:
-            print(f"Fanin normalization with coefficient of {self.fan_coeff}")
+            # print(f"Fanin normalization with coefficient of {self.fan_coeff}")
             self.normalize_fanin(self.fan_coeff)
+            print(f"Building {self.name} [======> ]", end="\r")
 
         self.make_and_connect_synapses()
+        print(f"Building {self.name} [=======>]", end="\r")
 
     def build_arbor(self):
         if self.layers == 6:
@@ -119,8 +123,8 @@ class MNISTNode(SuperNode):
                 layer_6,
             ]
 
-            for i,w in enumerate(self.weights):
-                print(f"Layer {i} has shape {w.shape}")
+            # for i,w in enumerate(self.weights):
+            #     print(f"Layer {i} has shape {w.shape}")
 
         elif self.layers == 5:
             print("Tiling Technique")
@@ -207,7 +211,7 @@ class MNISTNode(SuperNode):
                 shp = []
                 for group in w:
                     shp.append(len(group))
-                print(f"Layer {i} has shape {len(shp),sum(shp)}")  
+                # print(f"Layer {i} has shape {len(shp),sum(shp)}")  
                     
 
 class SpecificNode(SuperNode):

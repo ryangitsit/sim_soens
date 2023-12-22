@@ -405,7 +405,7 @@ def run_MNIST(nodes,codes,config):
     for run in range(runs):
 
         if run == 0:
-            path = f"results/res_MNIST/{exp_name}"
+            path = config['path']
             try:
                 os.makedirs(path)    
             except FileExistsError:
@@ -425,7 +425,7 @@ def run_MNIST(nodes,codes,config):
             for digit in range(digits):
                 # print(f"Digit {digit} -- Sample {sample}")
     
-                if run == 0:
+                if 'res_spikes' not in config.keys():
                     inp = SuperInput(
                         type="defined",
                         channels=784,
@@ -471,14 +471,18 @@ def run_MNIST(nodes,codes,config):
                         )
                     del(net)
                 
-                if run == 1:
-                    picklit(
-                        res_spikes,
-                        f"results/res_MNIST/{exp_name}/",
-                        f"res_spikes"
-                        )
-                    with open(f'{path}/config.txt', 'w') as file:
-                        file.write(json.dumps(config))
+                    if run == 1:
+                        picklit(
+                            res_spikes,
+                            f"results/res_MNIST/{exp_name}/",
+                            f"res_spikes"
+                            )
+                        with open(f'{path}/config.txt', 'w') as file:
+                            file.write(json.dumps(config))
+                        config['res_spikes'] = res_spikes
+                
+                else:
+                    res_spikes = config['res_spikes']
 
                 inpt = SuperInput(
                     type="defined",
@@ -563,11 +567,14 @@ def run_all(config):
     conn = config["res_connect_coeff"]
 
     print(f"res_eta_tau_c_tau_n_sth_n_sth_c_fans_n_fans_c_den_conn")
-    config['exp_name'] = f"res_{eta}_{tau_c}_{tau_n}_{sth_n}_{sth_c}_{fans_n}_{fans_c}_{den}_{conn}"
+
+    if 'exp_name' not in config.keys() or config['exp_name'] == 'test':
+        config['exp_name'] = f"res_N={N}_{eta}_{tau_c}_{tau_n}_{sth_n}_{sth_c}_{fans_n}_{fans_c}_{den}_{conn}"
 
     print(config['exp_name'])
 
-    config['path'] = f"results/res_MNIST/{config['exp_name']}"
+    if 'path' not in config.keys():
+        config['path'] = f"results/res_MNIST/{config['exp_name']}"
 
 
     np.random.seed(config['seed'])
@@ -580,35 +587,36 @@ def run_all(config):
     manager = multiprocessing.Manager()
     return_dict = manager.dict()
 
-    thrds = []
-    if config['N'] == 98:
-        for thrd in range(14):
-            thrds.append(
-                multiprocessing.Process(
-                    target=make_parallel_neurons, 
-                    args=(thrd*7,thrd*7+7,return_dict,config)
-                    )
-            )
-    
-    elif config['N'] == 490:
-        thrd_cnt = 14
-        intrvl   = 35
-        for thrd in range(thrd_cnt):
-            thrds.append(
-                multiprocessing.Process(
-                    target=make_parallel_neurons, 
-                    args=(thrd*intrvl,thrd*intrvl+intrvl,return_dict,config)
-                    )
-            )
-    for thrd in thrds:
-        thrd.start()
-
-    for thrd in thrds:
-        thrd.join()
-
     nodes = []
-    for i in range(config['N']):
-        nodes.append(return_dict[f'res_neuron_{i}'])
+    if 'res_spikes' not in config.keys():
+        thrds = []
+        if config['N'] == 98:
+            for thrd in range(14):
+                thrds.append(
+                    multiprocessing.Process(
+                        target=make_parallel_neurons, 
+                        args=(thrd*7,thrd*7+7,return_dict,config)
+                        )
+                )
+        
+        elif config['N'] == 490:
+            thrd_cnt = 14
+            intrvl   = 35
+            for thrd in range(thrd_cnt):
+                thrds.append(
+                    multiprocessing.Process(
+                        target=make_parallel_neurons, 
+                        args=(thrd*intrvl,thrd*intrvl+intrvl,return_dict,config)
+                        )
+                )
+        for thrd in thrds:
+            thrd.start()
+
+        for thrd in thrds:
+            thrd.join()
+
+        for i in range(config['N']):
+            nodes.append(return_dict[f'res_neuron_{i}'])
 
     s2 = time.perf_counter()
     print(f"Time to make nodes: {np.round(s2-s1,2)}")
@@ -646,8 +654,8 @@ def run_all(config):
     ###################################
     #      Connecting Reservoir       #
     ###################################
-
-    nodes = connect_nodes(nodes,config['density'],config['res_connect_coeff'])
+    if 'res_spikes' not in config.keys():
+        nodes = connect_nodes(nodes,config['density'],config['res_connect_coeff'])
 
     s4 = time.perf_counter()
     print(f"Time to connect nodes: {np.round(s4-s3,2)}")
@@ -664,124 +672,79 @@ def run_all(config):
     print(f"Time to run epoch: {np.round(s5-s4,2)}")
 
 
+def evolve(path):
+    import os
+    if os.path.exists(path) == True:
+        dir_list = os.listdir(path)
+        accs = {}
+        for directory in dir_list:
+            try:
+                exp_path = f"{path}{directory}"
+                acc = picklin(exp_path,"performance")
+                accs[directory] = np.max(acc)
+            except:
+                print(f"Dir {directory} has not been run.")
+    print("\n")
+    perf_rankings = dict(
+        reversed(list({k: v for k, v in sorted(accs.items(), key=lambda item: item[1])}.items()))
+        )
+    for i,(k,v) in enumerate(perf_rankings.items()):
+        if i < len(perf_rankings)*.1:
+            print(k,v)
+            exp_path = f"{path}{k}"
+            if not os.path.isfile(f"{path}{k}/evolved/acc.pickle"):
+                print(f"{k} has not undergone an evolution.")
+                try:
+                    res_spikes = picklin(exp_path,"res_spikes")
+                except:
+                    print(f"Dir {k} is not ready to evolve.")
+
+                try:
+                    with open(f"{path}{k}/config.txt") as f:
+                        config = dict(eval(f.read()))
+                except:
+                    print(f"Dir {k} has no config file.")
+                print(f"Running {k}")
+                break
+    config['path'] = f"results/res_MNIST/{k}/evolved"
+    config['runs'] = 100
+    config['res_spikes'] = res_spikes
+    return config
+
 if __name__ == "__main__":
 
-    
     config = setup_argument_parser()
-    run_all(config.__dict__)
 
-    # etas     = [0.005]
-    # tau_cs   = [250,500]
-    # tau_ns   = [50,100]
-
-    # sth_ns   = [0.1,.25]
-    # sth_cs   = [0.1,.25]
-
-    # fans_ns  = [2.25,2.5]
-    # fans_cs  = [1.50,1.75]
-
-    # dens     = [0.1,0.25,.5]
-    # conns    = [0.05,0.1,0.15]
-
-    # all_configs = []
-    # for eta in etas:
-    #     for tau_c in tau_cs:
-    #         for tau_n in tau_ns:
-    #             for sth_n in sth_ns:
-    #                 for sth_c in sth_cs:
-    #                     for fans_n in fans_ns:
-    #                         for fans_c in fans_cs:
-    #                             for den in dens:
-    #                                 for conn in conns:
-    #                                     config = {
-
-    #                                         'N'                     : 98,
-    #                                         'C'                     : 3,
-    #                                         'seed'                  : 442,
-    #                                         'eta'                   : eta,
-    #                                         'digits'                : 3,
-    #                                         'samples'               : 10,
-    #                                         'duration'              : 100,
-    #                                         'runs'                  : 25,
-
-    #                                         'nodes_tau'             : tau_n,
-    #                                         'nodes_beta'            : 2*np.pi*10**3,
-    #                                         'nodes_ib'              : 1.8,
-    #                                         'nodes_s_th'            : sth_n,
-    #                                         'fan_coeff_nodes'       : fans_n,
-
-    #                                         'codes_tau'             : tau_c,
-    #                                         'codes_beta'            : 2*np.pi*10**3,
-    #                                         'codes_ib'              : 1.8,
-    #                                         'codes_s_th'            : sth_c,
-    #                                         'fan_coeff_codes'       : fans_c,
-
-    #                                         'density'               : den,
-    #                                         'res_connect_coeff'     : conn,
-
-    #                                     }
-
-    #                                     N = config['N']
-    #                                     C = config['C']
-                                        
-    #                                     eta = config["eta"]
-    #                                     tau_c = config["codes_tau"]
-    #                                     tau_n = config["nodes_tau"]
-    #                                     sth_n = config["nodes_s_th"]
-    #                                     sth_c = config["codes_s_th"]
-    #                                     fans_n = config["fan_coeff_nodes"]
-    #                                     fans_c = config["fan_coeff_codes"]
-    #                                     den = config["density"]
-    #                                     conn = config["res_connect_coeff"]
-
-    #                                     config['exp_name'] = f"res_{eta}_{tau_c}_{tau_n}_{sth_n}_{sth_c}_{fans_n}_{fans_c}_{den}_{conn}"
+    if config.evolve==True:
+        print("Evolve")
+        path = 'results/res_MNIST/'
+        config = evolve(path)
+        run_all(config)
+    else:
+        config  = config.__dict__
+        N       = config['N']
+        C       = config['C']
+        eta     = config["eta"]
+        tau_c   = config["codes_tau"]
+        tau_n   = config["nodes_tau"]
+        sth_n   = config["nodes_s_th"]
+        sth_c   = config["codes_s_th"]
+        fans_n  = config["fan_coeff_nodes"]
+        fans_c  = config["fan_coeff_codes"]
+        den     = config["density"]
+        conn    = config["res_connect_coeff"]
 
 
-    #                                     # run_all(config)
-    #                                     all_configs.append(config)
+        exp_name = f"res_{eta}_{tau_c}_{tau_n}_{sth_n}_{sth_c}_{fans_n}_{fans_c}_{den}_{conn}"
+        path = f"results/res_MNIST/{exp_name}"
 
-    # print(len(all_configs))
-    # import os
-    # path = 'results/res_MNIST/'
-    # for i,config in enumerate(all_configs):
-    #     exp_path = f"{path}{config['exp_name']}"
-    #     # print("Already Run:")
-    #     try:
-    #         acc = picklin(exp_path,"performance")
-    #         # print(f"  {config['exp_name']}")
-    #     except:
-    #         print("Running Now:")
-    #         print(f"  {config['exp_name']} -- file number {i}")
-    #         run_all(config)
+        alt_name = f"res_{eta}_{tau_c}_{tau_n}_{sth_n}_{sth_c}_{fans_n}_{fans_c}_{den}_{conn}"
+        alt_path = f"results/res_MNIST/{alt_name}"
 
+        if (not os.path.isfile(f"{path}/performance.pickle") and 
+            not os.path.isfile(f"{alt_path}/performance.pickle")):
+            print(f"Running {exp_name}")
+            run_all(config)
+        else:
+            print(f"{exp_name} already run.")
 
-
-
-
-    #-------------------------------------------------------
-    # config = {
-
-    #     'N'                     : 100,
-    #     'C'                     : 3,
-    #     'seed'                  : np.random.randint(1000),
-    #     'eta'                   : 0.005,
-    #     'digits'                : 3,
-    #     'samples'               : 10,
-    #     'duration'              : 100,
-
-    #     'nodes_tau'             : 50,
-    #     'nodes_beta'            : 2*np.pi*10**3,
-    #     'nodes_ib'              : 1.8,
-    #     'nodes_s_th'            : 0.1,
-    #     'fan_coeff_nodes'       : 2.25,
-
-    #     'codes_tau'             : 250,
-    #     'codes_beta'            : 2*np.pi*10**3,
-    #     'codes_ib'              : 1.8,
-    #     'codes_s_th'            : 0.1,
-    #     'fan_coeff_codes'       : 1.5,
-
-    #     'density'               : .1,
-    #     'res_connect_coeff'     : 0.1,
-
-    # }

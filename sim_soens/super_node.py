@@ -353,7 +353,7 @@ class SuperNode():
     def random_flux(self,rand_flux):
         '''
         '''
-        print("RANDOM FLUX")
+        # print("RANDOM FLUX")
         for l,layer in enumerate(self.dendrites):
             for g,group in enumerate(layer):
                 for d,dend in enumerate(group):

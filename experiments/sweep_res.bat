@@ -41,6 +41,7 @@ FOR %%a IN (0.005) DO (
                                 FOR %%i IN (0.05,0.1,0.15) DO (
 
                                     python LSM_allspikes.py^
+                                        --N 98^
                                         --eta %%a^
                                         --nodes_tau %%b^
                                         --codes_tau %%c^

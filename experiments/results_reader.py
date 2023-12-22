@@ -373,7 +373,48 @@ def res_performances(path):
         plt.show()
 
 path = 'results/res_MNIST/'
-# res_performances(path)
-res_rasters(path)
+res_performances(path)
+# res_rasters(path)
 
+def evolve(path):
+    import os
+    if os.path.exists(path) == True:
+        dir_list = os.listdir(path)
+        accs = {}
+        for directory in dir_list:
+            try:
+                exp_path = f"{path}{directory}"
+                acc = picklin(exp_path,"performance")
+                accs[directory] = np.max(acc)
+            except:
+                print(f"Dir {directory} has not been run.")
+    print("\n")
+    perf_rankings = dict(
+        reversed(list({k: v for k, v in sorted(accs.items(), key=lambda item: item[1])}.items()))
+        )
+    for i,(k,v) in enumerate(perf_rankings.items()):
+        if i < len(perf_rankings)*.1:
+            print(k,v)
+            exp_path = f"{path}{k}"
+            if not os.path.isfile(f"{path}{k}/evolved/acc.pickle"):
+                print(f"{k} has not undergone an evolution.")
+                try:
+                    res_spikes = picklin(exp_path,"res_spikes")
+                except:
+                    print(f"Dir {k} is not ready to evolve.")
 
+                try:
+                    with open(f"{path}{k}/config.txt") as f:
+                        config = dict(eval(f.read()))
+                except:
+                    print(f"Dir {k} has no config file.")
+                print(f"Running {k}")
+                break
+    config['path'] = f"results/res_MNIST/{k}/evolved"
+    config['runs'] = 100
+    config['res_spikes'] = res_spikes
+    print(config)
+    return config
+
+path = 'results/res_MNIST/'
+# config = evolve(path)

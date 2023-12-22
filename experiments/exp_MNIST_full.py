@@ -23,9 +23,111 @@ from sim_soens.neuron_library import MNISTNode
 from sim_soens.super_algorithms import *
 from sim_soens.input_library import *
 import time
+# import multiprocessing
+import multiprocess as mp
 
 def main():
     np.random.seed(10)
+    
+    def make_nodes(path,name,config):
+        print("Making new nodes...")
+        if config.inh_counter:
+            print("Inhibition counter")  
+        if config.norm_fanin:
+            print("Fanin Normalization")  
+        saved_run = 0
+        start = time.perf_counter()
+        np.random.seed(10)
+
+        exin = config.exin
+        fixed = config.fixed
+        print(f" Excitatory, zeroed, inhibitory ratios: {exin}")
+        print(f" Fixed uniform Jij (coupling strength) factor: {fixed}")
+
+        # initialize a neuron of each class with this structure
+        nodes = []
+        for node in range(config.digits):
+
+            # internal node parameters
+            mutual_inhibition = True
+            ib      = 1.8
+            tau     = config.tau
+            beta    = 2*np.pi*10**config.beta
+            s_th    = config.s_th
+            params = {
+                "ib"        :ib,
+                "ib_n"      :ib,
+                "ib_di"     :ib,
+                "tau"       :tau,
+                "tau_ni"    :tau,
+                "tau_di"    :tau,
+                "beta"      :beta,
+                "beta_ni"   :beta,
+                "beta_di"   :beta,
+                "s_th"      :s_th,
+                "name"      :f'node_{node}'
+            }
+            params.update(config.__dict__)
+            nodes.append(MNISTNode(**params))
+            # if node == 0:
+            #     nodes[0].plot_structure()
+            # nodes.append(SuperNode(name=f'node_{node}',weights=weights,**params))
+            print("Ref: ",nodes[0].neuron.tau_ref,nodes[0].neuron.ib_ref)
+            # if node == 0:
+            #     nodes[node].plot_structure()
+
+
+        if mutual_inhibition == True:
+            inhibition = -(1/config.digits)
+            for i,node in enumerate(nodes):
+                syn_soma = synapse(name=f'{node.name}_somatic_synapse')
+                node.synapse_list.append(syn_soma)
+                node.neuron.dend_soma.add_input(syn_soma,connection_strength=inhibition)
+            for i,node in enumerate(nodes):
+                for other_node in nodes:
+                    if other_node.name != node.name:
+                        node.neuron.add_output(other_node.synapse_list[-1])
+                        print("-- ",other_node.synapse_list[-1].name)
+
+        finish = time.perf_counter()
+        print("Time to make neurons: ", finish-start)
+
+        # save the nodes!
+        picklit(
+            nodes,
+            f"{path}{name}/nodes/",
+            f"init_nodes"
+            )
+        
+        return nodes
+    
+
+    def make_single_node(n,return_dict,config):
+        print(f"Making new node {n}...")
+
+        # internal node parameters
+        ib      = 1.8
+        tau     = config.tau
+        beta    = 2*np.pi*10**config.beta
+        s_th    = config.s_th
+        params = {
+            "ib"          :ib,
+            "ib_n"        :ib,
+            "ib_di"       :ib,
+            "tau"         :tau,
+            "tau_ni"      :tau,
+            "tau_di"      :tau,
+            "beta"        :beta,
+            "beta_ni"     :beta,
+            "beta_di"     :beta,
+            "s_th"        :s_th,
+            "name"        :f'node_{n}',
+            "fan_coeff"   :config.fan_coeff
+        }
+        params.update(config.__dict__)
+        node = MNISTNode(**params)
+        return_dict[node.name] = node
+
 
     def get_nodes(
             path,
@@ -35,7 +137,7 @@ def main():
         '''
         Either creates or loads nodes for training
         '''
-
+        s1 = time.perf_counter()
         # importing os module
         place = path+name+'nodes/'
         if os.path.exists(place) == True:
@@ -47,63 +149,32 @@ def main():
             # print("file name: ",file_name)
             nodes = picklin(place,file_name)
 
-            new_nodes = False
-
         else:
-            new_nodes=True
+            if config.multi == True:
+                manager = mp.Manager()
+                return_dict = manager.dict()
+                return_dict = manager.dict()
+                thrds = []
+                for thrd in range(config.digits):
+                    thrds.append(
+                        mp.Process(
+                            target=make_single_node, 
+                            args=(thrd,return_dict,config)
+                            )
+                        )
 
+                for thrd in thrds:
+                    thrd.start()
 
-        if new_nodes == True:
-            print("Making new nodes...")
-            if config.inh_counter:
-                print("Inhibition counter")  
-            if config.norm_fanin:
-                print("Fanin Normalization")  
-            saved_run = 0
-            start = time.perf_counter()
-            np.random.seed(10)
+                for thrd in thrds:
+                    thrd.join()
 
-            exin = config.exin
-            fixed = config.fixed
-            print(f" Excitatory, zeroed, inhibitory ratios: {exin}")
-            print(f" Fixed uniform Jij (coupling strength) factor: {fixed}")
+                nodes = []
+                for i in range(config.digits):
+                    print(f'Adding node_{i}')
+                    nodes.append(return_dict[f'node_{i}'])
 
-
-            # initialize a neuron of each class with this structure
-            nodes = []
-            for node in range(config.digits):
-                # branching factor
-                f_idx = 28
-
-                # internal node parameters
-                mutual_inhibition = True
-                ib      = 1.8
-                tau     = config.tau
-                beta    = 2*np.pi*10**config.beta
-                s_th    = config.s_th
-                params = {
-                    "ib"        :ib,
-                    "ib_n"      :ib,
-                    "ib_di"     :ib,
-                    "tau"       :tau,
-                    "tau_ni"    :tau,
-                    "tau_di"    :tau,
-                    "beta"      :beta,
-                    "beta_ni"   :beta,
-                    "beta_di"   :beta,
-                    "s_th"      :s_th,
-                    "name"      :f'node_{node}'
-                }
-                params.update(config.__dict__)
-                nodes.append(MNISTNode(**params))
-                # if node == 0:
-                #     nodes[0].plot_structure()
-                # nodes.append(SuperNode(name=f'node_{node}',weights=weights,**params))
-                print("Ref: ",nodes[0].neuron.tau_ref,nodes[0].neuron.ib_ref)
-                # if node == 0:
-                #     nodes[node].plot_structure()
-
-
+            mutual_inhibition = True
             if mutual_inhibition == True:
                 inhibition = -(1/config.digits)
                 for i,node in enumerate(nodes):
@@ -116,18 +187,23 @@ def main():
                             node.neuron.add_output(other_node.synapse_list[-1])
                             print("-- ",other_node.synapse_list[-1].name)
 
-            finish = time.perf_counter()
-            print("Time to make neurons: ", finish-start)
+            else:
+                make_nodes(path,name,config)
 
-            # save the nodes!
-            picklit(
-                nodes,
-                f"{path}{name}/nodes/",
-                f"init_nodes"
-                )
+        # save the nodes!
+        picklit(
+            nodes,
+            f"{path}{name}/nodes/",
+            f"init_nodes"
+            )
+        
+        s2 = time.perf_counter()
+
+        print(f"Total node acquisition time: {s2-s1}")
+
         return nodes
 
-    
+
     def train_MNIST_neurons(nodes,dataset,path,name,config):
         '''
         Trains nodes on MNIST dataset
@@ -422,6 +498,10 @@ def main():
     from sim_soens.argparse import setup_argument_parser
     config = setup_argument_parser()
 
+    config.exp_name = f'arbor_sweep_{config.s_th}_{config.tau}_{config.fan_coeff}_{config.target}_{config.rand_flux}_{config.max_offset}_{config.exin}'
+    if config.exin != [0,0,100]:
+        print("Inhibition")
+        config.inh_counter=True
     # call in previously generated dataset
     path    = 'results/MNIST/'
     name    = config.exp_name+'/'
