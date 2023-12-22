@@ -12,7 +12,7 @@ def arbor_update(nodes,config,digit,sample,errors):
     s = time.perf_counter()
     offset_sums = [0 for _ in range(config.digits)]
     max_hits = np.zeros(config.digits)
-    if config.inh_counter: print("inh counter")
+    # if config.inh_counter: print("inh counter")
     for n,node in enumerate(nodes):
         for l,layer in enumerate(node.dendrites):
             for g,group in enumerate(layer):

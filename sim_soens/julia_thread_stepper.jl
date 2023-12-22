@@ -157,8 +157,16 @@ end
 function synapse_input_update(syn::Synapse,t::Int64,T::Int64,conversion::Float64,dt::Float64,duration::Int64)
     # hotspot = 3
     if t in syn.spike_times
-        until = min(t+duration,T)
-        syn.phi_spd[t:until] = max.(syn.phi_spd[t:until],SPD_response(conversion,dt)[1:until-t+1])
+        spk_idx = findfirst(item -> item == t, syn.spike_times)
+        if spk_idx > 1
+            if syn.spike_times[spk_idx] - syn.spike_times[spk_idx-1] > 35
+                # @show syn.spike_times[spk_idx], syn.spike_times[spk_idx-1]
+                until = min(t+duration,T)
+                syn.phi_spd[t:until] = max.(syn.phi_spd[t:until],SPD_response(conversion,dt)[1:until-t+1])
+            else
+                deleteat!(syn.spike_times,spk_idx)
+            end
+        end
     end
     return syn
 end

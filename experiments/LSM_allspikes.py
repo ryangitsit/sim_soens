@@ -30,8 +30,11 @@ Plan
 '''
 
 def make_res_node(n,config):
-    # print(f"Making node {n}")
+    '''
+    For making a single reservoir node of index n
+    '''
 
+    # parameters with which the node will be initialized
     ib      = config['nodes_ib']
     tau     = config['nodes_tau']
     beta    = config['nodes_beta']
@@ -49,7 +52,8 @@ def make_res_node(n,config):
                     "beta_di"   :beta,
                     "s_th"      :s_th,
                 }
-
+    
+    # Create a super node object with an exposed dendritied layer of 8
     node = SuperNode(
         name = f'res_neuron_{n}',
         weights = [
@@ -59,21 +63,28 @@ def make_res_node(n,config):
         ],
         **res_params
     )
-    node.normalize_fanin(2.25)
+
+    # Normalize the dendritic arbor fanin and weight updward with fanin coeff
+    node.normalize_fanin(config['fan_coeff_nodes'])
     return node
 
 def make_parallel_neurons(n1,n2,return_dict,config):
-
+    '''
+    This implementation allows pythonin multiprocess for node initializations
+    '''
     nodes = {(f'res_neuron_{n}',make_res_node(n,config)) for n in range(n1,n2)}
     return_dict.update(nodes)
 
 def make_single_readout(c,return_dict,N,C,config):
+    '''
+    Makes a single readout node (called a code here)
+    '''
 
+    # init params
     ib      = config['codes_ib']
     tau     = config['codes_tau']
     beta    = config['codes_beta']
     s_th    = config['codes_s_th']
-
 
     readout_params = {
                     "ib"        :ib,
@@ -88,7 +99,7 @@ def make_single_readout(c,return_dict,N,C,config):
                     "s_th"      :s_th,
                 }
 
-
+    # match the fanin to the size of the reservoir from which the code reads
     if N == 98:
         code = SuperNode(
             name = f'code_neuron_{c}',
@@ -116,8 +127,11 @@ def make_single_readout(c,return_dict,N,C,config):
 
     return_dict[code.name] = code
 
-def make_readouts(N,C,config):
 
+def make_readouts(N,C,config):
+    '''
+    For making readout nodes without parallelization
+    '''
     ib      = config['codes_ib']
     tau     = config['codes_tau']
     beta    = config['codes_beta']
@@ -178,12 +192,13 @@ def make_readouts(N,C,config):
             code.normalize_fanin(config['fan_coeff_codes'])
             codes.append(code)
 
-
     return codes
 
 
 def make_neurons(N,C,config):
-    
+    '''
+    For making reservoir nodes without parallelization
+    '''
     ib      = config['nodes_ib']
     tau     = config['nodes_tau']
     beta    = config['nodes_beta']
@@ -281,6 +296,11 @@ def make_neurons(N,C,config):
 
 
 def connect_nodes(nodes,p_connect,conn_coeff):
+    '''
+    Connect any two nodes in the reservoir with probability p_connect
+        - Strength of connection is a random number in [0,1], weighted by conn_coeff
+        - Connection pairing included in synaptic name
+    '''
     for i,N1 in enumerate(nodes):
         for j,N2 in enumerate(nodes):
             if np.random.rand() < p_connect and i!=j:
@@ -294,7 +314,9 @@ def connect_nodes(nodes,p_connect,conn_coeff):
 
 
 def nodes_to_codes(nodes,codes):
-
+    '''
+    Each reservoir node feeds into one synapse of every readout node
+    '''
     for n,node in enumerate(nodes):
         for c,code in enumerate(codes):
             node.neuron.add_output(code.synapse_list[n])
@@ -303,6 +325,11 @@ def nodes_to_codes(nodes,codes):
 
 
 def connect_input(inp,nodes,method='random_windows'):
+    '''
+    Connect input object to reservoir
+        - random_windows     -> connect in same order but in random spots
+        - synapse_sequential -> connect input in order to reservoir, repeat if needed
+    '''
     if method == 'random_windows':
         #** check ref syn position
         input_dims = len(inp.signals)
@@ -323,18 +350,13 @@ def connect_input(inp,nodes,method='random_windows'):
     
     return nodes
 
-# def run_network(all_nodes):
-#     net = network(
-#         sim     =True,
-#         tf      = 500,
-#         nodes   = all_nodes,
-#         backend = 'julia',
-#         dt=1.0
-#     )
-
-#     return net
 
 def check_success(codes,digit):
+    '''
+    Collect output spikes from each readout neuron
+        - Determine prediction based on code that spiked most
+        - Check against correct class
+    '''
     outputs = []
     for c,code in enumerate(codes):
         spikes = code.neuron.spike_times
@@ -353,6 +375,13 @@ def check_success(codes,digit):
     return success,outputs,prediction
 
 def make_updates(codes,targets,eta):
+    '''
+    For updated the readout layer for better classifcation
+        - Take error of outputs and targets at each readout neuron
+        - Apply the arbor update rule
+        - Bound by some maximal flux_offset size on either end
+        - Record updated made
+    '''
     update_sums = np.zeros(len(codes))
     for c,code in enumerate(codes):
         spikes = code.neuron.spike_times
@@ -370,6 +399,9 @@ def make_updates(codes,targets,eta):
     return codes,update_sums
 
 def cleanup(net,nodes,codes):
+    '''
+    Cleanup nodes for re-use
+    '''
     for n in nodes+codes:
         n.neuron.spikes_times = []
         n.neuron.spike_indices                       = []
@@ -383,11 +415,13 @@ def cleanup(net,nodes,codes):
     del(net)
     return nodes,codes
 
-#%%
 
 def run_MNIST(nodes,codes,config):
-
-
+    '''
+    Runs the reservoirs and readouts together on the first pass
+        - Thereafter, uses saved reservoir states to train only the readout
+    '''
+    # params
     digits   = config['digits']
     samples  = config['samples']
     eta      = config['eta']
@@ -396,14 +430,19 @@ def run_MNIST(nodes,codes,config):
     exp_name = config['exp_name']
     N        = config['N']
 
+    # Saved spiking MNIST data
     dataset = picklin("datasets/MNIST/","duration=5000_slowdown=100")
 
+    # Prepare a dictionary for collected reservoir spikes for each sample/class
     res_spikes = {}
     for i in range(digits):
         res_spikes[str(i)]=[]
     accs = []
+
+    # Iterate over some number of runs (reservoirs only run on the first pass)
     for run in range(runs):
 
+        # On first run, prepare the reservoir response plot
         if run == 0:
             path = config['path']
             try:
@@ -417,25 +456,30 @@ def run_MNIST(nodes,codes,config):
 
 
         print(f"RUN: {run} -- EXP: {exp_name}")
-        successes = 0
-        seen = 0
+        successes = 0 # start counting correct predictions
+        seen = 0      # and total seen samples
         
+        # itereate over all samples
         for sample in range(samples):
             print(f"  ------------------------------------------------ ")
+
+            # iterate over each class
             for digit in range(digits):
-                # print(f"Digit {digit} -- Sample {sample}")
-    
+                
+                # if reservoir data is passed in via the config dict, don't resimulate the reservoir
                 if 'res_spikes' not in config.keys():
+
+                    # create spiking MNIST input from saved spikes
                     inp = SuperInput(
                         type="defined",
                         channels=784,
                         defined_spikes=dataset[digit][sample]
                         )
 
-                    # raster_plot(inp.spike_arrays)
+                    # connect the input to reservoir nodes
                     nodes = connect_input(inp,nodes,method='synapse_sequential')
                     
-                    # net = run_network(nodes)
+                    # run the network --best with julia backend and large time step (for beta^3)
                     net = network(
                         sim     =True,
                         tf      = duration,
@@ -444,6 +488,7 @@ def run_MNIST(nodes,codes,config):
                         dt=1.0
                     )
 
+                    ### Can be useful for diagnosing reservoir dynamics
                     # if digit==0 and sample == 0:
                     #     # move to within class
                     #     mid_plot = plt
@@ -458,42 +503,51 @@ def run_MNIST(nodes,codes,config):
                     #     mid_plot.title("Network Node Dynamics",fontsize=18)
                     #     mid_plot.show()
 
+                    # add spikes to the multiplot
                     spikes = net.spikes
                     axs[digit][sample].plot(spikes[1], spikes[0], '.k')
                     # axs[digit][sample].axhline(y = N-.5, color = 'b', linestyle = '-') 
                     axs[digit][sample].set_xticks([])
                     axs[digit][sample].set_yticks([])
 
-
+                    # Collect reservoir spikes
                     res_spikes[str(digit)].append([
                         net.spikes[0].astype(int).tolist(),
                         net.spikes[1].tolist()]
                         )
-                    del(net)
-                
+                    del(net) # clear the net
+
                     if run == 1:
+                        # save the spikes
                         picklit(
                             res_spikes,
                             f"results/res_MNIST/{exp_name}/",
                             f"res_spikes"
                             )
+                        
+                        # save the config
                         with open(f'{path}/config.txt', 'w') as file:
                             file.write(json.dumps(config))
+
+                        # add spikes to config (so that this block will be skipped in future)
                         config['res_spikes'] = res_spikes
                 
                 else:
                     res_spikes = config['res_spikes']
 
+                # Use the reservoir spikes for this digit and sample to create an input object
                 inpt = SuperInput(
                     type="defined",
                     channels=config['N'],
                     defined_spikes=res_spikes[str(digit)][sample]
                     )
 
+                # Add input to readout neurons (Each neuron gets the whole res as input)
                 for c,code in enumerate(codes):
                     for s,signal in enumerate(inpt.signals):
                         code.synapse_list[s].add_input(signal)
 
+                # Run the readout simulation
                 c_net = network(
                     sim     =True,
                     tf      = duration,
@@ -502,18 +556,22 @@ def run_MNIST(nodes,codes,config):
                     dt=1.0
                 )
                     
-
+                # Count successful predictions
                 success,outputs,prediction = check_success(codes,digit)
 
+                # Targeted output for each readout neuron given the digit
                 targets = np.zeros(digits)
                 targets[digit] = 15 # --> 10/15
 
+                # Make the arbor update
                 codes, update_sums = make_updates(codes,targets,eta)
 
+                # Print out what has transpired
                 print(
                     f"   {digit} --> {prediction} :: {outputs} :: {np.round(update_sums,2)} :: {np.round(c_net.run_time,2)} :: {len(res_spikes[str(digit)][sample][0])}"
                     )   
 
+                # If all 30 samples are correctly classified, save the readout neurons and return
                 seen      += 1
                 successes += success
                 if seen == 30:
@@ -536,12 +594,13 @@ def run_MNIST(nodes,codes,config):
                         return nodes,codes
                 nodes,codes = cleanup(c_net,nodes,codes)
 
-
+        # Save the multiplot of reservoir spikes
         if run == 0:
             plt.subplots_adjust(wspace=0, hspace=0)
             plt.savefig(f"{path}/raster_all.png")
             plt.close()
 
+    # Save the performance history of the readout training
     picklit(
         accs,
         f"results/res_MNIST/{exp_name}/",
@@ -551,32 +610,38 @@ def run_MNIST(nodes,codes,config):
 
 
 def run_all(config):
+    '''
+    Creates or loads nodes and codes, runs experiment given config, can evolve successful exps
+    '''
     s1=time.perf_counter()
 
-    N = config['N']
-    C = config['C']
-    
-    eta = config["eta"]
-    tau_c = config["codes_tau"]
-    tau_n = config["nodes_tau"]
-    sth_n = config["nodes_s_th"]
-    sth_c = config["codes_s_th"]
-    fans_n = config["fan_coeff_nodes"]
-    fans_c = config["fan_coeff_codes"]
-    den = config["density"]
-    conn = config["res_connect_coeff"]
+    # params
+    N       = config['N']
+    C       = config['C']
+    eta     = config["eta"]
+    tau_c   = config["codes_tau"]
+    tau_n   = config["nodes_tau"]
+    sth_n   = config["nodes_s_th"]
+    sth_c   = config["codes_s_th"]
+    fans_n  = config["fan_coeff_nodes"]
+    fans_c  = config["fan_coeff_codes"]
+    den     = config["density"]
+    conn    = config["res_connect_coeff"]
 
+    # for reference
     print(f"res_eta_tau_c_tau_n_sth_n_sth_c_fans_n_fans_c_den_conn")
 
+    # if experiment name not passed in through config (which means it is being run for the first time)
     if 'exp_name' not in config.keys() or config['exp_name'] == 'test':
         config['exp_name'] = f"res_N={N}_{eta}_{tau_c}_{tau_n}_{sth_n}_{sth_c}_{fans_n}_{fans_c}_{den}_{conn}"
 
     print(config['exp_name'])
 
+    # Add path if not already passed in through config
     if 'path' not in config.keys():
         config['path'] = f"results/res_MNIST/{config['exp_name']}"
 
-
+    # Be consistent with seeding
     np.random.seed(config['seed'])
 
 
@@ -584,12 +649,17 @@ def run_all(config):
     ###################################
     #     Making Reservoir Neurons    #
     ###################################
+    # Mutliprocessing tools allowing for return of information from multiple threads
     manager = multiprocessing.Manager()
     return_dict = manager.dict()
 
+    # if creating a new reservoir, use multiprocessing
     nodes = []
     if 'res_spikes' not in config.keys():
         thrds = []
+
+        # use appropriate amount of threads given the number of neurons in reservoir
+        # each thread takes some chunk of total
         if config['N'] == 98:
             for thrd in range(14):
                 thrds.append(
@@ -598,7 +668,6 @@ def run_all(config):
                         args=(thrd*7,thrd*7+7,return_dict,config)
                         )
                 )
-        
         elif config['N'] == 490:
             thrd_cnt = 14
             intrvl   = 35
@@ -609,12 +678,14 @@ def run_all(config):
                         args=(thrd*intrvl,thrd*intrvl+intrvl,return_dict,config)
                         )
                 )
+        # start them
         for thrd in thrds:
             thrd.start()
-
+        # join them
         for thrd in thrds:
             thrd.join()
 
+        # create an ordered list of reservoir nodes from list
         for i in range(config['N']):
             nodes.append(return_dict[f'res_neuron_{i}'])
 
@@ -625,6 +696,7 @@ def run_all(config):
     #      Making Readout Neurons     #
     ###################################
 
+    # Apply same procedure to readout neurons
     return_dict = manager.dict()
     thrds = []
     for thrd in range(C):
@@ -645,15 +717,14 @@ def run_all(config):
     for i in range(C):
         codes.append(return_dict[f'code_neuron_{i}'])
 
-    # codes = make_readouts(N,C,config)
-    # nodes, codes = make_neurons(N,C,config)
-    
     s3 = time.perf_counter()
     print(f"Time to make codes: {np.round(s3-s2,2)}")
 
     ###################################
     #      Connecting Reservoir       #
     ###################################
+
+    # If it is a new reservoir, make internal connections
     if 'res_spikes' not in config.keys():
         nodes = connect_nodes(nodes,config['density'],config['res_connect_coeff'])
 
@@ -666,60 +737,76 @@ def run_all(config):
     #       Running Simulation        #
     ###################################
 
+    # Run the MNIST experiment
     nodes,codes,accs = run_MNIST(nodes,codes,config)
 
     s5 = time.perf_counter()
     print(f"Time to run epoch: {np.round(s5-s4,2)}")
 
 
-def evolve(path):
+def evolve(path,N):
+    '''
+    Takes the top ten percent of reservoir/readout configurations and reruns them for a greater
+    number of iterations.
+    '''
     import os
     if os.path.exists(path) == True:
         dir_list = os.listdir(path)
         accs = {}
         for directory in dir_list:
-            try:
-                exp_path = f"{path}{directory}"
-                acc = picklin(exp_path,"performance")
-                accs[directory] = np.max(acc)
-            except:
-                print(f"Dir {directory} has not been run.")
-    print("\n")
+            if str(N) in directory:
+                try:
+                    exp_path = f"{path}{directory}"
+                    acc = picklin(exp_path,"performance")
+                    accs[directory] = np.max(acc)
+                except:
+                    print(f"Dir {directory} has not been run.")
+    print(f"\n")
     perf_rankings = dict(
         reversed(list({k: v for k, v in sorted(accs.items(), key=lambda item: item[1])}.items()))
         )
     for i,(k,v) in enumerate(perf_rankings.items()):
-        if i < len(perf_rankings)*.1:
-            print(k,v)
+        if float(i) < len(perf_rankings)*.1:
+            print("HERE")
+            print("Evolution candidate: ",k,v)
             exp_path = f"{path}{k}"
-            if not os.path.isfile(f"{path}{k}/evolved/acc.pickle"):
+            print(f"{path}{k}/performance.pickle")
+            if (not os.path.isfile(f"{path}{k}/evolved/performance.pickle")
+                and os.path.isfile(f"{path}{k}/performance.pickle")==True):
                 print(f"{k} has not undergone an evolution.")
                 try:
                     res_spikes = picklin(exp_path,"res_spikes")
                 except:
                     print(f"Dir {k} is not ready to evolve.")
-
                 try:
                     with open(f"{path}{k}/config.txt") as f:
                         config = dict(eval(f.read()))
+
+                        config['path'] = f"results/res_MNIST/{k}/evolved"
+                        config['runs'] = 100
+                        config['res_spikes'] = res_spikes
+                        print(f"Config {k} ready to evolve.")
+                        break
                 except:
                     print(f"Dir {k} has no config file.")
+
                 print(f"Running {k}")
-                break
-    config['path'] = f"results/res_MNIST/{k}/evolved"
-    config['runs'] = 100
-    config['res_spikes'] = res_spikes
+                
     return config
 
 if __name__ == "__main__":
 
+    # Collect command line arguments as the configuration
     config = setup_argument_parser()
 
+    # The evolutionary path
     if config.evolve==True:
         print("Evolve")
         path = 'results/res_MNIST/'
-        config = evolve(path)
+        config = evolve(path,config.N)
         run_all(config)
+
+    # The traditional path
     else:
         config  = config.__dict__
         N       = config['N']
@@ -734,17 +821,19 @@ if __name__ == "__main__":
         den     = config["density"]
         conn    = config["res_connect_coeff"]
 
-
         exp_name = f"res_{eta}_{tau_c}_{tau_n}_{sth_n}_{sth_c}_{fans_n}_{fans_c}_{den}_{conn}"
         path = f"results/res_MNIST/{exp_name}"
 
         alt_name = f"res_{eta}_{tau_c}_{tau_n}_{sth_n}_{sth_c}_{fans_n}_{fans_c}_{den}_{conn}"
         alt_path = f"results/res_MNIST/{alt_name}"
 
+        # if this configuration has not been run before, run it
         if (not os.path.isfile(f"{path}/performance.pickle") and 
             not os.path.isfile(f"{alt_path}/performance.pickle")):
             print(f"Running {exp_name}")
             run_all(config)
+
+        # otherwise move on to the next config
         else:
             print(f"{exp_name} already run.")
 

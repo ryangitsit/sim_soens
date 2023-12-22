@@ -1,29 +1,3 @@
-
-@REM FOR /L %%i IN (0,1,100000) DO (
-@REM     python exp_MNIST_full.py^
-@REM       --run           %%i^
-@REM       --s_th          0.05^
-@REM       --duration      1000^
-@REM       --beta          3^
-@REM       --dt            1.0^
-@REM       --jul_threading 4^
-@REM       --digits        10^
-@REM       --samples       50^
-@REM       --eta           0.001^
-@REM       --exp_name      thresh_0.5_noref_full^
-@REM       --backend       julia^
-@REM       --dataset       MNIST^
-@REM       --max_offset    0.5^
-@REM       --fixed         .5^
-@REM       --rand_flux     0.005^
-@REM       --layers        6^
-@REM       --lay_weighting 1,1,1,4,8,10^
-@REM       --norm_fanin    True^
-@REM       --fan_coeff     1.5^
-@REM       --target        25
-@REM )
-
-
 ECHO OFF
 
 FOR %%a IN (0.005) DO (
@@ -60,5 +34,41 @@ FOR %%a IN (0.005) DO (
         )
     )
 )
+
+@REM N=490
+@REM FOR %%a IN (0.005) DO (
+
+@REM     FOR %%b IN (50,100) DO (
+@REM         FOR %%c IN (250,500) DO (
+
+@REM             FOR %%d IN (0.25,.5) DO (
+@REM                 FOR %%e IN (0.25,.5) DO (
+
+@REM                     FOR %%f IN (1.5,2.25) DO (
+@REM                         FOR %%g IN (1,1.5) DO (
+
+@REM                             FOR %%h IN (0.01,0.1,.25) DO (
+@REM                                 FOR %%i IN (0.05,0.1,0.15) DO (
+
+@REM                                     python LSM_allspikes.py^
+@REM                                         --N 490^
+@REM                                         --eta %%a^
+@REM                                         --nodes_tau %%b^
+@REM                                         --codes_tau %%c^
+@REM                                         --nodes_s_th %%d^
+@REM                                         --codes_s_th %%e^
+@REM                                         --fan_coeff_nodes %%f^
+@REM                                         --fan_coeff_codes %%g^
+@REM                                         --density %%h^
+@REM                                         --res_connect_coeff %%i
+@REM                                 )
+@REM                             )
+@REM                         )
+@REM                     )
+@REM                 )
+@REM             )
+@REM         )
+@REM     )
+@REM )
 
 PAUSE

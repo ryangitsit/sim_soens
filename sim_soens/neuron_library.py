@@ -80,7 +80,7 @@ class MNISTNode(SuperNode):
             # print("Random Flux")
         if self.inh_counter==True:
             # print("Inhibition counter")
-            self.add_inhibition_counts()
+            # self.add_inhibition_counts()
             print(f"Building {self.name} [=====>  ]", end="\r")
         if self.norm_fanin:
             # print(f"Fanin normalization with coefficient of {self.fan_coeff}")

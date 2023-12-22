@@ -87,7 +87,7 @@ def main():
                 for other_node in nodes:
                     if other_node.name != node.name:
                         node.neuron.add_output(other_node.synapse_list[-1])
-                        print("-- ",other_node.synapse_list[-1].name)
+                        # print("-- ",other_node.synapse_list[-1].name)
 
         finish = time.perf_counter()
         print("Time to make neurons: ", finish-start)
@@ -174,18 +174,18 @@ def main():
                     print(f'Adding node_{i}')
                     nodes.append(return_dict[f'node_{i}'])
 
-            mutual_inhibition = True
-            if mutual_inhibition == True:
-                inhibition = -(1/config.digits)
-                for i,node in enumerate(nodes):
-                    syn_soma = synapse(name=f'{node.name}_somatic_synapse')
-                    node.synapse_list.append(syn_soma)
-                    node.neuron.dend_soma.add_input(syn_soma,connection_strength=inhibition)
-                for i,node in enumerate(nodes):
-                    for other_node in nodes:
-                        if other_node.name != node.name:
-                            node.neuron.add_output(other_node.synapse_list[-1])
-                            print("-- ",other_node.synapse_list[-1].name)
+                mutual_inhibition = True
+                if mutual_inhibition == True:
+                    inhibition = -(1/config.digits)
+                    for i,node in enumerate(nodes):
+                        syn_soma = synapse(name=f'{node.name}_somatic_synapse')
+                        node.synapse_list.append(syn_soma)
+                        node.neuron.dend_soma.add_input(syn_soma,connection_strength=inhibition)
+                    for i,node in enumerate(nodes):
+                        for other_node in nodes:
+                            if other_node.name != node.name:
+                                node.neuron.add_output(other_node.synapse_list[-1])
+                                # print("-- ",other_node.synapse_list[-1].name)
 
             else:
                 make_nodes(path,name,config)
@@ -238,7 +238,7 @@ def main():
             for idx in range(config.digits):
                 desired[idx][idx] = config.target
 
-        if config.run ==1: print(desired)
+        if config.run ==0: print(desired)
 
         if config.tiling == True:
             print("Tiling")
@@ -280,10 +280,7 @@ def main():
 
         # initialize epoch success count
         samples_passed=0
-        if 'full' in config.exp_name:
-            mod = 500
-        else:
-            mod = 10
+        mod = config.samples*config.digits
         # itereate over each sample
         sample = config.run%50
         for sample in range(sample,sample+1):
@@ -458,11 +455,11 @@ def main():
         acc = np.round(nodes[0].passed*100/(nodes[0].seen),2)
         accs = np.round(100*nodes[0].all_passed/(nodes[0].seen/config.digits),2)
         # samples passed out of total epoch
-        if 'full' not in config.exp_name: 
-            print(f" samples passed: {samples_passed}/{config.digits*config.samples}\n")
-        else:
-            print(f" samples passed: {samples_passed}/{config.digits} -- running epoch accuracy: {acc}%")
-            print(f" digit performance {accs}%\n")
+        # if 'full' not in config.exp_name: 
+        #     print(f" samples passed: {samples_passed}/{config.digits*config.samples}\n")
+        # else:
+        print(f" samples passed: {samples_passed}/{config.digits} -- running epoch accuracy: {acc}%")
+        print(f" digit performance {accs}%\n")
 
 
         # if all samples passed, task complete!
@@ -498,10 +495,13 @@ def main():
     from sim_soens.argparse import setup_argument_parser
     config = setup_argument_parser()
 
-    config.exp_name = f'arbor_sweep_{config.s_th}_{config.tau}_{config.fan_coeff}_{config.target}_{config.rand_flux}_{config.max_offset}_{config.exin}'
-    if config.exin != [0,0,100]:
-        print("Inhibition")
-        config.inh_counter=True
+    exin_name = 'excit'
+    if config.exin is not None:
+        exin_name = 'inhib'
+    config.exp_name = f'arbor_sweep_{config.s_th}_{config.tau}_{config.fan_coeff}_{config.target}_{config.rand_flux}_{config.max_offset}_{exin_name}'
+    # if config.exin != [0,0,100]:
+    #     # print("Inhibition")
+    #     config.inh_counter=True
     # call in previously generated dataset
     path    = 'results/MNIST/'
     name    = config.exp_name+'/'
