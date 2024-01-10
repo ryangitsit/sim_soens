@@ -498,7 +498,8 @@ def main():
     exin_name = 'excit'
     if config.exin is not None:
         exin_name = 'inhib'
-    config.exp_name = f'arbor_sweep_{config.s_th}_{config.tau}_{config.fan_coeff}_{config.target}_{config.rand_flux}_{config.max_offset}_{exin_name}'
+    if "arbor_sweep" in config.exp_name:
+        config.exp_name = f'arbor_sweep_{config.s_th}_{config.tau}_{config.fan_coeff}_{config.target}_{config.rand_flux}_{config.max_offset}_{exin_name}'
     # if config.exin != [0,0,100]:
     #     # print("Inhibition")
     #     config.inh_counter=True
@@ -544,7 +545,7 @@ def main():
         config.eta
         )
     
-    if config.run == 0:
+    if config.run == 1:
         import json
         with open(f'{path}/{name}/config.txt', 'w') as convert_file:
             convert_file.write(json.dumps(config.__dict__))

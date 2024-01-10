@@ -305,8 +305,23 @@ experiments = {
     'thresh_0.5_noref_long_full',
 }
 
+
+# experiments = []
+# import os
+# path = 'results/MNIST'
+# if os.path.exists(path) == True:
+#     dir_list = os.listdir(path)
+
+#     for directory in dir_list:
+#         try:
+#             print(directory)
+#             if 'arbor_sweep' in directory:
+#                 experiments.append(directory)
+#         except:
+#             print(f"Dir {directory} does not exist.")
+
 # plot_singles(experiments,until,10,record='new')
-# plot_all(experiments,until,record='new')
+plot_all(experiments,until,record='new')
 
 def res_rasters(path):
     import matplotlib.image as mpimg
@@ -314,7 +329,7 @@ def res_rasters(path):
     import os
     if os.path.exists(path) == True:
         dir_list = os.listdir(path)
-
+        count = 0
         for directory in dir_list:
             try:
                 print(directory)
@@ -323,7 +338,7 @@ def res_rasters(path):
                 acc = picklin(exp_path,"performance")
                 # print(acc)
 
-                if np.max(acc)>49.9:
+                if np.max(acc)>61:
                     print(acc,np.max(acc))
                     plt.figure(figsize=(16, 11))
                     img = mpimg.imread(f"{exp_path}/raster_all.png")
@@ -353,12 +368,12 @@ def res_performances(path):
                 exp_path = f"{path}{directory}"
                 acc = picklin(exp_path,"performance")
 
-                if np.max(acc)>49:
+                if np.max(acc)>60:
                     print(acc,np.max(acc),directory)
-                    plt.plot(acc,linewidth=3,label=exp_path[len("results/res_MNIST/res_"):],color=colors[above])
+                    plt.plot(acc,linewidth=3,label=exp_path[len("results/res_MNIST/res_"):])#,color=colors[above%len(colors)])
                     above+=1
                 else:
-                    plt.plot(acc,'--',alpha=0.4)
+                    plt.plot(acc,'--',alpha=0.1)
             except:
                 print(f"Dir {directory} has no performance measures yet.")
 
@@ -373,7 +388,7 @@ def res_performances(path):
         plt.show()
 
 path = 'results/res_MNIST/'
-res_performances(path)
+# res_performances(path)
 # res_rasters(path)
 
 def evolve(path):
@@ -393,7 +408,7 @@ def evolve(path):
         reversed(list({k: v for k, v in sorted(accs.items(), key=lambda item: item[1])}.items()))
         )
     for i,(k,v) in enumerate(perf_rankings.items()):
-        if i < len(perf_rankings)*.1:
+        if i < len(perf_rankings)*.05:
             print(k,v)
             exp_path = f"{path}{k}"
             if not os.path.isfile(f"{path}{k}/evolved/acc.pickle"):

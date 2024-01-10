@@ -75,17 +75,22 @@ class MNISTNode(SuperNode):
         self.connect_dendrites()
         print(f"Building {self.name} [===>    ]", end="\r")
         if self.rand_flux is not None:
+            print("Random Flux")
             self.random_flux(self.rand_flux)
             print(f"Building {self.name} [====>   ]", end="\r")
-            # print("Random Flux")
+            
         if self.inh_counter==True:
-            # print("Inhibition counter")
+            print("Inhibition counter")
             # self.add_inhibition_counts()
             print(f"Building {self.name} [=====>  ]", end="\r")
         if self.norm_fanin:
-            # print(f"Fanin normalization with coefficient of {self.fan_coeff}")
+            print(f"Fanin normalization with coefficient of {self.fan_coeff}")
             self.normalize_fanin(self.fan_coeff)
             print(f"Building {self.name} [======> ]", end="\r")
+        elif self.norm_fanin_prime:
+            print(f"PRIME fanin normalization with coefficient of {self.fan_coeff}")
+            self.normalize_fanin_prime(self.fan_coeff)
+
 
         self.make_and_connect_synapses()
         print(f"Building {self.name} [=======>]", end="\r")

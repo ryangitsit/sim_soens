@@ -521,7 +521,7 @@ def run_MNIST(nodes,codes,config):
                         # save the spikes
                         picklit(
                             res_spikes,
-                            f"results/res_MNIST/{exp_name}/",
+                            f"{path}/",
                             f"res_spikes"
                             )
                         
@@ -583,12 +583,12 @@ def run_MNIST(nodes,codes,config):
                         all_nodes = nodes + codes
                         picklit(
                             accs,
-                            f"results/res_MNIST/{exp_name}/",
+                            f"{path}/",
                             f"CONVERGED"
                             )
                         picklit(
                             codes,
-                            f"results/res_MNIST/{exp_name}/",
+                            f"{path}/",
                             f"converged_nodes"
                             )
                         return nodes,codes
@@ -603,7 +603,7 @@ def run_MNIST(nodes,codes,config):
     # Save the performance history of the readout training
     picklit(
         accs,
-        f"results/res_MNIST/{exp_name}/",
+        f"{path}/",
         f"performance"
         )
     return nodes, codes, accs
@@ -633,7 +633,7 @@ def run_all(config):
 
     # if experiment name not passed in through config (which means it is being run for the first time)
     if 'exp_name' not in config.keys() or config['exp_name'] == 'test':
-        config['exp_name'] = f"res_N={N}_{eta}_{tau_c}_{tau_n}_{sth_n}_{sth_c}_{fans_n}_{fans_c}_{den}_{conn}"
+        config['exp_name'] = f"res_N{N}_{eta}_{tau_c}_{tau_n}_{sth_n}_{sth_c}_{fans_n}_{fans_c}_{den}_{conn}"
 
     print(config['exp_name'])
 
@@ -779,20 +779,25 @@ def evolve(path,N):
                 except:
                     print(f"Dir {k} is not ready to evolve.")
                 try:
-                    with open(f"{path}{k}/config.txt") as f:
-                        config = dict(eval(f.read()))
 
-                        config['path'] = f"results/res_MNIST/{k}/evolved"
-                        config['runs'] = 100
-                        config['res_spikes'] = res_spikes
-                        print(f"Config {k} ready to evolve.")
-                        break
+                    config = json.load(open(f"{path}{k}/config_dict.json"))
+                    # with open(f"{path}{k}/config.txt") as f:
+
+                    #     print(text)
+                    #     config = dict(eval())
+                    #     print(config)
+
+                    config['path'] = f"results/res_MNIST/{k}/evolved"
+                    config['runs'] = 100
+                    config['res_spikes'] = res_spikes
+                    print(f"Config {k} ready to evolve.")
+                    return config
                 except:
                     print(f"Dir {k} has no config file.")
 
                 print(f"Running {k}")
                 
-    return config
+                
 
 if __name__ == "__main__":
 

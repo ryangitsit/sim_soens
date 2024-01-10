@@ -1,5 +1,31 @@
 ECHO OFF
 
+@REM -----------------------------
+@REM        fanin prime
+@REM ------------------------------
+FOR /L %%i IN (0,1,100000) DO (
+    python exp_MNIST_full.py^
+      --run           %%i^
+      --s_th          0.1^
+      --duration      1000^
+      --beta          3^
+      --dt            1.0^
+      --jul_threading 4^
+      --digits        10^
+      --samples       50^
+      --eta           0.001^
+      --exp_name      fanin_prime^
+      --backend       julia^
+      --dataset       MNIST^
+      --max_offset    0.5^
+      --fixed         .5^
+      --rand_flux     0.005^
+      --layers        6^
+      --lay_weighting 1,1,1,4,8,10^
+      --fan_coeff     1.5^
+      --target        25
+)
+
 @REM FOR /L %%i IN (1,1,100000) DO (
 @REM     python exp_MNIST_full.py^
 @REM       --run           %%i^
@@ -191,29 +217,6 @@ ECHO OFF
 @REM       --target        15
 @REM )
 
-FOR /L %%i IN (0,1,100000) DO (
-    python exp_MNIST_full.py^
-      --run           %%i^
-      --s_th          0.05^
-      --duration      1000^
-      --beta          3^
-      --dt            1.0^
-      --jul_threading 4^
-      --digits        10^
-      --samples       50^
-      --eta           0.001^
-      --exp_name      thresh_0.5_noref_full^
-      --backend       julia^
-      --dataset       MNIST^
-      --max_offset    0.5^
-      --fixed         .5^
-      --rand_flux     0.005^
-      --layers        6^
-      --lay_weighting 1,1,1,4,8,10^
-      --norm_fanin    True^
-      --fan_coeff     1.5^
-      --target        25
-)
 
 @REM FOR /L %%i IN (0,1,100000) DO (
 @REM     python exp_MNIST_full.py^

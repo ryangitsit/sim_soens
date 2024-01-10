@@ -50,6 +50,7 @@ def arbor_update(nodes,config,digit,sample,errors):
                         
 
                         if config.max_offset != None:
+                            # print(f"max offset == {dend.phi_th}")
                             if np.abs(dend.offset_flux) > dend.phi_th: 
                                 old = dend.offset_flux
                                 max_hits[n]+=1

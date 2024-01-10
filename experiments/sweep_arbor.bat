@@ -7,7 +7,7 @@ FOR %%a IN (0.05, 0.1, 0.25) DO (
                 FOR %%e IN (.005, 0.05, 0.5) DO (
                     FOR %%f IN (.4, .5, .6) DO (
 
-                        FOR /L %%z IN (0,1,51) DO (
+                        FOR /L %%z IN (0,1,1501) DO (
                             python exp_MNIST_full.py^
                             --run           %%z^
                             --s_th          %%a^
@@ -34,7 +34,7 @@ FOR %%a IN (0.05, 0.1, 0.25) DO (
                             --norm_fanin    True
                         )
 
-                        FOR /L %%z IN (0,1,51) DO (
+                        FOR /L %%z IN (0,1,1501) DO (
                             python exp_MNIST_full.py^
                             --run           %%z^
                             --s_th          %%a^

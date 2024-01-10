@@ -1,3 +1,4 @@
+#%%
 import pandas as pd
 import matplotlib.pyplot as plt
 import numpy as np
@@ -14,6 +15,77 @@ def load_nodes(run,digit,sample,name):
     #     print(" ",node.name)
     return nodes
 
+
+def heat_map(node):
+    data = np.zeros((784,7))
+
+    count = 0
+    for l,layer in enumerate(node.dendrites[::-1]):
+
+        if l == 6:
+            # print("soma")
+            midpoint  = 784/2
+            halflayer = 1
+
+        elif l==5:
+            # print("penultimate")
+            midpoint  = 784/2 
+            halflayer = 4
+
+        elif l==4:
+            # print("penultimate")
+            midpoint  = 784/2 
+            halflayer = 24
+
+        else:
+            midpoint  = 784/2 
+            halflayer = np.ceil(len(layer))
+
+        # print(f"layer = {l} :: groups = {len(layer)} :: mid = {midpoint} :: halflayer = {halflayer}")
+        for g,group in enumerate(layer):
+            for d,dend in enumerate(group):
+
+                idx = int(count + midpoint - halflayer)
+                s = np.mean(dend.s)*1000
+                # print(idx,l,s)
+                data[idx][l] = s
+
+                count+=1
+        count=0
+
+
+    # plt.figure(figsize=(10,10))
+    # plt.imshow( data, extent=[0, 7, 0, 784], aspect=7/784 )
+    # plt.title(node.name)
+    # plt.show()
+        
+    return data  
+
+#%%
+import seaborn as sns 
+from matplotlib.colors import ListedColormap
+cmap = ListedColormap(sns.color_palette("ch:s=.25,rot=-.25"))
+# cmap = sns.light_palette("Greens", as_cmap=True)
+
+
+sums = np.zeros((10,10))
+fig, axs = plt.subplots(10,10,figsize=(12,12), sharex=True, sharey=True)
+fig.subplots_adjust(hspace=0,wspace=0)
+for i in range(10):
+    print(r"["+"="*i+">"+" "*(10-i)+"]")
+    nodes = load_nodes(3000,i,0,"thresh_full")
+    for j,node in enumerate(nodes):
+        data = heat_map(node)
+        sums[i][j]=sum(sum(data))
+        axs[i][j].imshow(data, extent=[0, 7, 0, 784], aspect=7/784, cmap=cmap)
+        axs[i][j].set_xticklabels([])
+        axs[i][j].set_yticklabels([])
+plt.show()
+
+
+plt.imshow(sums)
+
+#%%
 def mem_analysis(span):
     nodes = load_nodes(10,0,'inelast')
 
@@ -42,7 +114,9 @@ def mem_analysis(span):
     plt.legend()
     plt.show()
 
+#%%
 # mem_analysis([10,50])
+    
 
 def offset_analysis(path,files,digit,layer):
 
