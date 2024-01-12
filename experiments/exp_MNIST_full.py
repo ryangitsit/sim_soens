@@ -1,6 +1,6 @@
 import numpy as nps
 import matplotlib.pyplot as plt
-
+from wakepy import keep
 # Import writer class from csv module
 from csv import writer
 import os
@@ -550,7 +550,8 @@ def main():
         with open(f'{path}/{name}/config.txt', 'w') as convert_file:
             convert_file.write(json.dumps(config.__dict__))
 
-    train_MNIST_neurons(nodes,dataset,path,name,config)
+    with keep.running() as k:
+        train_MNIST_neurons(nodes,dataset,path,name,config)
 
 if __name__=='__main__':
     main()

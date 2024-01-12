@@ -246,3 +246,38 @@ def make_inputs(letters,spike_time):
         defined_spikes=[idx,spike_times]
         inputs.append(SuperInput(type='defined',defined_spikes=defined_spikes))
     return inputs
+
+def make_spikes(letter,spike_time):
+    '''
+    Converts a letter-array into spikes = [indices,times]
+    '''
+    # convert to indices of nine-channel input
+    idx = np.where(np.array(letter)==1)[0]
+
+    # all non-zero indices will spike at spike_time
+    times = (np.ones(len(idx))*spike_time).astype(int)
+    spikes = [idx,times]
+
+    return spikes
+
+def pixels_to_spikes(letter,spike_times):
+    '''
+    Converts a letter-array into spikes = [indices,times]
+    '''
+    indices = []
+    times   = []
+
+    # convert to indices of nine-channel input
+    idx = np.where(np.array(letter)==1)[0]
+
+    # all non-zero indices will spike at spike_times
+    for time in spike_times:
+        times.append((np.ones(len(idx))*time).astype(int))
+        indices.append(idx)
+    times = np.concatenate(times)
+    indices = np.concatenate(indices)
+
+    assert len(times)==len(indices)
+    spikes = [indices,times]
+
+    return spikes
