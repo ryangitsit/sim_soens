@@ -500,6 +500,10 @@ def main():
         exin_name = 'inhib'
     if "arbor_sweep" in config.exp_name:
         config.exp_name = f'arbor_sweep_{config.s_th}_{config.tau}_{config.fan_coeff}_{config.target}_{config.rand_flux}_{config.max_offset}_{exin_name}'
+        
+        if os.path.exists(f"results/MNIST/{config.exp_name}") == True:
+            print((f"Config {config.exp_name} alreadry run!"))
+            return
     # if config.exin != [0,0,100]:
     #     # print("Inhibition")
     #     config.inh_counter=True
@@ -528,7 +532,7 @@ def main():
         config.run = nodes[0].run
     else:
         nodes[0].run = config.run
-
+    
     # load_finish = time.perf_counter()
     # print("Load time: ", load_finish-load_start)
     if config.run%50 == 0: print(
