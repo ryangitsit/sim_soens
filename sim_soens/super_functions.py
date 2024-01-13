@@ -194,7 +194,7 @@ def bin_matrix_to_spks(mat):
     spikes = [indices,times]
     return spikes
 
-def make_letters():
+def make_letters(patterns='zvn'):
 
     # non-noisy nine-pixel letters
     letters = {
@@ -210,6 +210,16 @@ def make_letters():
               1,0,1,
               1,0,1]
     }
+
+    if patterns == 'zvnx+':
+        letters.update({
+            'x': [1,0,1,
+                  0,1,0,
+                  1,0,1],
+            '+': [0,1,0,
+                  1,1,1,
+                  0,1,0]
+        })
 
     return letters
 

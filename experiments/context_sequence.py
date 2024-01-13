@@ -5,10 +5,10 @@ sys.path.append('../sim_soens')
 sys.path.append('../')
 from sim_soens.super_node import SuperNode
 from sim_soens.super_input import SuperInput
-from sim_soens.soen_components import input_signal, synapse, neuron, network
-from sim_soens.soen_plotting import raster_plot
+from sim_soens.soen_components import network
+# from sim_soens.soen_plotting import raster_plot
 
-from sim_soens.super_functions import make_letters, pixels_to_spikes, plot_letters
+from sim_soens.super_functions import make_letters, pixels_to_spikes, plot_letters, picklit
 
 '''
 Simple test case for two-neuron predictive-processing method
@@ -46,10 +46,17 @@ def main():
         return node
 
     def make_rand_node():
+
+        # W = [
+        #     [np.random.random(2)],
+        #     np.random.random((2,3)),
+        #     np.random.random((6,3))
+        # ]
+
         W = [
-            [np.random.random(2)],
-            np.random.random((2,3)),
-            np.random.random((6,3))
+            [np.ones(2)],
+            np.ones((2,3)),
+            np.ones((6,3))
         ]
 
         params = {
@@ -62,14 +69,31 @@ def main():
             "weights": W,
         }
 
+        # params = {
+        #     "s_th": 0.5,
+        #     "ib": 1.8,
+        #     "tau_ni": 500,
+        #     "tau_di": 150,
+        #     "beta_ni": 2*np.pi*1e3,
+        #     "beta_di": 2*np.pi*1e3,
+        #     "weights": W,
+        # }
+
         node = SuperNode(**params)
         node.normalize_fanin(1.5)
+        node.random_flux(0.05)
         return node
     
     def run_context_and_event(node,l1,l2):
-        letters = make_letters()
-        prime_times = np.arange(50,251,50)
-        event_times = np.arange(300,600,50)
+        letters = make_letters(patterns='zvnx+')
+
+        persistent_context = False
+        if persistent_context == False:
+            prime_times = np.arange(50,251,50)
+            event_times = np.arange(300,600,50)
+        else:
+            prime_times = np.arange(50,600,50)
+            event_times = np.arange(300,600,50)    
 
         primer = pixels_to_spikes(letters[l1],prime_times)
         event  = pixels_to_spikes(letters[l2],event_times)
@@ -77,8 +101,15 @@ def main():
         proximal_input = SuperInput(channels=9,type='defined',defined_spikes=primer,duration=500)
         basal_input    = SuperInput(channels=9,type='defined',defined_spikes=event, duration=500)
 
-        proximal_connections = [(i,i) for i in range(9)]
-        basal_connections    = [(i+9,i) for i in range(9)]
+        separate_input=True
+        if separate_input==True:
+            # print("separate input")
+            proximal_connections = [(i,i) for i in range(9)]
+            basal_connections    = [(i+9,i) for i in range(9)]
+        else:
+            # print("global input")
+            proximal_connections = basal_connections = [(i,i%9) for i in range(18)]
+
 
         node.multi_channel_input(proximal_input,proximal_connections)
         node.multi_channel_input(basal_input,basal_connections)
@@ -108,9 +139,8 @@ def main():
         return node
 
 
-    def run_and_plot(node):
-        names = ['z','v','n']
-        fig, axs = plt.subplots(3, 3,figsize=(12,6))
+    def run_and_plot(node,names):
+        fig, axs = plt.subplots(len(names), len(names),figsize=(12,6))
         
         fig.subplots_adjust(wspace=0,hspace=0)
         basin  = np.arange(50,251,50)
@@ -122,7 +152,7 @@ def main():
                 node = run_context_and_event(node,name1,name2)
                 s,phi = node.neuron.dend_soma.s,node.neuron.dend_soma.phi_r
                 axs[i][j].set_ylim(-0.01,.225)
-                axs[i][j].set_title(f"{name1} - {name2}", y=1.0, x=.1, pad=-14)
+                axs[i][j].set_title(f"{name1} - {name2}", y=1.0, x=.15, pad=-14)
                 if i==0 and j == 0:
                     axs[i][j].plot(x,phi,color='orange',label='flux')
                     axs[i][j].plot(x,s,linewidth=4,color='b',label='signal')
@@ -148,7 +178,7 @@ def main():
                     linestyle = '--',
                     linewidth=.5
                     )
-                if i != 2:
+                if i != len(axs):
                     axs[i][j].set_xticklabels([])
                 if j != 0:
                     axs[i][j].set_yticklabels([])
@@ -162,42 +192,59 @@ def main():
             lines.extend(Line) 
             labels.extend(Label) 
         
-        # rotating x-axis labels of last sub-plot 
-        plt.xticks(rotation=45) 
-        
+        fig.text(0.5, 0.04, 'Time (ns)', ha='center', fontsize=18)
+        fig.text(0.04, 0.5, 'Unitless Signal and Flux', va='center', rotation='vertical', fontsize=18)
         fig.legend(lines, labels, bbox_to_anchor=(.15, 0.15), loc='lower left', borderaxespad=0) 
 
         plt.show()
 
+    def clear_node(node):
+        for dend in node.dendrite_list:
+            dend.s = []
+            dend.phi_r = []
+        for syn in node.synapse_list:
+            syn.phi_spd = []
+        return node
 
-    def learn():
+
+    def learn(names,pattern1,pattern2):
+
         node = make_rand_node()
-        names = ['z','v','n']
-        targets = [[0,0,10],
-                   [0,0,0],
-                   [0,0,0]]
+        targets = np.zeros((len(names),len(names)))
+        targets[names.index(pattern1)][names.index(pattern2)] = 10
+        
         accuracy = 0
         epochs = 0
         while accuracy!=100.00:
+            outputs = np.zeros(targets.shape)
             correct  = 0
             seen     = 0
-            print(f"\nEpoch {epochs}\n----------")
+            print(f"\nEpoch {epochs}\n--------------------")
             for i,name1 in enumerate(names):
                 for j,name2 in enumerate(names):
                     node = run_context_and_event(node,name1,name2)
                     output = len(node.neuron.spike_times)
+                    outputs[i][j] = output
                     print(f"  [{name1}, {name2}] : {targets[i][j]} -> {output}")
                     error = targets[i][j] - output
                     node = make_update(node,error)
+                    node = clear_node(node)
                     seen+=1
                     if error==0: correct+=1
             accuracy = np.round(correct*100/seen,2)
             epochs+=1
-            if epochs==10:
-                run_and_plot(node)
+            if np.argmax(targets)==np.argmax(outputs):
+                sub = np.concatenate(outputs) - np.concatenate(outputs)[np.argmax(outputs)]
+                if sum(n > -3 for n in sub) == 1 and sum(n == 0 for n in sub) == 1:
+                    print("Converged!")
+                    run_and_plot(node,names)
+                    picklit(node,'results/sequencing/',f'node_converged_{epochs}')
+                    return node
         run_and_plot(node)
-                    
-    learn()
+
+
+    names = ['z','v','n','x','+']          
+    node = learn(names,'z','n')
 
 if __name__=='__main__':
     main()

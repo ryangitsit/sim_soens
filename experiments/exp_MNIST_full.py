@@ -10,15 +10,14 @@ sys.path.append('../sim_soens')
 sys.path.append('../')
 
 from sim_soens.super_input import SuperInput
-from sim_soens.super_node import SuperNode
+# from sim_soens.super_node import SuperNode
 from sim_soens.super_functions import *
 from sim_soens.soen_components import network, synapse
 from sim_soens.soen_plotting import plot_MNIST_nodes
+from sim_soens.argparse import setup_argument_parser
 
-from sim_soens.soen_utilities import (
-    dend_load_arrays_thresholds_saturations, 
-    index_finder
-)
+# from sim_soens.soen_utilities import (
+# )
 from sim_soens.neuron_library import MNISTNode
 from sim_soens.super_algorithms import *
 from sim_soens.input_library import *
@@ -492,7 +491,6 @@ def main():
 
 
 
-    from sim_soens.argparse import setup_argument_parser
     config = setup_argument_parser()
 
     exin_name = 'excit'
@@ -500,14 +498,23 @@ def main():
         exin_name = 'inhib'
     if "arbor_sweep" in config.exp_name:
         config.exp_name = f'arbor_sweep_{config.s_th}_{config.tau}_{config.fan_coeff}_{config.target}_{config.rand_flux}_{config.max_offset}_{exin_name}'
-        
-        if os.path.exists(f"results/MNIST/{config.exp_name}") == True:
-            print((f"Config {config.exp_name} alreadry run!"))
-            return
+        file = f"results/MNIST/{config.exp_name}/performance_log.csv"
+        if os.path.isfile(file) == True:
+            import pandas as pd
+            df = pd.read_csv(file,names=['total_perf','by_dig_perf'])
+            # print(len(df['total_perf']))
+            if len(df) == 30:
+                print((f"Config {config.exp_name} alreadry run!"))
+                sys.exit()
+            else:
+                pass
+            
+
     # if config.exin != [0,0,100]:
     #     # print("Inhibition")
     #     config.inh_counter=True
     # call in previously generated dataset
+                
     path    = 'results/MNIST/'
     name    = config.exp_name+'/'
     if config.dataset=='MNIST':
