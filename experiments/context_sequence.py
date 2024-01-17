@@ -73,7 +73,7 @@ def main():
         #     "s_th": 0.5,
         #     "ib": 1.8,
         #     "tau_ni": 500,
-        #     "tau_di": 150,
+        #     "tau_di": 150, 
         #     "beta_ni": 2*np.pi*1e3,
         #     "beta_di": 2*np.pi*1e3,
         #     "weights": W,
@@ -243,8 +243,93 @@ def main():
         run_and_plot(node)
 
 
-    names = ['z','v','n','x','+']          
-    node = learn(names,'z','n')
+    def make_sequence_indices(sequence,iterations):
+        indices = []
+        seq_dct = {
+            "A":0,
+            "B":1,
+            "C":2,
+        }
+        for seq in sequence:
+            for i in range(iterations):
+                indices.append(seq_dct[seq])
+        return indices
+
+
+    
+    
+    
+    def timer_func(func): 
+        from time import time 
+        # This function shows the execution time of  
+        # the function object passed 
+        def wrap_func(*args, **kwargs): 
+            t1 = time() 
+            result = func(*args, **kwargs) 
+            t2 = time() 
+            print(f'Function {func.__name__!r} executed in {(t2-t1):.4f}s') 
+            return result 
+        return wrap_func 
+    
+    @timer_func
+    def run_sequence():
+        # import time
+        # s1 = time.perf_counter()
+        W = [
+            [[.1,.175,.25]],
+        ]
+        taus = [
+            [[500,100,10]],
+        ]
+
+        params = {
+            "s_th": 0.15,
+            "ib": 1.8,
+            # "tau_ni": 500,
+            # "tau_di": 250,
+            "beta_ni": 2*np.pi*1e2,
+            "beta_di": 2*np.pi*1e2,
+            "weights": W,
+            "taus": taus,
+        }
+
+        
+        # node.normalize_fanin(1.5)
+        # node.plot_structure()
+
+        sequence = ['A','B','C']
+        import itertools
+        combos = list(itertools.product(sequence, repeat=3))
+
+
+        for c  in combos:
+            node = SuperNode(**params)
+            # node.plot_structure()
+            indices = make_sequence_indices(c,3)
+            times = list(np.arange(10,len(indices)*50+10,50))
+            inp_spikes = np.array([indices,times])
+
+            duration = np.max(inp_spikes[1])
+            inp = SuperInput(type='defined',defined_spikes = inp_spikes, duration = duration)
+
+            node.one_to_one(inp)
+
+            net = network(sim=True,nodes=[node],dt=0.1,tf=duration,backend='julia')
+            print(c,len(net.spikes[0]))
+            if len(net.spikes[0]) > -1:
+                node.plot_arbor_activity(net,phir=True,title=f"{c}")
+            del(net)
+            del(node)
+            
+
+        # s2 = time.perf_counter()
+        # print("Time to run", s2-s1)
+            
+    run_sequence()
+    # names = ['z','v','n','x','+']          
+    # node = learn(names,'z','n')
+    
+
 
 if __name__=='__main__':
     main()
