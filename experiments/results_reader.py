@@ -303,26 +303,26 @@ experiments = {
     'thresh_0.5_full',
     'thresh_0.5_noref_full',
     'thresh_0.5_noref_long_full',
-    'fanin_prime'
+    # 'fanin_prime'
 }
 
 
-# experiments = []
-# import os
-# path = 'results/MNIST'
-# if os.path.exists(path) == True:
-#     dir_list = os.listdir(path)
+experiments = []
+import os
+path = 'results/MNIST'
+if os.path.exists(path) == True:
+    dir_list = os.listdir(path)
 
-#     for directory in dir_list:
-#         try:
-#             print(directory)
-#             if 'arbor_sweep' in directory:
-#                 experiments.append(directory)
-#         except:
-#             print(f"Dir {directory} does not exist.")
+    for directory in dir_list:
+        try:
+            print(directory)
+            if 'arbor_sweep' in directory and os.path.isfile(path+'/'+directory+'/performance_log.csv'):
+                experiments.append(directory)
+        except:
+            print(f"Dir {directory} does not exist.")
 
 # plot_singles(experiments,until,10,record='new')
-plot_all(experiments,until,record='new')
+# plot_all(experiments,until,record='new')
 
 def res_rasters(path):
     import matplotlib.image as mpimg
@@ -333,14 +333,14 @@ def res_rasters(path):
         count = 0
         for directory in dir_list:
             try:
-                print(directory)
+                # print(directory)
                 exp_path = f"{path}{directory}"
 
                 acc = picklin(exp_path,"performance")
                 # print(acc)
-
-                if np.max(acc)>61:
-                    print(acc,np.max(acc))
+                thresh = 61
+                if np.max(acc)>thresh:
+                    print(f"Above {thresh}: ",directory)
                     plt.figure(figsize=(16, 11))
                     img = mpimg.imread(f"{exp_path}/raster_all.png")
                     plt.imshow(img)
@@ -390,7 +390,7 @@ def res_performances(path):
 
 path = 'results/res_MNIST/'
 res_performances(path)
-# res_rasters(path)
+res_rasters(path)
 
 def evolve(path):
     import os

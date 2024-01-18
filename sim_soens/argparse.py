@@ -80,6 +80,8 @@ def setup_argument_parser():
     parser.add_argument( '--evolve',             type=bool,       default = False         )
     parser.add_argument( '--multi',              type=bool,       default = False         )
 
+    parser.add_argument( '--neuromod',           type=bool,       default = False         )
+
     # parser.add_argument( "int_var1",        type=int,           default = None     )
     # parser.add_argument( "int_var2",        type=int,           default = None     )
     # parser.add_argument( "int_var3",        type=int,           default = None     )

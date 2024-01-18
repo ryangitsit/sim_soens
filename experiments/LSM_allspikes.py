@@ -398,6 +398,37 @@ def make_updates(codes,targets,eta):
                 update_sums[c]+=dend.offset_flux-old_offset
     return codes,update_sums
 
+def neuromodulate(nodes,codes,targets,eta):
+    update_sums = np.zeros(len(codes))
+    for c,code in enumerate(codes):
+        spikes = code.neuron.spike_times
+        error = targets[c] - len(spikes)
+
+        for dend in code.dendrite_list:
+            if 'ref' not in dend.name:
+                step = error*np.mean(dend.s)*eta
+                old_offset = dend.offset_flux
+                if dend.offset_flux < 0:
+                    dend.offset_flux = np.max([dend.offset_flux+step,dend.phi_th])
+                else:
+                    dend.offset_flux = np.min([dend.offset_flux+step,dend.phi_th])
+                update_sums[c]+=dend.offset_flux-old_offset
+
+        if targets[c] > 0:
+            for node in nodes:
+                for dend in code.dendrite_list:
+                    if 'ref' not in dend.name:
+                        step = error*np.mean(dend.s)*eta
+                        old_offset = dend.offset_flux
+                        if dend.offset_flux < 0:
+                            dend.offset_flux = np.max([dend.offset_flux+step,dend.phi_th])
+                        else:
+                            dend.offset_flux = np.min([dend.offset_flux+step,dend.phi_th])
+                        update_sums[c]+=dend.offset_flux-old_offset    
+
+
+    return nodes,codes,update_sums
+
 def cleanup(net,nodes,codes):
     '''
     Cleanup nodes for re-use
@@ -467,7 +498,7 @@ def run_MNIST(nodes,codes,config):
             for digit in range(digits):
                 
                 # if reservoir data is passed in via the config dict, don't resimulate the reservoir
-                if 'res_spikes' not in config.keys():
+                if 'res_spikes' not in config.keys() or config['neuromod']==True:
 
                     # create spiking MNIST input from saved spikes
                     inp = SuperInput(
@@ -481,43 +512,27 @@ def run_MNIST(nodes,codes,config):
                     
                     # run the network --best with julia backend and large time step (for beta^3)
                     net = network(
-                        sim     =True,
+                        sim     = True,
                         tf      = duration,
                         nodes   = nodes,
                         backend = 'julia',
                         dt=1.0
                     )
 
-                    ### Can be useful for diagnosing reservoir dynamics
-                    # if digit==0 and sample == 0:
-                    #     # move to within class
-                    #     mid_plot = plt
-                    #     mid_plot.figure(figsize=(12,4))
-                        
-                    #     for node in nodes:
-                    #         mid_plot.plot(net.t,node.neuron.dend_soma.s)
-                    #         mid_plot.plot(net.t,node.neuron.dend_soma.phi_r,'--',linewidth=1)
-                    #     # plt.legend()
-                    #     mid_plot.xlabel("Time(ns)",fontsize=16)
-                    #     mid_plot.ylabel("Signal",fontsize=16)
-                    #     mid_plot.title("Network Node Dynamics",fontsize=18)
-                    #     mid_plot.show()
-
-                    # add spikes to the multiplot
-                    spikes = net.spikes
-                    axs[digit][sample].plot(spikes[1], spikes[0], '.k')
-                    # axs[digit][sample].axhline(y = N-.5, color = 'b', linestyle = '-') 
-                    axs[digit][sample].set_xticks([])
-                    axs[digit][sample].set_yticks([])
-
-                    # Collect reservoir spikes
-                    res_spikes[str(digit)].append([
+                    spks_current = [
                         net.spikes[0].astype(int).tolist(),
                         net.spikes[1].tolist()]
+                    
+                    # Collect reservoir spikes
+                    res_spikes[str(digit)].append(spks_current
                         )
-                    del(net) # clear the net
 
                     if run == 1:
+                        spikes = net.spikes
+                        axs[digit][sample].plot(spikes[1], spikes[0], '.k')
+                        # axs[digit][sample].axhline(y = N-.5, color = 'b', linestyle = '-') 
+                        axs[digit][sample].set_xticks([])
+                        axs[digit][sample].set_yticks([])
                         # save the spikes
                         picklit(
                             res_spikes,
@@ -531,15 +546,20 @@ def run_MNIST(nodes,codes,config):
 
                         # add spikes to config (so that this block will be skipped in future)
                         config['res_spikes'] = res_spikes
+                    del(net) # clear the net
                 
                 else:
                     res_spikes = config['res_spikes']
 
+                if config['neuromod'] == True:
+                    trial_spikes = spks_current
+                else:
+                    trial_spikes = res_spikes[str(digit)][sample]
                 # Use the reservoir spikes for this digit and sample to create an input object
                 inpt = SuperInput(
                     type="defined",
                     channels=config['N'],
-                    defined_spikes=res_spikes[str(digit)][sample]
+                    defined_spikes=trial_spikes
                     )
 
                 # Add input to readout neurons (Each neuron gets the whole res as input)
@@ -564,7 +584,11 @@ def run_MNIST(nodes,codes,config):
                 targets[digit] = 15 # --> 10/15
 
                 # Make the arbor update
-                codes, update_sums = make_updates(codes,targets,eta)
+                if config['neuromod'] == True:
+                    # print('Neurmodulation')
+                    nodes, codes, update_sums = neuromodulate(nodes,codes,targets,eta)
+                else:
+                    codes, update_sums = make_updates(codes,targets,eta)
 
                 # Print out what has transpired
                 print(
@@ -826,11 +850,17 @@ if __name__ == "__main__":
         den     = config["density"]
         conn    = config["res_connect_coeff"]
 
-        exp_name = f"res_{eta}_{tau_c}_{tau_n}_{sth_n}_{sth_c}_{fans_n}_{fans_c}_{den}_{conn}"
-        path = f"results/res_MNIST/{exp_name}"
+        if config['exp_name'] == "test":
+            exp_name = f"res_{eta}_{tau_c}_{tau_n}_{sth_n}_{sth_c}_{fans_n}_{fans_c}_{den}_{conn}"
+            path = f"results/res_MNIST/{exp_name}"
 
-        alt_name = f"res_{eta}_{tau_c}_{tau_n}_{sth_n}_{sth_c}_{fans_n}_{fans_c}_{den}_{conn}"
-        alt_path = f"results/res_MNIST/{alt_name}"
+            alt_name = f"res_{eta}_{tau_c}_{tau_n}_{sth_n}_{sth_c}_{fans_n}_{fans_c}_{den}_{conn}"
+            alt_path = f"results/res_MNIST/{alt_name}"
+        else:
+            exp_name = config['exp_name']
+            path = alt_path = f"results/res_MNIST/{exp_name}"
+        
+        
 
         # if this configuration has not been run before, run it
         if (not os.path.isfile(f"{path}/performance.pickle") and 
