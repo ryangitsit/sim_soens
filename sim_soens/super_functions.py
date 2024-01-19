@@ -288,6 +288,6 @@ def pixels_to_spikes(letter,spike_times):
     indices = np.concatenate(indices)
 
     assert len(times)==len(indices)
-    spikes = [indices,times]
+    spikes = [list(indices),list(times)]
 
     return spikes

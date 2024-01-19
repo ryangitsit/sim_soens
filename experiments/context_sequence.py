@@ -6,7 +6,7 @@ sys.path.append('../')
 from sim_soens.super_node import SuperNode
 from sim_soens.super_input import SuperInput
 from sim_soens.soen_components import network
-# from sim_soens.soen_plotting import raster_plot
+from sim_soens.soen_plotting import raster_plot
 
 from sim_soens.super_functions import make_letters, pixels_to_spikes, plot_letters, picklit
 
@@ -255,6 +255,31 @@ def main():
                 indices.append(seq_dct[seq])
         return indices
 
+    def make_letter_sequence(sequence,letters):
+        indices = []
+        spikes = []
+        for i,pattern in enumerate(sequence):
+
+            if pattern=='A': letter = 'z'
+            if pattern=='B': letter = 'v'
+            if pattern=='C': letter = 'n'
+
+            spk_times = np.arange(
+                50+i*150,
+                150*(i+1)+1,
+                50
+                )
+            pixels = letters[letter]
+            sub_spikes = pixels_to_spikes(pixels,spk_times)
+            # print(pattern,spikes)
+            spikes.append(sub_spikes)
+            indices.append(spikes[0])
+        
+        all_spikes = list(map(list.__add__, spikes[0],spikes[1]))
+        all_spikes = list(map(list.__add__, all_spikes,spikes[2]))
+        
+        return all_spikes
+
 
     
     
@@ -273,8 +298,28 @@ def main():
     
     @timer_func
     def run_sequence():
-        # import time
-        # s1 = time.perf_counter()
+
+        letters = make_letters(patterns='zvnx+')
+
+        W_z = [
+            [[.3,.3,.3]],
+            [[.3,.3,-.3],[-.3,.3,-.3],[-.3,.3,.3]]
+        ]
+        node_z = SuperNode(weights=W_z)
+        node_z.normalize_fanin(1.5)
+
+        W_v = [
+            [[.3,.3,.3]],
+            [[.3,-.3,.3],[.3,-.3,.3],[-.3,.3,-.3]]
+        ]
+
+
+        W_n = [
+            [[.3,.3,.3]],
+            [[-.3,.3,-.3],[.3,-.3,.3],[.3,-.3,.3]]
+        ]
+
+
         W = [
             [[.1,.175,.25]],
         ]
@@ -283,10 +328,10 @@ def main():
         ]
 
         params = {
-            "s_th": 0.15,
+            "s_th": 0.1,
             "ib": 1.8,
-            # "tau_ni": 500,
-            # "tau_di": 250,
+            "tau_ni": 100,
+            "tau_di": 100,
             "beta_ni": 2*np.pi*1e2,
             "beta_di": 2*np.pi*1e2,
             "weights": W,
@@ -298,33 +343,185 @@ def main():
         # node.plot_structure()
 
         sequence = ['A','B','C']
+
+        # make_letter_sequence(sequence,letters)
+
+
         import itertools
         combos = list(itertools.product(sequence, repeat=3))
 
-
+        print(f"\n     Sequence     |   z  v  n   |   Timing Neuron   ")
+        print(  f"----------------------------------------------------")
         for c  in combos:
-            node = SuperNode(**params)
-            # node.plot_structure()
-            indices = make_sequence_indices(c,3)
-            times = list(np.arange(10,len(indices)*50+10,50))
-            inp_spikes = np.array([indices,times])
 
-            duration = np.max(inp_spikes[1])
-            inp = SuperInput(type='defined',defined_spikes = inp_spikes, duration = duration)
+            make_letter_sequence(c,letters)
 
-            node.one_to_one(inp)
+            timing_node = SuperNode(**params)
 
-            net = network(sim=True,nodes=[node],dt=0.1,tf=duration,backend='julia')
-            print(c,len(net.spikes[0]))
-            if len(net.spikes[0]) > -1:
-                node.plot_arbor_activity(net,phir=True,title=f"{c}")
+            nodes = [
+                SuperNode(name='node_z',tau_di=50,weights=W_z),
+                SuperNode(name='node_v',tau_di=50,weights=W_v),
+                SuperNode(name='node_n',tau_di=50,weights=W_n),
+            ]
+
+            for node in nodes:
+                node.normalize_fanin(1.5)
+
+            ### branch test inputs ###
+            # indices = make_sequence_indices(c,3)
+            # times = list(np.arange(10,len(indices)*50+10,50))
+            # inp_spikes = np.array([indices,times])
+
+            ### pattern sequence inputs ###
+            inp_spikes = make_letter_sequence(c,letters)
+
+            duration = np.max(inp_spikes[1])+100
+            inp = SuperInput(type='defined',defined_spikes = inp_spikes, duration = duration,channels=9)
+            # raster_plot(inp.spike_arrays)
+            # timing_node.one_to_one(inp)
+
+            for i,node in enumerate(nodes):
+                node.one_to_one(inp)
+                node.neuron.add_output(timing_node.synapse_list[i])
+
+            run_nodes = nodes+[timing_node]
+            
+            net = network(sim=True,nodes=run_nodes,dt=0.1,tf=duration,backend='julia')
+
+            outputs = []
+            for node in nodes:
+                spikes = node.neuron.spike_times
+                outputs.append(len(spikes))
+
+
+            sequence_detection = len(timing_node.neuron.spike_times)
+            print(f"  {c}    {outputs}           {sequence_detection}")
+
+            if c==('A', 'B', 'C'):
+                timing_node.plot_neuron_activity(net=net,input=inp,title=f"{c}")
+                timing_node.plot_arbor_activity(net,phir=True,title=f"{c}")
+                # node_z.plot_arbor_activity(net,phir=True,title=f"{c}")
+                # node_z.plot_neuron_activity(net=net,input=inp)
             del(net)
-            del(node)
+            for node in run_nodes:
+                del(node)
+        print("\n\n")
+            
             
 
-        # s2 = time.perf_counter()
-        # print("Time to run", s2-s1)
+    @timer_func
+    def run_learning_sequence():
+
+        letters = make_letters(patterns='zvnx+')
+
+        nodes = []
+        for i in range(3):
+            # W_init = [
+            #     [np.ones(3)*.3],
+            #     [np.ones(3)*.3 for _ in range(3)]
+            # ]
+            W_init = [
+                [np.random.uniform(-1,1,[3,])*.3],
+                [np.random.uniform(-1,1,[3,])*.3 for _ in range(3)]
+            ]
+            node = SuperNode(weights=W_init)
+            node.normalize_fanin(1.5)
+            node.random_flux(0.15)
+            nodes.append(node)
+
+        W = [
+            [[.1,.175,.25]],
+        ]
+        taus = [
+            [[500,100,10]],
+        ]
+
+        params = {
+            "s_th": 0.1,
+            "ib": 1.8,
+            "tau_ni": 100,
+            "tau_di": 100,
+            "beta_ni": 2*np.pi*1e2,
+            "beta_di": 2*np.pi*1e2,
+            "weights": W,
+            "taus": taus,
+        }
+
+        
+        # node.normalize_fanin(1.5)
+        # node.plot_structure()
+
+        sequence = ['A','B','C']
+
+        # make_letter_sequence(sequence,letters)
+
+
+        import itertools
+        combos = list(itertools.product(sequence, repeat=3))
+        acc = 0
+        while acc != 100.00:
+
+            print(f"\n     Sequence     |   z  v  n   |   Timing Neuron   ")
+            print(  f"----------------------------------------------------")
+            seen    = 0
+            correct = 0 
+            for c  in combos:
+
+                make_letter_sequence(c,letters)
+
+                timing_node = SuperNode(**params)
+
+                ### branch test inputs ###
+                # indices = make_sequence_indices(c,3)
+                # times = list(np.arange(10,len(indices)*50+10,50))
+                # inp_spikes = np.array([indices,times])
+
+                ### pattern sequence inputs ###
+                inp_spikes = make_letter_sequence(c,letters)
+
+                duration = np.max(inp_spikes[1])+100
+                inp = SuperInput(type='defined',defined_spikes = inp_spikes, duration = duration,channels=9)
+                # raster_plot(inp.spike_arrays)
+                # timing_node.one_to_one(inp)
+
+                for i,node in enumerate(nodes):
+                    node.one_to_one(inp)
+                    node.neuron.add_output(timing_node.synapse_list[i])
+
+                run_nodes = nodes+[timing_node]
+                
+                net = network(sim=True,nodes=run_nodes,dt=0.1,tf=duration,backend='julia')
+                if c==('A', 'B', 'C'):
+                    target = 5
+                else:
+                    target = 0
+
+                sequence_detection = len(timing_node.neuron.spike_times)
+                error = target - sequence_detection
+                if error == 0: correct+=1
+
+                outputs = []
+                for node in nodes:
+                    spikes = node.neuron.spike_times
+                    outputs.append(len(spikes))
+
+                    node = make_update(node,error)
+                    node = clear_node(node)
+
+                
+                print(f"  {c}    {outputs}           {sequence_detection}")
+
+                del(net)
+                # for node in run_nodes:
+                #     del(node)
+            print("\n\n")
+        
+            acc = np.round(100*correct/27,2)
+            print(f"Epoch accuracy = {acc}")
+        print(f"Final accuracy = {acc}")
             
+            
+    # run_learning_sequence()
     run_sequence()
     # names = ['z','v','n','x','+']          
     # node = learn(names,'z','n')

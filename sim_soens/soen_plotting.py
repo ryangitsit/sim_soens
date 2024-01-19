@@ -243,7 +243,8 @@ def activity_plot(
         ## add input/output spikes
         if spikes==True and hasattr(net,'spikes'):
             if len(net.spikes[0]) > 0:
-                plt.plot(net.spikes[1],net.spike_signals[0],'xk', markersize=8, 
+                spk_times = neurons[0].neuron.spike_times
+                plt.plot(spk_times,np.ones(len(spk_times))*neurons[0].neuron.s_th,'xk', markersize=8, 
                          label='neuron fires')
                 plt.axhline(y = neurons[0].neuron.s_th, color = 'purple', 
                             linestyle = '--',label='Firing Threshold')
