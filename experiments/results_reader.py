@@ -322,7 +322,7 @@ if os.path.exists(path) == True:
             print(f"Dir {directory} does not exist.")
 
 # plot_singles(experiments,until,10,record='new')
-# plot_all(experiments,until,record='new')
+plot_all(experiments,until,record='new')
 
 def res_rasters(path):
     import matplotlib.image as mpimg
@@ -371,10 +371,10 @@ def res_performances(path):
 
                 if np.max(acc)>60:
                     print(acc,np.max(acc),directory)
-                    plt.plot(acc,linewidth=3,label=exp_path[len("results/res_MNIST/res_"):])#,color=colors[above%len(colors)])
+                    plt.plot(acc[:25],linewidth=3,label=exp_path[len("results/res_MNIST/res_"):])#,color=colors[above%len(colors)])
                     above+=1
                 else:
-                    plt.plot(acc,'--',alpha=0.1)
+                    plt.plot(acc[:25],'--',alpha=0.1)
             except:
                 print(f"Dir {directory} has no performance measures yet.")
 
@@ -390,7 +390,7 @@ def res_performances(path):
 
 path = 'results/res_MNIST/'
 res_performances(path)
-res_rasters(path)
+# res_rasters(path)
 
 def evolve(path):
     import os

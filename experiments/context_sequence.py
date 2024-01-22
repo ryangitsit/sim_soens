@@ -140,50 +140,89 @@ def main():
 
 
     def run_and_plot(node,names):
-        fig, axs = plt.subplots(len(names), len(names),figsize=(12,6))
+        import seaborn as sns
+        # plt.style.use('seaborn-muted')
+        colors = sns.color_palette("muted")
+        # print(plt.__dict__['pcolor'].__doc__)
+        # colors = plt.rcParams["axes.prop_cycle"].by_key()["color"]
+        fig, axs = plt.subplots(len(names), len(names),figsize=(8,4))
         
         fig.subplots_adjust(wspace=0,hspace=0)
         basin  = np.arange(50,251,50)
-        proxin = np.arange(300,600,50)
+        proxin = np.arange(300,501,50)
         x = np.arange(0,600.1,.1)
 
+        avgs = np.array([np.zeros((len(names),)) for _ in range(len(names))])
         for i,name1 in enumerate(names):
             for j,name2 in enumerate(names):
+                print(f" {name1} - {name2}")
                 node = run_context_and_event(node,name1,name2)
                 s,phi = node.neuron.dend_soma.s,node.neuron.dend_soma.phi_r
-                axs[i][j].set_ylim(-0.01,.225)
+                # print(node.neuron.dend_soma.dendritic_connection_strengths)#_dict__.keys())
+                cs = node.neuron.dend_soma.dendritic_connection_strengths
+                avgs[i][j] = np.mean(phi-node.neuron.dend__ref.s*cs[list(cs.keys())[0]]) #len(node.neuron.spike_times) #
+                axs[i][j].set_ylim(-0.01,.3)
                 axs[i][j].set_title(f"{name1} - {name2}", y=1.0, x=.15, pad=-14)
+                spike_times = node.neuron.spike_times
                 if i==0 and j == 0:
-                    axs[i][j].plot(x,phi,color='orange',label='flux')
-                    axs[i][j].plot(x,s,linewidth=4,color='b',label='signal')
-                    axs[i][j].plot(
-                        basin,np.zeros(len(basin)),'x',color='red', markersize=8, label='basal input event'
+                    axs[i][j].plot(x,phi,color=colors[1],label='soma flux')
+                    axs[i][j].plot(x,s,linewidth=2,color=colors[0],label='soma signal')
+                    axs[i][j].scatter(
+                        basin,np.zeros(len(basin)),marker='x',color=colors[2], s=50,linewidths=2,  label='basal input event'
                         )
-                    axs[i][j].plot(
-                        proxin,np.zeros(len(proxin)),'x',color='purple', markersize=8, label='proximal input event'
+                    axs[i][j].scatter(
+                        proxin,np.zeros(len(proxin)),marker='x',color=colors[3], s=50,linewidths=2, label='proximal input event'
+                        )
+                    axs[i][j].axhline(
+                        y = 0.15, 
+                        color = 'purple', 
+                        linestyle = '--',
+                        linewidth=.5,
+                        label='threshold'
                         )
                 else:
-                    axs[i][j].plot(x,phi,color='orange')
-                    axs[i][j].plot(x,s,linewidth=4,color='b')
-                    axs[i][j].plot(
-                        basin,np.zeros(len(basin)),'x',color='red', markersize=8
+                    axs[i][j].plot(x,phi,color=colors[1])
+                    axs[i][j].plot(x,s,linewidth=2,color=colors[0])
+                    axs[i][j].scatter(
+                        basin,np.zeros(len(basin)),marker='x',color=colors[2], s=50,linewidths=2,  
                         )
-                    axs[i][j].plot(
-                        proxin,np.zeros(len(proxin)),'x',color='purple', markersize=8
+                    axs[i][j].scatter(
+                        proxin,np.zeros(len(proxin)),marker='x',color=colors[3], s=50,linewidths=2,
                         )          
 
-                axs[i][j].axhline(
-                    y = 0.15, 
-                    color = 'purple', 
-                    linestyle = '--',
-                    linewidth=.5
-                    )
-                if i != len(axs):
+                    axs[i][j].axhline(
+                        y = 0.15, 
+                        color = 'purple', 
+                        linestyle = '--',
+                        linewidth=.5,
+                        )
+                if len(spike_times) > 0:
+                    axs[i][j].scatter(
+                        spike_times,np.ones(len(spike_times))*node.s_th,marker='x',color='black', s=60 ,linewidths=2, label='output spike',zorder=10
+                        )
+                if i != len(axs)-1:
                     axs[i][j].set_xticklabels([])
                 if j != 0:
                     axs[i][j].set_yticklabels([])
+        
 
-        plt.suptitle("Z-to-N Sequence Detector",fontsize=22)
+
+        # plt.figure(figsize=((8,7.5)))
+        # plt.title("Soma Activity After Learning n-x Sequence",fontsize=20)
+        # plt.ylabel("Basal Input Pattern",fontsize=16)
+        # plt.xlabel("Proximal Input Pattern",fontsize=16)
+        # plt.xticks(np.arange(0.5,len(names)+0.5,1),names,fontsize=18)
+        # plt.yticks(np.arange(0.5,len(names)+0.5,1),names,fontsize=18)
+        # print(avgs)
+        # print(avgs.shape)
+        # heatmap = plt.pcolor(avgs, cmap=plt.cm.Oranges)
+        # plt.colorbar(heatmap, cmap=plt.cm.Oranges)
+        # # plt.imshow(avgs)
+        # plt.tight_layout()
+        # plt.show()
+                    
+
+        plt.suptitle("Basal Proximal Neuron z-n",fontsize=20)
         lines = [] 
         labels = []     
         for ax in fig.axes: 
@@ -193,10 +232,13 @@ def main():
             labels.extend(Label) 
         
         fig.text(0.5, 0.04, 'Time (ns)', ha='center', fontsize=18)
-        fig.text(0.04, 0.5, 'Unitless Signal and Flux', va='center', rotation='vertical', fontsize=18)
-        fig.legend(lines, labels, bbox_to_anchor=(.15, 0.15), loc='lower left', borderaxespad=0) 
+        fig.text(0.04, 0.5, 'Signal and Flux', va='center', rotation='vertical', fontsize=18)
+        fig.legend(lines, labels, bbox_to_anchor=(.2, 0.185), loc='lower left', borderaxespad=0) 
+        plt.subplots_adjust(bottom=.15)
+        # plt.tight_layout()
 
         plt.show()
+
 
     def clear_node(node):
         for dend in node.dendrite_list:
@@ -233,9 +275,13 @@ def main():
                     if error==0: correct+=1
             accuracy = np.round(correct*100/seen,2)
             epochs+=1
+
+            # print(f"Max sequence: {np.argmax(outputs)} == {np.argmax(targets)}")
             if np.argmax(targets)==np.argmax(outputs):
+                # print("Converged!")
                 sub = np.concatenate(outputs) - np.concatenate(outputs)[np.argmax(outputs)]
-                if sum(n > -3 for n in sub) == 1 and sum(n == 0 for n in sub) == 1:
+                # print(sub)
+                if sum(n > 0 for n in sub) == 0 and sum(n == 0 for n in sub) == 1:
                     print("Converged!")
                     run_and_plot(node,names)
                     picklit(node,'results/sequencing/',f'node_converged_{epochs}')
@@ -259,10 +305,12 @@ def main():
         indices = []
         spikes = []
         for i,pattern in enumerate(sequence):
-
+            # print(i,pattern)
             if pattern=='A': letter = 'z'
             if pattern=='B': letter = 'v'
             if pattern=='C': letter = 'n'
+            if pattern=='D': letter = 'x'
+            if pattern=='E': letter = '+'
 
             spk_times = np.arange(
                 50+i*150,
@@ -275,12 +323,96 @@ def main():
             spikes.append(sub_spikes)
             indices.append(spikes[0])
         
-        all_spikes = list(map(list.__add__, spikes[0],spikes[1]))
-        all_spikes = list(map(list.__add__, all_spikes,spikes[2]))
+        all_spikes = [[],[]]
+        for i in range(len(sequence)):
+            all_spikes = list(map(list.__add__, all_spikes,spikes[i]))
         
         return all_spikes
 
+    def branch_test():
+            
+        # branch test
+        W = [
+            [[.1,.175,.25]],
+        ]
+        taus = [
+            [[100,50,25]],
+        ]
 
+        # W = [
+        #     [[.142,.225,.25]],
+        # ]
+        # taus = [
+        #     [[300,90,10]],
+        # ]
+
+        params = {
+            "s_th": 0.1,
+            "ib": 1.8,
+            "tau_ni": 100,
+            "tau_di": 100,
+            "beta_ni": 2*np.pi*1e2,
+            "beta_di": 2*np.pi*1e2,
+            "weights": W,
+            "taus": taus,
+        }
+
+        
+        # node.normalize_fanin(1.5)
+        # node.plot_structure()
+
+
+        timing_node = SuperNode(**params)
+        c = ['A','B','C']
+        indices = make_sequence_indices(c,1)
+        times = list(np.arange(10,len(indices)*50+10,50))
+        inp_spikes = np.array([indices,times])
+        duration = np.max(inp_spikes[1])+75
+        inp = SuperInput(type='defined',defined_spikes = inp_spikes, duration = duration,channels=3)
+        timing_node.one_to_one(inp)
+        
+        net = network(sim=True,nodes=[timing_node],dt=0.01,tf=duration,backend='julia')
+
+        import seaborn as sns
+        # plt.style.use('seaborn-muted')
+        colors = sns.color_palette("muted")
+        print(len(colors))
+
+        plt.figure(figsize=(8,3))
+        count = 0
+        for i,dend in enumerate(timing_node.dendrite_list):
+            if 'soma' not in dend.name and 'ref' not in dend.name:
+                plt.plot(net.t,dend.s*W[0][0][count],'--',color=colors[count+2],label=f"branch {count+1}",zorder=count+100)
+
+                plt.scatter(
+                        inp.spike_rows[count],np.zeros(len(inp.spike_rows[count])),marker='x',
+                        color=colors[count+2], s=70,linewidths=2,  zorder=count+150 #label=f'input event branch {count+1}',
+                        )
+                count+=1
+        plt.plot(net.t,timing_node.neuron.dend_soma.s,linewidth=4,label="soma signal")
+        # plt.plot(net.t,timing_node.neuron.dend_soma.phi_r,linewidth=2,label="soma  flux")
+        spike_times = timing_node.neuron.spike_times
+        if len(spike_times) > 0:
+                plt.scatter(
+                    spike_times,
+                    np.ones(len(spike_times))*timing_node.s_th,
+                    marker='x',color='black', s=60,linewidths=2, label='output spike',zorder=90
+                    )
+        plt.axhline(
+                    y = timing_node.s_th, 
+                    color = colors[7    ], 
+                    linestyle = '--',
+                    linewidth=.5,
+                    label='threshold',
+                    )
+        plt.title("Sequential Branch Excitation of Timing Neuron",fontsize=20)
+        plt.ylabel("Signal",fontsize=18)
+        plt.xlabel("Time (ns)",fontsize=18)
+        # plt.legend(loc='upper left', bbox_to_anchor=(1, 1.01))
+        # plt.subplots_adjust(bottom=.25)
+        plt.tight_layout()
+        plt.legend()
+        plt.show()
     
     
     
@@ -300,13 +432,11 @@ def main():
     def run_sequence():
 
         letters = make_letters(patterns='zvnx+')
-
+        # plot_letters(letters)
         W_z = [
             [[.3,.3,.3]],
             [[.3,.3,-.3],[-.3,.3,-.3],[-.3,.3,.3]]
         ]
-        node_z = SuperNode(weights=W_z)
-        node_z.normalize_fanin(1.5)
 
         W_v = [
             [[.3,.3,.3]],
@@ -327,6 +457,13 @@ def main():
             [[500,100,10]],
         ]
 
+        # W = [
+        #     [[.142,.225,.25]],
+        # ]
+        # taus = [
+        #     [[300,90,10]],
+        # ]
+
         params = {
             "s_th": 0.1,
             "ib": 1.8,
@@ -342,30 +479,57 @@ def main():
         # node.normalize_fanin(1.5)
         # node.plot_structure()
 
-        sequence = ['A','B','C']
+
+        timing_node = SuperNode(**params)
+
+        nodes = [
+            SuperNode(name='node_z',tau_di=50,weights=W_z),
+            SuperNode(name='node_v',tau_di=50,weights=W_v),
+            SuperNode(name='node_n',tau_di=50,weights=W_n),
+        ]
+
+        for node in nodes:
+            node.normalize_fanin(1.5)
 
         # make_letter_sequence(sequence,letters)
 
 
         import itertools
-        combos = list(itertools.product(sequence, repeat=3))
+        import random
+        from sim_soens.soen_plotting import activity_plot
+        # combos = list(itertools.product(sequence, repeat=3))
+        combos = [random.choices('ABCDE', k=10) for _ in range(1000)]
+        # print(combos)
+        # combos.insert(0, ['D','E','A','B','C','B','C','E'])
+        combos.insert(0, ['A','B','C','A','B','C','A','B','C','A','D','B','C','A','B','C'])
 
         print(f"\n     Sequence     |   z  v  n   |   Timing Neuron   ")
         print(  f"----------------------------------------------------")
+        excit = 0.125
+        inhib = -.75
+        W_anom = [[[excit,excit,excit,excit,excit,excit,excit,excit,excit,inhib]]]
+        tau_anom = [[[20,20,20,20,20,20,20,20,20,150]]]
+        anomaly_detector = SuperNode(
+            weights = W_anom,
+            taus    = tau_anom
+            )
+
+        # for i,syn in enumerate(anomaly_detector.synapse_list):
+        #     print(syn.name, syn.__dict__.keys())
+
+        # for i,dend in enumerate(anomaly_detector.dendrite_list):
+        #     if 'ref' not in dend.name and 'soma' not in dend.name:
+        #         # print(dend.name, dend.output_connection_strength, dend.tau_di)
+        #         if i < 9:
+        #             dend.name = f"excite_{i}"
+        #         else:
+        #             dend.name = "inhibit"
+
+
+
         for c  in combos:
-
-            make_letter_sequence(c,letters)
-
-            timing_node = SuperNode(**params)
-
-            nodes = [
-                SuperNode(name='node_z',tau_di=50,weights=W_z),
-                SuperNode(name='node_v',tau_di=50,weights=W_v),
-                SuperNode(name='node_n',tau_di=50,weights=W_n),
-            ]
-
-            for node in nodes:
-                node.normalize_fanin(1.5)
+            # print(f"Current sequence: {c}")
+            # make_letter_sequence(c,letters)
 
             ### branch test inputs ###
             # indices = make_sequence_indices(c,3)
@@ -374,9 +538,16 @@ def main():
 
             ### pattern sequence inputs ###
             inp_spikes = make_letter_sequence(c,letters)
-
+            # print(inp_spikes[1])
             duration = np.max(inp_spikes[1])+100
             inp = SuperInput(type='defined',defined_spikes = inp_spikes, duration = duration,channels=9)
+
+            times = list(set(inp.spike_arrays[1]))
+            times.sort()
+            times = times[::3]
+            print(
+                len(times),times
+                )
             # raster_plot(inp.spike_arrays)
             # timing_node.one_to_one(inp)
 
@@ -384,9 +555,93 @@ def main():
                 node.one_to_one(inp)
                 node.neuron.add_output(timing_node.synapse_list[i])
 
-            run_nodes = nodes+[timing_node]
+            
+            for i,sig in enumerate(inp.signals):
+                anomaly_detector.synapse_list[i].add_input(sig)
+
+            timing_node.neuron.add_output(anomaly_detector.synapse_list[-1])
+
+            anomaly_detector.synapse_list[-1].input_signal.spike_times.append(0.0)
+
+            run_nodes = nodes+[timing_node,anomaly_detector]
             
             net = network(sim=True,nodes=run_nodes,dt=0.1,tf=duration,backend='julia')
+
+            # anomaly_detector.plot_arbor_activity(net,phir=True,title=c)
+            # anomaly_detector.plot_neuron_activity(net=net,phir=True,legend=False,size=(8,4),title='Anomaly Detection')#,legend_out=True,size=(10,4))
+
+            ##################
+
+            import seaborn as sns
+            # plt.style.use('seaborn-muted')
+            colors = sns.color_palette("muted")
+            print(len(colors))
+            timing_node = anomaly_detector
+
+            plt.figure(figsize=(8,4))
+            count = 0
+            for i,dend in enumerate(timing_node.dendrite_list):
+                if 'soma' not in dend.name and 'ref' not in dend.name:
+                    if count==7:
+                        plt.plot(net.t,dend.s*W_anom[0][0][count],'--',color=colors[(count+2)%len(colors)],label=f"excitatory branch",zorder=count+10)
+                    elif count == 9:
+                        plt.plot(net.t,dend.s*W_anom[0][0][count],'--',color=colors[(count+2)%len(colors)],label=f"inhibitory branch",zorder=count+10)
+                    else:
+                        plt.plot(net.t,dend.s*W_anom[0][0][count],'--',color=colors[(count+2)%len(colors)],zorder=count+10)
+
+
+                    # plt.scatter(
+                    #         inp.spike_rows[count],np.zeros(len(inp.spike_rows[count])),marker='x',
+                    #         color=colors[count+2], s=70,linewidths=2,  zorder=count+150 #label=f'input event branch {count+1}',
+                    #         )
+                    count+=1
+            plt.plot(net.t,timing_node.neuron.dend_soma.s,linewidth=4,label="soma signal",zorder=20)
+            plt.plot(net.t,timing_node.neuron.dend_soma.phi_r,color=colors[2],linewidth=2,label="soma  flux")
+            spike_times = timing_node.neuron.spike_times
+            if len(spike_times) > 0:
+                    plt.scatter(
+                        spike_times,
+                        np.ones(len(spike_times))*.5,
+                        marker='x',color='black', s=70,linewidths=3, label='output spike',zorder=25
+                        )
+            plt.axhline(
+                        y = timing_node.neuron.s_th, 
+                        color = colors[7], 
+                        linestyle = '--',
+                        linewidth=.5,
+                        label='threshold',
+                        )
+            
+            plt.axvline(
+                        x = 1550, 
+                        color = colors[3], 
+                        linestyle = ':',
+                        linewidth=2,
+                        label='anomaly',
+                        zorder=24
+                        )
+            
+            plt.title("Anomaly Detection in Sequence of Patterns",fontsize=20)
+            plt.ylabel("Signal",fontsize=18)
+            plt.xlabel("Pattern Sequence",fontsize=18)
+            plt.xticks(times,c,fontsize=16)
+            plt.legend(loc='upper left', bbox_to_anchor=(1, 1.01))
+            plt.subplots_adjust(bottom=.25)
+            plt.tight_layout()
+            # plt.legend()
+            plt.show()
+
+
+
+
+
+
+
+
+
+
+
+            ###################
 
             outputs = []
             for node in nodes:
@@ -397,11 +652,17 @@ def main():
             sequence_detection = len(timing_node.neuron.spike_times)
             print(f"  {c}    {outputs}           {sequence_detection}")
 
-            if c==('A', 'B', 'C'):
-                timing_node.plot_neuron_activity(net=net,input=inp,title=f"{c}")
-                timing_node.plot_arbor_activity(net,phir=True,title=f"{c}")
-                # node_z.plot_arbor_activity(net,phir=True,title=f"{c}")
-                # node_z.plot_neuron_activity(net=net,input=inp)
+            # if c == combos[0] or sequence_detection > 0: # or c == combos[0]: #c==('A', 'B', 'C'):
+            #     # timing_node.plot_neuron_activity(net=net,phir=True,phi_th=True,input=inp,title=f"{c}")
+            #     # timing_node.plot_arbor_activity(net,phir=True,title=f"{c}")
+            #     # activity_plot(nodes,spikes=True,title=f"{c}",legend_all=True)#,legend_out=True)
+            #     # node_z.plot_arbor_activity(net,phir=True,title=f"{c}")
+            #     # node_z.plot_neuron_activity(net=net,input=inp)
+
+            #     fig, axs = plt.subplots(len(nodes), 1,figsize=(8,4))
+            #     fig.subplots_adjust(hspace=0)
+            #     for node in nodes:
+
             del(net)
             for node in run_nodes:
                 del(node)
@@ -415,6 +676,14 @@ def main():
         letters = make_letters(patterns='zvnx+')
 
         nodes = []
+
+        params_nodes = {
+            "beta_ni": 2*np.pi*1e3,
+            "beta_di": 2*np.pi*1e3,
+            "s_th": 0.1
+        }
+
+
         for i in range(3):
             # W_init = [
             #     [np.ones(3)*.3],
@@ -424,7 +693,7 @@ def main():
                 [np.random.uniform(-1,1,[3,])*.3],
                 [np.random.uniform(-1,1,[3,])*.3 for _ in range(3)]
             ]
-            node = SuperNode(weights=W_init)
+            node = SuperNode(weights=W_init,**params_nodes)
             node.normalize_fanin(1.5)
             node.random_flux(0.15)
             nodes.append(node)
@@ -441,8 +710,8 @@ def main():
             "ib": 1.8,
             "tau_ni": 100,
             "tau_di": 100,
-            "beta_ni": 2*np.pi*1e2,
-            "beta_di": 2*np.pi*1e2,
+            "beta_ni": 2*np.pi*1e3,
+            "beta_di": 2*np.pi*1e3,
             "weights": W,
             "taus": taus,
         }
@@ -490,21 +759,22 @@ def main():
 
                 run_nodes = nodes+[timing_node]
                 
-                net = network(sim=True,nodes=run_nodes,dt=0.1,tf=duration,backend='julia')
-                if c==('A', 'B', 'C'):
-                    target = 5
-                else:
-                    target = 0
+                net = network(sim=True,nodes=run_nodes,dt=1.0,tf=duration,backend='julia')
+                targets = np.zeros((3,))
+                for i,let in enumerate(c):
+                    if let == "A": targets[0]+=3
+                    if let == "B": targets[1]+=3
+                    if let == "C": targets[2]+=3
 
                 sequence_detection = len(timing_node.neuron.spike_times)
-                error = target - sequence_detection
-                if error == 0: correct+=1
+                # error = target - sequence_detection
+                # if error == 0: correct+=1
 
                 outputs = []
-                for node in nodes:
+                for i,node in enumerate(nodes):
                     spikes = node.neuron.spike_times
                     outputs.append(len(spikes))
-
+                    error = targets[i] - len(spikes)
                     node = make_update(node,error)
                     node = clear_node(node)
 
@@ -521,10 +791,28 @@ def main():
         print(f"Final accuracy = {acc}")
             
             
+
+
+    # l1 = 'z'
+    # l2 = 'n'
+    # names=['z','v','n']
+    # node=make_ZN_node()
+    # run_and_plot(node,names)
+
+    # node = make_rand_node()
+    # run_context_and_event(node,l1,l2)
+
     # run_learning_sequence()
+        
     run_sequence()
-    # names = ['z','v','n','x','+']          
-    # node = learn(names,'z','n')
+
+    names = ['z','v','n','x','+']          
+    # node = learn(names,'n','x')
+
+    # branch_test()
+    # from sim_soens.super_functions import picklin
+    # node = picklin('results/sequencing/','node_converged_8')
+    # run_and_plot(node,names)
     
 
 

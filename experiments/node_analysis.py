@@ -62,28 +62,28 @@ def heat_map(node):
     return data  
 
 #%%
-import seaborn as sns 
-from matplotlib.colors import ListedColormap
-cmap = ListedColormap(sns.color_palette("ch:s=.25,rot=-.25"))
-# cmap = sns.light_palette("Greens", as_cmap=True)
+# import seaborn as sns 
+# from matplotlib.colors import ListedColormap
+# cmap = ListedColormap(sns.color_palette("ch:s=.25,rot=-.25"))
+# # cmap = sns.light_palette("Greens", as_cmap=True)
 
 
-sums = np.zeros((10,10))
-fig, axs = plt.subplots(10,10,figsize=(12,12), sharex=True, sharey=True)
-fig.subplots_adjust(hspace=0,wspace=0)
-for i in range(10):
-    print(r"["+"="*i+">"+" "*(10-i)+"]")
-    nodes = load_nodes(3000,i,0,"thresh_full")
-    for j,node in enumerate(nodes):
-        data = heat_map(node)
-        sums[i][j]=sum(sum(data))
-        axs[i][j].imshow(data, extent=[0, 7, 0, 784], aspect=7/784, cmap=cmap)
-        axs[i][j].set_xticklabels([])
-        axs[i][j].set_yticklabels([])
-plt.show()
+# sums = np.zeros((10,10))
+# fig, axs = plt.subplots(10,10,figsize=(12,12), sharex=True, sharey=True)
+# fig.subplots_adjust(hspace=0,wspace=0)
+# for i in range(10):
+#     print(r"["+"="*i+">"+" "*(10-i)+"]")
+#     nodes = load_nodes(3000,i,0,"thresh_full")
+#     for j,node in enumerate(nodes):
+#         data = heat_map(node)
+#         sums[i][j]=sum(sum(data))
+#         axs[i][j].imshow(data, extent=[0, 7, 0, 784], aspect=7/784, cmap=cmap)
+#         axs[i][j].set_xticklabels([])
+#         axs[i][j].set_yticklabels([])
+# plt.show()
 
 
-plt.imshow(sums)
+# plt.imshow(sums)
 
 #%%
 def mem_analysis(span):
@@ -359,12 +359,12 @@ def plot_offsets(trajects):
             #     fontsize=16
             #     )
             plt.title(
-                f"Noisy 9-Pixel Classifier - {names[i]}",
-                fontsize=16
+                f"Dendritic Learning of 9-Pixel Patterns - {names[i]}",
+                fontsize=20
                 )
             
-            plt.xlabel("Total Iterations",fontsize=14)
-            plt.ylabel("Flux Offset",fontsize=14)
+            plt.xlabel("Total Iterations",fontsize=18)
+            plt.ylabel("Flux Offset",fontsize=18)
             plt.subplots_adjust(bottom=.15)
             plt.legend()
             plt.show()
@@ -386,8 +386,8 @@ def get_trajects(path):
             plot_offsets(picklin(path,file))
 
 
-# path = 'results/jul_testing/early_plots'
-# get_trajects(path)
+path = 'results/jul_testing/early_plots'
+get_trajects(path)
 
 
 

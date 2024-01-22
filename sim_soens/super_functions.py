@@ -226,7 +226,7 @@ def make_letters(patterns='zvn'):
 def plot_letters(letters):
     import matplotlib.cm as cm
     import matplotlib.pyplot as plt
-    fig, axs = plt.subplots(1, len(letters),figsize=(12,6))
+    fig, axs = plt.subplots(1, len(letters),figsize=(8,6))
     for  j,(name,pixels) in enumerate(letters.items()):
         arrays = [[] for i in range(3)]
         count = 0
@@ -238,7 +238,7 @@ def plot_letters(letters):
 
         axs[j].set_xticks([])
         axs[j].set_yticks([])
-        axs[j].set_title(name,fontsize=18)
+        axs[j].set_title(name,fontsize=14)
         axs[j].imshow(
             pixels,
             interpolation='nearest',
