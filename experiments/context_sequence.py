@@ -526,7 +526,7 @@ def main():
         #             dend.name = "inhibit"
 
 
-
+        combos=[['A','B','C']]
         for c  in combos:
             # print(f"Current sequence: {c}")
             # make_letter_sequence(c,letters)
@@ -566,6 +566,49 @@ def main():
             run_nodes = nodes+[timing_node,anomaly_detector]
             
             net = network(sim=True,nodes=run_nodes,dt=0.1,tf=duration,backend='julia')
+
+            # timing_node.plot_neuron_activity(net=net)
+
+            import seaborn as sns
+            # plt.style.use('seaborn-muted')
+            colors = sns.color_palette("muted")
+            print(len(colors))
+            branches = ['z','v','n']
+            plt.figure(figsize=(8,3))
+            count = 0
+            for i,dend in enumerate(timing_node.dendrite_list):
+                if 'soma' not in dend.name and 'ref' not in dend.name:
+                    plt.plot(net.t,dend.s*W[0][0][count],'--',color=colors[count+2],label=f"branch {branches[count]}",zorder=count+100)
+
+                    # plt.scatter(
+                    #         inp.spike_rows[count],np.zeros(len(inp.spike_rows[count])),marker='x',
+                    #         color=colors[count+2], s=70,linewidths=2,  zorder=count+150 #label=f'input event branch {count+1}',
+                    #         )
+                    count+=1
+            plt.plot(net.t,timing_node.neuron.dend_soma.s,linewidth=4,label="soma signal")
+            # plt.plot(net.t,timing_node.neuron.dend_soma.phi_r,linewidth=2,label="soma  flux")
+            spike_times = timing_node.neuron.spike_times
+            if len(spike_times) > 0:
+                    plt.scatter(
+                        spike_times,
+                        np.ones(len(spike_times))*timing_node.s_th,
+                        marker='x',color='black', s=60,linewidths=2, label='output spike',zorder=90
+                        )
+            plt.axhline(
+                        y = timing_node.s_th, 
+                        color = colors[7], 
+                        linestyle = '--',
+                        linewidth=.5,
+                        label='threshold',
+                        )
+            plt.title("Timing Neuron During a z-v-n Sequence",fontsize=20)
+            plt.ylabel("Signal",fontsize=18)
+            plt.xlabel("Time (ns)",fontsize=18)
+            # plt.legend(loc='upper left', bbox_to_anchor=(1, 1.01))
+            # plt.subplots_adjust(bottom=.25)
+            plt.tight_layout()
+            plt.legend()
+            plt.show()
 
             # anomaly_detector.plot_arbor_activity(net,phir=True,title=c)
             # anomaly_detector.plot_neuron_activity(net=net,phir=True,legend=False,size=(8,4),title='Anomaly Detection')#,legend_out=True,size=(10,4))

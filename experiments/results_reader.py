@@ -307,19 +307,19 @@ experiments = {
 }
 
 
-experiments = []
-import os
-path = 'results/MNIST'
-if os.path.exists(path) == True:
-    dir_list = os.listdir(path)
+# experiments = []
+# import os
+# path = 'results/MNIST'
+# if os.path.exists(path) == True:
+#     dir_list = os.listdir(path)
 
-    for directory in dir_list:
-        try:
-            print(directory)
-            if 'arbor_sweep' in directory and os.path.isfile(path+'/'+directory+'/performance_log.csv'):
-                experiments.append(directory)
-        except:
-            print(f"Dir {directory} does not exist.")
+#     for directory in dir_list:
+#         try:
+#             print(directory)
+#             if 'arbor_sweep' in directory and os.path.isfile(path+'/'+directory+'/performance_log.csv'):
+#                 experiments.append(directory)
+#         except:
+#             print(f"Dir {directory} does not exist.")
 
 # plot_singles(experiments,until,10,record='new')
 plot_all(experiments,until,record='new')

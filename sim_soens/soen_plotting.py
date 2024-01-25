@@ -261,10 +261,10 @@ def activity_plot(
                     )
         if S == True:
             plt.plot(time_vec,signal,  color='#1f77b4',linewidth=4)
-        plt.xlabel("Simulation Time (ns)",fontsize=14)
-        plt.ylabel("Signal (Ic)",fontsize=14)
+        plt.xlabel("Simulation Time (ns)",fontsize=18)
+        plt.ylabel("Signal (Ic)",fontsize=18)
         plt.subplots_adjust(bottom=.25)
-        plt.title(title,fontsize=18)
+        plt.title(title,fontsize=12)
         if legend==True:
             if legend_out==True:
                 plt.legend(loc='upper left', bbox_to_anchor=(1, 1.01))
@@ -502,7 +502,7 @@ def structure(node):
         G.append(groups)
     plt.figure(figsize=(8,5))
 
-    labels = ['Basal','Proximal']
+    # labels = ['Basal','Proximal']
     count=0
     for i,dot1 in enumerate(dots):
         
@@ -534,7 +534,7 @@ def structure(node):
             
             plt.plot(
                 [x1,x2],[y1,y2],linestyle=line_style,
-                color=color,linewidth=width,label=f"{labels[count]} Branch" #f'branch {dot1[6]}'
+                color=color,linewidth=width,label=f'branch {dot1[6]}' #f"{labels[count]} Branch" 
                 )
             count+=1
         else:

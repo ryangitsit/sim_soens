@@ -62,28 +62,37 @@ def heat_map(node):
     return data  
 
 #%%
-# import seaborn as sns 
-# from matplotlib.colors import ListedColormap
-# cmap = ListedColormap(sns.color_palette("ch:s=.25,rot=-.25"))
-# # cmap = sns.light_palette("Greens", as_cmap=True)
+import seaborn as sns 
+from matplotlib.colors import ListedColormap
+cmap = ListedColormap(sns.color_palette("ch:s=.25,rot=-.25"))
+# cmap = sns.light_palette("Greens", as_cmap=True)
 
 
-# sums = np.zeros((10,10))
-# fig, axs = plt.subplots(10,10,figsize=(12,12), sharex=True, sharey=True)
-# fig.subplots_adjust(hspace=0,wspace=0)
-# for i in range(10):
-#     print(r"["+"="*i+">"+" "*(10-i)+"]")
-#     nodes = load_nodes(3000,i,0,"thresh_full")
-#     for j,node in enumerate(nodes):
-#         data = heat_map(node)
-#         sums[i][j]=sum(sum(data))
-#         axs[i][j].imshow(data, extent=[0, 7, 0, 784], aspect=7/784, cmap=cmap)
-#         axs[i][j].set_xticklabels([])
-#         axs[i][j].set_yticklabels([])
-# plt.show()
+sums = np.zeros((10,10))
+fig, axs = plt.subplots(10,10,figsize=(18,18), sharex=True, sharey=True)
+fig.subplots_adjust(hspace=0,wspace=0)
+for i in range(10):
+    print(r"["+"="*i+">"+" "*(10-i)+"]")
+    nodes = load_nodes(3000,i,0,"thresh_full")
+    for j,node in enumerate(nodes):
+        data = heat_map(node)
+        sums[i][j]=sum(sum(data))
+        axs[i][j].imshow(data, extent=[0, 7, 0, 784], aspect=7/784) #, cmap=cmap)
+        axs[i][j].set_xticklabels([])
+        axs[i][j].set_yticklabels([])
+        
+        # if i == len(axs)-1:
+        #     axs[i][j].set_xticks([3.5],[str(j)],fontsize=18)
+        # # if j==0:
+        # #     axs[i][j].set_yticks([1],[str(i)],fontsize=18)
+
+# fig.xticks(np.arange(0,10,1),np.arange(0,10,1),fontsize=18)
+# fig.yticks(np.arange(0,10,1),np.arange(0,10,1),fontsize=18)
+plt.show()
 
 
-# plt.imshow(sums)
+plt.imshow(sums)
+plt.show()
 
 #%%
 def mem_analysis(span):
@@ -387,7 +396,7 @@ def get_trajects(path):
 
 
 path = 'results/jul_testing/early_plots'
-get_trajects(path)
+# get_trajects(path)
 
 
 

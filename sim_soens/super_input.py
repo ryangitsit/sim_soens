@@ -218,6 +218,79 @@ class SuperInput():
 
         return stream
     
+    
+    def poisson_spikes(T,rate):
+        spike_times = [0]
+        while max(spike_times) <= T:
+            spike_times.append(spike_times[-1]+np.random.poisson(rate, 1)[0])
+        spike_times = spike_times[1:-1]
+        # print(spike_times)
+        return spike_times
+    
+    def single_kernel(img,coordinates):
+        (x1,x2),(y1,y2) = coordinates
+        kernel = img[x1:x2,y1:y2] #.transpose()
+        return kernel
+
+    def get_coordinates(x,y,size):
+        return (x,x+size[0]),(y,y+size[1])
+
+    def make_row(self,img,size,y,kern):
+        x_axis = len(img[0])
+        row = [
+            self.single_kernel(img, self.get_coordinates(i,y,size))*kern for i in range(x_axis-size[0])
+            ]
+        return row
+
+    def get_kern(kernel):
+        if kernel == 'vertical':
+            kern = np.array([
+            [0,1,0],
+            [0,1,0],
+            [0,1,0]
+            ])
+        elif kernel == 'horizontal':
+            kern = np.array([
+            [0,0,0],
+            [1,1,1],
+            [0,0,0]
+            ])
+        elif kernel == 'up':
+            kern = np.array([
+            [0,0,1],
+            [0,1,0],
+            [1,0,0]
+            ])
+        elif kernel == 'down':
+            kern = np.array([
+            [1,0,0],
+            [0,1,0],
+            [0,0,1]
+            ])
+        else:
+            kern = np.ones((3,3))
+        return kern
+
+    def kernelize(self,img,size,kernel=None):
+
+        kern = self.get_kern(kernel)
+
+        y_axis = len(img)
+        all_rows = [self.make_row(img,size,j,kern) for j in range(y_axis-size[1])] #[::-1]
+        return np.rot90(np.array(all_rows))[::-1]
+
+    def kerns_to_img(kernels):
+        side = kernels.shape[0]*kernels.shape[2]
+        kern_img = [[] for _ in range(side)]
+        for i,row in enumerate(kernels):
+            for j,kern in enumerate(row):
+                for k in range(kernels.shape[2]):
+                    kern_img[i*kernels.shape[3]+k].extend(kern[k])
+        return kern_img
+
+    def kernelize(self):
+        pass
+    
     def plot(self,**kwargs):
         from sim_soens.soen_plotting import raster_plot
         raster_plot(self.spike_arrays,**kwargs)
