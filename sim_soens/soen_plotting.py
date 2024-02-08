@@ -230,8 +230,8 @@ def activity_plot(
                                     dend_s = dendrite.s
                                 plt.plot(
                                     time_vec,dend_s,'--', 
-                                    # label=f'w*dend.{i}.{j}.{k}'
-                                    label = dend_names[count]
+                                    label=f'w*dend.{i}.{j}.{k}'
+                                    # label = dend_names[count]
                                     )
                                 count+=1
                             if SPD==True:

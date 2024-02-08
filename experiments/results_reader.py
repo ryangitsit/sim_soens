@@ -303,6 +303,7 @@ experiments = {
     'thresh_0.5_full',
     'thresh_0.5_noref_full',
     'thresh_0.5_noref_long_full',
+    'long_slow_full',
     # 'fanin_prime'
 }
 

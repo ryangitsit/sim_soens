@@ -221,9 +221,51 @@ def make_letters(patterns='zvn'):
                   0,1,0]
         })
 
+    if patterns == 'all':
+        letters.update({
+            'x': [1,0,1,
+                  0,1,0,
+                  1,0,1],
+            '+': [0,1,0,
+                  1,1,1,
+                  0,1,0],
+            "|": 
+                [0,1,0,
+                 0,1,0,
+                 0,1,0],
+            "|  ": 
+                [1,0,0,
+                 1,0,0,
+                 1,0,0,],
+            "  |": 
+                [0,0,1,
+                 0,0,1,
+                 0,0,1,],
+            "-": 
+                [0,0,0,
+                 1,1,1,
+                 0,0,0],
+            "_": 
+                [0,0,0,
+                 0,0,0,
+                 1,1,1],
+            "\\": 
+                [1,0,0,
+                 0,1,0,
+                 0,0,1],
+            "/": 
+                [0,0,1,
+                 0,1,0,
+                 1,0,0],
+            "[]": 
+                [1,1,1,
+                 1,1,1,
+                 1,1,1],
+        })
+
     return letters
 
-def plot_letters(letters):
+def plot_letters(letters,letter=None):
     import matplotlib.cm as cm
     import matplotlib.pyplot as plt
     fig, axs = plt.subplots(1, len(letters),figsize=(8,6))
@@ -239,22 +281,30 @@ def plot_letters(letters):
         axs[j].set_xticks([])
         axs[j].set_yticks([])
         axs[j].set_title(name,fontsize=14)
-        axs[j].imshow(
-            pixels,
-            interpolation='nearest',
-            cmap=cm.Blues
-            )
+
+        if letter==name:
+            axs[j].imshow(
+                pixels,
+                interpolation='nearest',
+                cmap=cm.Oranges
+                )
+        else:
+            axs[j].imshow(
+                pixels,
+                interpolation='nearest',
+                cmap=cm.Blues
+                )
     plt.show()
 
 def make_inputs(letters,spike_time):
     from sim_soens.super_input import SuperInput
     # make the input spikes for different letters
-    inputs = []
+    inputs = {}
     for name, pixels in letters.items():
         idx = np.where(np.array(letters[name])==1)[0]
         spike_times = np.ones(len(idx))*spike_time
         defined_spikes=[idx,spike_times]
-        inputs.append(SuperInput(type='defined',defined_spikes=defined_spikes))
+        inputs[name]=SuperInput(type='defined',defined_spikes=defined_spikes)
     return inputs
 
 def make_spikes(letter,spike_time):
@@ -291,3 +341,16 @@ def pixels_to_spikes(letter,spike_times):
     spikes = [list(indices),list(times)]
 
     return spikes
+
+    
+def timer_func(func): 
+    from time import time 
+    # This function shows the execution time of  
+    # the function object passed 
+    def wrap_func(*args, **kwargs): 
+        t1 = time() 
+        result = func(*args, **kwargs) 
+        t2 = time() 
+        print(f'Function {func.__name__!r} executed in {(t2-t1):.4f}s') 
+        return result 
+    return wrap_func 

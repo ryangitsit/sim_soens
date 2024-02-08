@@ -2,6 +2,7 @@ import numpy as np
 
 from .soen_components import neuron, dendrite, synapse
 from .soen_utilities import dend_load_arrays_thresholds_saturations, index_finder
+from .super_functions import timer_func
 
 class SuperNode():
 
@@ -317,6 +318,7 @@ class SuperNode():
             dendrite.downstream_inhibition = 0
             self.recursive_downstream_inhibition_counter(dendrite,dendrite)
 
+    # @timer_func
     def max_s_finder(self,dendrite):
         '''
         '''

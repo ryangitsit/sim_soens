@@ -288,8 +288,15 @@ class SuperInput():
                     kern_img[i*kernels.shape[3]+k].extend(kern[k])
         return kern_img
 
-    def kernelize(self):
-        pass
+    def kernelized_MNIST(self,digits,samples,T):
+        from keras.datasets import mnist
+        (X_train, y_train), (X_test, y_test) = mnist.load_data()
+
+        for d in range(digits):
+            for s in range(samples):
+                img = X_train[(y_train==d)][s]
+                
+        
     
     def plot(self,**kwargs):
         from sim_soens.soen_plotting import raster_plot

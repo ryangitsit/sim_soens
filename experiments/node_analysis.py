@@ -69,17 +69,19 @@ cmap = ListedColormap(sns.color_palette("ch:s=.25,rot=-.25"))
 
 
 sums = np.zeros((10,10))
-fig, axs = plt.subplots(10,10,figsize=(18,18), sharex=True, sharey=True)
-fig.subplots_adjust(hspace=0,wspace=0)
+# fig, axs = plt.subplots(10,10,figsize=(18,18), sharex=True, sharey=True)
+# fig.subplots_adjust(hspace=0,wspace=0)
 for i in range(10):
     print(r"["+"="*i+">"+" "*(10-i)+"]")
     nodes = load_nodes(3000,i,0,"thresh_full")
     for j,node in enumerate(nodes):
         data = heat_map(node)
-        sums[i][j]=sum(sum(data))
-        axs[i][j].imshow(data, extent=[0, 7, 0, 784], aspect=7/784) #, cmap=cmap)
-        axs[i][j].set_xticklabels([])
-        axs[i][j].set_yticklabels([])
+        plt.imshow(data, extent=[0, 7, 0, 784], aspect=7/784) #, cmap=cmap)
+        plt.show()
+        # sums[i][j]=sum(sum(data))
+        # axs[i][j].imshow(data, extent=[0, 7, 0, 784], aspect=7/784) #, cmap=cmap)
+        # axs[i][j].set_xticklabels([])
+        # axs[i][j].set_yticklabels([])
         
         # if i == len(axs)-1:
         #     axs[i][j].set_xticks([3.5],[str(j)],fontsize=18)
