@@ -27,7 +27,10 @@ def test_max_signals():
     nodes = []
     for i,off in enumerate(offsets):
         off = np.round(off,2)
-        node = SuperNode(name=f'node_{off}',beta_di=2*np.pi*1e3,beta_ni=2*np.pi*1e3,beta=2*np.pi*1e3,s_th=1)
+        node = SuperNode(
+            name=f'node_{off}',
+            beta_di=2*np.pi*1e3,
+            beta_ni=2*np.pi*1e3,beta=2*np.pi*1e3,s_th=1)
         node.neuron.dend_soma.offset_flux = off
         nodes.append(node)
 

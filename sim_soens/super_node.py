@@ -352,29 +352,65 @@ class SuperNode():
                         if 'ref' not in in_name:
                             dendrite.dendritic_connection_strengths[in_name] = cs_normed[i]*coeff
 
-    def normalize_fanin_prime(self,coeff):
+    def normalize_fanin_symmetric(self,buffer=0,coeff=1):
         '''
+        
         '''
-        # print("NORMALIZING")
         for dendrite in self.dendrite_list:
-            if len(dendrite.dendritic_connection_strengths) > 0:
-                max_s = self.max_s_finder(dendrite) - 2*dendrite.phi_th
-                cs_list = []
-                max_list = []
-                influence = []
+            if len(dendrite.dendritic_connection_strengths) > 0:  
+
+                # print(f"{dendrite.name} =>  phi_th = {dendrite.phi_th} :: max_s = {self.max_s_finder(dendrite)}")
+                max_phi = 0.5 - dendrite.phi_th*buffer
+
+                negatives = []
+                neg_max   = []
+                neg_dends = []
+
+                positives = []
+                pos_max   = []
+                pos_dends = []
+
+
                 for in_name,in_dend in dendrite.dendritic_inputs.items():
                     cs = dendrite.dendritic_connection_strengths[in_name]
                     if 'ref' in in_name: cs = 0
                     max_in = self.max_s_finder(in_dend)
-                    cs_list.append(cs)
-                    max_list.append(max_in)
-                    influence.append(cs*max_in)
-                if sum(influence) > max_s:
-                    norm_fact = sum(influence)/max_s
-                    cs_normed = cs_list/norm_fact
-                    for i,(in_name,cs) in enumerate(dendrite.dendritic_connection_strengths.items()):
-                        if 'ref' not in in_name:
-                            dendrite.dendritic_connection_strengths[in_name] = cs_normed[i]*coeff
+                    # print(f"  {in_name} -> {cs}") 
+
+                    if cs<0:
+                        print(cs)
+                        negatives.append(cs)
+                        neg_max.append(cs*max_in)
+                        neg_dends.append(in_dend)
+
+                    elif cs>0:
+                        positives.append(cs)
+                        pos_max.append(cs*max_in)
+                        pos_dends.append(in_dend)
+            
+
+                if sum(pos_max) > max_phi:
+                    # print(f" Normalizing input to {dendrite.name} from {sum(pos_max)} to {max_phi}")
+                    for pos_dend in pos_dends:
+                        cs = dendrite.dendritic_connection_strengths[pos_dend.name]
+                        cs_max = cs*self.max_s_finder(pos_dend)
+                        cs_proportion = cs_max/sum(pos_max)
+                        cs_normalized = max_phi*cs_proportion/self.max_s_finder(pos_dend) 
+                        # print(f"   {pos_dend} -> {cs_normalized}")
+                        dendrite.dendritic_connection_strengths[pos_dend.name] = cs_normalized*coeff
+                # print(sum(np.abs(neg_max)))
+                if sum(np.abs(neg_max)) > max_phi:
+                    # print(f" Normalizing input to {dendrite.name} from {sum(neg_max)} to {max_phi}")
+
+                    for neg_dend in neg_dends:
+                        cs = np.abs(dendrite.dendritic_connection_strengths[neg_dend.name])
+                        cs_max = cs*self.max_s_finder(neg_dend)
+                        cs_proportion = cs_max/sum(np.abs(neg_max))
+                        cs_normalized = max_phi*cs_proportion/self.max_s_finder(neg_dend)*-1
+                        # print(f"   {neg_dend} -> {cs_normalized}")
+                        dendrite.dendritic_connection_strengths[neg_dend.name] = cs_normalized*coeff
+
+                # print("\n")
 
     def random_flux(self,rand_flux):
         '''

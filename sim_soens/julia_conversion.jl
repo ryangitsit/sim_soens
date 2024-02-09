@@ -178,11 +178,10 @@ function  make_dendrites(
             synputs[synput[1]] = synput[2]
         end
 
-        # phi_vec = arr_list[1]::Vector{Float64}
-        # s_array = obj_to_vect(arr_list[2])::Vector{Vector{Float64}}
-        # r_array = obj_to_vect(arr_list[3])::Vector{Vector{Float64}}
-
-        offset = minimum( [(maximum([dend.offset_flux,-dend.phi_th])), dend.phi_th] )
+        
+        ### *** consider implementing this offset clipping function elsewhere *** ###
+        # offset = minimum( [(maximum([dend.offset_flux,-dend.phi_th])), dend.phi_th] )
+        offset = dend.offset_flux
         # println(dend.offset_flux," or ",dend.phi_th," --> ",offset)
 
         if occursin("soma",dend.name)

@@ -8,10 +8,11 @@ def arbor_update(nodes,config,digit,sample,errors):
     Updates all dendrites (except refractory) according to the arbor update rule
      - Paper on the arbor update rule: https://dl.acm.org/doi/abs/10.1145/3589737.3605972
     '''
-    
+    # print(config.max_offset)
     s = time.perf_counter()
     offset_sums = [0 for _ in range(config.digits)]
     max_hits = np.zeros(config.digits)
+    
     # if config.inh_counter: print("inh counter")
     for n,node in enumerate(nodes):
         for l,layer in enumerate(node.dendrites):
@@ -50,14 +51,23 @@ def arbor_update(nodes,config,digit,sample,errors):
                         
 
                         if config.max_offset != None:
+                            if config.max_offset=='phi_off':
+                                max_off = dend.phi_th 
+                            elif config.max_offset=='half':
+                                max_off=0.5
+                            elif config.max_offset=='inverse':
+                                max_off=0.5-dend.phi_th
+                            else:
+                                print(f"Invalid maximum offset.")
+
                             # print(f"max offset == {dend.phi_th}")
-                            if np.abs(dend.offset_flux) > dend.phi_th: 
+                            if np.abs(dend.offset_flux) > max_off: 
                                 old = dend.offset_flux
                                 max_hits[n]+=1
                                 if dend.offset_flux < 0:
-                                    dend.offset_flux = np.max([dend.offset_flux,dend.phi_th])
+                                    dend.offset_flux = np.max([dend.offset_flux,-max_off])
                                 else:
-                                    dend.offset_flux = np.min([dend.offset_flux,dend.phi_th])
+                                    dend.offset_flux = np.min([dend.offset_flux,max_off])
                                 offset_sums[n] += dend.offset_flux - old 
                             else:
                                 offset_sums[n] += step

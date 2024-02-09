@@ -140,12 +140,13 @@ def main():
         # importing os module
         place = path+name+'nodes/'
         if os.path.exists(place) == True:
-            # print("Loading nodes...")
+            print("Loading nodes...")
             files = glob.glob(place+'*')
+            print(files)
             latest = max(files, key=os.path.getctime)
             # print("latest",latest)
             file_name = latest[len(place):len(latest)-len('.pickle')]
-            # print("file name: ",file_name)
+            print("file name: ",file_name)
             nodes = picklin(place,file_name)
 
         else:
@@ -189,16 +190,18 @@ def main():
             else:
                 make_nodes(path,name,config)
 
-        # save the nodes!
-        picklit(
-            nodes,
-            f"{path}{name}/nodes/",
-            f"init_nodes"
-            )
-        
+            
+
+            # save the nodes!
+            picklit(
+                nodes,
+                f"{path}{name}/nodes/",
+                f"init_nodes"
+                )
+            
         s2 = time.perf_counter()
 
-        print(f"Total node acquisition time: {s2-s1}")
+        # print(f"Total node acquisition time: {s2-s1}")
 
         return nodes
 
@@ -333,7 +336,7 @@ def main():
                     # print_times=True,
                     jul_threading=config.jul_threading
                     )
-            
+                
                 
                 # save one set of plots for all nodes for each digit of sample 0
                 if config.plotting == 'sparse':
@@ -380,6 +383,12 @@ def main():
                 
                 offset_sums = [0 for _ in range(config.digits)]
 
+                if config.exp_name=='updates_inverse' and digit==0 and config.run%10==0:
+                    picklit(
+                        nodes,
+                        f"{path}{name}/full_nodes_prime/",
+                        f"full_0_{digit}_nodes_at_{config.run}"
+                        )
                     
                 # on all but every tenth run, make updates according to algorithm 1 with elasticity
                 if config.run%mod != 0 or config.run == 0:

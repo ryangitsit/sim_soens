@@ -207,7 +207,7 @@ heavy = [
 ]
 
 kernel_node_vertical = SuperNode(
-    name = 'heavy_node',
+    name = 'vert_positive',
     weights=heavy,
     beta_di=2*np.pi*1e3,beta_ni=2*np.pi*1e3,
     normalize_input_connection_strengths=False
@@ -216,13 +216,13 @@ kernel_node_vertical = SuperNode(
 # kernel_node_vertical.normalize_fanin(1)
 
 @timer_func
-def normfan(node,buffer=0):
+def normfan(node,buffer=0,verbose=False):
+    
     for dendrite in node.dendrite_list:
         if len(dendrite.dendritic_connection_strengths) > 0:  
 
-            print(f"{dendrite.name} =>  phi_th = {dendrite.phi_th} :: max_s = {node.max_s_finder(dendrite)}")
+            if verbose==True: print(f"{dendrite.name} =>  phi_th = {dendrite.phi_th} :: max_s = {node.max_s_finder(dendrite)}")
             max_phi = 0.5 - dendrite.phi_th*buffer
-
 
             negatives = []
             neg_max   = []
@@ -237,10 +237,10 @@ def normfan(node,buffer=0):
                 cs = dendrite.dendritic_connection_strengths[in_name]
                 if 'ref' in in_name: cs = 0
                 max_in = node.max_s_finder(in_dend)
-                print(f"  {in_name} -> {cs}") 
+                if verbose==True: print(f"  {in_name} -> {cs}") 
 
                 if cs<0:
-                    print(cs)
+                    if verbose==True: print(cs)
                     negatives.append(cs)
                     neg_max.append(cs*max_in)
                     neg_dends.append(in_dend)
@@ -252,29 +252,30 @@ def normfan(node,buffer=0):
         
 
             if sum(pos_max) > max_phi:
-                print(f" Normalizing input to {dendrite.name} from {sum(pos_max)} to {max_phi}")
+                if verbose==True: print(f" Normalizing input to {dendrite.name} from {sum(pos_max)} to {max_phi}")
                 for pos_dend in pos_dends:
                     cs = dendrite.dendritic_connection_strengths[pos_dend.name]
                     cs_max = cs*node.max_s_finder(pos_dend)
                     cs_proportion = cs_max/sum(pos_max)
                     cs_normalized = max_phi*cs_proportion/node.max_s_finder(pos_dend) 
-                    print(f"   {pos_dend} -> {cs_normalized}")
+                    if verbose==True: print(f"   {pos_dend} -> {cs_normalized}")
                     dendrite.dendritic_connection_strengths[pos_dend.name] = cs_normalized
-            print(sum(np.abs(neg_max)))
-            if sum(np.abs(neg_max)) > max_phi:
-                print(f" Normalizing input to {dendrite.name} from {sum(neg_max)} to {max_phi}")
+            if verbose==True:print(sum(np.abs(neg_max)))
 
+            if sum(np.abs(neg_max)) > max_phi:
+                if verbose==True: print(f" Normalizing negative input to {dendrite.name} from {sum(neg_max)} to {max_phi}")
                 for neg_dend in neg_dends:
                     cs = np.abs(dendrite.dendritic_connection_strengths[neg_dend.name])
                     cs_max = cs*node.max_s_finder(neg_dend)
                     cs_proportion = cs_max/sum(np.abs(neg_max))
                     cs_normalized = max_phi*cs_proportion/node.max_s_finder(neg_dend)*-1
-                    print(f"   {neg_dend} -> {cs_normalized}")
+                    if verbose==True: print(f"   {neg_dend} -> {cs_normalized}")
                     dendrite.dendritic_connection_strengths[neg_dend.name] = cs_normalized
 
-            print("\n")
+            if verbose==True:print("\n")
+    return node
 
-normfan(kernel_node_vertical,buffer=0)
+# kernel_node_vertical = normfan(kernel_node_vertical,buffer=0)
 
 #%%
 def steady_input(node,inpt):
@@ -290,19 +291,26 @@ def steady_input(node,inpt):
                     dend.offset_flux = 0.5 #+ dend.phi_th#- dend.phi_th
 
 
-                    print(dend.name,dend.phi_th)
+                    # print(dend.name,dend.phi_th)
 
     return node
 
 # kernel_node_vertical.plot_structure()
 
-
+#%%
 for k,v in inputs.items():
 
 
-    if k=="|": #1==1: #
+    if k=="|": #1==1: #k=="|": #
         print(k,letters[k])
 
+        kernel_node_vertical = SuperNode(
+            name = 'vert_symmetric',
+            weights=heavy,
+            beta_di=2*np.pi*1e3,beta_ni=2*np.pi*1e3,
+            normalize_input_connection_strengths=False
+            )
+        kernel_node_vertical = normfan(kernel_node_vertical,buffer=0,verbose=True)
 
         plot_letters(letters,k)
 
@@ -318,19 +326,23 @@ for k,v in inputs.items():
             nodes   = [kernel_node_vertical],
             tf      = duration+500,
             dt      = 1.0,
-            backend = 'python'
+            backend = 'julia'
 
         )
 
         kernel_node_vertical.plot_arbor_activity(net,phir=True)
         kernel_node_vertical.plot_neuron_activity(phir=True,ref=True)
 
+        # del(net)
+        # del(kernel_node_vertical)
+
 #%%
 for dend in kernel_node_vertical.dendrite_list:
-    if 'lay1' in dend.name:
+    if 'lay2' in dend.name:
         plt.plot(dend.phi_r,'--',label=dend.name)
-        # plt.plot(dend.s)
+        plt.plot(dend.s)
         # print(dend.name)
+plt.ylim(0,1)
 plt.legend()
 plt.show()
 

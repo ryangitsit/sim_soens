@@ -17,6 +17,7 @@ FOR %%a IN (0.05, 0.1, 0.25) DO (
                             --rand_flux     %%e^
                             --max_offset    %%f^
                             --exin          20,0,80^
+                            --inh_counter   True^
                             --duration      1000^
                             --beta          3^
                             --dt            1.0^

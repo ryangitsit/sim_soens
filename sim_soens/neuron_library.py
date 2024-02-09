@@ -88,8 +88,10 @@ class MNISTNode(SuperNode):
             self.normalize_fanin(self.fan_coeff)
             print(f"Building {self.name} [======> ]", end="\r")
         elif self.norm_fanin_prime:
-            print(f"PRIME fanin normalization with coefficient of {self.fan_coeff}")
-            self.normalize_fanin_prime(self.fan_coeff)
+
+            print(f"Symmetric fanin normalization with buffer of {self.fan_buffer} and coeff of {self.fan_coeff}")
+
+            self.normalize_fanin_symmetric(buffer=self.fan_buffer,coeff=self.fan_coeff)
 
 
         self.make_and_connect_synapses()

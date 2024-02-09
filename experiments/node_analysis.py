@@ -1,6 +1,7 @@
 #%%
 import pandas as pd
 import matplotlib.pyplot as plt
+import seaborn as sns
 import numpy as np
 import sys
 sys.path.append('../sim_soens')
@@ -15,6 +16,82 @@ def load_nodes(run,digit,sample,name):
     #     print(" ",node.name)
     return nodes
 
+nodes = picklin(f"results\\MNIST\\updates_inverse\\full_nodes_prime",f"full_0_0_nodes_at_12")
+node = nodes[0]
+#%%
+
+plt.style.use('seaborn-muted')
+
+phis = [max(dend.s) for dend in node.dendrite_list]
+plt.hist(phis,bins=50,label='max_s')
+# plt.show()
+
+phis = [max(dend.phi_r) for dend in node.dendrite_list]
+plt.hist(phis,bins=50,label='max_phis')
+# plt.show()
+
+
+offsets = [dend.offset_flux for dend in node.dendrite_list]
+plt.hist(offsets,bins=50,label='offsets')
+# plt.show()
+
+plt.legend()
+plt.show()
+
+#%%
+
+for lay in range(1,6):
+    offsets = []
+    phis    = []
+    signals = []
+    for dend in node.dendrite_list:
+        if f'lay{lay}' in dend.name:
+            offsets.append(dend.offset_flux)
+            phis.append(max(dend.phi_r))
+            signals.append(max(dend.s))
+
+    plt.hist([signals,phis,offsets],bins=15,label=['signals','phis','offsets'])
+    # plt.hist(phis,   bins=50,label='max_phis')
+    # plt.hist(phis,   bins=50,label='max_s')  
+    plt.legend()
+    plt.title(f"Layer {lay}")
+    plt.show()
+
+#%%
+
+lays = [[] for _ in range(len(node.dendrites))]
+phays = [[] for _ in range(len(node.dendrites))]
+for l,layer in enumerate(node.dendrites):
+    for g,group in enumerate(layer):
+        for d,dend in enumerate(group):
+            lays[l].append(dend.s)
+            phays[l].append(dend.phi_r)
+
+# plt.style.use('seaborn-muted')
+colors = plt.rcParams["axes.prop_cycle"].by_key()["color"]
+plt.figure(figsize=(8,4))
+for l,lay in enumerate(lays):
+    if l == 0:
+        lw = 4
+    else:
+        lw = 2
+    plt.plot(
+        np.mean(lay,axis=0),
+        linewidth=lw,
+        color=colors[l%len(colors)],
+        label=f'Layer {l} Mean Signal'
+        )
+    plt.plot(
+        np.mean(phays[l],axis=0),
+        '--',
+        linewidth=.5,
+        color=colors[l%len(colors)],
+
+        # label=f'Layer {l} Mean Flux'
+        )
+plt.legend()
+plt.show()
+#%%
 
 def heat_map(node):
     data = np.zeros((784,7))
