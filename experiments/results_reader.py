@@ -298,13 +298,16 @@ experiments = {
     # "speed_target15_full3",
     # "tiling_deep_full",
     # "speed_target15_full_fan1",
-    'thresh_full',
-    'thresh_slow_full',
-    'thresh_0.5_full',
-    'thresh_0.5_noref_full',
-    'thresh_0.5_noref_long_full',
-    'long_slow_full',
+    # 'thresh_full',
+    # 'thresh_slow_full',
+    # 'thresh_0.5_full',
+    # 'thresh_0.5_noref_full',
+    # 'thresh_0.5_noref_long_full',
+    # 'long_slow_full',
     # 'fanin_prime'
+    'updates_inverse',
+    'updates_fresh',
+    'updates_coeff'
 }
 
 
@@ -390,7 +393,7 @@ def res_performances(path):
         plt.show()
 
 path = 'results/res_MNIST/'
-res_performances(path)
+# res_performances(path)
 # res_rasters(path)
 
 def evolve(path):

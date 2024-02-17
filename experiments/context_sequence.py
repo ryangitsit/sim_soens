@@ -836,6 +836,11 @@ def main():
             
 
 
+    # make node and run all combinations of named input patters, generate a multiplot
+    node = make_ZN_node()
+    names = ['z','n']
+    run_and_plot(node,names)
+
     # l1 = 'z'
     # l2 = 'n'
     # names=['z','v','n']
@@ -847,9 +852,9 @@ def main():
 
     # run_learning_sequence()
         
-    run_sequence()
+    # run_sequence()
 
-    names = ['z','v','n','x','+']          
+    # names = ['z','v','n','x','+']          
     # node = learn(names,'n','x')
 
     # branch_test()
