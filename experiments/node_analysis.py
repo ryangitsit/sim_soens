@@ -8,170 +8,339 @@ sys.path.append('../sim_soens')
 sys.path.append('../')
 from sim_soens.super_functions import *
 
-
+#%%
 def load_nodes(run,digit,sample,name):
     nodes = picklin(f"results\\MNIST\\{name}\\full_nodes",f"full_{sample}_{digit}_nodes_at_{run}")
     # print("Loaded nodes:")
     # for node in nodes:
     #     print(" ",node.name)
     return nodes
-
-nodes = picklin(f"results\\MNIST\\updates_inverse\\full_nodes_prime",f"full_0_0_nodes_at_920")
-node = nodes[0]
-#%%
-
-plt.style.use('seaborn-muted')
-
-phis = [max(dend.s) for dend in node.dendrite_list]
-plt.hist(phis,bins=50,label='max_s')
-# plt.show()
-
-phis = [max(dend.phi_r) for dend in node.dendrite_list]
-plt.hist(phis,bins=50,label='max_phis')
-# plt.show()
-
-
-offsets = [dend.offset_flux for dend in node.dendrite_list]
-plt.hist(offsets,bins=50,label='offsets')
-# plt.show()
-
-plt.legend()
-plt.show()
+nodes = picklin(f"results\\MNIST\\updates_cobuff\\full_nodes_prime",f"full_{10}_{0}_nodes_at_{360}")
 
 #%%
 
-for lay in range(1,6):
-    offsets = []
-    phis    = []
-    signals = []
-    for dend in node.dendrite_list:
-        if f'lay{lay}' in dend.name:
-            offsets.append(dend.offset_flux)
-            phis.append(max(dend.phi_r))
-            signals.append(max(dend.s))
-
-    plt.hist([signals,phis,offsets],bins=15,label=['signals','phis','offsets'])
-    # plt.hist(phis,   bins=50,label='max_phis')
-    # plt.hist(phis,   bins=50,label='max_s')  
-    plt.legend()
-    plt.title(f"Layer {lay}")
-    plt.show()
+loaded_weights = picklin('./saved_data/','W_symmetric_relu_nobias_1000')
+print(len(loaded_weights))
+print(loaded_weights[0][0])
 
 #%%
+# print(len(loaded_weights[0]))
+# print(len(loaded_weights[0][0]))
+# print(len(loaded_weights[0][0][0]))
+# print(len(loaded_weights[0][0][0]))
+# print(len(nodes[0].dendrites))
 
-lays = [[] for _ in range(len(node.dendrites))]
-phays = [[] for _ in range(len(node.dendrites))]
-for l,layer in enumerate(node.dendrites):
-    for g,group in enumerate(layer):
-        for d,dend in enumerate(group):
-            lays[l].append(dend.s)
-            phays[l].append(dend.phi_r)
-
-# plt.style.use('seaborn-muted')
-colors = plt.rcParams["axes.prop_cycle"].by_key()["color"]
-plt.figure(figsize=(8,4))
-for l,lay in enumerate(lays):
-    if l == 0:
-        lw = 4
-    else:
-        lw = 2
-    plt.plot(
-        np.mean(lay,axis=0),
-        linewidth=lw,
-        color=colors[l%len(colors)],
-        label=f'Layer {l} Mean Signal'
-        )
-    plt.plot(
-        np.mean(phays[l],axis=0),
-        '--',
-        linewidth=.5,
-        color=colors[l%len(colors)],
-
-        # label=f'Layer {l} Mean Flux'
-        )
-plt.legend()
-plt.show()
+nodes = [nodes[0]]
+for n,node in enumerate(nodes):
+    for i,layer in enumerate(node.dendrites[2:]):
+        print(len(layer))
+        for j,dens in enumerate(layer):
+            for k,d in enumerate(dens):
+                # print(d.name)
+                # print(loaded_weights[n][i][j][k])
+                d.offset_flux = loaded_weights[n][i][j][k]
 #%%
 
-def heat_map(node):
-    data = np.zeros((784,7))
+loc = f"results\\MNIST\\updates_cobuff\\"
+digs = 10
+all_S = []
 
-    count = 0
-    for l,layer in enumerate(node.dendrites[::-1]):
+runs = range(360,390,1)
+# runs = range(360,362,1)
+# runs = [20,30]
+S = []
+length=len(runs)
 
-        if l == 6:
-            # print("soma")
-            midpoint  = 784/2
-            halflayer = 1
 
-        elif l==5:
-            # print("penultimate")
-            midpoint  = 784/2 
-            halflayer = 4
+all_S = [ [[] for _ in range(digs)] for _ in range(digs)]
 
-        elif l==4:
-            # print("penultimate")
-            midpoint  = 784/2 
-            halflayer = 24
+#%%
+for i,run in enumerate(runs):
+    for dig in range(digs):
+        print(f"Digit {dig} - Run {run}",end="\r")
+        print("  ["+"="*i+">"+" "*(length-i)+"]"+f"{i}/{length}",end="\r")
 
+        # Nodes at a given run seeing a given sample of a given digit
+        nodes = picklin(f"results\\MNIST\\updates_cobuff\\full_nodes_prime",f"full_{10+i}_{dig}_nodes_at_{run}")
+
+
+        # iterate over each node in this situation
+        for d in range(digs):
+
+            node = nodes[d]
+
+            # collect the 7 average signals of the penultimate layer 
+            signal_last = []
+            for dend in node.dendrites[1][0]:
+                signal_last.append(np.mean(dend.s))
+
+            # append them to the confusion matrix
+            all_S[dig][d].append(signal_last)
+
+    
+#%%
+loc = f"results\\MNIST\\updates_cobuff\\"
+colors = sns.color_palette("muted")
+fig, axs = plt.subplots(digs,digs,figsize=(20,12))
+fig.subplots_adjust(wspace=0,hspace=0)    
+for i in range(digs):
+    for j in range(digs):
+        S = np.array(all_S[i][j])
+        if i == j == 0:
+            axs[i][j].plot(S,label=np.arange(1,len(S[0])+1,1))
         else:
-            midpoint  = 784/2 
-            halflayer = np.ceil(len(layer))
-
-        # print(f"layer = {l} :: groups = {len(layer)} :: mid = {midpoint} :: halflayer = {halflayer}")
-        for g,group in enumerate(layer):
-            for d,dend in enumerate(group):
-
-                idx = int(count + midpoint - halflayer)
-                s = np.mean(dend.s)*1000
-                # print(idx,l,s)
-                data[idx][l] = s
-
-                count+=1
-        count=0
-
-
-    # plt.figure(figsize=(10,10))
-    # plt.imshow( data, extent=[0, 7, 0, 784], aspect=7/784 )
-    # plt.title(node.name)
-    # plt.show()
-        
-    return data  
-
-#%%
-import seaborn as sns 
-from matplotlib.colors import ListedColormap
-cmap = ListedColormap(sns.color_palette("ch:s=.25,rot=-.25"))
-# cmap = sns.light_palette("Greens", as_cmap=True)
-
-
-sums = np.zeros((10,10))
-fig, axs = plt.subplots(10,10,figsize=(18,18), sharex=True, sharey=True)
-fig.subplots_adjust(hspace=0,wspace=0)
-for i in range(10):
-    print(r"["+"="*i+">"+" "*(10-i)+"]")
-    # nodes = load_nodes(3000,i,0,"thresh_full")
-    for j,node in enumerate(nodes):
-        data = heat_map(node)
-        # plt.imshow(data, extent=[0, 7, 0, 784], aspect=7/784) #, cmap=cmap)
-        # plt.show()
-        sums[i][j]=sum(sum(data))
-        axs[i][j].imshow(data, extent=[0, 7, 0, 784], aspect=7/784) #, cmap=cmap)
+            axs[i][j].plot(S)
         axs[i][j].set_xticklabels([])
         axs[i][j].set_yticklabels([])
+        # axs[i][j].set_ylim(0,0.5)
+        if i == j:
+            axs[i][j].set_facecolor("lavender")
+        else:
+            axs[i][j].set_facecolor("whitesmoke")
+        # axs[i][j].set_title(f"ith digit {i} :: jth node {j}")
+# plt.suptitle(f"Digit Seen vs Class Node for Signal Trajectories of Pre-Somatic Dendritic Layer",fontsize=28)
+lines = [] 
+labels = []     
+for ax in fig.axes: 
+    Line, Label = ax.get_legend_handles_labels() 
+    lines.extend(Line) 
+    labels.extend(Label) 
+fig.text(0.5, .9, f"Digit vs Node for Signal Trajectories of Pre-Somatic Dendritic Layer: Runs {min(runs)} -> {max(runs)}", ha='center',fontsize=24)
+fig.text(0.5, 0.1, 'Class Node', ha='center', fontsize=24)
+fig.text(0.09, 0.5, 'Digit Seen', va='center', rotation='vertical', fontsize=24)
+fig.legend(lines, labels, bbox_to_anchor=(0.94, 0.75), loc='upper right', borderaxespad=0) 
+plt.subplots_adjust(bottom=.15)
+# plt.tight_layout()
+plt.savefig(loc+f"DNsignals_{min(runs)}-{max(runs)}")
+plt.show()
+
+#%%
+
+def alternodes_inhibition(exp_name,all_S,alt_type='inhibit',renorm_fanin=False):
+    print("HERE")
+    nodes = picklin(f"results\\MNIST\\{exp_name}\\nodes\\","init_nodes.pickle")
+    config = picklin(f"results\\MNIST\\{exp_name}\\","config.pickle")
+    node = nodes[0]
+    print(node.neuron.dend_soma.dendritic_connection_strengths)
+
+    if alt_type=="inhibit":
+        factor = -1
         
-        if i == len(axs)-1:
-            axs[i][j].set_xticks([3.5],[str(j)],fontsize=18)
-        # if j==0:
-        #     axs[i][j].set_yticks([1],[str(i)],fontsize=18)
 
-fig.xticks(np.arange(0,10,1),np.arange(0,10,1),fontsize=18)
-fig.yticks(np.arange(0,10,1),np.arange(0,10,1),fontsize=18)
-plt.show()
+    for  i, node in enumerate(nodes):
+        print(f"\nNode {i}")
+        # print(len(all_S[i][i]))
+        avg_s = np.round(np.mean(all_S[i][i],axis=0),2)
+        print(avg_s)
+        for ii,s in enumerate(avg_s):
+            if s < 0.1:
+                print(f"  {ii} --> {node.dendrites[1][0][ii].name}")
+                # print(node.dendrites[1][0][ii].name)
+                node.neuron.dend_soma.dendritic_connection_strengths[node.dendrites[1][0][ii].name] *= factor 
+
+        print(node.neuron.dend_soma.dendritic_connection_strengths)
+
+    if renorm_fanin==True:
+        for  i, node in enumerate(nodes):
+            node.normalize_fanin_symmetric(buffer=config.fan_buffer,coeff=config.fan_coeff)
+        renorm_str='_renormed'
+    else:
+        renorm_str=''
+        
+    print(node.neuron.dend_soma.dendritic_connection_strengths)
+    new_name = exp_name + '_alternode_inh' + renorm_str
+    new_path = f"results\\MNIST\\{new_name}\\nodes\\"
+    config.exp_name  = new_name
+    config.alternode = new_name
+    picklit(
+        nodes,
+        new_path,
+        "init_nodes")
+    picklit(
+        config,
+        f"results\\MNIST\\{new_name}\\",
+        "config"
+    )
+    
+    
+
+print(np.array(all_S).shape)
+exp_name = "updates_cobuff"
+alternodes_inhibition(exp_name,all_S,alt_type='inhibit',renorm_fanin=True)
+
+# def alternodes_pruning(exp_name):
+#     pass
+
+# def alternodes_renormalization(exp_name):
+#     pass
 
 
-plt.imshow(sums)
-plt.show()
+
+
+
+
+
+
+#%%
+# #%%
+# nodes = picklin(f"results\\MNIST\\updates_cobuff\\full_nodes_prime",f"full_10_3_nodes_at_360")
+# node = nodes[0]
+# #%%
+
+# plt.style.use('seaborn-muted')
+
+# phis = [max(dend.s) for dend in node.dendrite_list]
+# plt.hist(phis,bins=50,label='max_s')
+# # plt.show()
+
+# phis = [max(dend.phi_r) for dend in node.dendrite_list]
+# plt.hist(phis,bins=50,label='max_phis')
+# # plt.show()
+
+
+# offsets = [dend.offset_flux for dend in node.dendrite_list]
+# plt.hist(offsets,bins=50,label='offsets')
+# # plt.show()
+
+# plt.legend()
+# plt.show()
+
+# #%%
+
+# for lay in range(1,6):
+#     offsets = []
+#     phis    = []
+#     signals = []
+#     for dend in node.dendrite_list:
+#         if f'lay{lay}' in dend.name:
+#             offsets.append(dend.offset_flux)
+#             phis.append(max(dend.phi_r))
+#             signals.append(max(dend.s))
+
+#     plt.hist([signals,phis,offsets],bins=15,label=['signals','phis','offsets'])
+#     # plt.hist(phis,   bins=50,label='max_phis')
+#     # plt.hist(phis,   bins=50,label='max_s')  
+#     plt.legend()
+#     plt.title(f"Layer {lay}")
+#     plt.show()
+
+# #%%
+# node=nodes[0]
+# lays = [[] for _ in range(len(node.dendrites))]
+# phays = [[] for _ in range(len(node.dendrites))]
+# for l,layer in enumerate(node.dendrites):
+#     for g,group in enumerate(layer):
+#         for d,dend in enumerate(group):
+#             if np.mean(dend.s) != 0:
+#                 lays[l].append(dend.s)
+#             if np.mean(dend.phi_r) != 0:
+#                 phays[l].append(dend.phi_r)
+
+# # plt.style.use('seaborn-muted')
+# colors = plt.rcParams["axes.prop_cycle"].by_key()["color"]
+# plt.figure(figsize=(8,4))
+# for l,lay in enumerate(lays):
+#     if l == 0:
+#         lw = 4
+#     else:
+#         lw = 2
+#     plt.plot(
+#         np.mean(lay,axis=0),
+#         linewidth=lw,
+#         color=colors[l%len(colors)],
+#         label=f'Layer {l} Mean Signal'
+#         )
+#     plt.plot(
+#         np.mean(phays[l],axis=0),
+#         '--',
+#         linewidth=.5,
+#         color=colors[l%len(colors)],
+
+#         # label=f'Layer {l} Mean Flux'
+#         )
+# plt.legend()
+# plt.show()
+# #%%
+
+# def heat_map(node):
+#     data = np.zeros((784,7))
+
+#     count = 0
+#     for l,layer in enumerate(node.dendrites[::-1]):
+
+#         if l == 6:
+#             # print("soma")
+#             midpoint  = 784/2
+#             halflayer = 1
+
+#         elif l==5:
+#             # print("penultimate")
+#             midpoint  = 784/2 
+#             halflayer = 4
+
+#         elif l==4:
+#             # print("penultimate")
+#             midpoint  = 784/2 
+#             halflayer = 24
+
+#         else:
+#             midpoint  = 784/2 
+#             halflayer = np.ceil(len(layer))
+
+#         # print(f"layer = {l} :: groups = {len(layer)} :: mid = {midpoint} :: halflayer = {halflayer}")
+#         for g,group in enumerate(layer):
+#             for d,dend in enumerate(group):
+
+#                 idx = int(count + midpoint - halflayer)
+#                 s = np.mean(dend.s)*1000
+#                 # print(idx,l,s)
+#                 data[idx][l] = s
+
+#                 count+=1
+#         count=0
+
+
+#     # plt.figure(figsize=(10,10))
+#     # plt.imshow( data, extent=[0, 7, 0, 784], aspect=7/784 )
+#     # plt.title(node.name)
+#     # plt.show()
+        
+#     return data  
+
+# #%%
+# import seaborn as sns 
+# from matplotlib.colors import ListedColormap
+# cmap = ListedColormap(sns.color_palette("ch:s=.25,rot=-.25"))
+# # cmap = sns.light_palette("Greens", as_cmap=True)
+
+
+# sums = np.zeros((10,10))
+# fig, axs = plt.subplots(10,10,figsize=(18,18), sharex=True, sharey=True)
+# fig.subplots_adjust(hspace=0,wspace=0)
+# for i in range(10):
+#     print(r"["+"="*i+">"+" "*(10-i)+"]")
+#     # nodes = load_nodes(3000,i,0,"thresh_full")
+#     for j,node in enumerate(nodes):
+#         data = heat_map(node)
+#         # plt.imshow(data, extent=[0, 7, 0, 784], aspect=7/784) #, cmap=cmap)
+#         # plt.show()
+#         sums[i][j]=sum(sum(data))
+#         axs[i][j].imshow(data, extent=[0, 7, 0, 784], aspect=7/784) #, cmap=cmap)
+#         axs[i][j].set_xticklabels([])
+#         axs[i][j].set_yticklabels([])
+        
+#         if i == len(axs)-1:
+#             axs[i][j].set_xticks([3.5],[str(j)],fontsize=18)
+#         # if j==0:
+#         #     axs[i][j].set_yticks([1],[str(i)],fontsize=18)
+
+# fig.xticks(np.arange(0,10,1),np.arange(0,10,1),fontsize=18)
+# fig.yticks(np.arange(0,10,1),np.arange(0,10,1),fontsize=18)
+# plt.show()
+
+
+# plt.imshow(sums)
+# plt.show()
 
 #%%
 def mem_analysis(span):
@@ -310,16 +479,16 @@ def get_ordered_files(path):
 # nodes = load_nodes(0,0,0,'unbounded_deep')
 # offset_analysis(path,files,digit,layer)
 
-name = 'thresh_full'
-# name = 'target50_maxflux_full'
-# name = 'MNIST_large'
-# name = 'MNIST_asymmetic'
-nodes = picklin(f"results\\MNIST\\{name}\\nodes",f"eternal_nodes")
-# for node in nodes:
-#     print(node.name)
-node = nodes[0]
-print(node.__dict__.keys())
-print(node.seen,node.passed)
+# name = 'thresh_full'
+# # name = 'target50_maxflux_full'
+# # name = 'MNIST_large'
+# # name = 'MNIST_asymmetic'
+# nodes = picklin(f"results\\MNIST\\{name}\\nodes",f"eternal_nodes")
+# # for node in nodes:
+# #     print(node.name)
+# node = nodes[0]
+# print(node.__dict__.keys())
+# print(node.seen,node.passed)
 
 # node.plot_structure()
 # print(node.neuron.name)
@@ -474,7 +643,7 @@ def get_trajects(path):
             plot_offsets(picklin(path,file))
 
 
-path = 'results/jul_testing/early_plots'
+# path = 'results/jul_testing/early_plots'
 # get_trajects(path)
 
 

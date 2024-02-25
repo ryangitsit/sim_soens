@@ -47,21 +47,22 @@ def setup_argument_parser():
     parser.add_argument( "--norm_fanin_prime",  type=bool,          default = None     )
     parser.add_argument( "--lay_weighting",     type=list_of_ints,  default = None     )
     parser.add_argument( "--fan_coeff",         type=float,         default = 1.5      )
-    parser.add_argument( "--fan_buffer",         type=float,        default = 0        )
+    parser.add_argument( "--fan_buffer",        type=float,         default = 0        )
     parser.add_argument( "--dt",                type=float,         default = .1       )
     parser.add_argument( "--target",            type=int,           default = 10       )
-    parser.add_argument( "--max_offset",        type=str,           default = "phi_th"     )
+    parser.add_argument( "--max_offset",        type=str,           default = "phi_th" )    
     parser.add_argument( "--tiling",            type=bool,          default = None     )
+    parser.add_argument( "--alternode",         type=str,           default = None     )
+    parser.add_argument( "--weight_transfer",   type=str,           default = None     )
+    parser.add_argument( "--offset_transfer",   type=str,           default = None     )
+
 
 
     parser.add_argument( '--N'                 , type=int,        default = 98            )
     parser.add_argument( '--C'                 , type=int,        default = 3             )
-    # parser.add_argument( '--digits'            , type=int,        default = 3             )
-    # parser.add_argument( '--samples'           , type=int,        default = 10            )
     parser.add_argument( '--seed'              , type=int,        default = 442           )
-    # parser.add_argument( '--duration'          , type=int,        default = 1000          )
     parser.add_argument( '--runs'              , type=int,        default = 25            )
-    # parser.add_argument( '--eta'               , type=float,      default = 0.005         )
+
 
     parser.add_argument( '--nodes_tau'         , type=int,        default = 50            )
     parser.add_argument( '--nodes_beta'        , type=float,      default = 2*np.pi*10**3 )

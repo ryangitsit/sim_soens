@@ -1,4 +1,4 @@
-import numpy as nps
+import numpy as np
 import matplotlib.pyplot as plt
 from wakepy import keep
 # Import writer class from csv module
@@ -27,6 +27,16 @@ import multiprocess as mp
 
 def main():
     np.random.seed(10)
+
+    def offset_readin(nodes,config):
+        
+        loaded_weights = picklin('./saved_data/',config.offset_transfer)
+        for n,node in enumerate(nodes):
+            for i,layer in enumerate(node.dendrites[2:]):
+                for j,dens in enumerate(layer):
+                    for k,d in enumerate(dens):
+                        d.offset_flux = loaded_weights[n][i][j][k]
+        return nodes
     
     def make_nodes(path,name,config):
         print("Making new nodes...")
@@ -67,6 +77,10 @@ def main():
                 "name"      :f'node_{node}'
             }
             params.update(config.__dict__)
+
+            if config.weight_transfer is not None:
+                params['loaded_weights'] = picklin('./saved_data/',config.weight_transfer)[node]
+                                        
             nodes.append(MNISTNode(**params))
             # if node == 0:
             #     nodes[0].plot_structure()
@@ -123,6 +137,8 @@ def main():
             "name"        :f'node_{n}',
             "fan_coeff"   :config.fan_coeff
         }
+        if config.weight_transfer is not None:
+            params['loaded_weights'] = picklin('./saved_data/',config.weight_transfer)[n]
         params.update(config.__dict__)
         node = MNISTNode(**params)
         return_dict[node.name] = node
@@ -185,10 +201,16 @@ def main():
                         for other_node in nodes:
                             if other_node.name != node.name:
                                 node.neuron.add_output(other_node.synapse_list[-1])
-                                # print("-- ",other_node.synapse_list[-1].name)
+                                # print("-- ",other_node.synapse_list[-1].name)]
+                
+                if config.offset_transfer is not None:
+                    nodes = offset_readin(nodes,config)
 
             else:
                 make_nodes(path,name,config)
+                if config.offset_transfer is not None:
+                    nodes = offset_readin(nodes,config)
+
 
             
 
@@ -203,6 +225,8 @@ def main():
 
         # print(f"Total node acquisition time: {s2-s1}")
 
+
+
         return nodes
 
 
@@ -211,63 +235,42 @@ def main():
         Trains nodes on MNIST dataset
         '''
         pass_arr = np.zeros(config.digits)
-        if 'unbounded' == config.exp_name:
-            desired = [
-                [30,10,10],
-                [10,30,10],
-                [10,10,30],
-            ]
 
-        if 'unbounded_fan' == config.exp_name:
-            desired = [
-                [60,40,40],
-                [40,60,40],
-                [40,40,60],
-            ]
+        # if 'unbounded' == config.exp_name:
+        #     desired = [
+        #         [30,10,10],
+        #         [10,30,10],
+        #         [10,10,30],
+        #     ]
 
-        elif config.dataset=='Heidelberg':
-            desired = [
-                [30,10,10],
-                [10,30,10],
-                [10,10,30],
-            ]
-        else:
-            desired = []
-            for idx in range(config.digits):
-                desired.append([0 for _ in range(config.digits)])
-            target = 10
-            # if 'long' in config.exp_name: target=10
-            for idx in range(config.digits):
-                desired[idx][idx] = config.target
+        # if 'unbounded_fan' == config.exp_name:
+        #     desired = [
+        #         [60,40,40],
+        #         [40,60,40],
+        #         [40,40,60],
+        #     ]
+
+        # elif config.dataset=='Heidelberg':
+        #     desired = [
+        #         [30,10,10],
+        #         [10,30,10],
+        #         [10,10,30],
+        #     ]
+
+        # else:
+
+        desired = []
+        for idx in range(config.digits):
+            desired.append([0 for _ in range(config.digits)])
+
+        for idx in range(config.digits):
+            desired[idx][idx] = config.target
 
         if config.run ==0: print(desired)
 
         if config.tiling == True:
-            print("Tiling")
-            idx_groups = {}
+            idx_groups,idx_list = tile()
 
-            for i in range(7):
-                for j in range(7):
-                    idx_groups[f"{i}-{j}"] = []
-
-            count = 0
-            modsi = 0
-            modsj = 0
-            for i in range(28):
-                if i%4 == 0 and i != 0 and i != 28:
-                    modsi+=1
-                for j in range(28):
-                    if j%4 == 0 and j != 0 and j != 28:
-                        modsj+=1
-                    idx_groups[f"{modsi}-{modsj}"].append((i,j,count))
-                    count+=1
-                modsj=0
-
-            idx_list = []        
-            for tile,pixels in idx_groups.items():
-                for (i,j,count) in pixels:
-                    idx_list.append(count)
-            if config.run == 0: print(idx_list)
 
         # backend = 'julia'
         # print('Backend: ', config.backend)
@@ -285,10 +288,9 @@ def main():
         mod = config.samples*config.digits
         # itereate over each sample
         sample = config.run%50
+
         for sample in range(sample,sample+1):
             
-            # count errors for this sample
-            # total_errors = [[] for i in range(3)]
 
             # track outputs for this samples
             outputs = [[] for i in range(config.digits)]
@@ -298,17 +300,35 @@ def main():
             shuffled = np.arange(0,config.digits,1)
             np.random.shuffle(shuffled)
             mhs = np.zeros(config.digits)
+
             for digit in range(config.digits):
                 digit = shuffled[digit]
 
                 start = time.perf_counter()
 
-                # create input opject for appropriate class and sample
-                input_ = SuperInput(
-                    type="defined",
-                    channels=784,
-                    defined_spikes=dataset[digit][sample]
-                    )
+                if config.dataset!='keras':
+                    # create input opject for appropriate class and sample
+                    input_ = SuperInput(
+                        type="defined",
+                        channels=784,
+                        defined_spikes=dataset[digit][sample]
+                        )
+                    
+                else:
+                    input_ = SuperInput(
+                        type="defined",
+                        channels=784,
+                        defined_spikes=[[],[]]
+                        )
+                    
+                    (X_train, y_train), (X_test, y_test) = dataset
+                    X = (X_train[(y_train == digit)][sample]).reshape(784)
+                    X_max = np.max(X)
+                    x = (X/X_max)*.5
+                    for i,x in enumerate(X):
+                        for node in nodes:
+                            node.dendrite_list[::-1][i].offset_flux = x
+
 
                 # attach same input to all neurons
                 for node in nodes:
@@ -337,6 +357,22 @@ def main():
                     jul_threading=config.jul_threading
                     )
                 
+
+                record_penultimate_signals=True
+                if record_penultimate_signals==True:
+                    penultimte_signals = []
+                    for itr, node in enumerate(nodes):
+                        signal_last = []           
+                        for dend in node.dendrites[1][0]:
+                            signal_last.append(np.mean(dend.s))
+                        # append them to the confusion matrix
+                        penultimte_signals.append(signal_last)
+                    
+                    with open(f'{path}{name}/penultimate.csv', 'a') as f_object:
+                        writer_object = writer(f_object)
+                        writer_object.writerow([nodes[0].run,digit,penultimte_signals])
+                        f_object.close()
+                    
                 
                 # save one set of plots for all nodes for each digit of sample 0
                 if config.plotting == 'sparse':
@@ -344,8 +380,6 @@ def main():
                         plot_MNIST_nodes(nodes,digit,sample,config.run,name,path)
                 elif config.plotting == 'full':
                     plot_MNIST_nodes(nodes,digit,sample,config.run,name,path)
-                # if "fanin" in config.exp_name and sample == 9:
-                #     plot_MNIST_nodes(nodes,digit,sample,config.run)
                 
 
                 # keep track of run time costs
@@ -383,11 +417,11 @@ def main():
                 
                 offset_sums = [0 for _ in range(config.digits)]
 
-                if config.exp_name=='updates_inverse' and digit==0 and config.run%10==0:
+                if config.exp_name=='thresh_full_rerun' and config.run>=500 and config.run<550:
                     picklit(
                         nodes,
                         f"{path}{name}/full_nodes_prime/",
-                        f"full_0_{digit}_nodes_at_{config.run}"
+                        f"full_{sample}_{digit}_nodes_at_{config.run}"
                         )
                     
                 # on all but every tenth run, make updates according to algorithm 1 with elasticity
@@ -400,7 +434,13 @@ def main():
                         # print("Probabilistic update")
                         nodes, offset_sums, max_hits = probablistic_arbor_update(nodes,config,digit,sample,errors)
                     # mhs[digit] = max_hits
-                # on the tenth run test, but don't update -- save full nodes with data
+                        
+                    for node in nodes:
+                        for dend in node.dendrite_list:
+                            dend.s = []
+                            dend.phi_r = []
+                        
+                # on the modth run test, but don't update -- save full nodes with data   
                 else:
                     max_hits = np.zeros(config.digits)
                     # print("Skipping Update")
@@ -419,6 +459,7 @@ def main():
                 f = time.perf_counter()
                 # print("Update time: ", f-s)
                 # print("Total runtime", f-start)
+
                 for o,offset in enumerate(offset_sums):
                     offset_sums[o] = np.round(offset,2)
 
@@ -502,6 +543,7 @@ def main():
 
     config = setup_argument_parser()
 
+
     exin_name = 'excit'
     if config.exin is not None:
         exin_name = 'inhib'
@@ -523,6 +565,11 @@ def main():
     #     # print("Inhibition")
     #     config.inh_counter=True
     # call in previously generated dataset
+            
+
+    if config.alternode is not None:
+        alt_name = config.alternode
+        config = picklin(f"results\\MNIST\\{alt_name}\\","config.pickle")
                 
     path    = 'results/MNIST/'
     name    = config.exp_name+'/'
@@ -532,7 +579,11 @@ def main():
         print("Heidelberg dataset!")
         dataset = picklin("datasets/Heidelberg/",f"digits=3_samples=10")
         # dataset = make_audio_dataset(config.digits,config.samples)
+    elif config.dataset=='keras':
+        from keras.datasets import mnist
+        dataset = mnist.load_data()
 
+        # config.exp_name = config.alternode
     # load_start = time.perf_counter()
 
     if config.decay == "True":
@@ -542,12 +593,30 @@ def main():
         # config.eta = 0.003389830508474576
 
     nodes = get_nodes(path,name,config)
+
+
+    # for  i, node in enumerate(nodes):
+    #     print(f"\nNode {i}")  
+    #     print(node.neuron.dend_soma.dendritic_connection_strengths)
     
-    if hasattr(nodes[0],'run'):
+    if config.alternode is not None and config.run==0:
+        nodes[0].run = 0
+    elif hasattr(nodes[0],'run'):
         nodes[0].run +=1
         config.run = nodes[0].run
+    # elif config.name == 'thresh_full_rerun':
+    #     print("restart")
+    #     nodes[0].run = 0
     else:
         nodes[0].run = config.run
+
+
+    # if config.exp_name == "thresh_full_rerun":
+    #     nodes[0].run = 0
+    #     config.run = nodes[0].run
+
+    # if config.exp_name == "updates_cobuff":
+    #     picklit(config,path+config.exp_name+'/',"config")
     
     # load_finish = time.perf_counter()
     # print("Load time: ", load_finish-load_start)

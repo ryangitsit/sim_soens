@@ -354,3 +354,32 @@ def timer_func(func):
         print(f'Function {func.__name__!r} executed in {(t2-t1):.4f}s') 
         return result 
     return wrap_func 
+
+
+def tile():
+    print("Tiling")
+    idx_groups = {}
+
+    for i in range(7):
+        for j in range(7):
+            idx_groups[f"{i}-{j}"] = []
+
+    count = 0
+    modsi = 0
+    modsj = 0
+    for i in range(28):
+        if i%4 == 0 and i != 0 and i != 28:
+            modsi+=1
+        for j in range(28):
+            if j%4 == 0 and j != 0 and j != 28:
+                modsj+=1
+            idx_groups[f"{modsi}-{modsj}"].append((i,j,count))
+            count+=1
+        modsj=0
+
+    idx_list = []        
+    for tile,pixels in idx_groups.items():
+        for (i,j,count) in pixels:
+            idx_list.append(count)
+
+    return idx_groups, idx_list

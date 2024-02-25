@@ -59,9 +59,16 @@ class MNISTNode(SuperNode):
         self.__dict__.update(entries)
         self.params = self.__dict__
         print(f"Building {self.name} [>       ]", end="\r")
-        self.build_arbor()
-        print(f"Building {self.name} [=>      ]", end="\r")
+
+        if 'loaded_weights' not in list(entries.keys()):
+            self.build_arbor()
+            print(f"Building {self.name} [=>      ]", end="\r")
+        else:
+            self.build_arbor()
+            self.weights = entries['loaded_weights']
+            print(f"Loading W {self.name} [=>      ]", end="\r")
         # create a neuron object given init params
+
         self.neuron = neuron(**self.params)
         self.neuron.dend_soma.branch=0
 

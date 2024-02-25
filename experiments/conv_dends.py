@@ -206,6 +206,22 @@ heavy = [
         ]
 ]
 
+rand = [
+    [
+        np.random.rand(3)
+        ],
+        np.random.rand(3,3)
+]
+
+
+weight_dict = {
+    'vert_positive':vert_positive,
+    'vert_symmetric':vert_symmetric,
+    # 'heavy_neg':heavy_neg,
+    'heavy':heavy,
+    'rand':rand,
+}
+
 kernel_node_vertical = SuperNode(
     name = 'vert_positive',
     weights=heavy,
@@ -215,8 +231,8 @@ kernel_node_vertical = SuperNode(
 # kernel_node_vertical.parameter_print()
 # kernel_node_vertical.normalize_fanin(1)
 
-@timer_func
-def normfan(node,buffer=0,verbose=False):
+# @timer_func
+def normfan(node,buffer=0,coeff=1,verbose=False):
     
     for dendrite in node.dendrite_list:
         if len(dendrite.dendritic_connection_strengths) > 0:  
@@ -259,7 +275,7 @@ def normfan(node,buffer=0,verbose=False):
                     cs_proportion = cs_max/sum(pos_max)
                     cs_normalized = max_phi*cs_proportion/node.max_s_finder(pos_dend) 
                     if verbose==True: print(f"   {pos_dend} -> {cs_normalized}")
-                    dendrite.dendritic_connection_strengths[pos_dend.name] = cs_normalized
+                    dendrite.dendritic_connection_strengths[pos_dend.name] = cs_normalized*coeff
             if verbose==True:print(sum(np.abs(neg_max)))
 
             if sum(np.abs(neg_max)) > max_phi:
@@ -270,7 +286,7 @@ def normfan(node,buffer=0,verbose=False):
                     cs_proportion = cs_max/sum(np.abs(neg_max))
                     cs_normalized = max_phi*cs_proportion/node.max_s_finder(neg_dend)*-1
                     if verbose==True: print(f"   {neg_dend} -> {cs_normalized}")
-                    dendrite.dendritic_connection_strengths[neg_dend.name] = cs_normalized
+                    dendrite.dendritic_connection_strengths[neg_dend.name] = cs_normalized*coeff
 
             if verbose==True:print("\n")
     return node
@@ -278,18 +294,25 @@ def normfan(node,buffer=0,verbose=False):
 # kernel_node_vertical = normfan(kernel_node_vertical,buffer=0)
 
 #%%
-def steady_input(node,inpt):
+
+
+def steady_input(node,inpt,inpt_type):
     for i,syn in enumerate(node.synapse_list):
         # print(inpt.signals[i].spike_times)
         # print(syn.__dict__.keys())
 
         # print(dend.name, inpt.signals[i].spike_times)
-        if 'ref' not in syn.name: # and len(inpt.signals[i].spike_times) > 0:
+        if 'ref' not in syn.name:
+            if inpt_type == "uniform":
+                for dend in node.dendrite_list:
+                    if syn.name in list(dend.synaptic_inputs.keys()):
+                        dend.offset_flux = 0.5
 
-            for dend in node.dendrite_list:
-                if syn.name in list(dend.synaptic_inputs.keys()):
-                    dend.offset_flux = 0.5 #+ dend.phi_th#- dend.phi_th
 
+            elif len(inpt.signals[i].spike_times) > 0:
+                for dend in node.dendrite_list:
+                    if syn.name in list(dend.synaptic_inputs.keys()):
+                        dend.offset_flux = 0.5
 
                     # print(dend.name,dend.phi_th)
 
@@ -298,43 +321,79 @@ def steady_input(node,inpt):
 # kernel_node_vertical.plot_structure()
 
 #%%
-for k,v in inputs.items():
 
 
-    if k=="|": #1==1: #k=="|": #
-        print(k,letters[k])
 
-        kernel_node_vertical = SuperNode(
-            name = 'vert_symmetric',
-            weights=heavy,
-            beta_di=2*np.pi*1e3,beta_ni=2*np.pi*1e3,
-            normalize_input_connection_strengths=False
+# for k,v in inputs.items():
+#     if k=="|": #1==1: #k=="|": #
+
+fanin_type = ['new','old']
+inpt_type  = ['vert','uniform']
+spk_type   = ['steady','spike']
+
+def run_plot_coeffsweep(weight_dict,inputs,fanin_type,inpt_type,spk_type):
+    plt.figure(figsize=(8,4))
+    for i,(k,v) in enumerate(weight_dict.items()):
+        # print(k)
+        # print(k,letters[k])
+        coeffs = np.arange(.5,20.1,1)
+        spikes = []
+        for c in coeffs:
+            print(f"{fanin_type,inpt_type,spk_type,k} COEFFICIENT = {c}",end="\r")
+            kernel_node_vertical = SuperNode(
+                name = k,
+                weights=v,
+                beta_di=2*np.pi*1e3,beta_ni=2*np.pi*1e3,
+                normalize_input_connection_strengths=False
+                )
+            
+
+            if fanin_type=='new':
+                kernel_node_vertical = normfan(kernel_node_vertical,buffer=0,coeff=c,verbose=False)
+            else:
+                kernel_node_vertical.normalize_fanin(c)
+
+
+            # plot_letters(letters,k)
+            # raster_plot(v.spike_arrays)
+                
+            if spk_type=='spike':
+                if inpt_type == 'vert':
+                    kernel_node_vertical.one_to_one(inputs["|"])
+                else:
+                    kernel_node_vertical.one_to_one(inputs["[]"])
+            else:
+                kernel_node_vertical = steady_input(kernel_node_vertical,inputs["|"],inpt_type)
+
+            net = network(
+                sim     = True,
+                nodes   = [kernel_node_vertical],
+                tf      = duration+500,
+                dt      = 1.0,
+                backend = 'julia'
+
             )
-        kernel_node_vertical = normfan(kernel_node_vertical,buffer=0,verbose=True)
+            spikes.append(len(kernel_node_vertical.neuron.spike_times))
 
-        plot_letters(letters,k)
+            del(net)
+            del(kernel_node_vertical)
+            # kernel_node_vertical.plot_arbor_activity(net,phir=True)
+            # kernel_node_vertical.plot_neuron_activity(phir=True,ref=True)
 
-        # raster_plot(v.spike_arrays)
-        # kernel_node_vertical.one_to_one(v)
+        plt.plot(coeffs,np.array(spikes)+i*.1,'--',linewidth=2,label=k)
+        # print("\n")
 
+    plt.title(f"Input = {inpt_type}_{spk_type}, Fanin = {fanin_type}")
+    plt.ylabel("Output Spikes")
+    plt.xlabel("Fanin Coefficient")
+    plt.legend()
+    plt.show()
 
+for fanin in fanin_type:
+    for inpt in inpt_type:
+        for spk in spk_type:
 
-        kernel_node_vertical = steady_input(kernel_node_vertical,v)
-
-        net = network(
-            sim     = True,
-            nodes   = [kernel_node_vertical],
-            tf      = duration+500,
-            dt      = 1.0,
-            backend = 'julia'
-
-        )
-
-        kernel_node_vertical.plot_arbor_activity(net,phir=True)
-        kernel_node_vertical.plot_neuron_activity(phir=True,ref=True)
-
-        # del(net)
-        # del(kernel_node_vertical)
+            run_plot_coeffsweep(weight_dict,inputs,fanin,inpt,spk)
 
 #%%
 for dend in kernel_node_vertical.dendrite_list:
@@ -342,6 +401,7 @@ for dend in kernel_node_vertical.dendrite_list:
         plt.plot(dend.phi_r,'--',label=dend.name)
         plt.plot(dend.s)
         # print(dend.name)
+
 plt.ylim(0,1)
 plt.legend()
 plt.show()

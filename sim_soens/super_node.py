@@ -378,7 +378,7 @@ class SuperNode():
                     # print(f"  {in_name} -> {cs}") 
 
                     if cs<0:
-                        print(cs)
+                        # print(cs)
                         negatives.append(cs)
                         neg_max.append(cs*max_in)
                         neg_dends.append(in_dend)
@@ -404,9 +404,9 @@ class SuperNode():
 
                     for neg_dend in neg_dends:
                         cs = np.abs(dendrite.dendritic_connection_strengths[neg_dend.name])
-                        cs_max = cs*self.max_s_finder(neg_dend)
+                        cs_max = np.abs(cs*self.max_s_finder(neg_dend))
                         cs_proportion = cs_max/sum(np.abs(neg_max))
-                        cs_normalized = max_phi*cs_proportion/self.max_s_finder(neg_dend)*-1
+                        cs_normalized = np.abs(max_phi*cs_proportion/self.max_s_finder(neg_dend))*-1
                         # print(f"   {neg_dend} -> {cs_normalized}")
                         dendrite.dendritic_connection_strengths[neg_dend.name] = cs_normalized*coeff
 

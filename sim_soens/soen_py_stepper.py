@@ -51,7 +51,8 @@ def spike(neuron,ii,tau_vec,dt):
             neuron.dend_soma.spike_times,
             tau_vec[ii+1]
             )
-        neuron.spike_times.append(tau_vec[ii+1])
+        # neuron.spike_times.append(tau_vec[ii+1])
+        np.append(neuron.spike_times,tau_vec[ii+1])
         neuron.spike_indices.append(ii+1)
         
         # add spike to refractory dendrite

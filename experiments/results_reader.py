@@ -298,16 +298,24 @@ experiments = {
     # "speed_target15_full3",
     # "tiling_deep_full",
     # "speed_target15_full_fan1",
-    # 'thresh_full',
+    'thresh_full',
     # 'thresh_slow_full',
     # 'thresh_0.5_full',
     # 'thresh_0.5_noref_full',
     # 'thresh_0.5_noref_long_full',
     # 'long_slow_full',
-    # 'fanin_prime'
-    'updates_inverse',
-    'updates_fresh',
-    'updates_coeff'
+    # # 'fanin_prime',
+
+    # 'updates_inverse',
+    # 'updates_fresh',
+    # 'updates_coeff',
+    'updates_cobuff',
+    # 'updates_nocoeff',
+    # 'updates_hicoeff_oldfan',
+    # 'updates_half'
+    'updates_cobuff_alternode_inh',
+    'thresh_full_rerun',
+    'steady_simple',
 }
 
 
@@ -325,6 +333,7 @@ experiments = {
 #         except:
 #             print(f"Dir {directory} does not exist.")
 
+# plot_singles(experiments,until,10,record='new')
 # plot_singles(experiments,until,10,record='new')
 plot_all(experiments,until,record='new')
 
