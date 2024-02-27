@@ -55,6 +55,7 @@ def setup_argument_parser():
     parser.add_argument( "--alternode",         type=str,           default = None     )
     parser.add_argument( "--weight_transfer",   type=str,           default = None     )
     parser.add_argument( "--offset_transfer",   type=str,           default = None     )
+    parser.add_argument( "--no_negative_jij",   type=bool,          default = False    )
 
 
 

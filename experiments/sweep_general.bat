@@ -1,6 +1,32 @@
 ECHO OFF
 
 
+@REM @REM  --target 10 for _not_all
+@REM FOR /L %%i IN (0,1,100000) DO (
+@REM     python exp_MNIST_full.py^
+@REM       --run               %%i^
+@REM       --s_th              0.1^
+@REM       --duration          1000^
+@REM       --beta              3^
+@REM       --dt                1.0^
+@REM       --jul_threading     4^
+@REM       --digits            10^
+@REM       --samples           50^
+@REM       --eta               0.005^
+@REM       --exp_name          weight_transfer_asymmetric^
+@REM       --no_negative_jij   True^
+@REM       --backend           julia^
+@REM       --dataset           MNIST^
+@REM       --max_offset        phi_off^
+@REM       --norm_fanin_prime  True^
+@REM       --fan_coeff         3^
+@REM       --fan_buffer        0.0^
+@REM       --multi             True^
+@REM       --weight_transfer   W_symmetric_relu_nobias_1000^
+@REM       --target            25
+@REM )
+
+
 
 @REM FOR /L %%i IN (0,1,100000) DO (
 @REM     python exp_MNIST_full.py^
@@ -16,7 +42,7 @@ ECHO OFF
 @REM       --exp_name          weight_transfer_inh_counting^
 @REM       --inh_counter       True^
 @REM       --backend           julia^
-@REM       --dataset           keras^
+@REM       --dataset           MNIST^
 @REM       --max_offset        phi_off^
 @REM       --fixed             .5^
 @REM       --rand_flux         0.0^
@@ -56,6 +82,8 @@ ECHO OFF
 @REM       --target            10
 @REM )
 
+
+@REM  --target 10 for _not_all
 FOR /L %%i IN (0,1,100000) DO (
     python exp_MNIST_full.py^
       --run               %%i^
@@ -67,7 +95,7 @@ FOR /L %%i IN (0,1,100000) DO (
       --digits            10^
       --samples           50^
       --eta               0.005^
-      --exp_name          offset_transfer_all^
+      --exp_name          offset_transfer_all_4.5^
       --backend           julia^
       --dataset           MNIST^
       --max_offset        phi_off^
@@ -75,11 +103,11 @@ FOR /L %%i IN (0,1,100000) DO (
       --layers            6^
       --lay_weighting     1,1,1,4,8,10^
       --norm_fanin_prime  True^
-      --fan_coeff         3^
+      --fan_coeff         4.5^
       --fan_buffer        0.0^
       --multi             True^
       --offset_transfer   W_symmetric_relu_nobias_1000^
-      --target            10
+      --target            25
 )
 
 

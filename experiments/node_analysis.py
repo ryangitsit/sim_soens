@@ -24,6 +24,18 @@ print(len(loaded_weights))
 print(loaded_weights[0][0])
 
 #%%
+W = loaded_weights[0]
+ws = []
+for i,layer in enumerate(W):
+    for j,group in enumerate(layer):
+        for k,w in enumerate(group):
+            ws.append(w)
+print(np.array(ws).shape)
+# ws = np.concatenate(np.concatenate(np.concatenate(loaded_weights[0])))
+plt.hist(ws,bins=100,label='w')
+plt.show()
+
+#%%
 # print(len(loaded_weights[0]))
 # print(len(loaded_weights[0][0]))
 # print(len(loaded_weights[0][0][0]))
@@ -32,11 +44,11 @@ print(loaded_weights[0][0])
 
 nodes = [nodes[0]]
 for n,node in enumerate(nodes):
-    for i,layer in enumerate(node.dendrites[2:]):
+    for i,layer in enumerate(node.dendrites[1:]):
         print(len(layer))
         for j,dens in enumerate(layer):
             for k,d in enumerate(dens):
-                # print(d.name)
+                print(d.name,n,i,j,k)
                 # print(loaded_weights[n][i][j][k])
                 d.offset_flux = loaded_weights[n][i][j][k]
 #%%

@@ -309,13 +309,17 @@ experiments = {
     # 'updates_inverse',
     # 'updates_fresh',
     # 'updates_coeff',
-    'updates_cobuff',
+    # 'updates_cobuff',
     # 'updates_nocoeff',
     # 'updates_hicoeff_oldfan',
     # 'updates_half'
-    'updates_cobuff_alternode_inh',
-    'thresh_full_rerun',
-    'steady_simple',
+    # 'updates_cobuff_alternode_inh',
+    # 'thresh_full_rerun',
+    # 'steady_simple',
+    'offset_transfer',
+    'weight_transfer',
+    'weight_transfer_inh_counting',
+    'offset_transfer_all',
 }
 
 

@@ -314,6 +314,7 @@ class SuperNode():
     def add_inhibition_counts(self):
         '''
         '''
+        print(f"Adding inhibition counts to {self.name}")
         for dendrite in self.dendrite_list:
             dendrite.downstream_inhibition = 0
             self.recursive_downstream_inhibition_counter(dendrite,dendrite)

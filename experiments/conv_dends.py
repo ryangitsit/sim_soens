@@ -327,7 +327,7 @@ def steady_input(node,inpt,inpt_type):
 # for k,v in inputs.items():
 #     if k=="|": #1==1: #k=="|": #
 
-fanin_type = ['new','old']
+fanin_type = ['new'] #,'old']
 inpt_type  = ['vert','uniform']
 spk_type   = ['steady','spike']
 
@@ -336,7 +336,7 @@ def run_plot_coeffsweep(weight_dict,inputs,fanin_type,inpt_type,spk_type):
     for i,(k,v) in enumerate(weight_dict.items()):
         # print(k)
         # print(k,letters[k])
-        coeffs = np.arange(.5,20.1,1)
+        coeffs = np.arange(.5,10.1,.25)
         spikes = []
         for c in coeffs:
             print(f"{fanin_type,inpt_type,spk_type,k} COEFFICIENT = {c}",end="\r")
@@ -380,7 +380,7 @@ def run_plot_coeffsweep(weight_dict,inputs,fanin_type,inpt_type,spk_type):
             # kernel_node_vertical.plot_arbor_activity(net,phir=True)
             # kernel_node_vertical.plot_neuron_activity(phir=True,ref=True)
 
-        plt.plot(coeffs,np.array(spikes)+i*.1,'--',linewidth=2,label=k)
+        plt.plot(coeffs,np.array(spikes)+i*.1,linewidth=2,label=k)
         # print("\n")
 
     plt.title(f"Input = {inpt_type}_{spk_type}, Fanin = {fanin_type}")
@@ -394,6 +394,35 @@ for fanin in fanin_type:
         for spk in spk_type:
 
             run_plot_coeffsweep(weight_dict,inputs,fanin,inpt,spk)
+
+#%%
+steady=True 
+spk=False
+inpt_type = "uniform"     
+kernel_node_vertical = SuperNode(
+                name = "heavy",
+                weights=heavy,
+                beta_di=2*np.pi*1e3,beta_ni=2*np.pi*1e3,
+                normalize_input_connection_strengths=False
+                )
+kernel_node_vertical = normfan(kernel_node_vertical,buffer=0,coeff=1,verbose=False)
+
+if spk == True:
+    kernel_node_vertical.one_to_one(inputs["[]"])
+
+elif steady == True:
+    kernel_node_vertical = steady_input(kernel_node_vertical,inputs["[]"],inpt_type)
+
+net = network(
+    sim     = True,
+    nodes   = [kernel_node_vertical],
+    tf      = duration+500,
+    dt      = 1.0,
+    backend = 'julia'
+
+)
+kernel_node_vertical.plot_arbor_activity(net,phir=True)
+kernel_node_vertical.plot_neuron_activity(phir=True,ref=True,legend=False)
 
 #%%
 for dend in kernel_node_vertical.dendrite_list:
@@ -435,3 +464,4 @@ plt.show()
 
 plt.plot(offsets,maxes)
 plt.show()
+# %%

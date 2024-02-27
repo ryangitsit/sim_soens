@@ -32,7 +32,7 @@ def main():
         
         loaded_weights = picklin('./saved_data/',config.offset_transfer)
         for n,node in enumerate(nodes):
-            for i,layer in enumerate(node.dendrites[2:]):
+            for i,layer in enumerate(node.dendrites[1:]):
                 for j,dens in enumerate(layer):
                     for k,d in enumerate(dens):
                         d.offset_flux = loaded_weights[n][i][j][k]
@@ -79,7 +79,16 @@ def main():
             params.update(config.__dict__)
 
             if config.weight_transfer is not None:
-                params['loaded_weights'] = picklin('./saved_data/',config.weight_transfer)[node]
+                lw = picklin('./saved_data/',config.weight_transfer)[node]
+
+                if config.no_negative_jij == True:
+                    print("Asymmetric weight transfer.")
+                    for l,layer in enumerate(lw):
+                        for g,group in enumerate(layer):
+                            for d,dend in enumerate(group):
+                                if dend < 0: lw[l][g][d] = 0
+
+                params['loaded_weights'] = lw
                                         
             nodes.append(MNISTNode(**params))
             # if node == 0:
@@ -138,7 +147,17 @@ def main():
             "fan_coeff"   :config.fan_coeff
         }
         if config.weight_transfer is not None:
-            params['loaded_weights'] = picklin('./saved_data/',config.weight_transfer)[n]
+            lw = picklin('./saved_data/',config.weight_transfer)[n]
+
+            if config.no_negative_jij == True:
+                print("Asymmetric weight transfer.")
+                for l,layer in enumerate(lw):
+                    for g,group in enumerate(layer):
+                        for d,dend in enumerate(group):
+                            if dend < 0: lw[l][g][d] = 0
+
+            params['loaded_weights'] = lw
+
         params.update(config.__dict__)
         node = MNISTNode(**params)
         return_dict[node.name] = node
@@ -593,6 +612,10 @@ def main():
         # config.eta = 0.003389830508474576
 
     nodes = get_nodes(path,name,config)
+
+    # if config.exp_name =='weight_transfer_inh_counting':
+    #     for n,node in enumerate(nodes):
+    #         node.add_inhibition_counts()
 
 
     # for  i, node in enumerate(nodes):
