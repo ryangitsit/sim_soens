@@ -314,12 +314,16 @@ experiments = {
     # 'updates_hicoeff_oldfan',
     # 'updates_half'
     # 'updates_cobuff_alternode_inh',
-    # 'thresh_full_rerun',
+    'thresh_full_rerun',
     # 'steady_simple',
     'offset_transfer',
     'weight_transfer',
     'weight_transfer_inh_counting',
     'offset_transfer_all',
+    'offset_transfer_all_4.5',
+    'offset_transfer_all_1.5',
+    'weight_transfer_asymmetric'
+
 }
 
 

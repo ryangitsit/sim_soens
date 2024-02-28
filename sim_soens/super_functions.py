@@ -383,3 +383,16 @@ def tile():
             idx_list.append(count)
 
     return idx_groups, idx_list
+
+def clear_node(node):
+    '''
+    '''
+    node.neuron.spike_times                         = []
+    node.neuron.spike_indices                       = []
+    node.neuron.electroluminescence_cumulative_vec  = []
+    node.neuron.time_params                         = []
+    for syn in node.synapse_list:
+        syn.phi_spd = []
+    for dend in node.dendrite_list:
+        dend.s     = []
+        dend.phi_r = []

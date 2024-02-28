@@ -64,6 +64,7 @@ def arbor_update(nodes,config,digit,sample,errors):
                             if np.abs(dend.offset_flux) > max_off: 
                                 old = dend.offset_flux
                                 max_hits[n]+=1
+                                #*** what about offset==0?
                                 if dend.offset_flux < 0:
                                     dend.offset_flux = np.max([dend.offset_flux,-max_off])
                                 else:
