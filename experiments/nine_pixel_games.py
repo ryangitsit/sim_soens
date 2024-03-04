@@ -16,10 +16,10 @@ import time
 
 letters = make_letters(patterns='all')
 
-# del letters['|  ']
-# del letters['  |']
-# del letters['_']
-# del letters['[]']
+del letters['|  ']
+del letters['  |']
+del letters['_']
+del letters['[]']
 
 # plot_letters(letters)
 # plot_letters(letters,'v')

@@ -298,7 +298,7 @@ experiments = {
     # "speed_target15_full3",
     # "tiling_deep_full",
     # "speed_target15_full_fan1",
-    'thresh_full',
+    # 'thresh_full',
     # 'thresh_slow_full',
     # 'thresh_0.5_full',
     # 'thresh_0.5_noref_full',
@@ -314,15 +314,16 @@ experiments = {
     # 'updates_hicoeff_oldfan',
     # 'updates_half'
     # 'updates_cobuff_alternode_inh',
-    'thresh_full_rerun',
+    # 'thresh_full_rerun',
     # 'steady_simple',
     'offset_transfer',
-    'weight_transfer',
-    'weight_transfer_inh_counting',
-    'offset_transfer_all',
+    # 'weight_transfer',
+    # 'weight_transfer_inh_counting',
+    # 'offset_transfer_all',
     'offset_transfer_all_4.5',
-    'offset_transfer_all_1.5',
-    'weight_transfer_asymmetric'
+    # 'offset_transfer_all_1.5',
+    'low_slow_long',
+    # 'weight_transfer_asymmetric'
 
 }
 
@@ -342,7 +343,7 @@ experiments = {
 #             print(f"Dir {directory} does not exist.")
 
 # plot_singles(experiments,until,10,record='new')
-# plot_singles(experiments,until,10,record='new')
+plot_singles(experiments,until,10,record='new')
 plot_all(experiments,until,record='new')
 
 def res_rasters(path):

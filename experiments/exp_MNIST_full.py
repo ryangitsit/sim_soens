@@ -177,7 +177,7 @@ def main():
         if os.path.exists(place) == True:
             print("Loading nodes...")
             files = glob.glob(place+'*')
-            print(files)
+            print(config.exp_name)
             latest = max(files, key=os.path.getctime)
             # print("latest",latest)
             file_name = latest[len(place):len(latest)-len('.pickle')]
