@@ -1,18 +1,44 @@
 ECHO OFF
 
+@REM @REM @REM  low target, slow learning rate, long duration
+@REM FOR /L %%i IN (0,1,100000) DO (
+@REM     python exp_MNIST_full.py^
+@REM       --run               %%i^
+@REM       --s_th              0.1^
+@REM       --duration          2000^
+@REM       --beta              3^
+@REM       --dt                1.0^
+@REM       --jul_threading     4^
+@REM       --digits            10^
+@REM       --samples           50^
+@REM       --eta               0.005^
+@REM       --exp_name          targets_high_long_python^
+@REM       --backend           python^
+@REM       --dataset           MNIST^
+@REM       --max_offset        phi_off^
+@REM       --fixed             .5^
+@REM       --norm_fanin_prime  True^
+@REM       --fan_coeff         3^
+@REM       --fan_buffer        0.0^
+@REM       --multi             True^
+@REM       --offset_transfer   W_symmetric_relu_nobias_1000^
+@REM       --target            42^
+@REM       --off_target        21
+@REM )
+
 @REM @REM  low target, slow learning rate, long duration
 FOR /L %%i IN (0,1,100000) DO (
     python exp_MNIST_full.py^
       --run               %%i^
       --s_th              0.1^
-      --duration          2000^
+      --duration          1000^
       --beta              3^
       --dt                1.0^
       --jul_threading     4^
       --digits            10^
       --samples           50^
-      --eta               0.0025^
-      --exp_name          low_slow_long^
+      --eta               0.00025^
+      --exp_name          targets_high_slow^
       --backend           julia^
       --dataset           MNIST^
       --max_offset        phi_off^
@@ -22,8 +48,36 @@ FOR /L %%i IN (0,1,100000) DO (
       --fan_buffer        0.0^
       --multi             True^
       --offset_transfer   W_symmetric_relu_nobias_1000^
-      --target            10
+      --target            42^
+      --off_target        21
 )
+
+
+
+@REM @REM @REM  low target, slow learning rate, long duration
+@REM FOR /L %%i IN (0,1,100000) DO (
+@REM     python exp_MNIST_full.py^
+@REM       --run               %%i^
+@REM       --s_th              0.1^
+@REM       --duration          1000^
+@REM       --beta              3^
+@REM       --dt                1.0^
+@REM       --jul_threading     4^
+@REM       --digits            10^
+@REM       --samples           50^
+@REM       --eta               0.0025^
+@REM       --exp_name          low_slow_long^
+@REM       --backend           julia^
+@REM       --dataset           MNIST^
+@REM       --max_offset        phi_off^
+@REM       --fixed             .5^
+@REM       --norm_fanin_prime  True^
+@REM       --fan_coeff         3^
+@REM       --fan_buffer        0.0^
+@REM       --multi             True^
+@REM       --offset_transfer   W_symmetric_relu_nobias_1000^
+@REM       --target            10
+@REM )
 
 
 @REM @REM  --target 10 for _not_all

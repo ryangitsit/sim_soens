@@ -100,7 +100,7 @@ for fan in fans:
                     nodes   = nodes,
                     tf      = duration,
                     dt      = 1.0,
-                    backend = 'julia'
+                    backend = 'python'
 
                 )
 

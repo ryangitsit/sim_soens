@@ -316,14 +316,17 @@ experiments = {
     # 'updates_cobuff_alternode_inh',
     # 'thresh_full_rerun',
     # 'steady_simple',
-    'offset_transfer',
+    # 'offset_transfer',
     # 'weight_transfer',
     # 'weight_transfer_inh_counting',
-    # 'offset_transfer_all',
+    'offset_transfer_all',
     'offset_transfer_all_4.5',
-    # 'offset_transfer_all_1.5',
-    'low_slow_long',
-    # 'weight_transfer_asymmetric'
+    'offset_transfer_all_1.5',
+    # 'low_slow_long',
+    # 'weight_transfer_asymmetric',
+    "low_slow_long",
+    "targets_high_slow",
+    "targets_high"
 
 }
 
@@ -343,7 +346,7 @@ experiments = {
 #             print(f"Dir {directory} does not exist.")
 
 # plot_singles(experiments,until,10,record='new')
-plot_singles(experiments,until,10,record='new')
+# plot_singles(experiments,until,10,record='new')
 plot_all(experiments,until,record='new')
 
 def res_rasters(path):

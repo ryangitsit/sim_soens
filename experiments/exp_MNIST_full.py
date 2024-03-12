@@ -280,7 +280,7 @@ def main():
 
         desired = []
         for idx in range(config.digits):
-            desired.append([0 for _ in range(config.digits)])
+            desired.append([config.off_target for _ in range(config.digits)])
 
         for idx in range(config.digits):
             desired[idx][idx] = config.target

@@ -24,6 +24,7 @@ def run_soen_sim(net):
         # convert to dimensionless time
         time_vec = np.arange(0,net.tf+net.dt,net.dt)  
         ttc = 1e-9/net.jj_params['tau_0']
+
         net.time_params = {
             'dt'               : net.dt, 
             'tf'               : net.tf, 

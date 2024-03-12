@@ -713,6 +713,7 @@ class network():
         dummy_dendrite = dendrite(name='dummy') 
         jj_params = get_jj_params(dummy_dendrite.Ic*1e-6,dummy_dendrite.beta_c)
         self.jj_params = jj_params # this should be done somewhere else globally
+        # print("JJPARAMS = ",jj_params)
         
         # prepare network to have neurons
         self.neurons = dict()
