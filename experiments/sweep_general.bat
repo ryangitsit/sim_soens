@@ -1,5 +1,339 @@
 ECHO OFF
 
+@REM @REM  double_dends
+FOR /L %%i IN (0,1,100000) DO (
+    python exp_MNIST_full.py^
+      --run               %%i^
+      --s_th              0.1^
+      --duration          250^
+      --beta              3^
+      --dt                1.0^
+      --jul_threading     4^
+      --digits            10^
+      --samples           50^
+      --eta               0.005^
+      --exp_name          disynaptic_extened_fanin_4^
+      --backend           julia^
+      --dataset           MNIST^
+      --max_offset        half^
+      --fixed             .5^
+      --layers            42^
+      --norm_fanin_prime  True^
+      --fan_coeff         3^
+      --fan_buffer        0.0^
+      --multi             True^
+      --max_offset        phi_off^
+      --updater           symmetric^
+      --target            2
+)
+
+
+@REM @REM @REM  double_dends
+@REM FOR /L %%i IN (0,1,100000) DO (
+@REM     python exp_MNIST_full.py^
+@REM       --run               %%i^
+@REM       --s_th              0.1^
+@REM       --duration          250^
+@REM       --beta              3^
+@REM       --dt                1.0^
+@REM       --jul_threading     4^
+@REM       --digits            10^
+@REM       --samples           50^
+@REM       --eta               0.005^
+@REM       --exp_name          double_dends_42^
+@REM       --backend           julia^
+@REM       --dataset           MNIST^
+@REM       --max_offset        half^
+@REM       --fixed             .5^
+@REM       --layers            42^
+@REM       --lay_weighting     1,1,1,4,8,10^
+@REM       --norm_fanin_prime  True^
+@REM       --fan_coeff         2.3^
+@REM       --fan_buffer        0.0^
+@REM       --multi             True^
+@REM       --max_offset        phi_off^
+@REM       --updater           symmetric^
+@REM       --double_dends      True^
+@REM       --target            2
+@REM )
+
+@REM @REM @REM  double_dends -> changed lr at run 64
+@REM FOR /L %%i IN (0,1,100000) DO (
+@REM     python exp_MNIST_full.py^
+@REM       --run               %%i^
+@REM       --s_th              0.1^
+@REM       --duration          250^
+@REM       --beta              3^
+@REM       --dt                1.0^
+@REM       --jul_threading     4^
+@REM       --digits            10^
+@REM       --samples           50^
+@REM       --eta               0.005^
+@REM       --exp_name          double_dends_slim_2^
+@REM       --backend           julia^
+@REM       --dataset           MNIST^
+@REM       --max_offset        half^
+@REM       --fixed             .5^
+@REM       --layers            6^
+@REM       --lay_weighting     1,1,1,4,8,10^
+@REM       --norm_fanin_prime  True^
+@REM       --fan_coeff         2^
+@REM       --fan_buffer        0.0^
+@REM       --multi             True^
+@REM       --double_dends      True^
+@REM       --rand_flux         0.15^
+@REM       --target            2
+@REM )
+
+@REM @REM @REM  double_dends -> changed lr at run 64
+@REM FOR /L %%i IN (0,1,100000) DO (
+@REM     python exp_MNIST_full.py^
+@REM       --run               %%i^
+@REM       --s_th              0.1^
+@REM       --duration          250^
+@REM       --beta              3^
+@REM       --dt                1.0^
+@REM       --jul_threading     4^
+@REM       --digits            10^
+@REM       --samples           50^
+@REM       --eta               0.005^
+@REM       --exp_name          double_dends_slim_nonrand_symm_full^
+@REM       --backend           julia^
+@REM       --dataset           MNIST^
+@REM       --max_offset        None^
+@REM       --fixed             .5^
+@REM       --layers            6^
+@REM       --lay_weighting     1,1,1,4,8,10^
+@REM       --norm_fanin_prime  True^
+@REM       --fan_coeff         2^
+@REM       --fan_buffer        0.0^
+@REM       --multi             True^
+@REM       --double_dends      True^
+@REM       --updater           symmetric^
+@REM       --target            2
+@REM )
+
+@REM @REM @REM  double_dends -> changed lr at run 64
+@REM FOR /L %%i IN (0,1,100000) DO (
+@REM     python exp_MNIST_full.py^
+@REM       --run               %%i^
+@REM       --s_th              0.1^
+@REM       --duration          250^
+@REM       --beta              3^
+@REM       --dt                1.0^
+@REM       --jul_threading     4^
+@REM       --digits            3^
+@REM       --samples           10^
+@REM       --eta               0.005^
+@REM       --exp_name          double_dends_slim_nonrand_chooser^
+@REM       --backend           julia^
+@REM       --dataset           MNIST^
+@REM       --max_offset        None^
+@REM       --fixed             .5^
+@REM       --layers            6^
+@REM       --lay_weighting     1,1,1,4,8,10^
+@REM       --norm_fanin_prime  True^
+@REM       --fan_coeff         2^
+@REM       --fan_buffer        0.0^
+@REM       --multi             True^
+@REM       --double_dends      True^
+@REM       --updater           chooser^
+@REM       --target            2
+@REM )
+
+@REM @REM @REM  double_dends -> changed lr at run 64
+@REM FOR /L %%i IN (0,1,100000) DO (
+@REM     python exp_MNIST_full.py^
+@REM       --run               %%i^
+@REM       --s_th              0.1^
+@REM       --duration          250^
+@REM       --beta              3^
+@REM       --dt                1.0^
+@REM       --jul_threading     4^
+@REM       --digits            3^
+@REM       --samples           10^
+@REM       --eta               0.005^
+@REM       --exp_name          double_dends_slim_nonrand_lim^
+@REM       --backend           julia^
+@REM       --dataset           MNIST^
+@REM       --fixed             .5^
+@REM       --layers            6^
+@REM       --lay_weighting     1,1,1,4,8,10^
+@REM       --norm_fanin_prime  True^
+@REM       --fan_coeff         3^
+@REM       --fan_buffer        0.0^
+@REM       --multi             True^
+@REM       --max_offset        phi_off^
+@REM       --updater           symmetric^
+@REM       --double_dends      True^
+@REM       --target            2
+@REM )
+
+@REM @REM @REM  double_dends -> changed lr at run 64
+@REM FOR /L %%i IN (0,1,100000) DO (
+@REM     python exp_MNIST_full.py^
+@REM       --run               %%i^
+@REM       --s_th              0.1^
+@REM       --duration          250^
+@REM       --beta              3^
+@REM       --dt                1.0^
+@REM       --jul_threading     4^
+@REM       --digits            10^
+@REM       --samples           50^
+@REM       --eta               0.005^
+@REM       --exp_name          double_dends_slim_nonrand_lim_full^
+@REM       --backend           julia^
+@REM       --dataset           MNIST^
+@REM       --fixed             .5^
+@REM       --layers            6^
+@REM       --lay_weighting     1,1,1,4,8,10^
+@REM       --norm_fanin_prime  True^
+@REM       --fan_coeff         3^
+@REM       --fan_buffer        0.0^
+@REM       --multi             True^
+@REM       --max_offset        phi_off^
+@REM       --updater           symmetric^
+@REM       --double_dends      True^
+@REM       --target            2
+@REM )
+
+@REM @REM @REM  double_dends -> changed lr at run 64
+@REM FOR /L %%i IN (0,1,100000) DO (
+@REM     python exp_MNIST_full.py^
+@REM       --run               %%i^
+@REM       --s_th              0.1^
+@REM       --duration          250^
+@REM       --beta              3^
+@REM       --dt                1.0^
+@REM       --jul_threading     4^
+@REM       --digits            3^
+@REM       --samples           10^
+@REM       --eta               0.005^
+@REM       --exp_name          double_dends_slim_nonrand_2^
+@REM       --backend           julia^
+@REM       --dataset           MNIST^
+@REM       --max_offset        None^
+@REM       --fixed             .5^
+@REM       --layers            6^
+@REM       --lay_weighting     1,1,1,4,8,10^
+@REM       --norm_fanin_prime  True^
+@REM       --fan_coeff         2^
+@REM       --fan_buffer        0.0^
+@REM       --multi             True^
+@REM       --double_dends      True^
+@REM       --target            2
+@REM )
+
+@REM @REM @REM  double_dends slower learnign and lower target
+@REM FOR /L %%i IN (0,1,100000) DO (
+@REM     python exp_MNIST_full.py^
+@REM       --run               %%i^
+@REM       --s_th              0.1^
+@REM       --duration          1000^
+@REM       --beta              3^
+@REM       --dt                1.0^
+@REM       --jul_threading     4^
+@REM       --digits            10^
+@REM       --samples           50^
+@REM       --eta               0.0005^
+@REM       --exp_name          double_dends_lite^
+@REM       --backend           julia^
+@REM       --dataset           MNIST^
+@REM       --max_offset        phi_off^
+@REM       --fixed             .5^
+@REM       --layers            6^
+@REM       --lay_weighting     1,1,1,4,8,10^
+@REM       --norm_fanin_prime  True^
+@REM       --fan_coeff         3^
+@REM       --fan_buffer        0.0^
+@REM       --multi             True^
+@REM       --double_dends      True^
+@REM       --rand_flux         0.15^
+@REM       --target            10
+@REM )
+
+@REM @REM @REM  double_dends
+@REM FOR /L %%i IN (0,1,100000) DO (
+@REM     python exp_MNIST_full.py^
+@REM       --run               %%i^
+@REM       --s_th              0.1^
+@REM       --duration          1000^
+@REM       --beta              3^
+@REM       --dt                1.0^
+@REM       --jul_threading     4^
+@REM       --digits            10^
+@REM       --samples           50^
+@REM       --eta               0.005^
+@REM       --exp_name          double_dends^
+@REM       --backend           julia^
+@REM       --dataset           MNIST^
+@REM       --max_offset        phi_off^
+@REM       --fixed             .5^
+@REM       --layers            6^
+@REM       --lay_weighting     1,1,1,4,8,10^
+@REM       --norm_fanin_prime  True^
+@REM       --fan_coeff         3^
+@REM       --fan_buffer        0.0^
+@REM       --multi             True^
+@REM       --double_dends      True^
+@REM       --rand_flux         0.15^
+@REM       --target            25
+@REM )
+
+
+@REM @REM  --extended_arbor    True^
+@REM FOR /L %%i IN (0,1,100000) DO (
+@REM     python exp_MNIST_full.py^
+@REM       --run               %%i^
+@REM       --s_th              0.1^
+@REM       --duration          1000^
+@REM       --beta              3^
+@REM       --dt                1.0^
+@REM       --jul_threading     4^
+@REM       --digits            10^
+@REM       --samples           50^
+@REM       --eta               0.005^
+@REM       --exp_name          extended_arbor^
+@REM       --backend           julia^
+@REM       --dataset           MNIST^
+@REM       --max_offset        phi_off^
+@REM       --fixed             .5^
+@REM       --layers            6^
+@REM       --lay_weighting     1,1,1,4,8,10^
+@REM       --norm_fanin_prime  True^
+@REM       --fan_coeff         3^
+@REM       --fan_buffer        0.0^
+@REM       --multi             True^
+@REM       --extended_arbor    True^
+@REM       --target            25
+@REM )
+
+@REM  --extended_arbor    True^
+FOR /L %%i IN (0,1,100000) DO (
+    python exp_MNIST_full.py^
+      --run               %%i^
+      --s_th              0.1^
+      --duration          1000^
+      --beta              3^
+      --dt                1.0^
+      --jul_threading     4^
+      --digits            10^
+      --samples           50^
+      --eta               0.005^
+      --exp_name          extended_arbor_control^
+      --backend           julia^
+      --dataset           MNIST^
+      --max_offset        phi_off^
+      --fixed             .5^
+      --layers            6^
+      --lay_weighting     1,1,1,4,8,10^
+      --norm_fanin_prime  True^
+      --fan_coeff         3^
+      --fan_buffer        0.0^
+      --multi             True^
+      --target            25
+)
+
 @REM @REM @REM  low target, slow learning rate, long duration
 @REM FOR /L %%i IN (0,1,100000) DO (
 @REM     python exp_MNIST_full.py^
@@ -26,31 +360,31 @@ ECHO OFF
 @REM       --off_target        21
 @REM )
 
-@REM @REM  low target, slow learning rate, long duration
-FOR /L %%i IN (0,1,100000) DO (
-    python exp_MNIST_full.py^
-      --run               %%i^
-      --s_th              0.1^
-      --duration          1000^
-      --beta              3^
-      --dt                1.0^
-      --jul_threading     4^
-      --digits            10^
-      --samples           50^
-      --eta               0.00025^
-      --exp_name          targets_high_slow^
-      --backend           julia^
-      --dataset           MNIST^
-      --max_offset        phi_off^
-      --fixed             .5^
-      --norm_fanin_prime  True^
-      --fan_coeff         3^
-      --fan_buffer        0.0^
-      --multi             True^
-      --offset_transfer   W_symmetric_relu_nobias_1000^
-      --target            42^
-      --off_target        21
-)
+@REM @REM @REM  low target, slow learning rate, long duration
+@REM FOR /L %%i IN (0,1,100000) DO (
+@REM     python exp_MNIST_full.py^
+@REM       --run               %%i^
+@REM       --s_th              0.1^
+@REM       --duration          1000^
+@REM       --beta              3^
+@REM       --dt                1.0^
+@REM       --jul_threading     4^
+@REM       --digits            10^
+@REM       --samples           50^
+@REM       --eta               0.00025^
+@REM       --exp_name          targets_high_slow^
+@REM       --backend           julia^
+@REM       --dataset           MNIST^
+@REM       --max_offset        phi_off^
+@REM       --fixed             .5^
+@REM       --norm_fanin_prime  True^
+@REM       --fan_coeff         3^
+@REM       --fan_buffer        0.0^
+@REM       --multi             True^
+@REM       --offset_transfer   W_symmetric_relu_nobias_1000^
+@REM       --target            42^
+@REM       --off_target        21
+@REM )
 
 
 

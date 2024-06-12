@@ -23,7 +23,37 @@ import time
 
 #%%
 
+def doubling_tester():
+    np.random.seed(10)
+    weights = [
+        [[0.3,0.3,0.3]],
+        [[0.3,0.3,0.3],[0.3,0.3,0.3],[0.3,0.3,0.3]]
+    ]
 
+    n = SuperNode(weights=weights,beta_ni=2*np.pi*1e3,beta_di=2*np.pi*1e3, double_dends=True)
+    n.normalize_fanin_symmetric(coeff=3)
+    n.random_flux(0.15)
+    # n.plot_structure()
+
+    letters = make_letters()
+    inpts   = make_inputs(letters,20)
+    inpt    = inpts["z"]
+    n.doubled_input(inpt)
+    for dend in n.dendrite_list:
+        print(dend.name,dend.output_connection_strength)
+    
+    net = network(
+        sim     = True,
+        nodes   = [n],
+        tf      = 250,
+        dt      = 1.0,
+        backend = 'julia'
+    )
+    
+    n.plot_arbor_activity(net)
+
+doubling_tester()
+#%%
 def backend_timer_duration(backends,durations):
     """
     Creates and runs a simple 'point' neuron with periodic spiketrain
@@ -125,7 +155,7 @@ def binary_fanin(layers):
     #     print(len(w))
     return weights
 
-bf = binary_fanin(3)
+# bf = binary_fanin(3)
 
 
 #%%
@@ -194,31 +224,31 @@ def backend_timer_size(backends,layers):
     return runtime_data
 
 
-layers = np.arange(2,10,1).astype('int32')
-backends = ['julia']
-runtime_data = backend_timer_size(backends,layers)
+# layers = np.arange(2,10,1).astype('int32')
+# backends = ['julia']
+# runtime_data = backend_timer_size(backends,layers)
 
 
-plt.style.use("seaborn-v0_8-darkgrid")
-plt.figure(figsize=(8,4))
-colors = plt.rcParams["axes.prop_cycle"].by_key()["color"]
-for b,backend in enumerate(backends):
-    plt.plot(layers,runtime_data[0][b],linewidth=2,label=backend,color=colors[b])
+# plt.style.use("seaborn-v0_8-darkgrid")
+# plt.figure(figsize=(8,4))
+# colors = plt.rcParams["axes.prop_cycle"].by_key()["color"]
+# for b,backend in enumerate(backends):
+#     plt.plot(layers,runtime_data[0][b],linewidth=2,label=backend,color=colors[b])
     
-    lower_bound = runtime_data[0][b]-0.5*np.array(runtime_data[1][b])
-    upper_bound = runtime_data[0][b]+0.5*np.array(runtime_data[1][b])
+#     lower_bound = runtime_data[0][b]-0.5*np.array(runtime_data[1][b])
+#     upper_bound = runtime_data[0][b]+0.5*np.array(runtime_data[1][b])
 
-    plt.fill_between(layers, lower_bound, upper_bound, 
-                     facecolor=colors[b], alpha=0.2)
+#     plt.fill_between(layers, lower_bound, upper_bound, 
+#                      facecolor=colors[b], alpha=0.2)
     
-# ratio = np.array(runtime_data[0][0])/np.array(runtime_data[0][1])
-# plt.plot(durations,ratio,'--',linewidth=1,label="python/julia",color=colors[2])
-plt.title("Time Stepper Run Time for Increasing Arbor size16 threads",fontsize=16)
-plt.xlabel(r"Layers of Binary Fanin $N=2^{layers}$",fontsize=14)
-plt.ylabel("Run Time (s)",fontsize=14)
-plt.legend()
-plt.savefig("results/profiling/runtimes_arbor_16threads")
-plt.show()
+# # ratio = np.array(runtime_data[0][0])/np.array(runtime_data[0][1])
+# # plt.plot(durations,ratio,'--',linewidth=1,label="python/julia",color=colors[2])
+# plt.title("Time Stepper Run Time for Increasing Arbor size16 threads",fontsize=16)
+# plt.xlabel(r"Layers of Binary Fanin $N=2^{layers}$",fontsize=14)
+# plt.ylabel("Run Time (s)",fontsize=14)
+# plt.legend()
+# plt.savefig("results/profiling/runtimes_arbor_16threads")
+# plt.show()
 
 
 #%%

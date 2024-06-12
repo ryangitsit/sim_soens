@@ -65,6 +65,7 @@ class SuperNode():
         self.w_sd=1
         self.random_syn = False
         self.weights = []
+        self.double_dends=False
         np.random.seed(None)
 
         # writing over default settings
@@ -100,6 +101,10 @@ class SuperNode():
 
         # check that the structure implied by .weights is compatible with construction method
         self.check_arbor_structor(self.weights)
+
+        if self.double_dends==True:
+            print("DOUBLE DENDRITES*")
+            self.double_dendrites()
                         
         self.make_dendrites()
         self.connect_dendrites()
@@ -108,6 +113,9 @@ class SuperNode():
     ############################################################################
     #                           dendritic arbor                                #
     ############################################################################  
+        
+    def double_dendrites(self):
+        self.weights.append([[-1,1] for _ in range(len(np.concatenate(self.weights[-1])))])
 
     def make_dendrites(self):
         '''
@@ -390,7 +398,7 @@ class SuperNode():
                         pos_dends.append(in_dend)
             
 
-                if sum(pos_max) > max_phi:
+                if sum(pos_max) > 0: # max_phi:
                     # print(f" Normalizing input to {dendrite.name} from {sum(pos_max)} to {max_phi}")
                     for pos_dend in pos_dends:
                         cs = dendrite.dendritic_connection_strengths[pos_dend.name]
@@ -400,7 +408,7 @@ class SuperNode():
                         # print(f"   {pos_dend} -> {cs_normalized}")
                         dendrite.dendritic_connection_strengths[pos_dend.name] = cs_normalized*coeff
                 # print(sum(np.abs(neg_max)))
-                if sum(np.abs(neg_max)) > max_phi:
+                if sum(np.abs(neg_max)) > 0: # max_phi:
                     # print(f" Normalizing input to {dendrite.name} from {sum(neg_max)} to {max_phi}")
 
                     for neg_dend in neg_dends:
@@ -573,6 +581,13 @@ class SuperNode():
         for i,S in enumerate(self.synapse_list):
             if 'ref' not in S.name:
                 S.add_input(input.signals[i])
+
+    def doubled_input(self,inpt,start=0):
+        for i,signal in enumerate(inpt.signals):
+            syn1 = self.synapse_list[start+i*2]
+            syn2 = self.synapse_list[start+i*2+1]
+            if 'ref' not in syn1.name: syn1.add_input(signal)
+            if 'ref' not in syn2.name: syn2.add_input(signal)
 
     def custom_input(self,input,synapse_indices):
         '''

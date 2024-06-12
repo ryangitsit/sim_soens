@@ -77,6 +77,10 @@ class MNISTNode(SuperNode):
 
         # check that the structure implied by .weights is compatible with construction method
         self.check_arbor_structor(self.weights)
+        if self.double_dends==True:
+            print("DOUBLE DENDRITES")
+            self.double_dendrites()
+
         print(f"Building {self.name} [==>     ]", end="\r")
         self.make_dendrites()
         self.connect_dendrites()
@@ -105,127 +109,181 @@ class MNISTNode(SuperNode):
         print(f"Building {self.name} [=======>]", end="\r")
 
     def build_arbor(self):
-        if self.layers == 6:
-            lw = np.array(self.lay_weighting)
+        if self.extended_arbor==True:
+            print("Extended Arbor")
+            if self.layers == 6:
+                lw = np.array(self.lay_weighting)
 
-            # create random weights for each layer
-            layer_1 = np.array(
-                [self.make_weights(7,self.exin,self.fixed)])*lw[0]*.5
-            
-            layer_2 = np.array(
-                [self.make_weights(7,self.exin,self.fixed)*lw[1] for _ in range(int(49/7))])
-            
-            layer_3 = np.array(
-                [self.make_weights(2,self.exin,self.fixed)*lw[2] for _ in range(int(98/2))])
-            
-            layer_4 = np.array(
-                [self.make_weights(2,self.exin,self.fixed)*lw[3] for _ in range(int(196/2))])
-            
-            layer_5 = np.array(
-                [self.make_weights(2,self.exin,self.fixed)*lw[4] for _ in range(int(392/2))])
-            
-            layer_6 = np.array(
-                [self.make_weights(2,self.exin,self.fixed)*lw[5] for _ in range(int(784/2))])
+                # create random weights for each layer
+                layer_1 = np.array(
+                    [self.make_weights(7,self.exin,self.fixed)])*lw[0]*.5
+                
+                layer_2 = np.array(
+                    [self.make_weights(7,self.exin,self.fixed)*lw[1] for _ in range(int(49/7))])
+                
+                layer_3 = np.array(
+                    [self.make_weights(2,self.exin,self.fixed)*lw[2] for _ in range(int(98/2))])
+                
+                layer_4 = np.array(
+                    [self.make_weights(2,self.exin,self.fixed)*lw[3] for _ in range(int(196/2))])
+                
+                layer_5 = np.array(
+                    [self.make_weights(2,self.exin,self.fixed)*lw[4] for _ in range(int(392/2))])
+                
+                layer_6 = np.array(
+                    [self.make_weights(4,self.exin,self.fixed)*lw[5] for _ in range(int(784/2))])
 
-            # place them in a weight structure (defines structure and weighing of a neuron)
-            self.weights = [
-                layer_1,
-                layer_2,
-                layer_3,
-                layer_4,
-                layer_5,
-                layer_6,
-            ]
+                # place them in a weight structure (defines structure and weighing of a neuron)
+                self.weights = [
+                    layer_1,
+                    layer_2,
+                    layer_3,
+                    layer_4,
+                    layer_5,
+                    layer_6,
+                ]
+        else:
 
-            # for i,w in enumerate(self.weights):
-            #     print(f"Layer {i} has shape {w.shape}")
+            if self.layers == 42:
 
-        elif self.layers == 5:
-            print("Tiling Technique")
-            lw = np.array(self.lay_weighting)
+                l1 = np.array([np.ones(4)])
 
-            # create random weights for each layer
-            layer_1 = np.array(
-                [self.make_weights(7,self.exin,self.fixed)])*lw[0]*.5
-            
-            layer_2 = np.array(
-                [self.make_weights(7,self.exin,self.fixed)*lw[1] for _ in range(int(49/7))])
-            
-            layer_3 = np.array(
-                [self.make_weights(2,self.exin,self.fixed)*lw[2] for _ in range(int(98/2))])
-            
-            layer_4 = np.array(
-                [self.make_weights(2,self.exin,self.fixed)*lw[3] for _ in range(int(196/2))])
-            
-            layer_5 = np.array(
-                [self.make_weights(4,self.exin,self.fixed)*lw[4] for _ in range(int(784/4))])
+                l2 = [np.ones(4) for _ in range(3)]
+                l2.append(np.array([1]))
+                
+                l3 = [np.ones(4) for _ in range(12)]
+                l3.append(np.array([1]))
 
-            # place them in a weight structure (defines structure and weighing of a neuron)
-            self.weights = [
-                layer_1,
-                layer_2,
-                layer_3,
-                layer_4,
-                layer_5,
-            ]
+                l4 = np.array([np.ones(4) for _ in range(49)])
+                l5 = np.array([np.ones(4) for _ in range(196)])
+                l6 = np.array([np.ones(4) for _ in range(784)])
+                l7 = np.array([[-1,1] for _ in range(int(784*4))])
+                
 
-            for i,w in enumerate(self.weights):
-                print(f"Layer {i} has shape {w.shape}")
+                # place them in a weight structure (defines structure and weighing of a neuron)
+                self.weights = [l1,l2,l3,l4,l5,l6,l7]
 
-        elif self.layers == 9:
-            print("Deep Tree")
-            lw = np.array(self.lay_weighting)
+            elif self.layers == 6:
+                lw = np.array(self.lay_weighting)
 
-            # create random weights for each layer
-            layer_1 = np.array(
-                [self.make_weights(4,self.exin,self.fixed)])*lw[0]*.5
+                # create random weights for each layer
+                layer_1 = np.array(
+                    [self.make_weights(7,self.exin,self.fixed)])*lw[0]*.5
+                
+                layer_2 = np.array(
+                    [self.make_weights(7,self.exin,self.fixed)*lw[1] for _ in range(int(49/7))])
+                
+                layer_3 = np.array(
+                    [self.make_weights(2,self.exin,self.fixed)*lw[2] for _ in range(int(98/2))])
+                
+                layer_4 = np.array(
+                    [self.make_weights(2,self.exin,self.fixed)*lw[3] for _ in range(int(196/2))])
+                
+                layer_5 = np.array(
+                    [self.make_weights(2,self.exin,self.fixed)*lw[4] for _ in range(int(392/2))])
+                
+                layer_6 = np.array(
+                    [self.make_weights(2,self.exin,self.fixed)*lw[5] for _ in range(int(784/2))])
 
-            layer_2 = [
-                self.make_weights(2,self.exin,self.fixed)*lw[1] for _ in range(int(6/2))]
-            layer_2.append(self.make_weights(1,self.exin,self.fixed)*lw[1])
-                    
-            layer_3 = [
-                self.make_weights(2,self.exin,self.fixed)*lw[1] for _ in range(int(12/2))]
-            layer_3.append(self.make_weights(1,self.exin,self.fixed)*lw[1])
+                # place them in a weight structure (defines structure and weighing of a neuron)
+                self.weights = [
+                    layer_1,
+                    layer_2,
+                    layer_3,
+                    layer_4,
+                    layer_5,
+                    layer_6,
+                ]
 
-            layer_4 = [
-                self.make_weights(2,self.exin,self.fixed)*lw[1] for _ in range(int(24/2))]
-            layer_4.append(self.make_weights(1,self.exin,self.fixed)*lw[1])
+                # for i,w in enumerate(self.weights):
+                #     print(f"Layer {i} has shape {w.shape}")
 
-            layer_5 = [
-                self.make_weights(2,self.exin,self.fixed)*lw[1] for _ in range(int(48/2))]
-            layer_5.append(self.make_weights(1,self.exin,self.fixed)*lw[1])
-            
-            layer_6 = np.array(
-                [self.make_weights(2,self.exin,self.fixed)*lw[2] for _ in range(int(98/2))])
-            
-            layer_7 = np.array(
-                [self.make_weights(2,self.exin,self.fixed)*lw[3] for _ in range(int(196/2))])
-            
-            layer_8 = np.array(
-                [self.make_weights(2,self.exin,self.fixed)*lw[4] for _ in range(int(392/2))])
-            
-            layer_9 = np.array(
-                [self.make_weights(2,self.exin,self.fixed)*lw[4] for _ in range(int(784/2))])
+            elif self.layers == 5:
+                print("Tiling Technique")
+                lw = np.array(self.lay_weighting)
 
-            # place them in a weight structure (defines structure and weighing of a neuron)
-            self.weights = [
-                layer_1,
-                layer_2,
-                layer_3,
-                layer_4,
-                layer_5,
-                layer_6,
-                layer_7,
-                layer_8,
-                layer_9
-            ]
+                # create random weights for each layer
+                layer_1 = np.array(
+                    [self.make_weights(7,self.exin,self.fixed)])*lw[0]*.5
+                
+                layer_2 = np.array(
+                    [self.make_weights(7,self.exin,self.fixed)*lw[1] for _ in range(int(49/7))])
+                
+                layer_3 = np.array(
+                    [self.make_weights(2,self.exin,self.fixed)*lw[2] for _ in range(int(98/2))])
+                
+                layer_4 = np.array(
+                    [self.make_weights(2,self.exin,self.fixed)*lw[3] for _ in range(int(196/2))])
+                
+                layer_5 = np.array(
+                    [self.make_weights(4,self.exin,self.fixed)*lw[4] for _ in range(int(784/4))])
 
-            for i,w in enumerate(self.weights):
-                shp = []
-                for group in w:
-                    shp.append(len(group))
-                # print(f"Layer {i} has shape {len(shp),sum(shp)}")  
+                # place them in a weight structure (defines structure and weighing of a neuron)
+                self.weights = [
+                    layer_1,
+                    layer_2,
+                    layer_3,
+                    layer_4,
+                    layer_5,
+                ]
+
+                for i,w in enumerate(self.weights):
+                    print(f"Layer {i} has shape {w.shape}")
+
+            elif self.layers == 9:
+                print("Deep Tree")
+                lw = np.array(self.lay_weighting)
+
+                # create random weights for each layer
+                layer_1 = np.array(
+                    [self.make_weights(4,self.exin,self.fixed)])*lw[0]*.5
+
+                layer_2 = [
+                    self.make_weights(2,self.exin,self.fixed)*lw[1] for _ in range(int(6/2))]
+                layer_2.append(self.make_weights(1,self.exin,self.fixed)*lw[1])
+                        
+                layer_3 = [
+                    self.make_weights(2,self.exin,self.fixed)*lw[1] for _ in range(int(12/2))]
+                layer_3.append(self.make_weights(1,self.exin,self.fixed)*lw[1])
+
+                layer_4 = [
+                    self.make_weights(2,self.exin,self.fixed)*lw[1] for _ in range(int(24/2))]
+                layer_4.append(self.make_weights(1,self.exin,self.fixed)*lw[1])
+
+                layer_5 = [
+                    self.make_weights(2,self.exin,self.fixed)*lw[1] for _ in range(int(48/2))]
+                layer_5.append(self.make_weights(1,self.exin,self.fixed)*lw[1])
+                
+                layer_6 = np.array(
+                    [self.make_weights(2,self.exin,self.fixed)*lw[2] for _ in range(int(98/2))])
+                
+                layer_7 = np.array(
+                    [self.make_weights(2,self.exin,self.fixed)*lw[3] for _ in range(int(196/2))])
+                
+                layer_8 = np.array(
+                    [self.make_weights(2,self.exin,self.fixed)*lw[4] for _ in range(int(392/2))])
+                
+                layer_9 = np.array(
+                    [self.make_weights(2,self.exin,self.fixed)*lw[4] for _ in range(int(784/2))])
+
+                # place them in a weight structure (defines structure and weighing of a neuron)
+                self.weights = [
+                    layer_1,
+                    layer_2,
+                    layer_3,
+                    layer_4,
+                    layer_5,
+                    layer_6,
+                    layer_7,
+                    layer_8,
+                    layer_9
+                ]
+
+                for i,w in enumerate(self.weights):
+                    shp = []
+                    for group in w:
+                        shp.append(len(group))
+                    # print(f"Layer {i} has shape {len(shp),sum(shp)}")  
                     
 
 class SpecificNode(SuperNode):

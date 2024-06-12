@@ -175,13 +175,13 @@ def main():
         # importing os module
         place = path+name+'nodes/'
         if os.path.exists(place) == True:
-            print("Loading nodes...")
+            # print("Loading nodes...")
             files = glob.glob(place+'*')
-            print(config.exp_name)
+            print("\n",config.exp_name)
             latest = max(files, key=os.path.getctime)
             # print("latest",latest)
             file_name = latest[len(place):len(latest)-len('.pickle')]
-            print("file name: ",file_name)
+            # print("file name: ",file_name)
             nodes = picklin(place,file_name)
 
         else:
@@ -229,7 +229,7 @@ def main():
                 make_nodes(path,name,config)
                 if config.offset_transfer is not None:
                     nodes = offset_readin(nodes,config)
-
+            
 
             
 
@@ -242,7 +242,7 @@ def main():
             
         s2 = time.perf_counter()
 
-        # print(f"Total node acquisition time: {s2-s1}")
+        print(f"Total node acquisition time: {s2-s1}")
 
 
 
@@ -322,8 +322,7 @@ def main():
 
             for digit in range(config.digits):
                 digit = shuffled[digit]
-
-                start = time.perf_counter()
+                start_1 = time.perf_counter()
 
                 if config.dataset!='keras':
                     # create input opject for appropriate class and sample
@@ -358,8 +357,19 @@ def main():
                             syn.add_input(input_.signals[idx_list[i]])
 
                     else:
-                        for i,channel in enumerate(input_.signals):
-                            node.synapse_list[i].add_input(channel)
+                        if config.layers == 42:
+                            # print("Special Inputs")
+                            for start in range(4):
+                                node.doubled_input(input_,start=start*784*2)
+                        elif config.double_dends == True:
+                            # print("Doubled Input")
+                            node.doubled_input(input_)
+                        else:
+                            for i,channel in enumerate(input_.signals):
+                                node.synapse_list[i].add_input(channel)
+                            if config.extended_arbor==True:
+                                for i,channel in enumerate(input_.signals):
+                                    node.synapse_list[i+784].add_input(channel)
 
                 # f0 = time.perf_counter()
                 # print("Input time: ", f0-start)
@@ -377,7 +387,7 @@ def main():
                     )
                 
 
-                record_penultimate_signals=True
+                record_penultimate_signals=False
                 if record_penultimate_signals==True:
                     penultimte_signals = []
                     for itr, node in enumerate(nodes):
@@ -399,6 +409,8 @@ def main():
                         plot_MNIST_nodes(nodes,digit,sample,config.run,name,path)
                 elif config.plotting == 'full':
                     plot_MNIST_nodes(nodes,digit,sample,config.run,name,path)
+                # if config.exp_name=='double_dends_slim':
+                #     plot_MNIST_nodes(nodes,digit,sample,config.run,name,path)
                 
 
                 # keep track of run time costs
@@ -436,7 +448,10 @@ def main():
                 
                 offset_sums = [0 for _ in range(config.digits)]
 
-                if config.exp_name=='thresh_full_rerun' and config.run>=500 and config.run<550:
+                if ((config.exp_name=='double_dends_slim_nonrand_lim' or
+                    config.exp_name=='double_dends_slim_nonrand_chooser' or
+                    config.exp_name=='disynaptic_extened_fanin_4') 
+                    and digit==0 and (config.run==1 or sample%500==0 or config.run==1)):
                     picklit(
                         nodes,
                         f"{path}{name}/full_nodes_prime/",
@@ -447,11 +462,11 @@ def main():
                 if config.run%mod != 0 or config.run == 0:
 
                     if config.probabilistic == 1:
-                        nodes, offset_sums, max_hits = arbor_update(nodes,config,digit,sample,errors)
+                        nodes, offset_sums, max_hits = arbor_update(nodes,config,digit,sample,errors,config.updater)
 
                     else:
                         # print("Probabilistic update")
-                        nodes, offset_sums, max_hits = probablistic_arbor_update(nodes,config,digit,sample,errors)
+                        nodes, offset_sums, max_hits = probablistic_arbor_update(nodes,config,digit,sample,errors,config.updater)
                     # mhs[digit] = max_hits
                         
                     for node in nodes:
@@ -463,7 +478,7 @@ def main():
                 else:
                     max_hits = np.zeros(config.digits)
                     # print("Skipping Update")
-                    if (sample == 0 and config.run%1000 == 0):
+                    if (sample == 0 and (config.run%1000 == 0 or config.run==1)):
                         # save the nodes!
                         picklit(
                             nodes,
@@ -482,7 +497,7 @@ def main():
                 for o,offset in enumerate(offset_sums):
                     offset_sums[o] = np.round(offset,2)
 
-                print(f"  {sample}  -  [{digit} -> {np.argmax(output)}]  -  {np.round(f-start,1)}  -  {output} - {offset_sums} - {max_hits}")
+                print(f"  {sample}  -  [{digit} -> {np.argmax(output)}]  -  {np.round(f-start_1,1)}  -  {output} - {errors} - {max_hits}")#- {offset_sums} - {max_hits}")
                 del(net)
                 del(input_)
 
@@ -506,9 +521,11 @@ def main():
 
 
         if hasattr(nodes[0],'seen'):
-            nodes[0].seen = ((config.run % 50))*10 + 10
+            # nodes[0].seen = ((config.run % 50))*10 + 10
+            nodes[0].seen = ((config.run % config.samples))*config.digits + config.digits
         else:
-            nodes[0].seen = 10
+            # nodes[0].seen = 10
+            nodes[0].seen = config.digits
 
         if hasattr(nodes[0],'passed'):
             nodes[0].passed += samples_passed
@@ -527,12 +544,12 @@ def main():
         #     print(f" samples passed: {samples_passed}/{config.digits*config.samples}\n")
         # else:
         print(f" samples passed: {samples_passed}/{config.digits} -- running epoch accuracy: {acc}%")
-        print(f" digit performance {accs}%\n")
+        # print(f" digit performance {accs}%\n")
 
 
         # if all samples passed, task complete!
         if nodes[0].seen == config.digits*config.samples:
-
+            print("acc check")
             with open(f'{path}{name}/performance_log.csv', 'a') as f_object:
                 writer_object = writer(f_object)
                 writer_object.writerow([acc,accs])
@@ -561,7 +578,7 @@ def main():
 
 
     config = setup_argument_parser()
-
+    if not hasattr(config,'updater'): config.updater = "classic"
 
     exin_name = 'excit'
     if config.exin is not None:
@@ -610,6 +627,9 @@ def main():
         # print("decay = ",decay)
         config.eta = np.max([1/(250+15*decay),0.00001])
         # config.eta = 0.003389830508474576
+    if config.run==0:
+        for i,(k,v) in enumerate(config.__dict__.items()):
+            print(f"{i}  --  {k}      {v}")
 
     nodes = get_nodes(path,name,config)
 

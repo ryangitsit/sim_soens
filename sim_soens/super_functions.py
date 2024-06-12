@@ -304,7 +304,8 @@ def make_inputs(letters,spike_time):
         idx = np.where(np.array(letters[name])==1)[0]
         spike_times = np.ones(len(idx))*spike_time
         defined_spikes=[idx,spike_times]
-        inputs[name]=SuperInput(type='defined',defined_spikes=defined_spikes)
+        # print(defined_spikes)
+        inputs[name]=SuperInput(type='defined',defined_spikes=defined_spikes,channels=9)
     return inputs
 
 def make_spikes(letter,spike_time):

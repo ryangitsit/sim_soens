@@ -420,7 +420,7 @@ def structure(node):
     plt.style.use('seaborn-muted')
     # print(plt.__dict__['pcolor'].__doc__)
     colors = plt.rcParams["axes.prop_cycle"].by_key()["color"]
-
+    # colors = [colors[1],colors[3]]
     arbor = node.dendrites
     strengths = node.weights
 
@@ -589,7 +589,7 @@ def structure(node):
     plt.yticks([])
     plt.ylabel("Dendrites",fontsize=18)
     plt.xlabel("Layers",fontsize=18)
-    plt.title("Dendritc Arbor",fontsize=20)
+    plt.title("Dendritic Arbor",fontsize=20)
     plt.tight_layout()
     plt.show()
 

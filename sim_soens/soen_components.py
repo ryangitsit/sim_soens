@@ -134,6 +134,7 @@ class dendrite():
         self.pri=False
         self.offset_trj = []
         self.outgoing_dendritic_connections = {}
+        self.output_connection_strength = None
 
         # check ahead of time if loop defined in custom params
         # pull default params for that loop

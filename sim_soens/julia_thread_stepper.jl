@@ -319,40 +319,49 @@ end
 
 function dend_signal(dend::AbstractDendrite,t_idx::Int,d_tau::Float64)
 
-    val = dend.phir[t_idx+1]
 
-    if val > dend.phi_max
-        # print("High roll")
-        val = val - dend.phi_max
-    elseif val < dend.phi_min
-        # print("Low roll")
-        val = val - dend.phi_min
+    if dend.phir[t_idx+1]<0.1675
+        r_fq = 0
+    else
+        r_fq = (dend.phir[t_idx+1]-0.1675)*(0.8388-dend.s[t_idx])
     end
 
+    # ###################################
+    # val = dend.phir[t_idx+1]
 
-    ind_phi = index_approxer(val)
-
-    # ind_phi = general_index_approxer(
-    #     val,
-    #     dend.abs_min_neg,
-    #     dend.abs_min_pos,
-    #     dend.abs_idx_neg,
-    #     dend.abs_idx_pos
-    #     )
-
-    # ind_phi = searchsortedfirst(dend.phi_vec,val)
-    # ind_phi= minimum([ind_phi,length(dend.phi_vec)])
+    # if val > dend.phi_max
+    #     # print("High roll")
+    #     val = val - dend.phi_max
+    # elseif val < dend.phi_min
+    #     # print("Low roll")
+    #     val = val - dend.phi_min
+    # end
 
 
+    # ind_phi = index_approxer(val)
 
-    s_vec = dend.s_array[ind_phi]
+    # # ind_phi = general_index_approxer(
+    # #     val,
+    # #     dend.abs_min_neg,
+    # #     dend.abs_min_pos,
+    # #     dend.abs_idx_neg,
+    # #     dend.abs_idx_pos
+    # #     )
+
+    # # ind_phi = searchsortedfirst(dend.phi_vec,val)
+    # # ind_phi= minimum([ind_phi,length(dend.phi_vec)])
 
 
-    ind_s = s_index_approxer(s_vec,dend.s[t_idx])
-    # ind_s = searchsortedfirst(s_vec,dend.s[t_idx])
-    # ind_s= minimum([ind_s,length(s_vec)])
 
-    r_fq = dend.r_array[ind_phi][ind_s]
+    # s_vec = dend.s_array[ind_phi]
+
+
+    # ind_s = s_index_approxer(s_vec,dend.s[t_idx])
+    # # ind_s = searchsortedfirst(s_vec,dend.s[t_idx])
+    # # ind_s= minimum([ind_s,length(s_vec)])
+
+    # r_fq = dend.r_array[ind_phi][ind_s]
+    # #########################################
     
     dend.s[t_idx+1] = dend.s[t_idx]*(1 - d_tau*dend.alpha/dend.beta) + (d_tau/dend.beta)*r_fq
     

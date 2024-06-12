@@ -57,6 +57,9 @@ def setup_argument_parser():
     parser.add_argument( "--weight_transfer",   type=str,           default = None     )
     parser.add_argument( "--offset_transfer",   type=str,           default = None     )
     parser.add_argument( "--no_negative_jij",   type=bool,          default = False    )
+    parser.add_argument( "--extended_arbor",    type=bool,          default = False    )
+    parser.add_argument( "--double_dends",      type=bool,          default = False    )
+    parser.add_argument( "--updater",           type=str,           default = "classic")
 
 
 

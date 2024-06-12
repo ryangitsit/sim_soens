@@ -9,15 +9,156 @@ sys.path.append('../')
 from sim_soens.super_functions import *
 
 #%%
+
 def load_nodes(run,digit,sample,name):
     nodes = picklin(f"results\\MNIST\\{name}\\full_nodes",f"full_{sample}_{digit}_nodes_at_{run}")
     # print("Loaded nodes:")
     # for node in nodes:
     #     print(" ",node.name)
     return nodes
-nodes = picklin(f"results\\MNIST\\updates_cobuff\\full_nodes_prime",f"full_{10}_{0}_nodes_at_{360}")
+# nodes = picklin(f"results\\MNIST\\updates_cobuff\\full_nodes_prime",f"full_{10}_{0}_nodes_at_{360}")
+# nodes = picklin(f"results\\MNIST\\double_dends_slim\\full_nodes_prime",f"full_42_0_nodes_at_242")
+i = 1000
+# i = 1021
+# nodes = picklin(f"results\\MNIST\\double_dends_42\\full_nodes",f"full_0_0_nodes_at_{1000}")
+
+i = 4000
+nodes = picklin(f"results\\MNIST\\disynaptic_extened_fanin_4\\full_nodes_prime",f"full_{i%50}_0_nodes_at_{i}")
+
+# nodes = picklin(f"results\\MNIST\\offset_transfer_all\\full_nodes",f"full_0_0_nodes_at_{1000}")
+# nodes = picklin(f"results\\MNIST\\double_dends_slim_nonrand_2\\full_nodes_prime",f"full_{i%50}_0_nodes_at_{i}")
+# nodes = picklin(f"results\\MNIST\\double_dends_slim_nonrand_chooser\\full_nodes_prime",f"full_{i%50}_0_nodes_at_{i}")
+
+# i = 3000
+# nodes = picklin(f"results\\MNIST\\double_dends_slim_nonrand_lim\\full_nodes_prime",f"full_{i%50}_0_nodes_at_{i}")
+
+
+# i = 3000
+# nodes = picklin(f"results\\MNIST\\double_dends_slim_nonrand_lim_full\\full_nodes",f"full_{i%50}_0_nodes_at_{i}")
+
+# nodes = picklin(f"results\\MNIST\\double_dends_slim_2\\full_nodes_prime",f"full_42_0_nodes_at_242")
+
 
 #%%
+
+node = nodes[0]
+layer = 6
+
+neg_syns = []
+pos_syns = []
+active_syns=0
+positive_offsets = []
+negative_offsets = []
+activity = []
+for i,dend in enumerate(node.dendrite_list):
+    if f'lay{layer}' in dend.name:
+        activity.append(np.mean(dend.phi_r))
+        # print(dend.name,dend.output_connection_strength)
+        if dend.output_connection_strength < 0:
+            negative_offsets.append(dend.offset_flux)
+            neg_syns.append(dend.offset_flux)
+            # plt.plot(np.ones(10)*np.min(dend.phi_r),'--')
+        else:
+            positive_offsets.append(dend.offset_flux)
+            pos_syns.append(dend.offset_flux)
+            # plt.plot(np.ones(10)*np.min(dend.phi_r))
+
+        if np.max(dend.phi_r)- np.min(dend.phi_r) > 0.1 or dend.offset_flux > 0.1675: active_syns +=1
+
+        if dend.output_connection_strength < 0:
+            plt.plot(dend.s,'--')
+        else:
+            plt.plot(dend.s)
+
+        # if dend.output_connection_strength < 0:
+        #     plt.plot(dend.phi_r,'--')
+        # else:
+        #     plt.plot(dend.phi_r)
+# print(active_syns)
+plt.show()
+
+# plt.plot(node.neuron.dend_soma.s)
+
+# plt.show()
+#%%
+
+
+
+# print(len(positive_offsets))
+if layer==7 or layer==6: shape = (28,28)
+if layer==4: shape = (14,14)
+if layer==2: shape = (7,7)
+# shape = (7,7)
+
+# shape = (14,14)
+# shape = (28,28)
+# shape = (28*4,28*2)
+
+shape = (28*2,28*2)
+
+
+# print(f"Total activity {np.sum(activity)} of {len(activity)} dendrites")
+# # if layer == 6:
+# plt.imshow(np.array(activity).reshape(shape))
+# plt.tick_params(left = False, right = False , labelleft = False , 
+#                 labelbottom = False, bottom = False)
+# plt.show()
+
+# shape = (28*2,28*2)
+
+# print(f"Total offset {np.sum(positive_offsets)} from {len(positive_offsets)} dendrites")
+plt.imshow(np.array(positive_offsets).reshape(shape),cmap='Greens')
+plt.tick_params(left = False, right = False , labelleft = False , 
+                labelbottom = False, bottom = False) 
+plt.show()
+
+if len(negative_offsets)>0:
+    # print(f"Total offset {np.mean(negative_offsets)} from {len(negative_offsets)} dendrites")
+    plt.imshow(np.array(negative_offsets).reshape(shape),cmap='Reds')
+    plt.tick_params(left = False, right = False , labelleft = False , 
+                labelbottom = False, bottom = False) 
+    plt.show()
+
+
+# plt.hist(neg_syns,color='r',bins=50,alpha=0.3)
+
+# plt.hist(pos_syns,color='g',bins=50,alpha=0.3)
+# plt.show()
+
+
+
+
+#%%
+#%%
+
+def count_total_elements(lst):
+    total_elements = 0
+ 
+    for item in lst:
+        if isinstance(item, list) or isinstance(item, np.ndarray):
+            total_elements += count_total_elements(item)
+        else:
+            total_elements += 1
+ 
+    return total_elements
+
+l7 = np.array([[-1,1] for _ in range(int(784*4))])
+print(count_total_elements(l7))
+print(count_total_elements(node.weights[-1]))
+print(count_total_elements(node.dendrites[-1]))
+print(len(node.synapse_list))
+
+#%%
+
+
+syn_flux = []
+for syn in node.synapse_list:
+    syn_flux.append(syn.phi_spd)
+
+
+print(len(syn_flux))
+#%%
+
 
 loaded_weights = picklin('./saved_data/','W_symmetric_relu_nobias_1000')
 print(len(loaded_weights))
@@ -194,28 +335,27 @@ alternodes_inhibition(exp_name,all_S,alt_type='inhibit',renorm_fanin=True)
 
 
 #%%
-# #%%
-# nodes = picklin(f"results\\MNIST\\updates_cobuff\\full_nodes_prime",f"full_10_3_nodes_at_360")
-# node = nodes[0]
-# #%%
+nodes = picklin(f"results\\MNIST\\updates_cobuff\\full_nodes_prime",f"full_10_3_nodes_at_360")
+node = nodes[0]
+#%%
 
-# plt.style.use('seaborn-muted')
+plt.style.use('seaborn-muted')
 
-# phis = [max(dend.s) for dend in node.dendrite_list]
-# plt.hist(phis,bins=50,label='max_s')
-# # plt.show()
-
-# phis = [max(dend.phi_r) for dend in node.dendrite_list]
-# plt.hist(phis,bins=50,label='max_phis')
-# # plt.show()
-
-
-# offsets = [dend.offset_flux for dend in node.dendrite_list]
-# plt.hist(offsets,bins=50,label='offsets')
-# # plt.show()
-
-# plt.legend()
+phis = [max(dend.s) for dend in node.dendrite_list]
+plt.hist(phis,bins=50,label='max_s')
 # plt.show()
+
+phis = [max(dend.phi_r) for dend in node.dendrite_list]
+plt.hist(phis,bins=50,label='max_phis')
+# plt.show()
+
+
+offsets = [dend.offset_flux for dend in node.dendrite_list]
+plt.hist(offsets,bins=50,label='offsets')
+# plt.show()
+
+plt.legend()
+plt.show()
 
 # #%%
 
