@@ -48,7 +48,7 @@ def raster_plot(
 
 def activity_plot(
         neurons,net=None,phir=False,dend=True,title=None,input=None,weighting=True,
-        docstring=False,lay=100000,spikes=True, path=None,SPD=False,ref=False,
+        docstring=False,lay=100000,spikes=False, path=None,SPD=False,ref=False,
         legend_out=False,size=(12,4), y_range=None,subtitles=None,legend=True,
         legend_all=False, S=True, phi_th=True
         ):
@@ -155,7 +155,7 @@ def activity_plot(
                 # rows = array_to_rows(net.spikes,2)
                 # print(rows)
                 axs[ii].plot(
-                    n.neuron.spike_times,n.neuron.s_th,'xk', markersize=8,
+                    n.neuron.spike_times,np.ones(len(n.neuron.spike_times))*n.neuron.s_th,'xk', markersize=8,
                     label='neuron fires'
                     )
                 axs[ii].axhline(
@@ -177,7 +177,7 @@ def activity_plot(
             )
             #, labelpad=20)
 
-        axs[int(np.floor(len(neurons)/2))].yaxis.set_label_coords(-1.05,1)
+        # axs[int(np.floor(len(neurons)/2))].yaxis.set_label_coords(-1.05,1)
         # fig.set_ylabel("ylabel")
         # plt.subplots_adjust(bottom=.25)
         if title:
