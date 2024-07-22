@@ -1,0 +1,31 @@
+Graph information for gpp_3_trivial_20240717-095906
+Simulation started on 20240717-095906 
+Arguments:
+python solve_gpp.py trivial 3 runs=2 
+Constants:
+seed: 7821585
+C_alpha: 1
+B_gamma: 1
+flux_offset: 0.4
+max_flux: 0.0
+ib_final: 1.7
+ib_initial: 1.7Girvan_Newman found more than 2 partitions!!!
+Ignore these results!!!
+
+
+Benchmark Partitions:
+        Partition Type 	 modularity 	 CO
+        kernighan-lin 	 0 	 0.1111
+        girvan-newman 	 -0.5 	 0.1111
+
+Ideal Partitions:
+        Partition Type 	 modularity 	 CO
+        ideal_q 	 0 	 -0.7778
+        ideal_co 	 0 	 0.1111
+
+SNN Partitions:
+        Partition Type 	 modularity 	 CO 
+	SNN \#0, Constraint_Optimization , seed 7923962 	 0 	 -0.7778\\ 
+	SNN \#0, Modularity , seed 739847 	 0 	 -0.7778\\ 
+	SNN \#1, Constraint_Optimization , seed 4600550 	 0 	 -0.7778\\ 
+	SNN \#1, Modularity , seed 753620 	 0 	 -0.7778\\ 

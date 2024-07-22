@@ -1,0 +1,37 @@
+Graph information for gpp_10_WS_20240719-181301
+Simulation started on 20240719-181301
+
+Arguments:
+python solve_gpp.py WS 10 4 0.05 runs=3 
+
+Constants:
+    seed: 1514390
+    simulation_time: 2000
+    time_step: 0.05
+    C_alpha: 1
+    B_gamma: 1
+    spiking_threshold: 0.141
+    flux_offset: 0.36825
+    gpp_max_neuron_input: 0.5707875
+    ib_final: 1.8
+    ib_initial: 1.8
+
+Benchmark Partitions:
+        Solver 		 Modularity 	 CO
+        kernighan-lin 	 0.2 	 0.16
+        girvan-newman 	 0.18 	 0.12
+
+SNN Partitions:
+        Solver 		 Modularity 	 CO 
+	#0 Mod 5647559	 0.12 	 0
+	#0 CO 444113	 0.12 	 0
+	#1 Mod 7221482	 0.18 	 0.12
+	#1 CO 4295263	 0.1487 	 0.12
+	#2 Mod 2660709	 0.18 	 0.12
+	#2 CO 536643	 0.18 	 0.12
+
+
+Ideal Partitions:
+        Solver 		 Modularity 	 CO
+        ideal_q 	 0.2 	 0.16
+        ideal_co 	 0.2 	 0.16

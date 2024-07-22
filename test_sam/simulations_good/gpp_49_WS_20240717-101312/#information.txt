@@ -1,0 +1,24 @@
+Graph information for gpp_49_WS_20240717-101312
+Simulation started on 20240717-101312 
+Arguments:
+python solve_gpp.py WS 49 5 0.07 runs=2 
+Constants:
+seed: 2688145
+C_alpha: 1
+B_gamma: 1
+flux_offset: 0.391
+max_flux: 0.782
+ib_final: 1.7
+ib_initial: 1.7
+
+Benchmark Partitions:
+        Partition Type 	 modularity 	 CO
+        kernighan-lin 	 0.4485 	 0.07289
+        girvan-newman 	 0.4302 	 0.03957
+
+SNN Partitions:
+        Partition Type   modularity 	 CO 
+#0, Constraint_Optimization, seed 5434129 	 0.1293 	 0.01791\\ 
+#0, Modularity, 5489551 	 0.4036 	 0.001249\\ 
+	SNN \#1, Constraint_Optimization , seed 1296003 	 0.09949 	 0.01291\\ 
+	SNN \#1, Modularity , seed 1465807 	 0.3036 	 -0.06039\\ 

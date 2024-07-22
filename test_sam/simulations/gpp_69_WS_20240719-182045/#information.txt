@@ -1,0 +1,31 @@
+Graph information for gpp_69_WS_20240719-182045
+Simulation started on 20240719-182045
+
+Arguments:
+python solve_gpp.py WS 69 6 0.13 runs=3 
+
+Constants:
+    seed: 5794776
+    simulation_time: 13800
+    time_step: 0.05
+    C_alpha: 1
+    B_gamma: 1
+    spiking_threshold: 0.14
+    flux_offset: 0.36827
+    gpp_max_neuron_input: 0.5745012
+    ib_final: 1.8
+    ib_initial: 1.8
+
+Benchmark Partitions:
+        Solver 		 Modularity 	 CO
+        kernighan-lin 	 0.3695 	 0.06406
+        girvan-newman 	 0.4018 	 0.05482
+
+SNN Partitions:
+        Solver 		 Modularity 	 CO 
+	#0 Mod 8309193	 0.3662 	 -0.02163
+	#0 CO 111553	 0.006675 	 -0.7585
+	#1 Mod 2199062	 0.3124 	 -0.04684
+	#1 CO 5299724	 -0.002625 	 -0.7593
+	#2 Mod 504158	 0.3503 	 -0.02415
+	#2 CO 7258153	 0.00629 	 -0.7593

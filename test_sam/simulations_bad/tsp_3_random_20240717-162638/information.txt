@@ -1,0 +1,23 @@
+Graph information for tsp_3_random_20240717-162638
+Simulation started on 20240717-162638
+
+Arguments:
+python solve_tsp.py random 3 runs=3 
+
+Constants:
+    seed: 4631725
+    flux_offset: 0.5
+    max_flux: 1.0
+    ib_final: 1.7
+    ib_initial: 1.7
+Benchmark Partitions:
+        Solver 		 Distance
+        Greedy 		 1.4
+        Christofides 	 1.4
+        Annealing 	 1.4 
+
+SNN Partitions:
+        Solver 		 Distance 	 Validity
+	#0 2447383 	 0 	 False
+	#1 6726263 	 0 	 False
+	#2 5387654 	 0 	 False

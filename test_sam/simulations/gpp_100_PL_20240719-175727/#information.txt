@@ -1,0 +1,25 @@
+Graph information for gpp_100_PL_20240719-175727
+Simulation started on 20240719-175727
+
+Arguments:
+python solve_gpp.py PL 100 2 0.07 runs=3 
+
+Constants:
+    seed: 5734925
+    simulation_time: 20000
+    time_step: 0.05
+    C_alpha: 1
+    B_gamma: 1
+    spiking_threshold: 0.142
+    flux_offset: 0.3682
+    gpp_max_neuron_input: 0.57071
+    ib_final: 1.8
+    ib_initial: 1.8
+
+Benchmark Partitions:
+        Solver 		 Modularity 	 CO
+        kernighan-lin 	 0.2911 	 0.024
+        girvan-newman 	 0.1046 	 -0.5744
+
+SNN Partitions:
+        Solver 		 Modularity 	 CO 
