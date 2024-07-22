@@ -1,0 +1,29 @@
+Graph information for gpp_6_trivial_20240717-095756
+Simulation started on 20240717-095756 
+Arguments:
+python solve_gpp.py trivial 6 runs=2 
+Constants:
+seed: 7320318
+C_alpha: 1
+B_gamma: 1
+flux_offset: 0.377
+max_flux: 0.0
+ib_final: 1.7
+ib_initial: 1.7
+
+Benchmark Partitions:
+        Partition Type 	 modularity 	 CO
+        kernighan-lin 	 0.3571 	 0.2778
+        girvan-newman 	 0.3571 	 0.2778
+
+Ideal Partitions:
+        Partition Type 	 modularity 	 CO
+        ideal_q 	 0.3571 	 0.2778
+        ideal_co 	 0.3571 	 0.2778
+
+SNN Partitions:
+        Partition Type 	 modularity 	 CO 
+	SNN \#0, Constraint_Optimization , seed 5070229 	 1.11e-16 	 -0.6111\\ 
+	SNN \#0, Modularity , seed 4195616 	 1.11e-16 	 -0.6111\\ 
+	SNN \#1, Constraint_Optimization , seed 5585511 	 1.11e-16 	 -0.6111\\ 
+	SNN \#1, Modularity , seed 6291732 	 1.11e-16 	 -0.6111\\ 

@@ -1,0 +1,36 @@
+Graph information for gpp_6_trivial_20240719-123136
+Simulation started on 20240719-123136
+
+Arguments:
+python solve_gpp.py trivial 6 runs=3 
+
+Constants:
+    seed: 7623385
+    time_step: 0.05
+    C_alpha: 1
+    B_gamma: 1
+    spiking_threshold: 0.1425
+    flux_offset: 0.369
+    gpp_max_neuron_input: 0.5535
+    ib_final: 1.8
+    ib_initial: 1.8
+
+Benchmark Partitions:
+        Solver 		 Modularity 	 CO
+        kernighan-lin 	 0.3571 	 0.2778
+        girvan-newman 	 0.3571 	 0.2778
+
+SNN Partitions:
+        Solver 		 Modularity 	 CO 
+	#0 Mod 8331262	 0.3571 	 0.2778
+	#0 CO 3541372	 -0.04082 	 -0.2778
+	#1 Mod 2072242	 0.3571 	 0.2778
+	#1 CO 1891337	 1.11e-16 	 -0.6111
+	#2 Mod 5273481	 1.11e-16 	 -0.6111
+	#2 CO 273575	 1.11e-16 	 -0.6111
+
+
+Ideal Partitions:
+        Solver 		 Modularity 	 CO
+        ideal_q 	 0.3571 	 0.2778
+        ideal_co 	 0.3571 	 0.2778

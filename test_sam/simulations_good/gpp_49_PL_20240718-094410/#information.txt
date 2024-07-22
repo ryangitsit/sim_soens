@@ -1,0 +1,27 @@
+Graph information for gpp_49_PL_20240718-094410
+Simulation started on 20240718-094410
+
+Arguments:
+python solve_gpp.py PL 49 1 0.1 runs=2 
+
+Constants:
+    seed: 7064917
+    C_alpha: 1
+    B_gamma: 1
+    spiking_threshold: 0.15
+    flux_offset: 0.35
+    max_flux: 0.595
+    ib_final: 1.85
+    ib_initial: 1.85
+
+Benchmark Partitions:
+        Solver 		 Modularity 	 CO
+        kernighan-lin 	 0.3539 	 0.02791
+        girvan-newman 	 0.4685 	 0.01791
+
+SNN Partitions:
+        Solver 		 Modularity 	 CO 
+#0 CO 3979073	 0.0408 	 -0.01374
+#0 Mod 7617417	 0.4575 	 0.03623
+#1 CO 1209957	 -0.03147 	 -0.0354
+#1 Mod 665412	 0.4685 	 0.01791

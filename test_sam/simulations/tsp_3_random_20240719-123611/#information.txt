@@ -1,0 +1,31 @@
+Graph information for tsp_3_random_20240719-123611
+Simulation started on 20240719-123611
+
+Arguments:
+python solve_tsp.py random 3 runs=3 
+
+Constants:
+    seed: 245706
+    time_step: 0.05
+    spiking_threshold: 0.1423
+    flux_offset: 0.368
+    tsp_max_synaptic_weight: 0.00552
+    ib_final: 1.8
+    ib_initial: 1.8
+
+Benchmark Routes:
+        Solver 		 Distance
+        Greedy 		 1.15
+        Christofides 	 1.15
+        Annealing 	 1.15
+
+SNN Routes:
+        Solver 		 Distance 	 Validity
+	#0 7700369 	 0.0101 		 False
+	#1 4955626 	 0.0202 		 False
+	#2 2871769 	 0.0202 		 False
+
+
+Ideal Routes:
+        Solver 		 Distance
+        Ideal 		 1.15

@@ -1,0 +1,29 @@
+Graph information for gpp_7_WS_20240716-162714
+Simulation started on 20240716-162714 
+Arguments:
+python solve_gpp.py WS 7 2 0.03 runs=2 
+Constants:
+seed: 4143401
+C_alpha: 1
+B_gamma: 1
+flux_offset: 0.377
+max_flux: 0.435
+ib_final: 1.7
+ib_initial: 1.7
+
+Benchmark Partitions:
+        Partition Type 	 modularity 	 CO
+        kernighan-lin 	 0.2041 	 0.102
+        girvan-newman 	 0.2041 	 0.102
+
+Ideal Partitions:
+        Partition Type 	 modularity 	 CO
+        ideal_q 	 0.2041 	 0.102
+        ideal_co 	 0.2041 	 0.102
+
+SNN Partitions:
+        Partition Type 	 modularity 	 CO 
+	SNN \#0, Constraint_Optimization , seed 6092203 	 -0.1633 	 -0.2245\\ 
+	SNN \#0, Modularity , seed 1583453 	 1.11e-16 	 -0.7143\\ 
+	SNN \#1, Constraint_Optimization , seed 729446 	 0.2041 	 0.102\\ 
+	SNN \#1, Modularity , seed 6219 	 1.11e-16 	 -0.7143\\ 
